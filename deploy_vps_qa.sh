@@ -30,16 +30,16 @@ sudo usermod -aG docker $USER || true
 
 # 3. Detener contenedores previos si existen
 echo "[2/4] Deteniendo contenedores QA previos..."
-docker compose down || true
+sudo docker compose down || true
 
 # 4. Construir e Iniciar el Stack completo de QA
 echo "[3/4] Construyendo e iniciando contenedores QA (PostgreSQL+PostGIS, Mosquitto MQTT y Node.js)..."
-docker compose up -d --build
+sudo docker compose up -d --build
 
 # 5. Estado de los contenedores
 echo "========================================================="
 echo "[4/4] ESTADO DE LOS SERVICIOS DE QA:"
-docker compose ps
+sudo docker compose ps
 echo "========================================================="
 echo "🚀 Servidor de QA Desplegado Exitosamente!"
 echo "📍 Aplicación Web & API: http://$(curl -s ifconfig.me 2>/dev/null || echo 'IP_DE_TU_VPS'):3500"
