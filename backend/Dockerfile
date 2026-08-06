@@ -3,17 +3,20 @@ FROM node:20-alpine
 # Directorio de trabajo en el contenedor
 WORKDIR /app
 
-# Copiar dependencias e instalarlas
-COPY package*.json ./
-RUN npm ci --only=production
+# Copiar e instalar dependencias del backend
+COPY backend/package*.json ./backend/
+RUN cd backend && npm ci --only=production
 
-# Copiar código del backend
-COPY . ./
+# Copiar código fuente del backend y frontend
+COPY backend ./backend
+COPY frontend ./frontend
 
-# Exponer puerto 3500
+# Cambiar directorio de trabajo a backend
+WORKDIR /app/backend
+
+# Exponer el puerto 3500
 EXPOSE 3500
 
-# Variable de entorno por defecto
 ENV PORT=3500
 ENV NODE_ENV=production
 

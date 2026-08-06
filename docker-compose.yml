@@ -37,8 +37,8 @@ services:
   # 3. Backend REST API + Socket.io + Web Server CollarNet
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: collarnet-app-qa
     restart: always
     ports:
