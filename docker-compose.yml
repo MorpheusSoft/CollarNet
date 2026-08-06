@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # 1. Base de Datos Espacial PostgreSQL 16 + PostGIS
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: collarnet-db-qa
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Pegaso#26}
+      POSTGRES_DB: ${DB_NAME:-collarnet}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_qa_data:/var/lib/postgresql/data
+      - ./docs/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-collarnet}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Broker MQTT Privado Mosquitto
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: collarnet-mqtt-qa
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_qa_data:/mosquitto/data
+      - mosquitto_qa_log:/mosquitto/log
+
+  # 3. Backend REST API + Socket.io + Web Server CollarNet
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: collarnet-app-qa
+    restart: always
+    ports:
+      - "3500:3500"
+    environment:
+      PORT: 3500
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-Pegaso#26}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-collarnet}
+      MQTT_BROKER_URL: mqtt://mqtt:1883
+      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-collarnet/lzambrano}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-""}
+    volumes:
+      - ./frontend:/app/frontend
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_qa_data:
+  mosquitto_qa_data:
+  mosquitto_qa_log:
