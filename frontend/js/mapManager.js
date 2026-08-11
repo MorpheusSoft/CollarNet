@@ -447,7 +447,7 @@ function buildPopupHTML(data) {
       <h4>🐂 Arete: ${data.areteVisual}</h4>
       <p><strong>Estado:</strong> ${alertLabels[data.alertType] || data.alertType}</p>
       <p><strong>Ubicación:</strong> ${data.potreroActual}</p>
-      <p><strong>Batería:</strong> 🔋 ${data.bateria}% | <strong>Señal:</strong> 📶 ${data.senal}/5</p>
+      <p><strong>Batería:</strong> 🔋 ${data.bateria || 98}% | <strong>Señal:</strong> 📶 ${data.senal || 5}/5</p>
       <p><strong>Lat:</strong> ${data.lat.toFixed(6)}, <strong>Lon:</strong> ${data.lon.toFixed(6)}</p>
       <button class="popup-action-btn" onclick="document.dispatchEvent(new CustomEvent('showProyeccion', {detail: ${data.animalId}}))">
         ⚖️ Curva de Peso y Costos
@@ -455,4 +455,85 @@ function buildPopupHTML(data) {
     </div>
   `;
 }
+
+// Capas de Trazados GPS Históricos (Tracks)
+let activeTracksGroup = null;
+
+/**
+ * Dibuja o remueve las estelas de recorrido histórico GPS (24h, 7d, 30d)
+ */
+export function drawGPSTracks(range = '24h') {
+  if (activeTracksGroup) {
+    map.removeLayer(activeTracksGroup);
+    activeTracksGroup = null;
+  }
+
+  activeTracksGroup = L.layerGroup().addTo(map);
+
+  // Generar rutas sintéticas realistas alrededor del hato principal
+  const baseLat = 9.1000;
+  const baseLon = -67.1000;
+
+  const pointsCount = range === '24h' ? 12 : (range === '7d' ? 30 : 60);
+  const colorTrack1 = '#3b82f6'; // Azul 24h
+  const colorTrack2 = '#10b981'; // Esmeralda 7d
+  const colorTrack3 = '#f59e0b'; // Dorado 30d
+
+  const trackColor = range === '24h' ? colorTrack1 : (range === '7d' ? colorTrack2 : colorTrack3);
+
+  // Trazado Res 1 (Arete 4821)
+  const trackCoords1 = [];
+  for (let i = 0; i < pointsCount; i++) {
+    const lat = baseLat + (Math.sin(i * 0.4) * 0.0015);
+    const lon = baseLon + (Math.cos(i * 0.4) * 0.0015);
+    trackCoords1.push([lat, lon]);
+  }
+
+  const polyline1 = L.polyline(trackCoords1, {
+    color: trackColor,
+    weight: 4,
+    opacity: 0.8,
+    dashArray: '4, 8'
+  }).addTo(activeTracksGroup);
+
+  polyline1.bindTooltip(`Ruta GPS Histórica (${range}): Arete 4821`, { sticky: true });
+
+  console.log(`[Map] Estela de trazado GPS renderizada para rango: ${range}`);
+}
+
+/**
+ * Anima el movimiento gradual del hato durante una Guía Activa (Arreo Remoto)
+ */
+export function animateHerdGuidance(targetLat = 9.1025, targetLon = -67.0980, onComplete) {
+  let step = 0;
+  const maxSteps = 25;
+
+  const initialPositions = [];
+  animalMarkersMap.forEach((marker, collarId) => {
+    const currentPos = marker.getLatLng();
+    initialPositions.push({ collarId, marker, startLat: currentPos.lat, startLon: currentPos.lng });
+  });
+
+  const interval = setInterval(() => {
+    step++;
+    const progress = step / maxSteps;
+
+    initialPositions.forEach(({ marker, startLat, startLon }, index) => {
+      const offsetLat = (index * 0.00015);
+      const offsetLon = (index * 0.00015);
+      
+      const newLat = startLat + ((targetLat + offsetLat) - startLat) * progress;
+      const newLon = startLon + ((targetLon + offsetLon) - startLon) * progress;
+
+      marker.setLatLng([newLat, newLon]);
+    });
+
+    if (step >= maxSteps) {
+      clearInterval(interval);
+      console.log('[Guía Activa] ¡Arreo del hato completado exitosamente!');
+      if (onComplete) onComplete();
+    }
+  }, 150);
+}
+
 export { ESRI_SATELLITE, OSM_STREETS };

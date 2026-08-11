@@ -31,6 +31,8 @@ import {
   focusOnGeofence,
   enablePolygonEditing,
   disablePolygonEditing,
+  drawGPSTracks,
+  animateHerdGuidance,
   ESRI_SATELLITE,
   OSM_STREETS
 } from './mapManager.js';
@@ -697,6 +699,15 @@ function initUIEvents() {
       chip.style.backgroundColor = 'rgba(16, 185, 129, 0.25)';
       chip.innerHTML = '<span class="pulse-icon">📡</span><span>Guía Activa: <strong>En Progreso -> Zona Ordeño 🥛</strong></span>';
     }
+
+    // Ejecutar animación de arreo en el mapa
+    animateHerdGuidance(9.1025, -67.0980, () => {
+      alert('🥛 ¡El hato ha ingresado exitosamente a la Zona de Ordeño!');
+      if (chip) {
+        chip.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+        chip.innerHTML = '<span class="pulse-icon">📡</span><span>Guía Activa: <strong>Completada &bull; En Zona Ordeño 🥛</strong></span>';
+      }
+    });
   };
 
   if (btnStartHerdGuide) btnStartHerdGuide.addEventListener('click', triggerHerdGuideAnimation);
@@ -709,9 +720,12 @@ function initUIEvents() {
       trackBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const range = btn.getAttribute('data-range');
-      console.log(`[Tracks] Filtrando recorrido histórico: ${range}`);
+      drawGPSTracks(range);
     });
   });
+
+  // Dibujar estela GPS por defecto
+  drawGPSTracks('24h');
 }
 
 /**
