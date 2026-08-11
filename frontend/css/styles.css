@@ -567,19 +567,21 @@ body.dark-theme {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(5, 8, 15, 0.75);
+  background-color: rgba(5, 8, 15, 0.8);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
   z-index: 2000;
 }
 
 .modal.active {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 

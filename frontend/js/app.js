@@ -625,29 +625,34 @@ function initUIEvents() {
   // EVENTOS Y MODALES DE COWAI MVP v1.0
   // ==========================================
 
-  // Cierre Global de Modales (al hacer clic en la X o en el fondo oscuro fuera de la ventana)
-  const allModals = document.querySelectorAll('.modal');
-  allModals.forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('active');
-      }
-    });
+  // Cierre Global Infalible de Modales (al hacer clic en la X, fuera del contenido o presionando ESC)
+  document.addEventListener('click', (e) => {
+    // 1. Si hace clic en un botón de cerrar (clase .close-modal-btn o id btn-close-)
+    const closeBtn = e.target.closest('.close-modal-btn') || (e.target.id && e.target.id.startsWith('btn-close-') ? e.target : null);
+    if (closeBtn) {
+      const parentModal = closeBtn.closest('.modal');
+      if (parentModal) parentModal.classList.remove('active');
+      return;
+    }
+
+    // 2. Si hace clic fuera del recuadro (.modal-content) sobre el fondo oscuro (.modal)
+    const targetModal = e.target.classList.contains('modal') ? e.target : null;
+    if (targetModal && !e.target.closest('.modal-content')) {
+      targetModal.classList.remove('active');
+    }
   });
 
-  const closeBtns = document.querySelectorAll('.close-modal-btn');
-  closeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const parentModal = btn.closest('.modal');
-      if (parentModal) parentModal.classList.remove('active');
-    });
+  // Tecla Escape (ESC)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+    }
   });
 
   // 1. Modal de Escáner QR de Collar
   const modalQr = document.getElementById('modal-qr-scanner');
   const btnOpenQr = document.getElementById('btn-open-qr-scanner');
   const btnScanQrForm = document.getElementById('btn-scan-collar-qr');
-  const btnCloseQr = document.getElementById('btn-close-qr-modal');
   const btnSimulateQr = document.getElementById('btn-simulate-qr-read');
   const qrResultBox = document.getElementById('qr-result-box');
 
@@ -661,7 +666,6 @@ function initUIEvents() {
   if (btnOpenQr) btnOpenQr.addEventListener('click', openQrModal);
   if (btnScanQrForm) btnScanQrForm.addEventListener('click', openQrModal);
   if (btnPairCollarFromProfile) btnPairCollarFromProfile.addEventListener('click', openQrModal);
-  if (btnCloseQr) btnCloseQr.addEventListener('click', () => modalQr.classList.remove('active'));
 
   if (btnSimulateQr) {
     btnSimulateQr.addEventListener('click', () => {
