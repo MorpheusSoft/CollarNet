@@ -1231,19 +1231,344 @@ input:focus, select:focus {
 .zone-descanso { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
 .zone-callejuela { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
 
-/* Leyenda del Mapa */
-.map-legend-overlay {
-  position: absolute;
-  bottom: 25px;
-  left: 15px;
-  z-index: 1000;
-  background-color: var(--bg-card);
-  backdrop-filter: blur(var(--blur-amount));
-  padding: 12px 15px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  font-size: 0.75rem;
+
+/* ==========================================================================
+   10. ESTILOS PIXEL-PERFECT COWAI MVP FASE 1 (IGUAL A LA IMAGEN DE REFERENCIA)
+   ========================================================================== */
+
+/* Estructura Modal de la Ficha Técnica */
+.modal-profile-card {
+  width: 92%;
+  max-width: 950px;
+  background-color: #121824 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8) !important;
+  overflow: hidden;
 }
+
+.modal-header-bar {
+  padding: 16px 24px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header-bar h2 {
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.modal-body-content {
+  padding: 24px;
+}
+
+/* Layout en 2 Columnas de la Ficha */
+.profile-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+}
+
+.profile-main-card {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.profile-header-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.profile-photo-container {
+  width: 140px;
+  height: 140px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.profile-photo-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-identity-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.animal-title-name {
+  font-family: var(--font-title);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.rfid-tag-sub {
+  font-size: 0.95rem;
+  color: #94a3b8;
+}
+
+.rfid-num {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-left: 4px;
+}
+
+.brand-iron-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.brand-lbl {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.brand-val {
+  font-family: var(--font-title);
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #ffffff;
+}
+
+.profile-badges-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.badge-pill {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-healthy {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-active {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+/* Especificaciones Grid en 2 Columnas */
+.profile-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 20px;
+  margin-bottom: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.spec-lbl {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.spec-val {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+/* Botón de Vinculación de Collar */
+.pair-collar-action-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #ffffff;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.pair-collar-action-btn:hover {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  transform: translateY(-1px);
+}
+
+/* Tarjeta del Árbol Genealógico */
+.profile-lineage-card {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.lineage-title {
+  font-family: var(--font-title);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.lineage-tree-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+.tree-branch-parents {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tree-member-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.tree-member-card.active-child {
+  border-color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.1);
+}
+
+.member-photo {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.member-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.member-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-details strong {
+  font-size: 0.85rem;
+  color: #ffffff;
+}
+
+.member-details span {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.member-details small {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+/* Modal Overlay Escáner QR */
+.modal-qr-card {
+  width: 380px;
+  background-color: #121824 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9) !important;
+}
+
+.qr-scanner-frame-box {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 15px;
+}
+
+.scanner-preview-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.corner-brackets .bracket {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #38bdf8;
+}
+
+.corner-brackets .top-left { top: 15px; left: 15px; border-right: none; border-bottom: none; }
+.corner-brackets .top-right { top: 15px; right: 15px; border-left: none; border-bottom: none; }
+.corner-brackets .bottom-left { bottom: 15px; left: 15px; border-right: none; border-top: none; }
+.corner-brackets .bottom-right { bottom: 15px; right: 15px; border-left: none; border-top: none; }
+
+/* Lista de Telemetría QR */
+.qr-device-telemetry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.8rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.telem-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.telem-lbl {
+  color: #94a3b8;
+}
+
+.telem-val {
+  font-family: monospace;
+}
+
+.val-device { color: #f8fafc; font-weight: 700; }
+.val-battery { color: #f59e0b; font-weight: 700; }
+.val-good { color: #10b981; font-weight: 600; }
 
 .map-legend-overlay h4 {
   font-size: 0.8rem;

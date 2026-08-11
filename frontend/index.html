@@ -359,91 +359,192 @@
         <div class="qr-scan-result" id="qr-result-box" style="display: none; margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--color-safe); border-radius: var(--radius-md);">
           <h4 style="color: var(--color-safe); font-size: 0.95rem;">✅ ¡Collar Detectado y Emparejado!</h4>
           <p id="qr-detected-id" style="font-family: monospace; font-size: 1.1rem; margin-top: 5px; font-weight: 700;">ID: COW-COLLAR-8821</p>
-          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px;">🔋 Batería Solar: 98% &bull; Firmware: v2.4.1 &bull; GPS: Fijado</p>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px;">🔋 Batería Solar:  <!-- 5. MODAL DE FICHA TÉCNICA Y GENEALOGÍA DEL ANIMAL (Fórmula idéntica a la imagen de referencia) -->
+  <div class="modal active" id="modal-animal-profile">
+    <div class="modal-content modal-profile-card">
+      <div class="modal-header-bar">
+        <h2>Individual Cattle Profile | COWAI Livestock Platform</h2>
+        <button class="close-modal-btn" id="btn-close-profile-modal">✕</button>
+      </div>
+      <div class="modal-body-content">
+        <div class="profile-layout-grid">
+          
+          <!-- TARJETA IZQUIERDA: DATOS INDIVIDUALES & FOTO DE LA RES -->
+          <div class="profile-main-card">
+            <div class="profile-header-row">
+              <div class="profile-photo-container">
+                <img id="prof-photo" src="https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=400&auto=format&fit=crop&q=80" alt="Esperanza Brahman">
+              </div>
+              <div class="profile-identity-info">
+                <h3 id="prof-name" class="animal-title-name">Esperanza</h3>
+                <div class="rfid-tag-sub">RFID Ear Tag <span id="prof-arete" class="rfid-num">4821</span></div>
+                <div class="brand-iron-box">
+                  <span class="brand-lbl">Brand</span>
+                  <span id="prof-hierro" class="brand-val">#78</span>
+                </div>
+                <div class="profile-badges-row">
+                  <span class="badge-pill badge-healthy">Healthy</span>
+                  <span class="badge-pill badge-active">Active</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABLA DE ESPECIFICACIONES (2 COLUMNAS) -->
+            <div class="profile-specs-grid">
+              <div class="spec-item">
+                <span class="spec-lbl">Breed</span>
+                <span id="prof-breed" class="spec-val">Brahman (Purebred)</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-lbl">Owner</span>
+                <span id="prof-owner" class="spec-val">John Doe Livestock Ranch</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-lbl">Birthdate</span>
+                <span id="prof-birth" class="spec-val">12 Nov 2021</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-lbl">Location</span>
+                <span id="prof-location" class="spec-val">Pasture Area A1</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-lbl">Sex</span>
+                <span id="prof-sex" class="spec-val">Female</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-lbl">Lot Group</span>
+                <span id="prof-lote" class="spec-val">Herd 7B (Registered)</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-lbl">Age</span>
+                <span id="prof-age" class="spec-val">2 Yrs 7 Mths</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-lbl">Weight</span>
+                <span id="prof-weight" class="spec-val">468 kg</span>
+              </div>
+            </div>
+
+            <!-- BOTÓN PRINCIPAL: VINCULACIÓN DE COLLAR INTELIGENTE -->
+            <button class="pair-collar-action-btn" id="btn-trigger-pair-collar">
+              Pair Smart Collar
+            </button>
+          </div>
+
+          <!-- TARJETA DERECHA: ÁRBOL GENEALÓGICO (FAMILY TREE LINEAGE CHART) -->
+          <div class="profile-lineage-card">
+            <h4 class="lineage-title">Family Tree Lineage Chart</h4>
+            
+            <div class="lineage-tree-diagram">
+              <div class="tree-branch-parents">
+                <!-- Node Padre -->
+                <div class="tree-member-card">
+                  <div class="member-photo">
+                    <img src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=150&auto=format&fit=crop&q=80" alt="Duke Sire">
+                  </div>
+                  <div class="member-details">
+                    <strong id="prof-sire">Duke</strong>
+                    <span>Hereford</span>
+                    <small>RFID 1198</small>
+                  </div>
+                </div>
+
+                <!-- Node Madre -->
+                <div class="tree-member-card">
+                  <div class="member-photo">
+                    <img src="https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=150&auto=format&fit=crop&q=80" alt="Dam Mother">
+                  </div>
+                  <div class="member-details">
+                    <strong id="prof-dam">Dam</strong>
+                    <span>Brahman</span>
+                    <small>RFID 3042</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Conectores del Árbol -->
+              <div class="tree-connector-lines"></div>
+
+              <!-- Node Hijo (Esperanza) -->
+              <div class="tree-branch-child">
+                <div class="tree-member-card active-child">
+                  <div class="member-photo">
+                    <img src="https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=150&auto=format&fit=crop&q=80" alt="Esperanza Child">
+                  </div>
+                  <div class="member-details">
+                    <strong id="prof-child-name">Esperanza</strong>
+                    <span>Brahman</span>
+                    <small>RFID 4821</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
-        <button class="submit-btn" id="btn-simulate-qr-read" style="margin-top: 15px;">Simular Escaneo Exitoso</button>
       </div>
     </div>
   </div>
 
-  <!-- 5. MODAL DE FICHA TÉCNICA Y GENEALOGÍA DEL ANIMAL -->
-  <div class="modal" id="modal-animal-profile">
-    <div class="modal-content" style="max-width: 750px;">
-      <div class="modal-header">
-        <h2 id="prof-modal-title">Ficha Técnica & Genealogía</h2>
-        <button class="close-modal-btn" id="btn-close-profile-modal">×</button>
+  <!-- 6. OVERLAY MODAL: QR CODE SCANNER | SMART COLLAR PAIRING (Idéntico a la imagen) -->
+  <div class="modal active" id="modal-qr-scanner" style="z-index: 2200;">
+    <div class="modal-content modal-qr-card">
+      <div class="modal-header-bar">
+        <h2>QR Code Scanner | Smart Collar Pairing</h2>
+        <button class="close-modal-btn" id="btn-close-qr-modal">✕</button>
       </div>
-      <div class="modal-body">
-        <div class="animal-profile-grid">
-          <!-- Columna 1: Foto y Datos Básicos -->
-          <div class="profile-card-left">
-            <div class="animal-photo-box">
-              <img id="prof-photo" src="https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=400&auto=format&fit=crop&q=80" alt="Res Foto">
-              <div class="iron-mark-badge" id="prof-iron-badge">Hierro #78</div>
-            </div>
-            <h3 id="prof-name" style="font-family: var(--font-title); font-size: 1.3rem; margin-top: 10px;">Esperanza</h3>
-            <p style="font-size: 0.85rem; color: var(--text-secondary);" id="prof-breed">Brahman Puro (Hembra)</p>
-            <div class="profile-stats-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
-              <div><strong>No. Arete / RFID:</strong> <span id="prof-arete">4821</span></div>
-              <div><strong>No. de Hierro:</strong> <span id="prof-hierro">#78</span></div>
-              <div><strong>Nacimiento:</strong> <span id="prof-birth">12/11/2021</span></div>
-              <div><strong>Propietario:</strong> <span id="prof-owner">Ganadería El Trebol</span></div>
-              <div><strong>Lote:</strong> <span id="prof-lote">Lote 7B Ordeño</span></div>
-            </div>
-          </div>
-
-          <!-- Columna 2: Genealogía & Estado del Collar -->
-          <div class="profile-card-right">
-            <h4 style="color: var(--color-accent); font-size: 0.95rem; margin-bottom: 10px;">🧬 Árbol Genealógico</h4>
-            <div class="genealogy-tree">
-              <div class="tree-node parent-node">
-                <span class="node-role">Padre (Toro)</span>
-                <strong id="prof-sire">Duke (RFID 1198)</strong>
-                <span class="node-sub">Línea Importada TX</span>
-              </div>
-              <div class="tree-node parent-node">
-                <span class="node-role">Madre (Vaca)</span>
-                <strong id="prof-dam">Bella (RFID 3042)</strong>
-                <span class="node-sub">Registrada ASOCEBU</span>
-              </div>
-              <div class="tree-node child-node" style="grid-column: span 2;">
-                <span class="node-role">Línea Genética</span>
-                <strong id="prof-lineage">Línea Red Brahman de Alta Leche</strong>
-              </div>
-            </div>
-
-            <h4 style="color: var(--color-safe); font-size: 0.95rem; margin-top: 20px; margin-bottom: 10px;">📡 Estado del Collar Inteligente</h4>
-            <div class="collar-telemetry-box">
-              <div class="telemetry-item">
-                <span>🔋 Batería / Solar:</span>
-                <strong id="prof-battery" style="color: var(--color-safe);">98% (Cargando Solar ☀️)</strong>
-              </div>
-              <div class="telemetry-item">
-                <span>📶 Conexión / Firmware:</span>
-                <strong id="prof-firmware">Online &bull; v2.4.1</strong>
-              </div>
-              <div class="telemetry-item">
-                <span>⏱️ Última Sincronización:</span>
-                <strong id="prof-lastsync">Hace 2 segundos</strong>
-              </div>
-            </div>
-
-            <button class="submit-btn" id="btn-open-projection-from-profile" style="margin-top: 15px;">⚖️ Ver Proyección de Crecimiento & Peso</button>
+      <div class="modal-body-content">
+        <!-- VISTA DE CÁMARA CON HARDWARE DEL COLLAR Y ENFOQUE QR -->
+        <div class="qr-scanner-frame-box">
+          <img src="/home/renier/.gemini/antigravity/brain/ae710871-c1d4-4387-a412-d2f403fe40bf/cowai_cattle_profile_1786464769195.jpg" alt="Collar Hardware Scanner" class="scanner-preview-bg">
+          <div class="corner-brackets">
+            <span class="bracket top-left"></span>
+            <span class="bracket top-right"></span>
+            <span class="bracket bottom-left"></span>
+            <span class="bracket bottom-right"></span>
           </div>
         </div>
+
+        <!-- TELEMETRÍA EN TIEMPO REAL DEL DISPOSITIVO DETECTADO -->
+        <div class="qr-device-telemetry-list">
+          <div class="telem-row">
+            <span class="telem-lbl">Device Found</span>
+            <strong class="telem-val val-device">COWAI SC-X100 (ID: 9A:F1:C7)</strong>
+          </div>
+          <div class="telem-row">
+            <span class="telem-lbl">Battery</span>
+            <strong class="telem-val val-battery">98% (Solar Charging ☀️)</strong>
+          </div>
+          <div class="telem-row">
+            <span class="telem-lbl">Firmware</span>
+            <strong class="telem-val val-good">v2.4.1 (Up to date)</strong>
+          </div>
+          <div class="telem-row">
+            <span class="telem-lbl">GPS Sync</span>
+            <strong class="telem-val val-good">Synced (OK)</strong>
+          </div>
+          <div class="telem-row">
+            <span class="telem-lbl">Connection</span>
+            <strong class="telem-val val-good">Connected via BLE</strong>
+          </div>
+        </div>
+
+        <button class="pair-collar-action-btn" id="btn-simulate-qr-read" style="margin-top: 15px; background: linear-gradient(135deg, #10b981, #059669);">
+          ✅ Confirm & Pair Collar
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- 6. MODAL DE PROYECCIONES FINANCIERAS (ZOOTECNIA) -->
+  <!-- 7. MODAL DE PROYECCIONES FINANCIERAS (ZOOTECNIA) -->
   <div class="modal" id="modal-proyeccion">
     <div class="modal-content" style="max-width: 800px;">
-      <div class="modal-header">
+      <div class="modal-header-bar">
         <h2 id="proj-modal-title">Crecimiento y Rentabilidad</h2>
-        <button class="close-modal-btn" id="btn-close-modal">×</button>
+        <button class="close-modal-btn" id="btn-close-modal">✕</button>
       </div>
       
-      <div class="modal-body">
+      <div class="modal-body-content">
         <div class="chart-container">
           <canvas id="projectionChart"></canvas>
         </div>
@@ -471,6 +572,17 @@
                 <th>Peso Proyectado</th>
                 <th>Costo Manutención</th>
                 <th>Valor Comercial</th>
+                <th>Beneficio Neto</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="projection-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+         <th>Valor Comercial</th>
                 <th>Beneficio Neto</th>
                 <th>Estado</th>
               </tr>

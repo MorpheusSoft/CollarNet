@@ -631,8 +631,11 @@ function initUIEvents() {
     if (qrResultBox) qrResultBox.style.display = 'none';
   };
 
+  const btnPairCollarFromProfile = document.getElementById('btn-trigger-pair-collar');
+
   if (btnOpenQr) btnOpenQr.addEventListener('click', openQrModal);
   if (btnScanQrForm) btnScanQrForm.addEventListener('click', openQrModal);
+  if (btnPairCollarFromProfile) btnPairCollarFromProfile.addEventListener('click', openQrModal);
   if (btnCloseQr) btnCloseQr.addEventListener('click', () => modalQr.classList.remove('active'));
 
   if (btnSimulateQr) {
