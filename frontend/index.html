@@ -222,12 +222,12 @@
   <!-- ==========================================================================
        MODAL: FICHA DE REGISTRO E IDENTIFICACIÓN DEL GANADO (FUNCIONALIDAD 1 MVP)
        ========================================================================== -->
-  <div class="modal" id="modal-animal-profile">
+  <div class="modal" id="modal-animal-profile" onclick="if(event.target === this) this.classList.remove('active')">
     <div class="modal-content modal-profile-card">
       
       <div class="modal-header-bar">
         <h2>Individual Cattle Profile | COWAI Livestock Platform</h2>
-        <button class="close-modal-btn" id="btn-close-profile-modal">✕</button>
+        <button class="close-modal-btn" id="btn-close-profile-modal" onclick="document.getElementById('modal-animal-profile').classList.remove('active')">✕</button>
       </div>
 
       <div class="modal-body-content">
@@ -352,11 +352,11 @@
   </div>
 
   <!-- MODAL: ESCÁNER QR PARA EMPAREJAMIENTO DE COLLAR -->
-  <div class="modal" id="modal-qr-scanner" style="z-index: 2200;">
+  <div class="modal" id="modal-qr-scanner" style="z-index: 2200;" onclick="if(event.target === this) this.classList.remove('active')">
     <div class="modal-content modal-qr-card">
       <div class="modal-header-bar">
         <h2>QR Code Scanner | Smart Collar Pairing</h2>
-        <button class="close-modal-btn" id="btn-close-qr-modal">✕</button>
+        <button class="close-modal-btn" id="btn-close-qr-modal" onclick="document.getElementById('modal-qr-scanner').classList.remove('active')">✕</button>
       </div>
 
       <div class="modal-body-content">

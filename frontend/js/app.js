@@ -246,52 +246,65 @@ function initUIEvents() {
   }
 
   // Toggles de Capa de Mapa (Satélite / Calles)
-  document.getElementById('btn-layer-satellite').addEventListener('click', (e) => {
-    document.querySelectorAll('.map-control-btn').forEach(btn => btn.classList.remove('active'));
-    e.target.classList.add('active');
-    setLayer(ESRI_SATELLITE, 'Tiles &copy; Esri &mdash; Source: Esri, USDA, USGS, and the GIS User Community');
-  });
+  const btnSat = document.getElementById('btn-layer-satellite');
+  if (btnSat) {
+    btnSat.addEventListener('click', (e) => {
+      document.querySelectorAll('.map-control-btn').forEach(btn => btn.classList.remove('active'));
+      e.target.classList.add('active');
+      setLayer(ESRI_SATELLITE, 'Tiles &copy; Esri &mdash; Source: Esri, USDA, USGS, and the GIS User Community');
+    });
+  }
 
-  document.getElementById('btn-layer-streets').addEventListener('click', (e) => {
-    document.querySelectorAll('.map-control-btn').forEach(btn => btn.classList.remove('active'));
-    e.target.classList.add('active');
-    setLayer(OSM_STREETS, 'Tiles &copy; OpenStreetMap contributors');
-  });
+  const btnStr = document.getElementById('btn-layer-streets');
+  if (btnStr) {
+    btnStr.addEventListener('click', (e) => {
+      document.querySelectorAll('.map-control-btn').forEach(btn => btn.classList.remove('active'));
+      e.target.classList.add('active');
+      setLayer(OSM_STREETS, 'Tiles &copy; OpenStreetMap contributors');
+    });
+  }
 
   // Colapsar Menú Lateral en pantallas de campo
-  document.getElementById('sidebar-toggle-btn').addEventListener('click', () => {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('collapsed');
-  });
+  const btnSidebarToggle = document.getElementById('sidebar-toggle-btn');
+  if (btnSidebarToggle) {
+    btnSidebarToggle.addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar) sidebar.classList.toggle('collapsed');
+    });
+  }
 
   // Botones de Dibujo Poligonal
   const btnDrawHato = document.getElementById('btn-draw-hato');
   const btnDrawPotrero = document.getElementById('btn-draw-potrero');
 
-  btnDrawHato.addEventListener('click', () => {
-    btnDrawPotrero.classList.remove('active');
-    btnDrawHato.classList.toggle('active');
-    if (btnDrawHato.classList.contains('active')) {
-      startDrawing('hato');
-    } else {
-      cancelDrawing();
-    }
-  });
+  if (btnDrawHato) {
+    btnDrawHato.addEventListener('click', () => {
+      if (btnDrawPotrero) btnDrawPotrero.classList.remove('active');
+      btnDrawHato.classList.toggle('active');
+      if (btnDrawHato.classList.contains('active')) {
+        startDrawing('hato');
+      } else {
+        cancelDrawing();
+      }
+    });
+  }
 
-  btnDrawPotrero.addEventListener('click', () => {
-    btnDrawHato.classList.remove('active');
-    btnDrawPotrero.classList.toggle('active');
-    if (btnDrawPotrero.classList.contains('active')) {
-      startDrawing('potrero');
-    } else {
-      cancelDrawing();
-    }
-  });
+  if (btnDrawPotrero) {
+    btnDrawPotrero.addEventListener('click', () => {
+      if (btnDrawHato) btnDrawHato.classList.remove('active');
+      btnDrawPotrero.classList.toggle('active');
+      if (btnDrawPotrero.classList.contains('active')) {
+        startDrawing('potrero');
+      } else {
+        cancelDrawing();
+      }
+    });
+  }
 
   // Recibir vértices completados desde el mapa
   onPolygonComplete(async (mode, vertices) => {
-    btnDrawHato.classList.remove('active');
-    btnDrawPotrero.classList.remove('active');
+    if (btnDrawHato) btnDrawHato.classList.remove('active');
+    if (btnDrawPotrero) btnDrawPotrero.classList.remove('active');
     
     const nombre = prompt(`Ingrese el nombre para este nuevo ${mode === 'hato' ? 'Hato' : 'Potrero'}:`);
     if (!nombre) return;
@@ -314,151 +327,173 @@ function initUIEvents() {
   });
 
   // Filtrar Potreros dinámicamente al seleccionar un Hato
-  document.getElementById('sync-hato-select').addEventListener('change', (e) => {
-    const selectedHatoId = parseInt(e.target.value, 10);
-    const syncPotreroSelect = document.getElementById('sync-potrero-select');
-    syncPotreroSelect.innerHTML = '<option value="">Selecciona un potrero...</option>';
+  const syncHatoSelect = document.getElementById('sync-hato-select');
+  if (syncHatoSelect) {
+    syncHatoSelect.addEventListener('change', (e) => {
+      const selectedHatoId = parseInt(e.target.value, 10);
+      const syncPotreroSelect = document.getElementById('sync-potrero-select');
+      if (!syncPotreroSelect) return;
+      syncPotreroSelect.innerHTML = '<option value="">Selecciona un potrero...</option>';
 
-    if (!isNaN(selectedHatoId)) {
-      const filtered = currentGeocercasData.potreros.filter(p => p.hato_id === selectedHatoId);
-      if (filtered.length === 0) {
-        syncPotreroSelect.innerHTML = '<option value="">No hay potreros en este hato</option>';
+      if (!isNaN(selectedHatoId)) {
+        const filtered = currentGeocercasData.potreros.filter(p => p.hato_id === selectedHatoId);
+        if (filtered.length === 0) {
+          syncPotreroSelect.innerHTML = '<option value="">No hay potreros en este hato</option>';
+        } else {
+          filtered.forEach(p => {
+            syncPotreroSelect.innerHTML += `<option value="${p.id}">${p.nombre} (ID: ${p.id})</option>`;
+          });
+        }
       } else {
-        filtered.forEach(p => {
+        currentGeocercasData.potreros.forEach(p => {
           syncPotreroSelect.innerHTML += `<option value="${p.id}">${p.nombre} (ID: ${p.id})</option>`;
         });
       }
-    } else {
-      currentGeocercasData.potreros.forEach(p => {
-        syncPotreroSelect.innerHTML += `<option value="${p.id}">${p.nombre} (ID: ${p.id})</option>`;
-      });
-    }
-  });
+    });
+  }
 
   // Botón Sincronizar Geocerca con Collar (MQTT)
-  document.getElementById('btn-sync-geofence').addEventListener('click', async () => {
-    const collarId = document.getElementById('sync-collar-select').value;
-    const hatoId = document.getElementById('sync-hato-select').value;
-    const potreroId = document.getElementById('sync-potrero-select').value;
+  const btnSyncGeofence = document.getElementById('btn-sync-geofence');
+  if (btnSyncGeofence) {
+    btnSyncGeofence.addEventListener('click', async () => {
+      const collarId = document.getElementById('sync-collar-select')?.value;
+      const hatoId = document.getElementById('sync-hato-select')?.value;
+      const potreroId = document.getElementById('sync-potrero-select')?.value;
 
-    if (!collarId || !hatoId || !potreroId) {
-      alert('Por favor selecciona el Collar, Hato y Potrero para sincronizar.');
-      return;
-    }
+      if (!collarId || !hatoId || !potreroId) {
+        alert('Por favor selecciona el Collar, Hato y Potrero para sincronizar.');
+        return;
+      }
 
-    try {
-      const res = await syncGeocercas(collarId, hatoId, potreroId);
-      alert(res.message);
-    } catch (err) {
-      alert(`Fallo en la sincronización: ${err.message}`);
-    }
-  });
+      try {
+        const res = await syncGeocercas(collarId, hatoId, potreroId);
+        alert(res.message);
+      } catch (err) {
+        alert(`Fallo en la sincronización: ${err.message}`);
+      }
+    });
+  }
 
   // ==========================================
   // FORMULARIOS DE REGISTRO
   // ==========================================
 
   // Registro Propietario
-  document.getElementById('form-propietario').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const nombre = document.getElementById('prop-nombre').value;
-    const documento = document.getElementById('prop-documento').value;
-    const telefono = document.getElementById('prop-telefono').value;
-    const correo = document.getElementById('prop-correo').value;
+  const formProp = document.getElementById('form-propietario');
+  if (formProp) {
+    formProp.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('prop-nombre').value;
+      const documento = document.getElementById('prop-documento').value;
+      const telefono = document.getElementById('prop-telefono').value;
+      const correo = document.getElementById('prop-correo').value;
 
-    try {
-      await registrarPropietario(nombre, documento, telefono, correo);
-      alert('Propietario registrado exitosamente.');
-      e.target.reset();
-      await refreshData();
-    } catch (err) {
-      alert(err.message);
-    }
-  });
+      try {
+        await registrarPropietario(nombre, documento, telefono, correo);
+        alert('Propietario registrado exitosamente.');
+        e.target.reset();
+        await refreshData();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
 
   // Registro Collar
-  document.getElementById('form-collar').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('coll-id').value;
-    const numeroSim = document.getElementById('coll-sim').value;
-    const fechaInstalacion = document.getElementById('coll-instalacion').value;
+  const formColl = document.getElementById('form-collar');
+  if (formColl) {
+    formColl.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('coll-id').value;
+      const numeroSim = document.getElementById('coll-sim').value;
+      const fechaInstalacion = document.getElementById('coll-instalacion').value;
 
-    try {
-      await registrarCollar(id, numeroSim, fechaInstalacion);
-      alert('Collar registrado exitosamente.');
-      e.target.reset();
-      await refreshData();
-    } catch (err) {
-      alert(err.message);
-    }
-  });
+      try {
+        await registrarCollar(id, numeroSim, fechaInstalacion);
+        alert('Collar registrado exitosamente.');
+        e.target.reset();
+        await refreshData();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
 
   // Registro Pesaje
-  document.getElementById('form-pesaje').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const animalId = document.getElementById('peso-animal').value;
-    const peso = document.getElementById('peso-valor').value;
-    const fechaPesaje = document.getElementById('peso-fecha').value;
+  const formPesaje = document.getElementById('form-pesaje');
+  if (formPesaje) {
+    formPesaje.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const animalId = document.getElementById('peso-animal').value;
+      const peso = document.getElementById('peso-valor').value;
+      const fechaPesaje = document.getElementById('peso-fecha').value;
 
-    try {
-      await registrarPesaje(animalId, peso, fechaPesaje);
-      alert('Pesaje guardado exitosamente.');
-      e.target.reset();
-      await refreshData();
-    } catch (err) {
-      alert(err.message);
-    }
-  });
+      try {
+        await registrarPesaje(animalId, peso, fechaPesaje);
+        alert('Pesaje guardado exitosamente.');
+        e.target.reset();
+        await refreshData();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
 
   // Guardar Parámetros de Rendimiento
-  document.getElementById('form-rendimiento').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const data = {
-      raza: document.getElementById('rend-raza').value,
-      categoria: document.getElementById('rend-categoria').value,
-      gdpPromedio: parseFloat(document.getElementById('rend-gdp').value),
-      pesoAdulto: parseFloat(document.getElementById('rend-adulto').value),
-      costoDiario: parseFloat(document.getElementById('rend-costo').value),
-      precioKg: parseFloat(document.getElementById('rend-precio').value)
-    };
+  const formRend = document.getElementById('form-rendimiento');
+  if (formRend) {
+    formRend.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        raza: document.getElementById('rend-raza').value,
+        categoria: document.getElementById('rend-categoria').value,
+        gdpPromedio: parseFloat(document.getElementById('rend-gdp').value),
+        pesoAdulto: parseFloat(document.getElementById('rend-adulto').value),
+        costoDiario: parseFloat(document.getElementById('rend-costo').value),
+        precioKg: parseFloat(document.getElementById('rend-precio').value)
+      };
 
-    try {
-      await registrarRendimiento(data);
-      alert('Parámetros guardados.');
-      e.target.reset();
-    } catch (err) {
-      alert(err.message);
-    }
-  });
+      try {
+        await registrarRendimiento(data);
+        alert('Parámetros guardados.');
+        e.target.reset();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
 
   // Vincular Animal
-  document.getElementById('form-animal').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const propietarioId = document.getElementById('anim-propietario').value;
-    if (!propietarioId) {
-      alert('Por favor selecciona un dueño para el animal.');
-      return;
-    }
+  const formAnimal = document.getElementById('form-animal');
+  if (formAnimal) {
+    formAnimal.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const propietarioId = document.getElementById('anim-propietario').value;
+      if (!propietarioId) {
+        alert('Por favor selecciona un dueño para el animal.');
+        return;
+      }
 
-    const data = {
-      areteVisual: document.getElementById('anim-arete').value,
-      raza: document.getElementById('anim-raza').value,
-      categoria: document.getElementById('anim-categoria').value,
-      fechaNacimiento: document.getElementById('anim-nacimiento').value,
-      collarId: document.getElementById('anim-collar').value,
-      propietarioId: parseInt(propietarioId, 10),
-      potreroId: document.getElementById('anim-potrero').value ? parseInt(document.getElementById('anim-potrero').value, 10) : null
-    };
+      const data = {
+        areteVisual: document.getElementById('anim-arete').value,
+        raza: document.getElementById('anim-raza').value,
+        categoria: document.getElementById('anim-categoria').value,
+        fechaNacimiento: document.getElementById('anim-nacimiento').value,
+        collarId: document.getElementById('anim-collar').value,
+        propietarioId: parseInt(propietarioId, 10),
+        potreroId: document.getElementById('anim-potrero').value ? parseInt(document.getElementById('anim-potrero').value, 10) : null
+      };
 
-    try {
-      await registrarAnimal(data);
-      alert('Animal registrado y vinculado con éxito.');
-      e.target.reset();
-      await refreshData();
-    } catch (err) {
-      alert(err.message);
-    }
-  });
+      try {
+        await registrarAnimal(data);
+        alert('Animal registrado y vinculado con éxito.');
+        e.target.reset();
+        await refreshData();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
 
   // Escuchar Evento para mostrar Ventana Modal de Proyecciones
   document.addEventListener('showProyeccion', async (e) => {
@@ -466,20 +501,27 @@ function initUIEvents() {
     await openProjectionModal(animalId);
   });
 
-  // Cerrar Modal
-  document.getElementById('btn-close-modal').addEventListener('click', () => {
-    document.getElementById('modal-proyeccion').classList.remove('active');
-  });
+  // Cerrar Modal Proyección
+  const btnCloseModalElem = document.getElementById('btn-close-modal');
+  if (btnCloseModalElem) {
+    btnCloseModalElem.addEventListener('click', () => {
+      const modalProy = document.getElementById('modal-proyeccion');
+      if (modalProy) modalProy.classList.remove('active');
+    });
+  }
 
   // Filtro de búsqueda del panel de animales
-  document.getElementById('search-animal').addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    const filtered = allAnimals.filter(a => 
-      a.arete_visual.toLowerCase().includes(query) || 
-      a.collar_id.toLowerCase().includes(query)
-    );
-    renderAnimalList(filtered);
-  });
+  const searchAnimalInput = document.getElementById('search-animal');
+  if (searchAnimalInput) {
+    searchAnimalInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtered = allAnimals.filter(a => 
+        a.arete_visual.toLowerCase().includes(query) || 
+        a.collar_id.toLowerCase().includes(query)
+      );
+      renderAnimalList(filtered);
+    });
+  }
 
   // Mostrar/Ocultar Hato Asociado en Entrada Manual
   const manualTypeSelect = document.getElementById('manual-type');
