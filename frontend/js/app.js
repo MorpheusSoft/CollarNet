@@ -48,17 +48,21 @@ let currentGeocercasData = { hatos: [], potreros: [] };
  * Inicialización Principal
  */
 document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Inicializar el mapa centrado en el hato de prueba
-  initMap(9.1000, -67.1000, 15);
+  // 1. Inicializar mini mapa si existe contenedor
+  const miniMapElem = document.getElementById('mini-map');
+  if (miniMapElem) {
+    initMap(9.1000, -67.1000, 15, 'mini-map');
+  } else {
+    initMap(9.1000, -67.1000, 15);
+  }
   
-  // 2. Conectar a Socket.io en el puerto 3500 del backend
-  initWebSocketConnection();
+  // 2. Conectar a WebSockets si socket.io está disponible
+  if (typeof io !== 'undefined') {
+    initWebSocketConnection();
+  }
 
-  // 3. Configurar eventos de navegación y pestañas
+  // 3. Configurar eventos UI
   initUIEvents();
-
-  // 4. Cargar datos iniciales desde el Servidor REST (incluyendo dibujar geocercas)
-  await refreshData();
 });
 
 /**
@@ -222,19 +226,23 @@ async function refreshData() {
  * Enlaza los listeners de todos los formularios e interacciones UI
  */
 function initUIEvents() {
-  // Pestañas de Navegación del Menú Lateral
-  const menuItems = document.querySelectorAll('.menu-item');
-  menuItems.forEach(item => {
-    item.addEventListener('click', () => {
-      menuItems.forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-      
-      const tabId = item.getAttribute('data-tab');
-      document.querySelectorAll('.tab-panel').forEach(panel => {
-        panel.classList.remove('active');
-      });
-      document.getElementById(tabId).classList.add('active');
-      currentTab = tabId;
+  // Listeners para los botones "View Profile" de la tabla de ganado
+  const viewProfileBtns = document.querySelectorAll('.btn-table-view-profile');
+  const modalProfileElem = document.getElementById('modal-animal-profile');
+
+  viewProfileBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (modalProfileElem) modalProfileElem.classList.add('active');
+    });
+  });
+
+  const cattleRows = document.querySelectorAll('.cattle-row');
+  cattleRows.forEach(row => {
+    row.addEventListener('click', () => {
+      cattleRows.forEach(r => r.classList.remove('active-row'));
+      row.classList.add('active-row');
+      if (modalProfileElem) modalProfileElem.classList.add('active');
     });
   });
 
