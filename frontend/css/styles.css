@@ -1026,3 +1026,359 @@ input:focus, select:focus {
   to { transform: rotate(360deg); }
 }
 
+
+/* ==========================================================================
+   9. ESTILOS COWAI MVP v1.0 (HEADER, QR SCANNER, GENEALOGÍA & GUÍA ACTIVA)
+   ========================================================================== */
+
+/* Header Superior */
+.cowai-header {
+  height: 60px;
+  background-color: #0b1120;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2));
+  border: 1px solid var(--color-safe);
+  border-radius: var(--radius-md);
+  padding: 4px 8px;
+}
+
+.brand-text .logo-title {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.brand-text .logo-title span {
+  color: var(--color-safe);
+}
+
+.brand-sub {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.header-status-center {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: 30px;
+  font-size: 0.8rem;
+}
+
+.active-guidance-chip {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: var(--color-safe);
+  color: var(--color-safe);
+}
+
+.pulse-icon {
+  animation: pulse-glow-red 2s infinite;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.header-btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition-smooth);
+}
+
+.qr-scan-btn {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.qr-scan-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.active-guide-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.active-guide-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Modificación app-container para considerar el Header */
+.app-container {
+  height: calc(100vh - 60px);
+}
+
+/* Selector de Historial de Recorrido (Tracks) */
+.track-history-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.track-btn {
+  padding: 6px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.track-btn:hover, .track-btn.active {
+  background-color: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+/* Estímulo Progresivo */
+.stimulus-card {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.stimulus-card h4 {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.stimulus-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stimulus-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background-color: rgba(0, 0, 0, 0.2);
+  font-size: 0.8rem;
+  border-left: 3px solid transparent;
+}
+
+.step-safe { border-left-color: var(--color-safe); }
+.step-audio { border-left-color: var(--color-warning); }
+.step-pulse { border-left-color: var(--color-danger); }
+
+/* Geocercas por Función Badges */
+.zone-function-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.zone-badge-card {
+  padding: 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.zone-ordeno { background-color: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+.zone-cuarentena { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+.zone-descanso { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+.zone-callejuela { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
+
+/* Leyenda del Mapa */
+.map-legend-overlay {
+  position: absolute;
+  bottom: 25px;
+  left: 15px;
+  z-index: 1000;
+  background-color: var(--bg-card);
+  backdrop-filter: blur(var(--blur-amount));
+  padding: 12px 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  font-size: 0.75rem;
+}
+
+.map-legend-overlay h4 {
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  font-family: var(--font-title);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.legend-box {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.box-ordeno { background-color: rgba(16, 185, 129, 0.6); border: 1px solid #10b981; }
+.box-descanso { background-color: rgba(245, 158, 11, 0.6); border: 1px solid #f59e0b; }
+.box-cuarentena { background-color: rgba(239, 68, 68, 0.6); border: 1px solid #ef4444; }
+.box-callejuela { background-color: rgba(59, 130, 246, 0.6); border: 1px solid #3b82f6; }
+
+/* Escáner QR Modal */
+.qr-camera-viewport {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background-color: #000;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed var(--color-accent);
+}
+
+.scanner-laser {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #10b981;
+  box-shadow: 0 0 12px #10b981;
+  animation: scan-move 2s linear infinite;
+}
+
+@keyframes scan-move {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+/* Ficha del Animal & Genealogía Grid */
+.animal-profile-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+}
+
+.animal-photo-box {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.animal-photo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.iron-mark-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--color-warning);
+  color: var(--color-warning);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* Árbol Genealógico */
+.genealogy-tree {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.tree-node {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.node-role {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.node-sub {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.collar-telemetry-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+}
+
+.telemetry-item {
+  display: flex;
+  justify-content: space-between;
+}

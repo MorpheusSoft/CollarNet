@@ -603,7 +603,6 @@ function initUIEvents() {
       } catch (err) {
         alert(`Error al analizar PDF: ${err.message}`);
       } finally {
-        // Ocultar spinner y habilitar botón
         if (aiLoadingSpinner) aiLoadingSpinner.style.display = 'none';
         if (btnSubmitAi) {
           btnSubmitAi.disabled = false;
@@ -612,6 +611,107 @@ function initUIEvents() {
       }
     });
   }
+
+  // ==========================================
+  // EVENTOS Y MODALES DE COWAI MVP v1.0
+  // ==========================================
+
+  // 1. Modal de Escáner QR de Collar
+  const modalQr = document.getElementById('modal-qr-scanner');
+  const btnOpenQr = document.getElementById('btn-open-qr-scanner');
+  const btnScanQrForm = document.getElementById('btn-scan-collar-qr');
+  const btnCloseQr = document.getElementById('btn-close-qr-modal');
+  const btnSimulateQr = document.getElementById('btn-simulate-qr-read');
+  const qrResultBox = document.getElementById('qr-result-box');
+
+  const openQrModal = () => {
+    if (modalQr) modalQr.classList.add('active');
+    if (qrResultBox) qrResultBox.style.display = 'none';
+  };
+
+  if (btnOpenQr) btnOpenQr.addEventListener('click', openQrModal);
+  if (btnScanQrForm) btnScanQrForm.addEventListener('click', openQrModal);
+  if (btnCloseQr) btnCloseQr.addEventListener('click', () => modalQr.classList.remove('active'));
+
+  if (btnSimulateQr) {
+    btnSimulateQr.addEventListener('click', () => {
+      if (qrResultBox) qrResultBox.style.display = 'block';
+      const animCollarSelect = document.getElementById('anim-collar');
+      const collIdInput = document.getElementById('coll-id');
+
+      if (collIdInput) collIdInput.value = 'COW-COLLAR-8821';
+      if (animCollarSelect) {
+        let opt = Array.from(animCollarSelect.options).find(o => o.value === 'COW-COLLAR-8821');
+        if (!opt) {
+          opt = new Option('COW-COLLAR-8821 (Emparejado QR 📷)', 'COW-COLLAR-8821');
+          animCollarSelect.add(opt);
+        }
+        animCollarSelect.value = 'COW-COLLAR-8821';
+      }
+      setTimeout(() => {
+        alert('✅ Collar inteligente COW-COLLAR-8821 emparejado con éxito por QR.');
+        modalQr.classList.remove('active');
+      }, 1200);
+    });
+  }
+
+  // 2. Modal de Ficha Técnica del Animal & Genealogía
+  const modalProfile = document.getElementById('modal-animal-profile');
+  const btnCloseProfile = document.getElementById('btn-close-profile-modal');
+  if (btnCloseProfile && modalProfile) {
+    btnCloseProfile.addEventListener('click', () => modalProfile.classList.remove('active'));
+  }
+
+  document.addEventListener('openAnimalProfile', (e) => {
+    const animal = e.detail;
+    if (!animal) return;
+
+    if (document.getElementById('prof-name')) document.getElementById('prof-name').textContent = animal.nombre || 'Esperanza';
+    if (document.getElementById('prof-arete')) document.getElementById('prof-arete').textContent = animal.arete_visual || '4821';
+    if (document.getElementById('prof-hierro')) document.getElementById('prof-hierro').textContent = animal.hierro || '#78';
+    if (document.getElementById('prof-breed')) document.getElementById('prof-breed').textContent = `${animal.raza || 'Brahman Puro'} (${animal.categoria || 'Vaca'})`;
+    if (document.getElementById('prof-iron-badge')) document.getElementById('prof-iron-badge').textContent = `Hierro ${animal.hierro || '#78'}`;
+    if (document.getElementById('prof-sire')) document.getElementById('prof-sire').textContent = animal.padre || 'Duke (RFID 1198)';
+    if (document.getElementById('prof-dam')) document.getElementById('prof-dam').textContent = animal.madre || 'Bella (RFID 3042)';
+    if (document.getElementById('prof-lineage')) document.getElementById('prof-lineage').textContent = animal.linea_genetica || 'Línea Red Brahman de Alta Leche';
+
+    if (modalProfile) modalProfile.classList.add('active');
+  });
+
+  const btnProjFromProf = document.getElementById('btn-open-projection-from-profile');
+  if (btnProjFromProf) {
+    btnProjFromProf.addEventListener('click', () => {
+      if (modalProfile) modalProfile.classList.remove('active');
+      openProjectionModal(1);
+    });
+  }
+
+  // 3. Botón de Guía Activa / Arreo Remoto
+  const btnStartHerdGuide = document.getElementById('btn-start-herd-guide');
+  const btnQuickActiveHerd = document.getElementById('btn-quick-active-herd');
+
+  const triggerHerdGuideAnimation = () => {
+    alert('🧭 ¡Guía Activa Iniciada! Los collares emitirán secuencias de señales sonoras progresivas para orientar al hato hacia la Zona de Ordeño.');
+    const chip = document.getElementById('guidance-status-chip');
+    if (chip) {
+      chip.style.backgroundColor = 'rgba(16, 185, 129, 0.25)';
+      chip.innerHTML = '<span class="pulse-icon">📡</span><span>Guía Activa: <strong>En Progreso -> Zona Ordeño 🥛</strong></span>';
+    }
+  };
+
+  if (btnStartHerdGuide) btnStartHerdGuide.addEventListener('click', triggerHerdGuideAnimation);
+  if (btnQuickActiveHerd) btnQuickActiveHerd.addEventListener('click', triggerHerdGuideAnimation);
+
+  // 4. Selector de Historial de Recorrido (Tracks 24h, 7d, 30d)
+  const trackBtns = document.querySelectorAll('.track-btn');
+  trackBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      trackBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const range = btn.getAttribute('data-range');
+      console.log(`[Tracks] Filtrando recorrido histórico: ${range}`);
+    });
+  });
 }
 
 /**
@@ -652,9 +752,21 @@ function renderAnimalList(animals) {
       </div>
     `;
 
-    // Clic en la tarjeta centra la cámara del mapa
+    // Clic en la tarjeta centra la cámara del mapa y abre la Ficha Técnica / Genealogía
     card.addEventListener('click', () => {
       centerOnAnimal(a.collar_id);
+      document.dispatchEvent(new CustomEvent('openAnimalProfile', {
+        detail: {
+          nombre: a.arete_visual ? `Res Arete ${a.arete_visual}` : 'Esperanza',
+          arete_visual: a.arete_visual,
+          hierro: a.hierro || '#78',
+          raza: a.raza || 'Brahman Puro',
+          categoria: a.categoria || 'Vaca',
+          padre: 'Duke (RFID 1198)',
+          madre: 'Bella (RFID 3042)',
+          linea_genetica: 'Línea Red Brahman de Alta Leche'
+        }
+      }));
     });
 
     liveList.appendChild(card);
