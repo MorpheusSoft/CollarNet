@@ -3,421 +3,239 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COWAI - Plataforma Inteligente de Gestión Ganadera & Monitoreo de Hato</title>
+  <title>COWAI - Plataforma Inteligente de Monitoreo & Registro de Ganado</title>
   
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Leaflet CSS para Mapa Satelital Integrado -->
+  <!-- Leaflet CSS para Mapas Satelitales HD -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
-  <!-- Estilos Personalizados del Dashboard -->
+  <!-- Estilos Personalizados COWAI (Exactos a la imagen) -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="dark-theme">
 
-  <!-- CONTENEDOR PRINCIPAL DEL DASHBOARD -->
-  <div class="app-layout">
-
-    <!-- 1. BARRA LATERAL IZQUIERDA ESTRECHA (Sidebar Navigation) -->
-    <aside class="sidebar-nav">
-      <div class="sidebar-brand">
-        <div class="brand-logo-icon">🐂</div>
+  <!-- BARRA SUPERIOR DE NAVEGACIÓN (HEADER BAR) -->
+  <header class="top-nav-header">
+    <div class="header-left">
+      <div class="brand-logo">
+        <div class="logo-bull-icon">🐂</div>
+        <span class="brand-name">COW<span>AI</span></span>
       </div>
 
-      <nav class="sidebar-icons-menu">
-        <button class="nav-icon-btn" title="Inicio / Dashboard">
-          <span class="icon">🏠</span>
+      <nav class="main-nav-links">
+        <button class="nav-item-btn" id="nav-dashboard">
+          <span class="icon">🎛️</span> Dashboard
         </button>
-        <button class="nav-icon-btn active" title="Cow Herd (Hato de Ganado)">
-          <span class="icon">🎛️</span>
+        <button class="nav-item-btn active" id="nav-map">
+          <span class="icon">🗺️</span> Map
         </button>
-        <button class="nav-icon-btn" title="Inventario & Aretes">
-          <span class="icon">📋</span>
+        <button class="nav-item-btn" id="nav-livestock">
+          <span class="icon">🐂</span> Livestock
         </button>
-        <button class="nav-icon-btn" title="Cercas Virtuales & Mapas">
-          <span class="icon">🗺️</span>
+        <button class="nav-item-btn" id="nav-alerts">
+          <span class="icon">🔔</span> Alerts
+          <span class="badge-count">1</span>
         </button>
-        <button class="nav-icon-btn" title="Archivos & Documentos">
-          <span class="icon">📁</span>
+        <button class="nav-item-btn" id="nav-analytics">
+          <span class="icon">📊</span> Analytics
         </button>
-        <button class="nav-icon-btn" title="Analítica Zootécnica">
-          <span class="icon">📊</span>
-        </button>
-        <button class="nav-icon-btn" title="Configuración Sistema">
-          <span class="icon">⚙️</span>
+        <button class="nav-item-btn" id="nav-settings">
+          <span class="icon">⚙️</span> Settings
         </button>
       </nav>
-
-      <div class="sidebar-user-footer">
-        <div class="user-avatar-small" title="John Doe (Administrador Ganadería)">CE</div>
-      </div>
-    </aside>
-
-    <!-- 2. CONTENIDO PRINCIPAL (Main Content) -->
-    <div class="main-wrapper">
-
-      <!-- TOP BAR DE NAVEGACIÓN Y BÚSQUEDA -->
-      <header class="top-navbar">
-        <div class="top-brand">
-          <div class="logo-title">COW<span>AI</span></div>
-        </div>
-
-        <div class="top-search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="global-search-input" placeholder="Search for cattle, RFID, Brand or Lot...">
-        </div>
-
-        <div class="top-actions-right">
-          <div class="connection-status-pill">
-            <span class="pulse-dot green"></span>
-            <span>Telemetry IoT Live</span>
-          </div>
-
-          <button class="top-icon-btn notification-btn" title="Notificaciones">
-            <span>🔔</span>
-            <span class="notification-badge">3</span>
-          </button>
-
-          <div class="user-profile-badge">
-            <div class="profile-avatar">CE</div>
-            <span class="profile-name">Carlos E.</span>
-          </div>
-        </div>
-      </header>
-
-      <!-- VIEW HEADER (Encabezado de la página Cow Herd) -->
-      <section class="view-header-bar">
-        <div class="view-title-group">
-          <h1 class="view-title">Cow Herd</h1>
-          <span class="view-sub-badge">&bull; Cattle dashboard</span>
-        </div>
-
-        <div class="view-actions-group">
-          <button class="btn-secondary-action" id="btn-toggle-gridview">
-            <span>👁️</span> Userview
-          </button>
-          <button class="btn-secondary-action" id="btn-date-record">
-            <span>📅</span> Date Record
-          </button>
-          <button class="btn-primary-action" id="btn-add-cattle">
-            <span>➕</span> Cattle Herd
-          </button>
-        </div>
-      </section>
-
-      <!-- BARRA DE PESTAÑAS Y FILTROS SECUNDARIOS -->
-      <div class="sub-header-tabs">
-        <div class="tab-filters-left">
-          <button class="filter-tab-btn active" data-tab="all">All</button>
-          <button class="filter-tab-btn" data-tab="charts">Charts</button>
-          <button class="filter-tab-btn" data-tab="shortcuts">Shortcuts</button>
-          <button class="filter-tab-btn" data-tab="active-herds">Lot Groups</button>
-        </div>
-
-        <div class="tab-options-right">
-          <label class="toggle-switch-label">
-            <input type="checkbox" id="toggle-show-charts" checked>
-            <span class="switch-slider"></span>
-            <span class="label-text">Show Charts</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- DASHBOARD MAIN BODY (GRID DE CONTENIDO CON TABLA Y PANELS) -->
-      <div class="dashboard-body-grid">
-        
-        <!-- PANEL IZQUIERDO: TABLA DE RESES (CATTLE TABLE LIST) -->
-        <div class="cattle-table-container">
-          <table class="cattle-table">
-            <thead>
-              <tr>
-                <th style="width: 40px;"><input type="checkbox" id="select-all-cattle"></th>
-                <th>Cattle Name & RFID</th>
-                <th>Breed / Sex</th>
-                <th>Birthdate</th>
-                <th>Lot / Pasture</th>
-                <th>Collar & Battery</th>
-                <th>Status</th>
-                <th style="text-align: right;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="cattle-table-body">
-              
-              <!-- FILA 1: ESPERANZA (PRINCIPAL DE LA IMAGEN) -->
-              <tr class="cattle-row active-row" data-id="4821">
-                <td><input type="checkbox" checked></td>
-                <td>
-                  <div class="cattle-cell-info">
-                    <div class="cattle-thumb">
-                      <img src="https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=150&auto=format&fit=crop&q=80" alt="Esperanza">
-                    </div>
-                    <div class="cattle-name-box">
-                      <strong class="name">Esperanza</strong>
-                      <span class="rfid">RFID 4821 &bull; <small>Brand #78</small></span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="breed-cell">
-                    <strong>Brahman</strong>
-                    <span>Purebred (Female)</span>
-                  </div>
-                </td>
-                <td>12 Nov 2021</td>
-                <td>
-                  <span class="lot-badge">Herd 7B (Pasture A1)</span>
-                </td>
-                <td>
-                  <div class="collar-cell">
-                    <span class="collar-id">COW-SC-X100</span>
-                    <span class="battery-status good">🔋 98% ☀️</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="status-tags">
-                    <span class="tag-healthy">Healthy</span>
-                    <span class="tag-active">Active</span>
-                  </div>
-                </td>
-                <td style="text-align: right;">
-                  <button class="btn-table-view-profile" data-id="4821">View Profile</button>
-                </td>
-              </tr>
-
-              <!-- FILA 2: DUKE -->
-              <tr class="cattle-row" data-id="1198">
-                <td><input type="checkbox"></td>
-                <td>
-                  <div class="cattle-cell-info">
-                    <div class="cattle-thumb">
-                      <img src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=150&auto=format&fit=crop&q=80" alt="Duke">
-                    </div>
-                    <div class="cattle-name-box">
-                      <strong class="name">Duke</strong>
-                      <span class="rfid">RFID 1198 &bull; <small>Brand #45</small></span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="breed-cell">
-                    <strong>Hereford</strong>
-                    <span>Sire Bull (Male)</span>
-                  </div>
-                </td>
-                <td>05 Mar 2020</td>
-                <td>
-                  <span class="lot-badge">Herd 1A (Pasture B2)</span>
-                </td>
-                <td>
-                  <div class="collar-cell">
-                    <span class="collar-id">COW-SC-X105</span>
-                    <span class="battery-status good">🔋 85% ☀️</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="status-tags">
-                    <span class="tag-healthy">Healthy</span>
-                    <span class="tag-active">Active</span>
-                  </div>
-                </td>
-                <td style="text-align: right;">
-                  <button class="btn-table-view-profile" data-id="1198">View Profile</button>
-                </td>
-              </tr>
-
-              <!-- FILA 3: BELLA (MADRE) -->
-              <tr class="cattle-row" data-id="3042">
-                <td><input type="checkbox"></td>
-                <td>
-                  <div class="cattle-cell-info">
-                    <div class="cattle-thumb">
-                      <img src="https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=150&auto=format&fit=crop&q=80" alt="Bella">
-                    </div>
-                    <div class="cattle-name-box">
-                      <strong class="name">Bella (Dam)</strong>
-                      <span class="rfid">RFID 3042 &bull; <small>Brand #78</small></span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="breed-cell">
-                    <strong>Brahman</strong>
-                    <span>Dam Cow (Female)</span>
-                  </div>
-                </td>
-                <td>18 Aug 2021</td>
-                <td>
-                  <span class="lot-badge">Herd 7B (Pasture A1)</span>
-                </td>
-                <td>
-                  <div class="collar-cell">
-                    <span class="collar-id">COW-SC-X102</span>
-                    <span class="battery-status good">🔋 92% ☀️</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="status-tags">
-                    <span class="tag-healthy">Healthy</span>
-                    <span class="tag-active">Active</span>
-                  </div>
-                </td>
-                <td style="text-align: right;">
-                  <button class="btn-table-view-profile" data-id="3042">View Profile</button>
-                </td>
-              </tr>
-
-              <!-- FILA 4: TAURUS 99 -->
-              <tr class="cattle-row" data-id="9912">
-                <td><input type="checkbox"></td>
-                <td>
-                  <div class="cattle-cell-info">
-                    <div class="cattle-thumb">
-                      <img src="https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=150&auto=format&fit=crop&q=80" alt="Taurus 99">
-                    </div>
-                    <div class="cattle-name-box">
-                      <strong class="name">Taurus-99</strong>
-                      <span class="rfid">RFID 9912 &bull; <small>Brand #12</small></span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="breed-cell">
-                    <strong>Angus Black</strong>
-                    <span>Steer (Male)</span>
-                  </div>
-                </td>
-                <td>10 Jan 2022</td>
-                <td>
-                  <span class="lot-badge">Herd 2B (Pasture C1)</span>
-                </td>
-                <td>
-                  <div class="collar-cell">
-                    <span class="collar-id">COW-SC-X088</span>
-                    <span class="battery-status warn">🔋 64%</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="status-tags">
-                    <span class="tag-warn">Rotation Limit</span>
-                  </div>
-                </td>
-                <td style="text-align: right;">
-                  <button class="btn-table-view-profile" data-id="9912">View Profile</button>
-                </td>
-              </tr>
-
-              <!-- FILA 5: KAISER -->
-              <tr class="cattle-row" data-id="5541">
-                <td><input type="checkbox"></td>
-                <td>
-                  <div class="cattle-cell-info">
-                    <div class="cattle-thumb">
-                      <img src="https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?w=150&auto=format&fit=crop&q=80" alt="Kaiser">
-                    </div>
-                    <div class="cattle-name-box">
-                      <strong class="name">Kaiser</strong>
-                      <span class="rfid">RFID 5541 &bull; <small>Brand #03</small></span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="breed-cell">
-                    <strong>Nelore</strong>
-                    <span>Bull (Male)</span>
-                  </div>
-                </td>
-                <td>22 Jun 2021</td>
-                <td>
-                  <span class="lot-badge danger">Quarantine Zone</span>
-                </td>
-                <td>
-                  <div class="collar-cell">
-                    <span class="collar-id">COW-SC-X091</span>
-                    <span class="battery-status good">🔋 78%</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="status-tags">
-                    <span class="tag-quarantine">Quarantine</span>
-                  </div>
-                </td>
-                <td style="text-align: right;">
-                  <button class="btn-table-view-profile" data-id="5541">View Profile</button>
-                </td>
-              </tr>
-
-            </tbody>
-          </table>
-        </div>
-
-        <!-- PANEL DERECHO: CHARTS Y VISUALIZACIÓN ANALÍTICA -->
-        <aside class="dashboard-analytics-aside" id="analytics-panel">
-          
-          <!-- TARJETA 1: ANÁLISIS DE OCUPACIÓN Y ROTACIÓN -->
-          <div class="analytics-card">
-            <div class="card-header-sm">
-              <h4>Pasture Occupancy & Rotation</h4>
-              <span class="card-sub-lbl">Pasture vs Plan</span>
-            </div>
-            <div class="chart-bars-mini">
-              <div class="bar-item">
-                <span class="bar-lbl">Pasture A1</span>
-                <div class="bar-track"><div class="bar-fill green" style="width: 85%;"></div></div>
-                <span class="bar-val">85%</span>
-              </div>
-              <div class="bar-item">
-                <span class="bar-lbl">Pasture B2</span>
-                <div class="bar-track"><div class="bar-fill blue" style="width: 42%;"></div></div>
-                <span class="bar-val">42%</span>
-              </div>
-              <div class="bar-item">
-                <span class="bar-lbl">Rest Zone C1</span>
-                <div class="bar-track"><div class="bar-fill gold" style="width: 15%;"></div></div>
-                <span class="bar-val">15%</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- TARJETA 2: MONITOREO DEL MAPA SATELITAL REAL TIME -->
-          <div class="analytics-card map-card">
-            <div class="card-header-sm">
-              <h4>Live GPS Virtual Fence Preview</h4>
-              <span class="card-sub-lbl">Pasture Area A1</span>
-            </div>
-            <div class="mini-map-container" id="mini-map"></div>
-          </div>
-
-        </aside>
-
-      </div>
     </div>
+
+    <div class="header-right">
+      <div class="header-time-display">Oct 26, 2023 | 14:15</div>
+      <div class="user-profile-icon" title="Usuario Administrador">👤</div>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL: MAPA SATELITAL REAL TIME + SIDEBAR TELEMETRÍA -->
+  <div class="screen-split-container">
+
+    <!-- PANEL IZQUIERDO: VISOR DE MAPA SATELITAL HD -->
+    <main class="map-viewport-section">
+      
+      <!-- CONTROLES SUPERIORES FLOTANTES SOBRE EL MAPA -->
+      <div class="map-top-bar-overlay">
+        <div class="farm-selector-pill">
+          <button class="arrow-btn">&lt;</button>
+          <span class="farm-title">Green Valley Farm <small>North Lot</small></span>
+          <button class="arrow-btn">&gt;</button>
+        </div>
+
+        <div class="map-tool-actions">
+          <button class="map-tool-btn" title="Buscar en Mapa">🔍</button>
+          <button class="map-tool-btn" title="Filtrar por Fecha">📅</button>
+          <select class="map-dropdown-select">
+            <option>Green Valley Farm - North</option>
+            <option>Pasture Sector South B</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- MAPA INTERACTIVO LEAFLET.JS -->
+      <div id="map" class="satellite-map-canvas"></div>
+
+      <!-- OVERLAYS INFERIORES DEL MAPA -->
+      <!-- 1. Herd Total Badge -->
+      <div class="map-overlay-badge herd-total-badge">
+        Herd Total: <strong>412</strong>
+      </div>
+
+      <!-- 2. Leyenda de Geocercas Funcionales -->
+      <div class="map-legend-box">
+        <div class="legend-row">
+          <span class="legend-color-indicator box-milking"></span>
+          <span class="legend-lbl">Milking Zone</span>
+          <span class="status-tag tag-active">Active</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-color-indicator box-resting"></span>
+          <span class="legend-lbl">Resting Pastures</span>
+          <span class="status-tag tag-active">Active</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-color-indicator box-quarantine"></span>
+          <span class="legend-lbl">Quarantine Area</span>
+          <span class="status-tag tag-amber">Amber</span>
+        </div>
+      </div>
+
+      <!-- 3. Tracking Status Badge -->
+      <div class="map-overlay-badge tracking-status-badge">
+        <span class="live-dot"></span> Active Cattle Tracking
+      </div>
+
+    </main>
+
+    <!-- PANEL DERECHO: TELEMETRÍA Y REGISTRO DE GANADO EN VIVO -->
+    <aside class="cattle-telemetry-sidebar">
+      
+      <div class="telemetry-header">
+        <div>
+          <h2>CATTLE TELEMETRY</h2>
+          <span class="sub-title">Live Updates</span>
+        </div>
+        <button class="more-opts-btn">•••</button>
+      </div>
+
+      <!-- BANNER DE ALERTAS ACTIVAS EN TIEMPO REAL -->
+      <div class="active-alerts-banner" id="active-alert-banner">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-details">
+          <strong>ACTIVE ALERTS: 1 - ESCAPE ALERT!</strong>
+          <p>C105 - NORTH LOT FENCE BREACH!</p>
+        </div>
+      </div>
+
+      <!-- LISTA DE TARJETAS DE TELEMETRÍA DE RESES -->
+      <div class="telemetry-cards-list" id="telemetry-list-container">
+        
+        <!-- TARJETA 1: C105 (ALERTA DE ESCAPE - BORDE DORADO/ÁMBAR) -->
+        <div class="telemetry-card alert-escaped" data-id="105">
+          <div class="card-top-row">
+            <div class="cow-id-tag">
+              <span class="cow-icon">🐂</span>
+              <strong>C105</strong>
+              <span class="badge-status badge-escaped">Escaped - 1 min ago</span>
+            </div>
+            <button class="card-menu-btn">⋮</button>
+          </div>
+          <div class="card-location">North Boundary</div>
+          <div class="card-coords">Last Location: 43.123N, -78.456W</div>
+          <div class="card-collar-specs">
+            <div class="spec-row"><strong>Collar Status:</strong></div>
+            <div class="spec-row">
+              <span class="icon">🔋</span> Battery: <strong>94% (Solar Charging ☀️)</strong>
+            </div>
+            <div class="spec-row">
+              <span class="icon">📶</span> Signal: <strong>Excellent</strong>
+            </div>
+            <div class="spec-row">
+              <span class="icon">❤️</span> HR: <strong>88 bpm</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- TARJETA 2: C098 (ACTIVO EN RESTING PASTURE - BORDE CYAN) -->
+        <div class="telemetry-card active-resting" data-id="98">
+          <div class="card-top-row">
+            <div class="cow-id-tag">
+              <span class="cow-icon">🐂</span>
+              <strong>C098</strong>
+              <span class="badge-status badge-active-blue">Active</span>
+            </div>
+            <button class="card-menu-btn">⋮</button>
+          </div>
+          <div class="card-location">Resting Pasture 2</div>
+          <div class="card-coords">Last Location: 43.121N, -78.458W</div>
+          <div class="card-collar-specs">
+            <div class="spec-row">
+              <span class="icon">🔋</span> Battery: <strong>91% (☀️)</strong>
+            </div>
+            <div class="spec-row">
+              <span class="icon">❤️</span> HR: <strong>85 bpm</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- TARJETA 3: C023 (ACTIVO EN MILKING ZONE - BORDE VERDE) -->
+        <div class="telemetry-card active-milking" data-id="23">
+          <div class="card-top-row">
+            <div class="cow-id-tag">
+              <span class="cow-icon">🐂</span>
+              <strong>C023</strong>
+              <span class="badge-status badge-active-green">Active</span>
+            </div>
+            <button class="card-menu-btn">⋮</button>
+          </div>
+          <div class="card-location">Milking Zone</div>
+          <div class="card-collar-specs">
+            <div class="spec-row">
+              <span class="icon">🔋</span> Battery: <strong>88% (☀️)</strong>
+            </div>
+            <div class="spec-row">
+              <span class="icon">❤️</span> HR: <strong>71 bpm</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTÓN FLOTANTE PARA REGISTRAR NUEVA RES / IDENTIFICACIÓN -->
+      <div class="sidebar-action-footer">
+        <button class="btn-full-register" id="btn-open-register-modal">
+          ➕ Registrar Nueva Res & Emparejar Collar
+        </button>
+      </div>
+
+    </aside>
 
   </div>
 
   <!-- ==========================================================================
-       MODAL 1: INDIVIDUAL CATTLE PROFILE | COWAI LIVESTOCK PLATFORM
-       (REPLICADO EXACTAMENTE DE LA IMAGEN MOCKUP ADJUNTA)
+       MODAL: FICHA DE REGISTRO E IDENTIFICACIÓN DEL GANADO (FUNCIONALIDAD 1 MVP)
        ========================================================================== -->
-  <div class="modal active" id="modal-animal-profile">
+  <div class="modal" id="modal-animal-profile">
     <div class="modal-content modal-profile-card">
       
-      <!-- HEADER BAR DEL MODAL -->
       <div class="modal-header-bar">
         <h2>Individual Cattle Profile | COWAI Livestock Platform</h2>
         <button class="close-modal-btn" id="btn-close-profile-modal">✕</button>
       </div>
 
-      <!-- BODY DEL MODAL CON 2 COLUMNAS -->
       <div class="modal-body-content">
         <div class="profile-layout-grid">
           
-          <!-- COLUMNA IZQUIERDA: TARJETA PRINCIPAL DE LA RES -->
+          <!-- COLUMNA IZQUIERDA: DATOS DE REGISTRO E IDENTIFICACIÓN -->
           <div class="profile-main-card">
             
-            <!-- FOTO Y DATOS DE IDENTIDAD -->
             <div class="profile-header-row">
               <div class="profile-photo-container">
                 <img id="prof-photo" src="https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=400&auto=format&fit=crop&q=80" alt="Esperanza Brahman">
@@ -436,7 +254,7 @@
               </div>
             </div>
 
-            <!-- GRID DE ESPECIFICACIONES (2 COLUMNAS DE CAMPOS) -->
+            <!-- ESPECIFICACIONES DE ORIGEN, RAZA Y PROPIETARIO -->
             <div class="profile-specs-grid">
               <div class="spec-item">
                 <span class="spec-lbl">Breed</span>
@@ -472,20 +290,18 @@
               </div>
             </div>
 
-            <!-- BOTÓN PRINCIPAL CYAN DE VINCULACIÓN -->
             <button class="pair-collar-action-btn" id="btn-trigger-pair-collar">
               Pair Smart Collar
             </button>
           </div>
 
-          <!-- COLUMNA DERECHA: ÁRBOL GENEALÓGICO (FAMILY TREE LINEAGE CHART) -->
+          <!-- COLUMNA DERECHA: GENEALOGÍA BÁSICA (ÁRBOL FAMILIAR) -->
           <div class="profile-lineage-card">
             <h4 class="lineage-title">Family Tree Lineage Chart</h4>
             
             <div class="lineage-tree-diagram">
               <div class="tree-branch-parents">
-                
-                <!-- NODE PADRE (DUKE) -->
+                <!-- Node Padre -->
                 <div class="tree-member-card">
                   <div class="member-photo">
                     <img src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=150&auto=format&fit=crop&q=80" alt="Duke Sire">
@@ -497,7 +313,7 @@
                   </div>
                 </div>
 
-                <!-- NODE MADRE (DAM / BELLA) -->
+                <!-- Node Madre -->
                 <div class="tree-member-card">
                   <div class="member-photo">
                     <img src="https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=150&auto=format&fit=crop&q=80" alt="Dam Mother">
@@ -510,10 +326,9 @@
                 </div>
               </div>
 
-              <!-- LÍNEAS CONECTORAS DEL ÁRBOL -->
               <div class="tree-connector-lines"></div>
 
-              <!-- NODE HIJO (ESPERANZA) -->
+              <!-- Node Hijo -->
               <div class="tree-branch-child">
                 <div class="tree-member-card active-child">
                   <div class="member-photo">
@@ -536,23 +351,17 @@
     </div>
   </div>
 
-  <!-- ==========================================================================
-       MODAL 2: OVERLAY QR CODE SCANNER | SMART COLLAR PAIRING
-       (REPLICADO EXACTAMENTE DE LA IMAGEN MOCKUP ADJUNTA)
-       ========================================================================== -->
-  <div class="modal active" id="modal-qr-scanner" style="z-index: 2200;">
+  <!-- MODAL: ESCÁNER QR PARA EMPAREJAMIENTO DE COLLAR -->
+  <div class="modal" id="modal-qr-scanner" style="z-index: 2200;">
     <div class="modal-content modal-qr-card">
-      
       <div class="modal-header-bar">
         <h2>QR Code Scanner | Smart Collar Pairing</h2>
         <button class="close-modal-btn" id="btn-close-qr-modal">✕</button>
       </div>
 
       <div class="modal-body-content">
-        
-        <!-- VISOR DE CÁMARA CON LA FOTO REAL DEL DISPOSITIVO COLLAR -->
         <div class="qr-scanner-frame-box">
-          <img src="/home/renier/.gemini/antigravity/brain/ae710871-c1d4-4387-a412-d2f403fe40bf/cowai_cattle_profile_1786464769195.jpg" alt="Smart Collar Hardware Preview" class="scanner-preview-bg">
+          <img src="/home/renier/.gemini/antigravity/brain/ae710871-c1d4-4387-a412-d2f403fe40bf/cowai_cattle_profile_1786464769195.jpg" alt="Collar Hardware" class="scanner-preview-bg">
           <div class="corner-brackets">
             <span class="bracket top-left"></span>
             <span class="bracket top-right"></span>
@@ -561,7 +370,6 @@
           </div>
         </div>
 
-        <!-- LISTA DE TELEMETRÍA EN TIEMPO REAL DEL COLLAR DETECTADO -->
         <div class="qr-device-telemetry-list">
           <div class="telem-row">
             <span class="telem-lbl">Device Found</span>
@@ -585,18 +393,17 @@
           </div>
         </div>
 
-        <button class="pair-collar-action-btn" id="btn-simulate-qr-read" style="margin-top: 15px; background: linear-gradient(135deg, #10b981, #059669); border-color: rgba(16, 185, 129, 0.4);">
+        <button class="pair-collar-action-btn" id="btn-simulate-qr-read" style="margin-top: 15px; background: linear-gradient(135deg, #10b981, #059669);">
           ✅ Confirm & Pair Collar
         </button>
-
       </div>
     </div>
   </div>
 
-  <!-- DEPENDENCIAS LIBRERÍAS DE MAPAS Y GRÁFICOS -->
+  <!-- DEPENDENCIAS LIBRERÍAS DE MAPAS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-  <!-- MÓDULOS DE LÓGICA DE APLICACIÓN -->
+  <!-- MÓDULOS DE LÓGICA JS -->
   <script type="module" src="js/api.js"></script>
   <script type="module" src="js/mapManager.js"></script>
   <script type="module" src="js/app.js"></script>

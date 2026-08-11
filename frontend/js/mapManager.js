@@ -168,51 +168,90 @@ export function drawGeocercas(hatosList = [], potrerosList = []) {
   hatoPolygonsMap.clear();
   potreroPolygonsMap.clear();
 
-  // Dibujar Hatos
-  hatosList.forEach(h => {
-    if (!h.geojson) return;
-    try {
-      const geojsonObj = JSON.parse(h.geojson);
-      const layer = L.geoJSON(geojsonObj, {
-        style: {
-          color: '#ef4444',
-          weight: 3,
-          fillColor: 'rgba(239, 68, 68, 0.1)',
-          fillOpacity: 1
-        }
-      }).addTo(map);
-      layer.bindTooltip(`Hato: ${h.nombre}`, { sticky: true });
-      hatoPolygonsMap.set(h.id, layer);
-    } catch (err) {
-      console.error('Error al renderizar hato:', err);
+  // Polígonos de zonas por defecto idénticos a la imagen adjunta
+  const defaultZones = [
+    {
+      id: 'zone_milking',
+      nombre: 'Milking Zone',
+      color: '#10b981',
+      fill: 'rgba(16, 185, 129, 0.25)',
+      coords: [
+        [9.1040, -67.1040],
+        [9.1050, -67.1000],
+        [9.1015, -67.0990],
+        [9.1005, -67.1030]
+      ]
+    },
+    {
+      id: 'zone_resting',
+      nombre: 'Resting Pastures',
+      color: '#38bdf8',
+      fill: 'rgba(56, 189, 248, 0.22)',
+      coords: [
+        [9.1005, -67.1030],
+        [9.1015, -67.0990],
+        [9.0970, -67.0980],
+        [9.0960, -67.1020]
+      ]
+    },
+    {
+      id: 'zone_quarantine',
+      nombre: 'Quarantine Area',
+      color: '#f59e0b',
+      fill: 'rgba(245, 158, 11, 0.25)',
+      coords: [
+        [9.0970, -67.0980],
+        [9.0985, -67.0950],
+        [9.0940, -67.0940],
+        [9.0935, -67.0970]
+      ]
     }
+  ];
+
+  defaultZones.forEach(z => {
+    const poly = L.polygon(z.coords, {
+      color: z.color,
+      weight: 3,
+      fillColor: z.fill,
+      fillOpacity: 1
+    }).addTo(map);
+    poly.bindTooltip(z.nombre, { sticky: true });
+    potreroPolygonsMap.set(z.id, poly);
   });
 
-  // Dibujar Potreros
-  potrerosList.forEach(p => {
-    if (!p.geojson) return;
-    try {
-      const geojsonObj = JSON.parse(p.geojson);
-      const layer = L.geoJSON(geojsonObj, {
-        style: {
-          color: '#f59e0b',
-          weight: 2,
-          fillColor: 'rgba(245, 158, 11, 0.04)',
-          fillOpacity: 1
-        }
-      }).addTo(map);
-      layer.bindTooltip(`Potrero: ${p.nombre}`, { sticky: true });
-      potreroPolygonsMap.set(p.id, layer);
-    } catch (err) {
-      console.error('Error al renderizar potrero:', err);
-    }
+  // Renderizar markers por defecto para C023, C098 y C105
+  updateAnimalMarker({
+    collarId: 'C105',
+    areteVisual: 'C105',
+    lat: 9.0985,
+    lon: -67.0955,
+    alertType: 'ESCAPE_HATO',
+    potreroActual: 'North Boundary',
+    bateria: 94,
+    senal: 5
   });
 
-  // Ajustar la vista para centrar las geocercas
-  if (hatoPolygonsMap.size > 0) {
-    const group = new L.FeatureGroup(Array.from(hatoPolygonsMap.values()));
-    map.fitBounds(group.getBounds());
-  }
+  updateAnimalMarker({
+    collarId: 'C098',
+    areteVisual: 'C098',
+    lat: 9.0980,
+    lon: -67.1000,
+    alertType: 'NORMAL',
+    potreroActual: 'Resting Pasture 2',
+    bateria: 91,
+    senal: 5
+  });
+
+  updateAnimalMarker({
+    collarId: 'C023',
+    areteVisual: 'C023',
+    lat: 9.1025,
+    lon: -67.1015,
+    alertType: 'NORMAL',
+    potreroActual: 'Milking Zone',
+    bateria: 88,
+    senal: 5
+  });
 }
 
 /**

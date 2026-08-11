@@ -226,25 +226,24 @@ async function refreshData() {
  * Enlaza los listeners de todos los formularios e interacciones UI
  */
 function initUIEvents() {
-  // Listeners para los botones "View Profile" de la tabla de ganado
-  const viewProfileBtns = document.querySelectorAll('.btn-table-view-profile');
+  // Listeners para las tarjetas de telemetría del panel derecho
+  const telemetryCards = document.querySelectorAll('.telemetry-card');
   const modalProfileElem = document.getElementById('modal-animal-profile');
+  const btnOpenRegister = document.getElementById('btn-open-register-modal');
 
-  viewProfileBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
+  telemetryCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const cowId = card.getAttribute('data-id');
+      centerOnAnimal(`C${cowId}`);
       if (modalProfileElem) modalProfileElem.classList.add('active');
     });
   });
 
-  const cattleRows = document.querySelectorAll('.cattle-row');
-  cattleRows.forEach(row => {
-    row.addEventListener('click', () => {
-      cattleRows.forEach(r => r.classList.remove('active-row'));
-      row.classList.add('active-row');
+  if (btnOpenRegister) {
+    btnOpenRegister.addEventListener('click', () => {
       if (modalProfileElem) modalProfileElem.classList.add('active');
     });
-  });
+  }
 
   // Toggles de Capa de Mapa (Satélite / Calles)
   document.getElementById('btn-layer-satellite').addEventListener('click', (e) => {
