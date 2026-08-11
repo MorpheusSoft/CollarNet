@@ -625,6 +625,24 @@ function initUIEvents() {
   // EVENTOS Y MODALES DE COWAI MVP v1.0
   // ==========================================
 
+  // Cierre Global de Modales (al hacer clic en la X o en el fondo oscuro fuera de la ventana)
+  const allModals = document.querySelectorAll('.modal');
+  allModals.forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+      }
+    });
+  });
+
+  const closeBtns = document.querySelectorAll('.close-modal-btn');
+  closeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const parentModal = btn.closest('.modal');
+      if (parentModal) parentModal.classList.remove('active');
+    });
+  });
+
   // 1. Modal de Escáner QR de Collar
   const modalQr = document.getElementById('modal-qr-scanner');
   const btnOpenQr = document.getElementById('btn-open-qr-scanner');
