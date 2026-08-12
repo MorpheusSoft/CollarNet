@@ -131,6 +131,144 @@ body.dark-theme {
   border-radius: 3px 3px 0 0;
 }
 
+/* POPUP DROPDOWN MENU PARA EL BOTÓN MAP */
+.nav-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-chevron {
+  font-size: 0.7rem;
+  margin-left: 2px;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+
+.nav-dropdown-wrapper.active .dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.map-nav-popup-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  width: 290px;
+  background-color: #121826;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85);
+  padding: 12px;
+  z-index: 2500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+
+.map-nav-popup-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.popup-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 8px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.popup-actions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popup-action-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.popup-action-card:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateX(2px);
+}
+
+.action-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.draw-icon {
+  background-color: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.location-icon {
+  background-color: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.action-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action-card-info strong {
+  font-size: 0.85rem;
+  color: #ffffff;
+}
+
+.action-card-info span {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* MARCADOR DE UBICACIÓN ACTUAL */
+.user-location-pulse-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-pulse-dot {
+  font-size: 1.4rem;
+  animation: pulse-bounce 1.5s infinite alternate;
+}
+
+@keyframes pulse-bounce {
+  0% { transform: scale(1); filter: drop-shadow(0 0 4px #10b981); }
+  100% { transform: scale(1.25); filter: drop-shadow(0 0 12px #38bdf8); }
+}
+
 .badge-count {
   background-color: var(--color-danger);
   color: white;

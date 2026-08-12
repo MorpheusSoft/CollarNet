@@ -575,4 +575,43 @@ export function animateHerdGuidance(targetLat = 9.1025, targetLon = -67.0980, on
   }, 150);
 }
 
+/**
+ * Obriene la ubicación GPS del usuario en el navegador y vuela la cámara sobre su posición
+ */
+export function locateUserPosition() {
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        map.flyTo([lat, lng], 17, { duration: 1.5 });
+        
+        // Marcador visual con pulso para la ubicación actual
+        if (window.userLocMarker) {
+          map.removeLayer(window.userLocMarker);
+        }
+        
+        const pulseIcon = L.divIcon({
+          className: 'user-location-pulse-container',
+          html: `<div class="user-pulse-dot" title="Tu Ubicación GPS Actual">📍</div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
+        });
+
+        window.userLocMarker = L.marker([lat, lng], { icon: pulseIcon }).addTo(map);
+        window.userLocMarker.bindPopup('📍 <strong>Tu Ubicación GPS Actual</strong><br><small>Precisión basada en dispositivo</small>').openPopup();
+      },
+      (err) => {
+        console.warn('[Geolocation] Permiso denegado o no disponible:', err);
+        alert('📍 No se pudo acceder al GPS del navegador. Centrando mapa en la ubicación del Hato principal.');
+        map.flyTo([9.1025, -67.0980], 16, { duration: 1.5 });
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  } else {
+    alert('📍 La geolocalización no está soportada en tu navegador. Centrando mapa en el Hato principal.');
+    map.flyTo([9.1025, -67.0980], 16, { duration: 1.5 });
+  }
+}
+
 export { ESRI_SATELLITE, OSM_STREETS };

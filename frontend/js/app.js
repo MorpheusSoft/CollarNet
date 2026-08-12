@@ -33,6 +33,7 @@ import {
   disablePolygonEditing,
   drawGPSTracks,
   animateHerdGuidance,
+  locateUserPosition,
   ESRI_SATELLITE,
   OSM_STREETS
 } from './mapManager.js';
@@ -226,6 +227,52 @@ async function refreshData() {
  * Enlaza los listeners de todos los formularios e interacciones UI
  */
 function initUIEvents() {
+  // POPUP DROPDOWN DEL BOTÓN MAP (VENTANA EMERGENTE DE HERRAMIENTAS)
+  const navMapBtn = document.getElementById('nav-map');
+  const mapPopupMenu = document.getElementById('map-popup-menu');
+  const navDropdownWrapper = document.querySelector('.nav-dropdown-wrapper');
+  const btnPopupDrawGeofence = document.getElementById('btn-popup-draw-geofence');
+  const btnPopupCurrentLocation = document.getElementById('btn-popup-current-location');
+
+  if (navMapBtn && mapPopupMenu) {
+    navMapBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mapPopupMenu.classList.toggle('active');
+      if (navDropdownWrapper) navDropdownWrapper.classList.toggle('active');
+    });
+
+    // Cerrar ventana emergente al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if (navDropdownWrapper && !navDropdownWrapper.contains(e.target)) {
+        mapPopupMenu.classList.remove('active');
+        navDropdownWrapper.classList.remove('active');
+      }
+    });
+  }
+
+  // Acción 1: Botón para el Dibujo de Geocercas en el Mapa
+  if (btnPopupDrawGeofence) {
+    btnPopupDrawGeofence.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (mapPopupMenu) mapPopupMenu.classList.remove('active');
+      if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
+      
+      startDrawing('potrero');
+      alert('✏️ Modo Dibujo de Geocercas Activo.\n\nHaz clic en los puntos del mapa satelital para trazar cada esquina del perímetro. Haz clic en el primer punto para guardar.');
+    });
+  }
+
+  // Acción 2: Botón para ir a la Ubicación Actual GPS
+  if (btnPopupCurrentLocation) {
+    btnPopupCurrentLocation.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (mapPopupMenu) mapPopupMenu.classList.remove('active');
+      if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
+      
+      locateUserPosition();
+    });
+  }
+
   // Listeners para las tarjetas de telemetría del panel derecho
   const telemetryCards = document.querySelectorAll('.telemetry-card');
   const modalProfileElem = document.getElementById('modal-animal-profile');

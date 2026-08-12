@@ -30,9 +30,42 @@
         <button class="nav-item-btn" id="nav-dashboard">
           <span class="icon">🎛️</span> Dashboard
         </button>
-        <button class="nav-item-btn active" id="nav-map">
-          <span class="icon">🗺️</span> Map
-        </button>
+
+        <!-- BOTÓN MAP CON VENTANA EMERGENTE (POPUP MENU) -->
+        <div class="nav-dropdown-wrapper">
+          <button class="nav-item-btn active" id="nav-map">
+            <span class="icon">🗺️</span> Map <span class="dropdown-chevron">▾</span>
+          </button>
+
+          <!-- VENTANA EMERGENTE POPUP DE OPCIONES DE MAPA -->
+          <div class="map-nav-popup-menu" id="map-popup-menu">
+            <div class="popup-header-title">
+              <span class="title-icon">🗺️</span>
+              <span>Herramientas de Mapa</span>
+            </div>
+
+            <div class="popup-actions-grid">
+              <!-- BOTÓN 1: DIBUJO DE GEOCERCAS VIRTUALES -->
+              <button class="popup-action-card" id="btn-popup-draw-geofence">
+                <div class="action-card-icon draw-icon">✏️</div>
+                <div class="action-card-info">
+                  <strong>Dibujo de Geocercas</strong>
+                  <span>Delimitar potrero o hato en el mapa</span>
+                </div>
+              </button>
+
+              <!-- BOTÓN 2: IR A UBICACIÓN ACTUAL -->
+              <button class="popup-action-card" id="btn-popup-current-location">
+                <div class="action-card-icon location-icon">📍</div>
+                <div class="action-card-info">
+                  <strong>Ubicación Actual</strong>
+                  <span>Ir a tu posición GPS en vivo</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <button class="nav-item-btn" id="nav-livestock">
           <span class="icon">🐂</span> Livestock
         </button>
