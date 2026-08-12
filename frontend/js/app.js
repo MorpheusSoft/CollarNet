@@ -34,6 +34,7 @@ import {
   drawGPSTracks,
   animateHerdGuidance,
   locateUserPosition,
+  undoLastAction,
   ESRI_SATELLITE,
   OSM_STREETS
 } from './mapManager.js';
@@ -269,6 +270,25 @@ function initUIEvents() {
   if (btnMapMyLocation) {
     btnMapMyLocation.addEventListener('click', () => {
       locateUserPosition();
+    });
+  }
+
+  // Acción 4: Botón de Regresar / Deshacer la Acción Reciente (desde desplegable y barra superior)
+  const btnPopupUndoAction = document.getElementById('btn-popup-undo-action');
+  const btnMapUndoAction = document.getElementById('btn-map-undo-action');
+
+  if (btnPopupUndoAction) {
+    btnPopupUndoAction.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (mapPopupMenu) mapPopupMenu.classList.remove('active');
+      if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
+      undoLastAction();
+    });
+  }
+
+  if (btnMapUndoAction) {
+    btnMapUndoAction.addEventListener('click', () => {
+      undoLastAction();
     });
   }
 

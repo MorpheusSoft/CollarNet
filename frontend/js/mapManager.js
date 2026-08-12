@@ -273,6 +273,7 @@ export function drawGeocercas(hatosList = [], potrerosList = []) {
 export function focusOnGeofence(type, id) {
   const mapObj = type === 'hato' ? hatoPolygonsMap : potreroPolygonsMap;
   if (mapObj.has(id)) {
+    recordCameraState(`Vista previa antes de enfocar geocerca ${id}`);
     const layer = mapObj.get(id);
     map.fitBounds(layer.getBounds());
     layer.openTooltip();
@@ -478,6 +479,7 @@ export function updateAnimalMarker(data) {
  */
 export function centerOnAnimal(collarId) {
   if (animalMarkersMap.has(collarId)) {
+    recordCameraState(`Vista previa antes de enfocar Res ${collarId}`);
     const marker = animalMarkersMap.get(collarId);
     map.setView(marker.getLatLng(), 17);
     marker.openPopup();
@@ -588,10 +590,68 @@ export function animateHerdGuidance(targetLat = 9.1025, targetLon = -67.0980, on
   }, 150);
 }
 
+// Historial de Acciones del Mapa (Undo Stack)
+let actionHistory = [];
+
+/**
+ * Guarda el estado actual de la cámara antes de realizar un movimiento
+ */
+function recordCameraState(actionLabel = 'Movimiento de cámara') {
+  if (!map) return;
+  const center = map.getCenter();
+  const zoom = map.getZoom();
+  actionHistory.push({
+    type: 'camera',
+    label: actionLabel,
+    center: [center.lat, center.lng],
+    zoom: zoom
+  });
+  if (actionHistory.length > 20) actionHistory.shift();
+}
+
+/**
+ * Revierte la última acción realizada en el mapa (Vértice dibujado o movimiento de cámara)
+ */
+export function undoLastAction() {
+  // 1. Si está en modo dibujo activo y hay vértices colocados, deshacer el último punto
+  if (isDrawing && tempPoints.length > 0) {
+    tempPoints.pop();
+    const lastMarker = tempMarkers.pop();
+    if (lastMarker) map.removeLayer(lastMarker);
+
+    if (tempPolyline) {
+      if (tempPoints.length > 0) {
+        tempPolyline.setLatLngs(tempPoints);
+      } else {
+        map.removeLayer(tempPolyline);
+        tempPolyline = null;
+      }
+    }
+    
+    alert(`↩️ Vértice de geocerca revertido. (Puntos restantes: ${tempPoints.length})`);
+    return;
+  }
+
+  // 2. Si hay historial de movimientos de cámara o navegaciones
+  if (actionHistory.length > 0) {
+    const lastAction = actionHistory.pop();
+    if (lastAction.type === 'camera') {
+      map.flyTo(lastAction.center, lastAction.zoom, { duration: 1.2 });
+      alert(`↩️ Acción revertida: ${lastAction.label}`);
+      return;
+    }
+  }
+
+  // 3. Fallback: Si no hay acciones previas en la pila, restaurar vista por defecto del Hato
+  alert('↩️ No hay más acciones recientes. Restaurando la vista inicial del Hato principal.');
+  map.flyTo([9.1000, -67.1000], 15, { duration: 1.2 });
+}
+
 /**
  * Obriene la ubicación GPS del usuario en el navegador y vuela la cámara sobre su posición
  */
 export function locateUserPosition() {
+  recordCameraState('Vista previa antes de Ir a Ubicación GPS');
   if ('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
