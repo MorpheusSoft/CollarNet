@@ -36,6 +36,8 @@ import {
   animateHerdGuidance,
   locateUserPosition,
   undoLastAction,
+  searchLocationByCity,
+  setFarmCustomLocation,
   ESRI_SATELLITE,
   OSM_STREETS
 } from './mapManager.js';
@@ -271,6 +273,101 @@ function initUIEvents() {
   if (btnMapMyLocation) {
     btnMapMyLocation.addEventListener('click', () => {
       locateUserPosition();
+    });
+  }
+
+  // Acción 3.5: Buscador Geográfico de Ciudad, Estado, País o Finca
+  const btnMapSearchLocation = document.getElementById('btn-map-search-location');
+  const mapSearchOverlayBar = document.getElementById('map-search-overlay-bar');
+  const btnCloseCitySearch = document.getElementById('btn-close-city-search');
+  const btnExecuteCitySearch = document.getElementById('btn-execute-city-search');
+  const inputSearchLocation = document.getElementById('input-search-location');
+  const btnOpenManualCoordModal = document.getElementById('btn-open-manual-coord-modal');
+
+  if (btnMapSearchLocation) {
+    btnMapSearchLocation.addEventListener('click', () => {
+      if (mapSearchOverlayBar) {
+        const isHidden = mapSearchOverlayBar.style.display === 'none' || !mapSearchOverlayBar.style.display;
+        mapSearchOverlayBar.style.display = isHidden ? 'flex' : 'none';
+        if (isHidden && inputSearchLocation) inputSearchLocation.focus();
+      }
+    });
+  }
+
+  if (btnCloseCitySearch) {
+    btnCloseCitySearch.addEventListener('click', () => {
+      if (mapSearchOverlayBar) mapSearchOverlayBar.style.display = 'none';
+    });
+  }
+
+  const handleCitySearchExecution = async () => {
+    const query = inputSearchLocation?.value;
+    if (!query) {
+      alert('Por favor escribe el nombre de una Ciudad, Estado, País o Finca para buscar.');
+      return;
+    }
+    if (btnExecuteCitySearch) {
+      btnExecuteCitySearch.disabled = true;
+      btnExecuteCitySearch.innerText = '🔍 Buscando...';
+    }
+    await searchLocationByCity(query);
+    if (btnExecuteCitySearch) {
+      btnExecuteCitySearch.disabled = false;
+      btnExecuteCitySearch.innerText = '🔍 Buscar';
+    }
+  };
+
+  if (btnExecuteCitySearch) {
+    btnExecuteCitySearch.addEventListener('click', handleCitySearchExecution);
+  }
+
+  if (inputSearchLocation) {
+    inputSearchLocation.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleCitySearchExecution();
+      }
+    });
+  }
+
+  // Modal Configuración Manual de Coordenadas y Ciudad
+  const modalManualLocation = document.getElementById('modal-manual-location');
+  if (btnOpenManualCoordModal && modalManualLocation) {
+    btnOpenManualCoordModal.addEventListener('click', () => {
+      modalManualLocation.classList.add('active');
+    });
+  }
+
+  const btnModalGeocodeSearch = document.getElementById('btn-modal-geocode-search');
+  if (btnModalGeocodeSearch) {
+    btnModalGeocodeSearch.addEventListener('click', async () => {
+      const query = document.getElementById('loc-search-text')?.value;
+      if (!query) {
+        alert('Por favor escribe el nombre de una Ciudad o País.');
+        return;
+      }
+      btnModalGeocodeSearch.disabled = true;
+      btnModalGeocodeSearch.innerText = 'Buscando...';
+      const result = await searchLocationByCity(query);
+      btnModalGeocodeSearch.disabled = false;
+      btnModalGeocodeSearch.innerText = '🔍 Buscar';
+      if (result) {
+        document.getElementById('loc-lat').value = result.lat;
+        document.getElementById('loc-lng').value = result.lon;
+      }
+    });
+  }
+
+  const formManualLocationConfig = document.getElementById('form-manual-location-config');
+  if (formManualLocationConfig) {
+    formManualLocationConfig.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const lat = document.getElementById('loc-lat').value;
+      const lon = document.getElementById('loc-lng').value;
+      const farmName = document.getElementById('loc-farm-name').value;
+
+      setFarmCustomLocation(lat, lon, farmName);
+      if (modalManualLocation) modalManualLocation.classList.remove('active');
     });
   }
 

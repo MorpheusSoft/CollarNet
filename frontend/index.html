@@ -127,13 +127,24 @@
           </div>
           <button class="map-tool-btn" id="btn-map-undo-action" title="Regresar Acción Recién Realizada (Deshacer)">↩️</button>
           <button class="map-tool-btn" id="btn-map-my-location" title="Ir a Mi Posición Actual GPS">📍</button>
-          <button class="map-tool-btn" title="Buscar en Mapa">🔍</button>
+          <button class="map-tool-btn" id="btn-map-search-location" title="Buscar Ciudad, Estado, País o Finca en el Mapa">🔍</button>
           <button class="map-tool-btn" title="Filtrar por Fecha">📅</button>
           <select class="map-dropdown-select">
             <option>Green Valley Farm - North</option>
             <option>Pasture Sector South B</option>
           </select>
         </div>
+      </div>
+
+      <!-- BARRA FLOTANTE DE BÚSQUEDA DE CIUDAD, PAÍS O FINCA -->
+      <div class="map-search-overlay-bar" id="map-search-overlay-bar" style="display: none;">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="input-search-location" class="map-search-input" placeholder="Buscar Ciudad, Estado, País o Finca (ej. Calabozo, Venezuela)...">
+        </div>
+        <button type="button" id="btn-execute-city-search" class="btn-execute-search">🔍 Buscar</button>
+        <button type="button" id="btn-open-manual-coord-modal" class="btn-manual-coords" title="Ingresar Latitud y Longitud Manualmente">🌐 Coordenadas</button>
+        <button type="button" id="btn-close-city-search" class="btn-close-search" title="Cerrar Buscador">✕</button>
       </div>
 
       <!-- MAPA INTERACTIVO LEAFLET.JS -->
@@ -536,6 +547,54 @@
           </div>
         </form>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BÚSQUEDA Y CONFIGURACIÓN MANUAL DE UBICACIÓN DE LA FINCA -->
+  <div class="modal" id="modal-manual-location" style="z-index: 2400;" onclick="if(event.target === this) this.classList.remove('active')">
+    <div class="modal-content modal-geofence-card" style="width: 500px;">
+      
+      <div class="modal-header-bar">
+        <h2>🌐 Ubicación y Coordenadas de la Finca</h2>
+        <button class="close-modal-btn" onclick="document.getElementById('modal-manual-location').classList.remove('active')">✕</button>
+      </div>
+
+      <div class="modal-body-content">
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; line-height: 1.4;">
+          Busca por Ciudad / País o escribe las coordenadas exactas de tu hacienda para centrar el mapa y fijar la ubicación del Hato.
+        </p>
+
+        <form id="form-manual-location-config">
+          <div class="form-group">
+            <label for="loc-search-text">Buscar por Ciudad, Municipio, Estado o País</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="loc-search-text" class="form-input" placeholder="ej. Calabozo, Guárico, Venezuela">
+              <button type="button" id="btn-modal-geocode-search" class="btn-save-geofence" style="white-space: nowrap; padding: 0 16px; background: linear-gradient(135deg, #3b82f6, #1d4ed8);">🔍 Buscar</button>
+            </div>
+          </div>
+
+          <div class="form-row-2col" style="margin-top: 14px;">
+            <div class="form-group">
+              <label for="loc-lat">Latitud GPS <span class="required">*</span></label>
+              <input type="number" step="any" id="loc-lat" class="form-input" placeholder="ej. 8.9208" required>
+            </div>
+            <div class="form-group">
+              <label for="loc-lng">Longitud GPS <span class="required">*</span></label>
+              <input type="number" step="any" id="loc-lng" class="form-input" placeholder="ej. -67.4234" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="loc-farm-name">Nombre / Referencia del Hato o Finca</label>
+            <input type="text" id="loc-farm-name" class="form-input" placeholder="ej. Hato San José - Finca Principal">
+          </div>
+
+          <div class="modal-actions-bar" style="margin-top: 20px;">
+            <button type="button" class="btn-cancel-modal" onclick="document.getElementById('modal-manual-location').classList.remove('active')">❌ Cancelar</button>
+            <button type="submit" class="btn-save-geofence">📍 Centrar & Guardar Ubicación</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

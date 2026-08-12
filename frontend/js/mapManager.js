@@ -20,6 +20,13 @@ let onPolygonCompleteCallback = null;
  * Inicializa el mapa de Leaflet
  */
 export function initMap(lat = 9.1000, lon = -67.1000, zoom = 15) {
+  const savedLat = localStorage.getItem('collarnet_saved_farm_lat');
+  const savedLng = localStorage.getItem('collarnet_saved_farm_lng');
+  if (savedLat && savedLng) {
+    lat = parseFloat(savedLat);
+    lon = parseFloat(savedLng);
+  }
+
   map = L.map('map', {
     zoomControl: true,
     attributionControl: true
@@ -916,6 +923,96 @@ export function locateUserPosition() {
   } else {
     alert('📍 La geolocalización no está soportada en tu navegador. Centrando mapa en el Hato principal.');
     map.flyTo([9.1025, -67.0980], 16, { duration: 1.5 });
+  }
+}
+
+/**
+ * Realiza una búsqueda geográfica por Nombre de Ciudad, Municipio, Estado o País (Nominatim OpenStreetMap)
+ */
+export async function searchLocationByCity(query) {
+  if (!query || !query.trim()) return null;
+
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1`);
+    const results = await response.json();
+
+    if (results && results.length > 0) {
+      const top = results[0];
+      const lat = parseFloat(top.lat);
+      const lon = parseFloat(top.lon);
+      const displayName = top.display_name;
+
+      // Volar la cámara del mapa a la ciudad / país encontrado
+      recordCameraState(`Búsqueda de ciudad: ${query}`);
+      map.flyTo([lat, lon], 14, { duration: 1.8 });
+
+      // Colocar pin arrastrable en esa posición
+      if (window.userLocMarker) map.removeLayer(window.userLocMarker);
+
+      const pulseIcon = L.divIcon({
+        className: 'user-location-pulse-container',
+        html: `<div class="user-pulse-dot" style="font-size:26px; cursor:grab;" title="Arrastra para ajustar">📍</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 32]
+      });
+
+      window.userLocMarker = L.marker([lat, lon], { icon: pulseIcon, draggable: true }).addTo(map);
+      updateUserLocationPopup(lat, lon);
+
+      window.userLocMarker.on('dragend', (e) => {
+        const newPos = e.target.getLatLng();
+        updateUserLocationPopup(newPos.lat, newPos.lng);
+      });
+
+      return { lat, lon, displayName };
+    } else {
+      alert(`⚠️ No se encontraron resultados para "${query}". Prueba ingresando la Ciudad y el País (ej. "Calabozo, Venezuela" o "Medellín, Colombia").`);
+      return null;
+    }
+  } catch (err) {
+    console.error('[Geocoding Error]', err);
+    alert(`Error de conexión al buscar ciudad: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * Centra y guarda directamente las coordenadas Latitud / Longitud ingresadas manualmente
+ */
+export function setFarmCustomLocation(lat, lon, farmName = '') {
+  const latitude = parseFloat(lat);
+  const longitude = parseFloat(lon);
+
+  if (isNaN(latitude) || isNaN(longitude)) {
+    alert('Por favor ingresa coordenadas válidas en números decimales.');
+    return;
+  }
+
+  recordCameraState(`Ubicación manual: ${latitude}, ${longitude}`);
+  map.flyTo([latitude, longitude], 15, { duration: 1.5 });
+
+  if (window.userLocMarker) map.removeLayer(window.userLocMarker);
+
+  const pulseIcon = L.divIcon({
+    className: 'user-location-pulse-container',
+    html: `<div class="user-pulse-dot" style="font-size:26px; cursor:grab;" title="Arrastra para ajustar">📍</div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 32]
+  });
+
+  window.userLocMarker = L.marker([latitude, longitude], { icon: pulseIcon, draggable: true }).addTo(map);
+  updateUserLocationPopup(latitude, longitude);
+
+  window.userLocMarker.on('dragend', (e) => {
+    const newPos = e.target.getLatLng();
+    updateUserLocationPopup(newPos.lat, newPos.lng);
+  });
+
+  saveCustomUserLocation(latitude, longitude);
+
+  if (farmName) {
+    const farmTitleElem = document.querySelector('.farm-title');
+    if (farmTitleElem) farmTitleElem.innerHTML = `${farmName} <small>Centro Hato</small>`;
   }
 }
 
