@@ -24,6 +24,7 @@ import {
   initMap,
   setLayer,
   startDrawing,
+  cancelDrawing,
   onPolygonComplete,
   drawGeocercas,
   updateAnimalMarker,
@@ -390,30 +391,152 @@ function initUIEvents() {
     });
   }
 
-  // Recibir vértices completados desde el mapa
-  onPolygonComplete(async (mode, vertices) => {
+  // Variable de estado para la geocerca trazada pendiente de guardar
+  let pendingPolygonData = null;
+
+  /**
+   * Calcula el área aproximada de un polígono trazado en Hectáreas (Ha)
+   */
+  function calculatePolygonAreaHa(vertices) {
+    if (!vertices || vertices.length < 3) return '0.00';
+    let area = 0;
+    const radius = 6378137; // Radio medio de la Tierra en metros
+    for (let i = 0; i < vertices.length; i++) {
+      const p1 = vertices[i];
+      const p2 = vertices[(i + 1) % vertices.length];
+      const lat1 = p1[0] * Math.PI / 180;
+      const lat2 = p2[0] * Math.PI / 180;
+      const lon1 = p1[1] * Math.PI / 180;
+      const lon2 = p2[1] * Math.PI / 180;
+      area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+    }
+    area = Math.abs(area * radius * radius / 2.0);
+    return (area / 10000).toFixed(2); // Convertir m² a Hectáreas
+  }
+
+  // Recibir vértices completados inmediatamente al terminar la delimitación en el mapa
+  onPolygonComplete((mode, vertices) => {
     if (btnDrawHato) btnDrawHato.classList.remove('active');
     if (btnDrawPotrero) btnDrawPotrero.classList.remove('active');
     
-    const nombre = prompt(`Ingrese el nombre para este nuevo ${mode === 'hato' ? 'Hato' : 'Potrero'}:`);
-    if (!nombre) return;
+    pendingPolygonData = { mode, vertices };
 
-    try {
-      if (mode === 'hato') {
-        await apiGuardarHato(null, nombre, vertices);
-        alert(`Hato "${nombre}" guardado con éxito.`);
-      } else {
-        const hatoOptions = currentGeocercasData.hatos.map(h => `ID ${h.id} -> ${h.nombre}`).join('\n');
-        const hatoId = prompt(`Ingresa el número de ID del Hato al que pertenece este Potrero:\n\nHatos disponibles:\n${hatoOptions || 'Ninguno (Crea un hato primero)'}`);
-        if (!hatoId) return;
-        await apiGuardarPotrero(null, parseInt(hatoId, 10), nombre, vertices, 50);
-        alert(`Potrero "${nombre}" guardado con éxito.`);
+    const areaHa = calculatePolygonAreaHa(vertices);
+    const modalGeofenceElem = document.getElementById('modal-geofence-register');
+    const modalTitleElem = document.getElementById('geo-modal-title');
+    const summaryBadgeElem = document.getElementById('geo-summary-badge');
+    const calculatedAreaElem = document.getElementById('geo-calculated-area');
+    const verticesCountElem = document.getElementById('geo-vertices-count');
+    const parentHatoGroupElem = document.getElementById('group-parent-hato-select');
+    const parentHatoSelectElem = document.getElementById('geo-parent-hato');
+    const propietarioSelectElem = document.getElementById('geo-propietario');
+    const btnSubmitElem = document.getElementById('btn-submit-geofence');
+
+    // Llenar resumen visual en el banner del modal
+    if (calculatedAreaElem) calculatedAreaElem.textContent = `${areaHa} Ha`;
+    if (verticesCountElem) verticesCountElem.textContent = `${vertices.length} Puntos GPS`;
+    if (document.getElementById('geo-form-mode')) document.getElementById('geo-form-mode').value = mode;
+
+    if (mode === 'hato') {
+      if (modalTitleElem) modalTitleElem.textContent = '📌 Alta & Registro de Nuevo Hato Delimitado';
+      if (summaryBadgeElem) {
+        summaryBadgeElem.className = 'summary-badge-type';
+        summaryBadgeElem.textContent = '🔴 Hato Principal';
       }
-      await refreshData();
-    } catch (err) {
-      alert(`Error al guardar: ${err.message}`);
+      if (parentHatoGroupElem) parentHatoGroupElem.style.display = 'none';
+      if (btnSubmitElem) btnSubmitElem.textContent = '💾 Guardar Hato & Activar Geocerca';
+      const nameInput = document.getElementById('geo-name');
+      if (nameInput) {
+        nameInput.placeholder = 'ej. Hato Santa María - Sector Norte';
+        nameInput.value = '';
+        nameInput.focus();
+      }
+    } else {
+      if (modalTitleElem) modalTitleElem.textContent = '📌 Alta & Registro de Nuevo Potrero Delimitado';
+      if (summaryBadgeElem) {
+        summaryBadgeElem.className = 'summary-badge-type potrero';
+        summaryBadgeElem.textContent = '🟡 Potrero de Rotación';
+      }
+      if (parentHatoGroupElem) parentHatoGroupElem.style.display = 'block';
+      if (btnSubmitElem) btnSubmitElem.textContent = '💾 Guardar Potrero & Activar Geocerca';
+      const nameInput = document.getElementById('geo-name');
+      if (nameInput) {
+        nameInput.placeholder = 'ej. Potrero 3B - Pasto Estrella';
+        nameInput.value = '';
+        nameInput.focus();
+      }
+
+      // Llenar selector de Hato Propietario si existe
+      if (parentHatoSelectElem && currentGeocercasData) {
+        parentHatoSelectElem.innerHTML = '<option value="">Selecciona el hato propietario...</option>';
+        currentGeocercasData.hatos.forEach(h => {
+          parentHatoSelectElem.innerHTML += `<option value="${h.id}">${h.nombre} (ID: ${h.id})</option>`;
+        });
+      }
     }
+
+    // Llenar selector de Propietarios cargados
+    if (propietarioSelectElem) {
+      propietarioSelectElem.innerHTML = '<option value="">Asociar a Propietario / Encargado...</option>';
+      const animPropSelect = document.getElementById('anim-propietario');
+      if (animPropSelect) {
+        Array.from(animPropSelect.options).forEach(opt => {
+          if (opt.value) propietarioSelectElem.add(opt.cloneNode(true));
+        });
+      }
+    }
+
+    // Abrir inmediatamente la ventana modal interactiva
+    if (modalGeofenceElem) modalGeofenceElem.classList.add('active');
   });
+
+  // Listener para enviar el formulario de registro de la geocerca delimitada
+  const formRegisterGeofence = document.getElementById('form-register-delimited-geofence');
+  if (formRegisterGeofence) {
+    formRegisterGeofence.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!pendingPolygonData) return;
+
+      const { mode, vertices } = pendingPolygonData;
+      const nombre = document.getElementById('geo-name').value;
+      const capacidad = parseInt(document.getElementById('geo-capacity').value, 10) || 50;
+
+      try {
+        if (mode === 'hato') {
+          await apiGuardarHato(null, nombre, vertices);
+          alert(`✅ Hato "${nombre}" guardado exitosamente con sus datos y perímetro de geocerca.`);
+        } else {
+          const hatoId = parseInt(document.getElementById('geo-parent-hato').value, 10);
+          if (isNaN(hatoId)) {
+            alert('Por favor selecciona el Hato Principal al que pertenece este potrero.');
+            return;
+          }
+          await apiGuardarPotrero(null, hatoId, nombre, vertices, capacidad);
+          alert(`✅ Potrero "${nombre}" guardado exitosamente y vinculado al Hato ID ${hatoId}.`);
+        }
+
+        const modalGeofenceElem = document.getElementById('modal-geofence-register');
+        if (modalGeofenceElem) modalGeofenceElem.classList.remove('active');
+        formRegisterGeofence.reset();
+        pendingPolygonData = null;
+
+        await refreshData();
+      } catch (err) {
+        alert(`Fallo al guardar la geocerca: ${err.message}`);
+      }
+    });
+  }
+
+  // Listener para el botón Cancelar del modal
+  const btnCancelGeofenceModal = document.getElementById('btn-cancel-geofence-modal');
+  if (btnCancelGeofenceModal) {
+    btnCancelGeofenceModal.addEventListener('click', () => {
+      const modalGeofenceElem = document.getElementById('modal-geofence-register');
+      if (modalGeofenceElem) modalGeofenceElem.classList.remove('active');
+      cancelDrawing();
+      pendingPolygonData = null;
+    });
+  }
 
   // Filtrar Potreros dinámicamente al seleccionar un Hato
   const syncHatoSelect = document.getElementById('sync-hato-select');
