@@ -479,6 +479,21 @@
         <form id="form-register-delimited-geofence" class="geofence-register-form">
           <input type="hidden" id="geo-form-mode" value="hato">
 
+          <!-- SELECTOR INTERACTIVO DE TIPO DE GEOCERCA (HATO VS POTRERO) -->
+          <div class="form-group">
+            <label>Tipo de Geocerca a Registrar <span class="required">*</span></label>
+            <div class="geofence-type-selector">
+              <div class="type-pill-option active" id="pill-type-hato">
+                <input type="radio" name="geo-type-radio" id="radio-type-hato" value="hato" checked style="display:none;">
+                <span>🔴 Hato Principal</span>
+              </div>
+              <div class="type-pill-option" id="pill-type-potrero">
+                <input type="radio" name="geo-type-radio" id="radio-type-potrero" value="potrero" style="display:none;">
+                <span>🟡 Potrero de Rotación</span>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="geo-name">Nombre del Hato o Potrero <span class="required">*</span></label>
             <input type="text" id="geo-name" class="form-input" placeholder="ej. Hato Santa María - Sector Norte" required>
