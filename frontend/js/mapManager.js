@@ -31,6 +31,19 @@ export function initMap(lat = 9.1000, lon = -67.1000, zoom = 15) {
   // Registrar eventos de mapa para dibujo poligonal libre
   map.on('click', handleMapClick);
 
+  // Agregar botón flotante de Posición Actual GPS en los controles de la esquina superior izquierda
+  const locateControl = L.control({ position: 'topleft' });
+  locateControl.onAdd = function() {
+    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom-locate');
+    div.innerHTML = `<button type="button" title="Ir a Mi Posición Actual GPS" style="background:#121826; border:1px solid rgba(255,255,255,0.2); width:34px; height:34px; line-height:34px; font-size:16px; cursor:pointer; color:white; border-radius:4px; display:flex; align-items:center; justify-content:center;">📍</button>`;
+    div.onclick = function(e) {
+      L.DomEvent.stopPropagation(e);
+      locateUserPosition();
+    };
+    return div;
+  };
+  locateControl.addTo(map);
+
   return map;
 }
 

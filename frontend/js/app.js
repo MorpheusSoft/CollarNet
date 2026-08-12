@@ -253,13 +253,21 @@ function initUIEvents() {
     });
   }
 
-  // Acción 2: Botón para ir a la Ubicación Actual GPS
+  // Acción 2: Botón para ir a la Ubicación Actual GPS (desde desplegable)
   if (btnPopupCurrentLocation) {
     btnPopupCurrentLocation.addEventListener('click', (e) => {
       e.stopPropagation();
       if (mapPopupMenu) mapPopupMenu.classList.remove('active');
       if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
       
+      locateUserPosition();
+    });
+  }
+
+  // Acción 3: Botón de Posición Actual directo en la barra superior de acciones del mapa
+  const btnMapMyLocation = document.getElementById('btn-map-my-location');
+  if (btnMapMyLocation) {
+    btnMapMyLocation.addEventListener('click', () => {
       locateUserPosition();
     });
   }
