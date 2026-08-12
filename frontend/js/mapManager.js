@@ -73,6 +73,7 @@ export function startDrawing(mode) {
   isDrawing = true;
   drawMode = mode;
   console.log(`[Map] Iniciando dibujo para: ${mode}`);
+  showDrawingControlBanner();
 }
 
 /**
@@ -90,6 +91,99 @@ export function cancelDrawing() {
     map.removeLayer(tempPolyline);
     tempPolyline = null;
   }
+
+  hideDrawingControlBanner();
+}
+
+/**
+ * Renderiza el banner flotante de control de trazado sobre el mapa
+ */
+function showDrawingControlBanner() {
+  hideDrawingControlBanner();
+
+  const banner = document.createElement('div');
+  banner.id = 'map-drawing-banner';
+  banner.style.cssText = `
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    color: white;
+    font-size: 0.85rem;
+    backdrop-filter: blur(8px);
+  `;
+
+  const modeLbl = drawMode === 'hato' ? '🔴 Hato Principal' : '🟡 Potrero de Rotación';
+
+  banner.innerHTML = `
+    <span>✏️ <strong>Trazando ${modeLbl}:</strong> <small id="drawing-banner-count">0 puntos</small></span>
+    <button id="btn-banner-finish-drawing" style="
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    ">✅ Finalizar y Nombrar</button>
+    <button id="btn-banner-undo-drawing" style="
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+    ">↩️ Deshacer</button>
+    <button id="btn-banner-cancel-drawing" style="
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+    ">❌ Cancelar</button>
+  `;
+
+  const mapContainer = document.getElementById('map');
+  if (mapContainer) mapContainer.appendChild(banner);
+
+  document.getElementById('btn-banner-finish-drawing').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closePolygon();
+  });
+
+  document.getElementById('btn-banner-undo-drawing').addEventListener('click', (e) => {
+    e.stopPropagation();
+    undoLastAction();
+    updateDrawingBannerCount();
+  });
+
+  document.getElementById('btn-banner-cancel-drawing').addEventListener('click', (e) => {
+    e.stopPropagation();
+    cancelDrawing();
+  });
+}
+
+function hideDrawingControlBanner() {
+  const banner = document.getElementById('map-drawing-banner');
+  if (banner) banner.remove();
+}
+
+function updateDrawingBannerCount() {
+  const countElem = document.getElementById('drawing-banner-count');
+  if (countElem) {
+    countElem.textContent = `${tempPoints.length} punto${tempPoints.length === 1 ? '' : 's'}`;
+  }
 }
 
 /**
@@ -101,23 +195,28 @@ function handleMapClick(e) {
   const latlng = e.latlng;
   tempPoints.push([latlng.lat, latlng.lng]);
 
+  updateDrawingBannerCount();
+
   // Crear marcador para el vértice
   const marker = L.circleMarker(latlng, {
-    radius: 6,
+    radius: 7,
     color: drawMode === 'hato' ? '#ef4444' : '#f59e0b',
     fillColor: '#ffffff',
     fillOpacity: 1,
     weight: 2
   }).addTo(map);
 
-  // Si es el primer punto, añadir evento para cerrar el polígono al hacer clic
-  if (tempMarkers.length === 0) {
-    marker.on('click', (event) => {
-      L.DomEvent.stopPropagation(event);
+  // Permitir cerrar el polígono al hacer clic en cualquiera de los marcadores si hay 3 o más vértices
+  marker.on('click', (event) => {
+    L.DomEvent.stopPropagation(event);
+    if (tempPoints.length >= 3) {
       closePolygon();
-    });
-    marker.bindTooltip('Haz clic aquí para cerrar el polígono', { direction: 'top' });
-  }
+    } else {
+      alert('Se requieren por lo menos 3 vértices para delimitar el perímetro.');
+    }
+  });
+
+  marker.bindTooltip(tempMarkers.length === 0 ? 'Haz clic aquí o en "Finalizar" para nombrar' : `Vértice ${tempPoints.length}`, { direction: 'top' });
 
   tempMarkers.push(marker);
 
@@ -139,7 +238,6 @@ function handleMapClick(e) {
 function closePolygon() {
   if (tempPoints.length < 3) {
     alert('Un polígono requiere por lo menos 3 vértices para ser guardado.');
-    cancelDrawing();
     return;
   }
 
@@ -163,13 +261,25 @@ function closePolygon() {
     potreroPolygonsMap.set('temp', polygon);
   }
 
+  hideDrawingControlBanner();
+
   // Notificar callback
   if (onPolygonCompleteCallback) {
     onPolygonCompleteCallback(mode, vertices);
   }
 
-  cancelDrawing();
+  // Limpiar temporales sin ocultar el polígono resultante
+  isDrawing = false;
+  drawMode = null;
+  tempPoints = [];
+  tempMarkers.forEach(m => map.removeLayer(m));
+  tempMarkers = [];
+  if (tempPolyline) {
+    map.removeLayer(tempPolyline);
+    tempPolyline = null;
+  }
 }
+
 
 /**
  * Carga y dibuja los Hatos y Potreros en el mapa
