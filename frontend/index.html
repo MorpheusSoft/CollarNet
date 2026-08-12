@@ -71,6 +71,15 @@
                   <span>Deshacer punto o restaurar vista previa</span>
                 </div>
               </button>
+
+              <!-- BOTÓN 4: CAMBIAR A VISTA CALLES / RUTAS -->
+              <button class="popup-action-card" id="btn-popup-toggle-streets">
+                <div class="action-card-icon streets-icon">🏙️</div>
+                <div class="action-card-info">
+                  <strong>Vista Calles / Rutas</strong>
+                  <span>Alternar mapa de calles OpenStreetMap</span>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -112,6 +121,10 @@
         </div>
 
         <div class="map-tool-actions">
+          <div class="map-layer-pill-switch" title="Cambiar Vista de Mapa (Satélite / Calles)">
+            <button class="layer-switch-btn active" id="btn-layer-sat">🛰️ Satélite</button>
+            <button class="layer-switch-btn" id="btn-layer-streets">🏙️ Calles</button>
+          </div>
           <button class="map-tool-btn" id="btn-map-undo-action" title="Regresar Acción Recién Realizada (Deshacer)">↩️</button>
           <button class="map-tool-btn" id="btn-map-my-location" title="Ir a Mi Posición Actual GPS">📍</button>
           <button class="map-tool-btn" title="Buscar en Mapa">🔍</button>

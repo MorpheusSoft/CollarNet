@@ -311,22 +311,45 @@ function initUIEvents() {
     });
   }
 
-  // Toggles de Capa de Mapa (Satélite / Calles)
-  const btnSat = document.getElementById('btn-layer-satellite');
-  if (btnSat) {
-    btnSat.addEventListener('click', (e) => {
-      document.querySelectorAll('.map-control-btn').forEach(btn => btn.classList.remove('active'));
-      e.target.classList.add('active');
-      setLayer(ESRI_SATELLITE, 'Tiles &copy; Esri &mdash; Source: Esri, USDA, USGS, and the GIS User Community');
-    });
+  // Acción 5: Toggles de Capa de Mapa (Satélite vs Calles OpenStreetMap)
+  const btnLayerSat = document.getElementById('btn-layer-sat');
+  const btnLayerStreets = document.getElementById('btn-layer-streets');
+  const btnPopupToggleStreets = document.getElementById('btn-popup-toggle-streets');
+
+  const switchToSatLayer = () => {
+    if (btnLayerSat) btnLayerSat.classList.add('active');
+    if (btnLayerStreets) btnLayerStreets.classList.remove('active');
+    setLayer(ESRI_SATELLITE, 'Tiles &copy; Esri &mdash; Source: Esri, USDA, USGS, and the GIS User Community');
+  };
+
+  const switchToStreetsLayer = () => {
+    if (btnLayerSat) btnLayerSat.classList.remove('active');
+    if (btnLayerStreets) btnLayerStreets.classList.add('active');
+    setLayer(OSM_STREETS, 'Tiles &copy; OpenStreetMap contributors');
+  };
+
+  if (btnLayerSat) {
+    btnLayerSat.addEventListener('click', switchToSatLayer);
   }
 
-  const btnStr = document.getElementById('btn-layer-streets');
-  if (btnStr) {
-    btnStr.addEventListener('click', (e) => {
-      document.querySelectorAll('.map-control-btn').forEach(btn => btn.classList.remove('active'));
-      e.target.classList.add('active');
-      setLayer(OSM_STREETS, 'Tiles &copy; OpenStreetMap contributors');
+  if (btnLayerStreets) {
+    btnLayerStreets.addEventListener('click', switchToStreetsLayer);
+  }
+
+  if (btnPopupToggleStreets) {
+    btnPopupToggleStreets.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (mapPopupMenu) mapPopupMenu.classList.remove('active');
+      if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
+      
+      const isStreetsCurrently = btnLayerStreets && btnLayerStreets.classList.contains('active');
+      if (isStreetsCurrently) {
+        switchToSatLayer();
+        alert('🛰️ Vista Satelital HD Activada.');
+      } else {
+        switchToStreetsLayer();
+        alert('🏙️ Vista de Calles y Rutas (OpenStreetMap) Activada.');
+      }
     });
   }
 
