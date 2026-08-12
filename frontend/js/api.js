@@ -301,38 +301,6 @@ export async function apiGuardarPotrero(id, hatoId, nombre, vertices, capacidad 
 }
 
 /**
- * Guarda o actualiza un Hato dibujado
- */
-export async function apiGuardarHato(id, nombre, vertices) {
-  const res = await fetch(`${API_BASE}/geocercas/hato`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, nombre, vertices })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al guardar hato');
-  }
-  return res.json();
-}
-
-/**
- * Guarda o actualiza un Potrero dibujado
- */
-export async function apiGuardarPotrero(id, hatoId, nombre, vertices, capacidad = 50) {
-  const res = await fetch(`${API_BASE}/geocercas/potrero`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, hatoId, nombre, vertices, capacidad })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al guardar potrero');
-  }
-  return res.json();
-}
-
-/**
  * Elimina un Hato de la base de datos
  */
 export async function apiEliminarHato(id) {
