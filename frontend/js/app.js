@@ -228,27 +228,18 @@ async function refreshData() {
  */
 function initUIEvents() {
   // POPUP DROPDOWN DEL BOTÓN MAP (VENTANA EMERGENTE DE HERRAMIENTAS)
-  const navMapBtn = document.getElementById('nav-map');
   const mapPopupMenu = document.getElementById('map-popup-menu');
   const navDropdownWrapper = document.querySelector('.nav-dropdown-wrapper');
   const btnPopupDrawGeofence = document.getElementById('btn-popup-draw-geofence');
   const btnPopupCurrentLocation = document.getElementById('btn-popup-current-location');
 
-  if (navMapBtn && mapPopupMenu) {
-    navMapBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      mapPopupMenu.classList.toggle('active');
-      if (navDropdownWrapper) navDropdownWrapper.classList.toggle('active');
-    });
-
-    // Cerrar ventana emergente al hacer clic fuera
-    document.addEventListener('click', (e) => {
-      if (navDropdownWrapper && !navDropdownWrapper.contains(e.target)) {
-        mapPopupMenu.classList.remove('active');
-        navDropdownWrapper.classList.remove('active');
-      }
-    });
-  }
+  // Cerrar ventana emergente al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    if (navDropdownWrapper && !navDropdownWrapper.contains(e.target)) {
+      if (mapPopupMenu) mapPopupMenu.classList.remove('active');
+      navDropdownWrapper.classList.remove('active');
+    }
+  });
 
   // Acción 1: Botón para el Dibujo de Geocercas en el Mapa
   if (btnPopupDrawGeofence) {

@@ -33,7 +33,7 @@
 
         <!-- BOTÓN MAP CON VENTANA EMERGENTE (POPUP MENU) -->
         <div class="nav-dropdown-wrapper">
-          <button class="nav-item-btn active" id="nav-map">
+          <button class="nav-item-btn active" id="nav-map" onclick="event.stopPropagation(); const m=document.getElementById('map-popup-menu'); const p=this.parentElement; const isAct=m.classList.contains('active'); if(isAct){ m.classList.remove('active'); p.classList.remove('active'); } else { m.classList.add('active'); p.classList.add('active'); }">
             <span class="icon">🗺️</span> Map <span class="dropdown-chevron">▾</span>
           </button>
 

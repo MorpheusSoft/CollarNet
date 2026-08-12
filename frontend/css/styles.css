@@ -58,14 +58,16 @@ body.dark-theme {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 1000;
+  z-index: 3000 !important;
   position: relative;
+  overflow: visible !important;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 32px;
+  overflow: visible !important;
 }
 
 .brand-logo {
@@ -94,6 +96,7 @@ body.dark-theme {
 .main-nav-links {
   display: flex;
   gap: 4px;
+  overflow: visible !important;
 }
 
 .nav-item-btn {
@@ -135,6 +138,7 @@ body.dark-theme {
 .nav-dropdown-wrapper {
   position: relative;
   display: inline-block;
+  overflow: visible !important;
 }
 
 .dropdown-chevron {
@@ -154,25 +158,27 @@ body.dark-theme {
   left: 0;
   margin-top: 8px;
   width: 290px;
-  background-color: #121826;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: #121826 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 14px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9) !important;
   padding: 12px;
-  z-index: 2500;
+  z-index: 9999 !important;
   display: flex;
   flex-direction: column;
   gap: 8px;
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transform: translateY(-8px);
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
 }
 
 .map-nav-popup-menu.active {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
 }
 
 .popup-header-title {
