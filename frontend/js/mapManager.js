@@ -758,36 +758,158 @@ export function undoLastAction() {
 }
 
 /**
- * Obriene la ubicación GPS del usuario en el navegador y vuela la cámara sobre su posición
+ * Renderiza el popup interactivo para la ubicación actual con opción de mover y guardar
+ */
+function updateUserLocationPopup(lat, lng) {
+  if (!window.userLocMarker) return;
+
+  const savedLat = localStorage.getItem('collarnet_saved_farm_lat');
+  const savedLng = localStorage.getItem('collarnet_saved_farm_lng');
+  const isSavedPosition = savedLat && Math.abs(parseFloat(savedLat) - lat) < 0.0001 && Math.abs(parseFloat(savedLng) - lng) < 0.0001;
+
+  const html = `
+    <div class="user-location-popup-card" style="padding: 6px; min-width: 230px; text-align: center; font-family: system-ui, sans-serif;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px;">
+        <span style="font-size: 1.1rem;">📍</span>
+        <h4 style="margin: 0; color: #f8fafc; font-size: 0.95rem; font-weight: 700;">Ubicación GPS de la Finca</h4>
+      </div>
+
+      <p style="margin: 0 0 8px 0; font-size: 0.8rem; color: #94a3b8; line-height: 1.3;">
+        💡 <strong>Arrastra este pin en el mapa</strong> para ajustar la posición exacta de tu hacienda/hato.
+      </p>
+
+      <div style="font-family: monospace; font-size: 0.78rem; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 10px; border-radius: 8px; margin-bottom: 10px; color: #38bdf8; display: flex; justify-content: space-between;">
+        <span><strong>Lat:</strong> ${lat.toFixed(6)}</span>
+        <span><strong>Lon:</strong> ${lng.toFixed(6)}</span>
+      </div>
+
+      <button id="btn-save-custom-user-location" style="
+        width: 100%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      ">
+        💾 ${isSavedPosition ? 'Ubicación Guardada (Actualizar)' : 'Guardar esta Ubicación'}
+      </button>
+    </div>
+  `;
+
+  window.userLocMarker.bindPopup(html, { closeOnClick: false });
+  window.userLocMarker.openPopup();
+
+  setTimeout(() => {
+    const saveBtn = document.getElementById('btn-save-custom-user-location');
+    if (saveBtn) {
+      saveBtn.onclick = (e) => {
+        e.stopPropagation();
+        saveCustomUserLocation(lat, lng);
+      };
+    }
+  }, 100);
+}
+
+/**
+ * Guarda las coordenadas de la finca en el almacenamiento local y actualiza la referencia
+ */
+function saveCustomUserLocation(lat, lng) {
+  localStorage.setItem('collarnet_saved_farm_lat', lat.toString());
+  localStorage.setItem('collarnet_saved_farm_lng', lng.toString());
+
+  console.log(`[GPS Saved] Coordenadas guardadas: Lat ${lat}, Lon ${lng}`);
+
+  alert(`✅ ¡Ubicación de la Finca guardada con éxito!\n\nCoordenadas ajustadas:\n• Latitud: ${lat.toFixed(6)}\n• Longitud: ${lng.toFixed(6)}\n\nEsta ubicación ha quedado registrada como punto central de tu Hato.`);
+
+  if (window.userLocMarker) {
+    window.userLocMarker.bindPopup(`
+      <div style="padding: 6px; text-align: center;">
+        <h4 style="margin: 0 0 4px 0; color: #10b981;">✅ Ubicación de Finca Guardada</h4>
+        <small style="color: #cbd5e1; font-weight: 600;">Lat: ${lat.toFixed(6)} | Lon: ${lng.toFixed(6)}</small>
+        <p style="margin: 4px 0 0 0; font-size: 0.75rem; color: #94a3b8;">Puedes volver a arrastrar el pin cuando desees ajustarlo.</p>
+      </div>
+    `).openPopup();
+  }
+}
+
+/**
+ * Obtiene la ubicación GPS del usuario en el navegador y vuela la cámara sobre su posición
  */
 export function locateUserPosition() {
   recordCameraState('Vista previa antes de Ir a Ubicación GPS');
+
+  const savedLat = localStorage.getItem('collarnet_saved_farm_lat');
+  const savedLng = localStorage.getItem('collarnet_saved_farm_lng');
+
   if ('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+        let lat = position.coords.latitude;
+        let lng = position.coords.longitude;
+
+        if (savedLat && savedLng) {
+          lat = parseFloat(savedLat);
+          lng = parseFloat(savedLng);
+        }
+
         map.flyTo([lat, lng], 17, { duration: 1.5 });
         
-        // Marcador visual con pulso para la ubicación actual
         if (window.userLocMarker) {
           map.removeLayer(window.userLocMarker);
         }
         
         const pulseIcon = L.divIcon({
           className: 'user-location-pulse-container',
-          html: `<div class="user-pulse-dot" title="Tu Ubicación GPS Actual">📍</div>`,
+          html: `<div class="user-pulse-dot" style="font-size:26px; cursor:grab;" title="Mueve este pin para ajustar la ubicación exacta">📍</div>`,
           iconSize: [36, 36],
-          iconAnchor: [18, 18]
+          iconAnchor: [18, 32]
         });
 
-        window.userLocMarker = L.marker([lat, lng], { icon: pulseIcon }).addTo(map);
-        window.userLocMarker.bindPopup('📍 <strong>Tu Ubicación GPS Actual</strong><br><small>Precisión basada en dispositivo</small>').openPopup();
+        // Marcador movible arrastrable (draggable: true)
+        window.userLocMarker = L.marker([lat, lng], {
+          icon: pulseIcon,
+          draggable: true
+        }).addTo(map);
+
+        updateUserLocationPopup(lat, lng);
+
+        // Al terminar de arrastrar el pin en el mapa
+        window.userLocMarker.on('dragend', (e) => {
+          const newPos = e.target.getLatLng();
+          updateUserLocationPopup(newPos.lat, newPos.lng);
+        });
       },
       (err) => {
         console.warn('[Geolocation] Permiso denegado o no disponible:', err);
-        alert('📍 No se pudo acceder al GPS del navegador. Centrando mapa en la ubicación del Hato principal.');
-        map.flyTo([9.1025, -67.0980], 16, { duration: 1.5 });
+        const lat = savedLat ? parseFloat(savedLat) : 9.1025;
+        const lng = savedLng ? parseFloat(savedLng) : -67.0980;
+
+        map.flyTo([lat, lng], 16, { duration: 1.5 });
+
+        if (window.userLocMarker) map.removeLayer(window.userLocMarker);
+
+        const pulseIcon = L.divIcon({
+          className: 'user-location-pulse-container',
+          html: `<div class="user-pulse-dot" style="font-size:26px; cursor:grab;">📍</div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 32]
+        });
+
+        window.userLocMarker = L.marker([lat, lng], { icon: pulseIcon, draggable: true }).addTo(map);
+        updateUserLocationPopup(lat, lng);
+
+        window.userLocMarker.on('dragend', (e) => {
+          const newPos = e.target.getLatLng();
+          updateUserLocationPopup(newPos.lat, newPos.lng);
+        });
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
