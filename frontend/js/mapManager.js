@@ -431,40 +431,88 @@ export function drawGeocercas(hatosList = [], potrerosList = []) {
   });
 
   // Dibujar Hatos pasados por parámetro o locales
-  hatosList.forEach(h => {
-    if (h.geojson) {
+  let hatosToProcess = [...hatosList];
+
+  // Si no vienen hatos guardados, cargar por defecto el Hato Principal de la finca (HCDA. LA VEGA)
+  if (hatosToProcess.length === 0) {
+    hatosToProcess.push({
+      id: 1,
+      nombre: 'HCDA. LA VEGA (Hato Principal)',
+      coords: [
+        [9.1085, -67.1060],
+        [9.1095, -67.0980],
+        [9.1040, -67.0930],
+        [9.0950, -67.0920],
+        [9.0915, -67.0980],
+        [9.0930, -67.1040],
+        [9.1010, -67.1070]
+      ]
+    });
+  }
+
+  hatosToProcess.forEach(h => {
+    let coords = null;
+    if (h.vertices && Array.isArray(h.vertices) && h.vertices.length >= 3) {
+      coords = h.vertices;
+    } else if (h.coords && Array.isArray(h.coords) && h.coords.length >= 3) {
+      coords = h.coords;
+    } else if (h.geojson) {
       try {
         const geo = typeof h.geojson === 'string' ? JSON.parse(h.geojson) : h.geojson;
-        const coords = geo.coordinates[0].map(c => [c[1], c[0]]); // GeoJSON [lon, lat] -> Leaflet [lat, lon]
-        const poly = L.polygon(coords, {
-          color: '#ef4444',
-          weight: 4,
-          fillColor: 'rgba(239, 68, 68, 0.08)',
-          fillOpacity: 1
-        }).addTo(map);
-        poly.bindTooltip(`🔴 Hato: ${h.nombre}`, { sticky: true });
-        hatoPolygonsMap.set(h.id, poly);
+        if (geo && geo.coordinates && geo.coordinates[0]) {
+          coords = geo.coordinates[0].map(c => [c[1], c[0]]); // GeoJSON [lon, lat] -> Leaflet [lat, lon]
+        }
       } catch (_) {}
+    }
+
+    if (coords && coords.length >= 3) {
+      const poly = L.polygon(coords, {
+        color: '#ef4444',
+        weight: 4,
+        fillColor: 'rgba(239, 68, 68, 0.12)',
+        fillOpacity: 1
+      }).addTo(map);
+      poly.bindTooltip(`🔴 Hato: ${h.nombre}`, { sticky: true });
+      hatoPolygonsMap.set(h.id, poly);
     }
   });
 
   // Dibujar Potreros pasados por parámetro o locales
   potrerosList.forEach(p => {
-    if (p.geojson) {
+    let coords = null;
+    if (p.vertices && Array.isArray(p.vertices) && p.vertices.length >= 3) {
+      coords = p.vertices;
+    } else if (p.coords && Array.isArray(p.coords) && p.coords.length >= 3) {
+      coords = p.coords;
+    } else if (p.geojson) {
       try {
         const geo = typeof p.geojson === 'string' ? JSON.parse(p.geojson) : p.geojson;
-        const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
-        const poly = L.polygon(coords, {
-          color: '#f59e0b',
-          weight: 3,
-          fillColor: 'rgba(245, 158, 11, 0.05)',
-          fillOpacity: 1
-        }).addTo(map);
-        poly.bindTooltip(`🟡 Potrero: ${p.nombre}`, { sticky: true });
-        potreroPolygonsMap.set(p.id, poly);
+        if (geo && geo.coordinates && geo.coordinates[0]) {
+          coords = geo.coordinates[0].map(c => [c[1], c[0]]);
+        }
       } catch (_) {}
     }
+
+    if (coords && coords.length >= 3) {
+      const poly = L.polygon(coords, {
+        color: '#f59e0b',
+        weight: 3,
+        fillColor: 'rgba(245, 158, 11, 0.05)',
+        fillOpacity: 1
+      }).addTo(map);
+      poly.bindTooltip(`🟡 Potrero: ${p.nombre}`, { sticky: true });
+      potreroPolygonsMap.set(p.id, poly);
+    }
   });
+
+  // Enfocar automáticamente el mapa sobre el perímetro del Hato Principal
+  if (hatoPolygonsMap.size > 0) {
+    try {
+      const layersArr = Array.from(hatoPolygonsMap.values());
+      const boundsGroup = L.featureGroup(layersArr);
+      map.fitBounds(boundsGroup.getBounds(), { padding: [35, 35] });
+    } catch (_) {}
+  }
 
   // Renderizar markers por defecto para C023, C098 y C105
   updateAnimalMarker({
