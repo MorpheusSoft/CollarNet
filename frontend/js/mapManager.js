@@ -119,6 +119,12 @@ export function setDrawMode(mode) {
     m.setStyle({ color: color });
   });
 
+  // Actualizar el borde del banner flotante
+  const banner = document.getElementById('map-drawing-banner');
+  if (banner) {
+    banner.style.borderColor = mode === 'hato' ? '#ef4444' : '#f59e0b';
+  }
+
   // Actualizar los botones de pastilla (pills) del banner
   const pillHato = document.getElementById('banner-pill-hato');
   const pillPotrero = document.getElementById('banner-pill-potrero');
@@ -151,22 +157,22 @@ function showDrawingControlBanner() {
   const banner = document.createElement('div');
   banner.id = 'map-drawing-banner';
   banner.style.cssText = `
-    position: absolute;
-    top: 20px;
+    position: fixed;
+    top: 85px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 2000;
-    background: rgba(15, 23, 42, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 99999;
+    background: rgba(15, 23, 42, 0.96);
+    border: 2px solid ${drawMode === 'hato' ? '#ef4444' : '#f59e0b'};
     border-radius: 30px;
-    padding: 8px 18px;
+    padding: 8px 20px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     color: white;
     font-size: 0.85rem;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
   `;
 
   const isHato = drawMode === 'hato';
@@ -227,8 +233,7 @@ function showDrawingControlBanner() {
     ">❌ Cancelar</button>
   `;
 
-  const mapContainer = document.getElementById('map');
-  if (mapContainer) mapContainer.appendChild(banner);
+  document.body.appendChild(banner);
 
   document.getElementById('banner-pill-hato').addEventListener('click', (e) => {
     e.stopPropagation();

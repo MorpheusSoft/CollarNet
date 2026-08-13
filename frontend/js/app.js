@@ -351,7 +351,7 @@ function initUIEvents() {
     }
   });
 
-  // Acción 1: Botón para el Dibujo de Geocercas en el Mapa (Selección de Hato vs Potrero)
+  // Acción 1: Botón para el Dibujo de Geocercas en el Mapa
   const modalSelectDrawMode = document.getElementById('modal-select-draw-mode');
   const btnSelectDrawHato = document.getElementById('btn-select-draw-hato');
   const btnSelectDrawPotrero = document.getElementById('btn-select-draw-potrero');
@@ -361,7 +361,7 @@ function initUIEvents() {
       e.stopPropagation();
       if (mapPopupMenu) mapPopupMenu.classList.remove('active');
       if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
-      if (modalSelectDrawMode) modalSelectDrawMode.classList.add('active');
+      startDrawing('hato');
     });
   }
 
