@@ -80,6 +80,31 @@ export async function fetchGeocercasData() {
   const localHatos = JSON.parse(localStorage.getItem('collarnet_hatos') || '[]');
   const localPotreros = JSON.parse(localStorage.getItem('collarnet_potreros') || '[]');
 
+  // Hato predeterminado por defecto si no existen hatos registrados
+  const defaultHatos = [
+    {
+      id: 1,
+      nombre: 'HCDA. LA VEGA (Hato Principal)',
+      capacidad_maxima: 500,
+      geojson: JSON.stringify({
+        type: 'Polygon',
+        coordinates: [[
+          [-67.1060, 9.1085],
+          [-67.0980, 9.1095],
+          [-67.0930, 9.1040],
+          [-67.0920, 9.0950],
+          [-67.0980, 9.0915],
+          [-67.1040, 9.0930],
+          [-67.1070, 9.1010]
+        ]]
+      })
+    }
+  ];
+
+  defaultHatos.forEach(dh => {
+    if (!hatos.some(h => h.id == dh.id)) hatos.push(dh);
+  });
+
   localHatos.forEach(lh => {
     if (!hatos.some(h => h.id == lh.id)) hatos.push(lh);
   });
