@@ -103,6 +103,46 @@ export function cancelDrawing() {
 }
 
 /**
+ * Cambia dinámicamente el modo de trazado (Hato = Rojo vs Potrero = Amarillo)
+ */
+export function setDrawMode(mode) {
+  drawMode = mode;
+  const color = drawMode === 'hato' ? '#ef4444' : '#f59e0b';
+
+  // Actualizar la línea conectora en tiempo real
+  if (tempPolyline) {
+    tempPolyline.setStyle({ color: color });
+  }
+
+  // Actualizar el color de los marcadores de vértices en tiempo real
+  tempMarkers.forEach(m => {
+    m.setStyle({ color: color });
+  });
+
+  // Actualizar los botones de pastilla (pills) del banner
+  const pillHato = document.getElementById('banner-pill-hato');
+  const pillPotrero = document.getElementById('banner-pill-potrero');
+
+  if (pillHato && pillPotrero) {
+    if (mode === 'hato') {
+      pillHato.style.background = 'rgba(239, 68, 68, 0.35)';
+      pillHato.style.borderColor = '#ef4444';
+      pillHato.style.fontWeight = '700';
+      pillPotrero.style.background = 'rgba(255, 255, 255, 0.05)';
+      pillPotrero.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      pillPotrero.style.fontWeight = '500';
+    } else {
+      pillPotrero.style.background = 'rgba(245, 158, 11, 0.35)';
+      pillPotrero.style.borderColor = '#f59e0b';
+      pillPotrero.style.fontWeight = '700';
+      pillHato.style.background = 'rgba(255, 255, 255, 0.05)';
+      pillHato.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      pillHato.style.fontWeight = '500';
+    }
+  }
+}
+
+/**
  * Renderiza el banner flotante de control de trazado sobre el mapa
  */
 function showDrawingControlBanner() {
@@ -129,10 +169,36 @@ function showDrawingControlBanner() {
     backdrop-filter: blur(8px);
   `;
 
-  const modeLbl = drawMode === 'hato' ? '🔴 Hato Principal' : '🟡 Potrero de Rotación';
+  const isHato = drawMode === 'hato';
 
   banner.innerHTML = `
-    <span>✏️ <strong>Trazando ${modeLbl}:</strong> <small id="drawing-banner-count">0 puntos</small></span>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button id="banner-pill-hato" type="button" style="
+        background: ${isHato ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255,255,255,0.05)'};
+        color: white;
+        border: 1px solid ${isHato ? '#ef4444' : 'rgba(255,255,255,0.2)'};
+        padding: 4px 10px;
+        border-radius: 14px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        font-weight: ${isHato ? '700' : '500'};
+        transition: all 0.2s ease;
+      ">🔴 Hato (Rojo)</button>
+      <button id="banner-pill-potrero" type="button" style="
+        background: ${!isHato ? 'rgba(245, 158, 11, 0.35)' : 'rgba(255,255,255,0.05)'};
+        color: white;
+        border: 1px solid ${!isHato ? '#f59e0b' : 'rgba(255,255,255,0.2)'};
+        padding: 4px 10px;
+        border-radius: 14px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        font-weight: ${!isHato ? '700' : '500'};
+        transition: all 0.2s ease;
+      ">🟡 Potrero (Amarillo)</button>
+    </div>
+    <span style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px;">
+      <small id="drawing-banner-count">0 puntos</small>
+    </span>
     <button id="btn-banner-finish-drawing" style="
       background: linear-gradient(135deg, #10b981, #059669);
       color: white;
@@ -163,6 +229,16 @@ function showDrawingControlBanner() {
 
   const mapContainer = document.getElementById('map');
   if (mapContainer) mapContainer.appendChild(banner);
+
+  document.getElementById('banner-pill-hato').addEventListener('click', (e) => {
+    e.stopPropagation();
+    setDrawMode('hato');
+  });
+
+  document.getElementById('banner-pill-potrero').addEventListener('click', (e) => {
+    e.stopPropagation();
+    setDrawMode('potrero');
+  });
 
   document.getElementById('btn-banner-finish-drawing').addEventListener('click', (e) => {
     e.stopPropagation();

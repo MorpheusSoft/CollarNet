@@ -248,15 +248,31 @@ function initUIEvents() {
     }
   });
 
-  // Acción 1: Botón para el Dibujo de Geocercas en el Mapa
+  // Acción 1: Botón para el Dibujo de Geocercas en el Mapa (Selección de Hato vs Potrero)
+  const modalSelectDrawMode = document.getElementById('modal-select-draw-mode');
+  const btnSelectDrawHato = document.getElementById('btn-select-draw-hato');
+  const btnSelectDrawPotrero = document.getElementById('btn-select-draw-potrero');
+
   if (btnPopupDrawGeofence) {
     btnPopupDrawGeofence.addEventListener('click', (e) => {
       e.stopPropagation();
       if (mapPopupMenu) mapPopupMenu.classList.remove('active');
       if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
-      
+      if (modalSelectDrawMode) modalSelectDrawMode.classList.add('active');
+    });
+  }
+
+  if (btnSelectDrawHato) {
+    btnSelectDrawHato.addEventListener('click', () => {
+      if (modalSelectDrawMode) modalSelectDrawMode.classList.remove('active');
+      startDrawing('hato');
+    });
+  }
+
+  if (btnSelectDrawPotrero) {
+    btnSelectDrawPotrero.addEventListener('click', () => {
+      if (modalSelectDrawMode) modalSelectDrawMode.classList.remove('active');
       startDrawing('potrero');
-      alert('✏️ Modo Dibujo de Geocercas Activo.\n\nHaz clic en los puntos del mapa satelital para trazar cada esquina del perímetro. Haz clic en el primer punto para guardar.');
     });
   }
 

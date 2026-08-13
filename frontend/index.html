@@ -673,6 +673,68 @@
     </div>
   </div>
 
+  <!-- MODAL: SELECCIONAR TIPO DE DIBUJO DE GEOCERCA (HATO VS POTRERO) -->
+  <div class="modal" id="modal-select-draw-mode" style="z-index: 2500;" onclick="if(event.target === this) this.classList.remove('active')">
+    <div class="modal-content modal-geofence-card" style="width: 520px; max-width: 92vw;">
+      
+      <div class="modal-header-bar">
+        <h2>✏️ Seleccionar Tipo de Geocerca a Trazar</h2>
+        <button class="close-modal-btn" onclick="document.getElementById('modal-select-draw-mode').classList.remove('active')">✕</button>
+      </div>
+
+      <div class="modal-body-content" style="padding: 22px;">
+        <p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 20px; line-height: 1.4;">
+          Elige el tipo de perímetro a dibujar en el mapa satelital. Cada tipo se trazará con su **color de línea distintivo**:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- OPCIÓN 1: HATO PRINCIPAL (LÍNEAS ROJAS) -->
+          <button type="button" id="btn-select-draw-hato" style="
+            display: flex; align-items: center; gap: 16px; text-align: left;
+            background: rgba(239, 68, 68, 0.12); border: 2px solid #ef4444;
+            padding: 16px; border-radius: 14px; cursor: pointer; color: white;
+            transition: all 0.2s ease;
+          ">
+            <div style="
+              width: 44px; height: 44px; border-radius: 12px;
+              background: rgba(239, 68, 68, 0.25); border: 2px solid #ef4444;
+              display: flex; align-items: center; justify-content: center;
+              font-size: 1.5rem; flex-shrink: 0;
+            ">🔴</div>
+            <div>
+              <strong style="color: #fca5a5; font-size: 1rem; display: block; margin-bottom: 2px;">🔴 Hato Principal (Linderos Perimetrales)</strong>
+              <small style="color: #cbd5e1; font-size: 0.82rem;">Traza el perímetro exterior de la finca con <span style="color: #ef4444; font-weight: 700;">Líneas Rojas Intensas</span>.</small>
+            </div>
+          </button>
+
+          <!-- OPCIÓN 2: POTRERO DE ROTACIÓN (LÍNEAS AMARILLAS / DORADAS) -->
+          <button type="button" id="btn-select-draw-potrero" style="
+            display: flex; align-items: center; gap: 16px; text-align: left;
+            background: rgba(245, 158, 11, 0.12); border: 2px solid #f59e0b;
+            padding: 16px; border-radius: 14px; cursor: pointer; color: white;
+            transition: all 0.2s ease;
+          ">
+            <div style="
+              width: 44px; height: 44px; border-radius: 12px;
+              background: rgba(245, 158, 11, 0.25); border: 2px solid #f59e0b;
+              display: flex; align-items: center; justify-content: center;
+              font-size: 1.5rem; flex-shrink: 0;
+            ">🟡</div>
+            <div>
+              <strong style="color: #fde047; font-size: 1rem; display: block; margin-bottom: 2px;">🟡 Potrero de Rotación (Divisiones Internas)</strong>
+              <small style="color: #cbd5e1; font-size: 0.82rem;">Traza los potreros de pastoreo interno con <span style="color: #f59e0b; font-weight: 700;">Líneas Amarillas / Doradas</span>.</small>
+            </div>
+          </button>
+        </div>
+
+        <div style="margin-top: 22px; text-align: right;">
+          <button type="button" class="btn-cancel-modal" onclick="document.getElementById('modal-select-draw-mode').classList.remove('active')">Cancelar</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- DEPENDENCIAS LIBRERÍAS DE MAPAS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
