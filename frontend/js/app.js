@@ -475,6 +475,13 @@ function initUIEvents() {
     });
   }
 
+  const farmSelectorPill = document.getElementById('farm-selector-pill');
+  if (farmSelectorPill) {
+    farmSelectorPill.addEventListener('click', () => {
+      focusOnGeofence('hato', 1);
+    });
+  }
+
   // Modal Configuración Manual de Coordenadas y Ciudad
   const modalManualLocation = document.getElementById('modal-manual-location');
   if (btnOpenManualCoordModal && modalManualLocation) {

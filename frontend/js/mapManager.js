@@ -554,11 +554,28 @@ export function drawGeocercas(hatosList = [], potrerosList = []) {
  */
 export function focusOnGeofence(type, id) {
   const mapObj = type === 'hato' ? hatoPolygonsMap : potreroPolygonsMap;
-  if (mapObj.has(id)) {
+  let layer = mapObj.get(id);
+
+  if (!layer) {
+    for (let [k, v] of mapObj.entries()) {
+      if (String(k) === String(id)) {
+        layer = v;
+        break;
+      }
+    }
+  }
+
+  if (layer) {
     recordCameraState(`Vista previa antes de enfocar geocerca ${id}`);
-    const layer = mapObj.get(id);
-    map.fitBounds(layer.getBounds());
-    layer.openTooltip();
+    map.fitBounds(layer.getBounds(), { padding: [40, 40] });
+    if (layer.openTooltip) layer.openTooltip();
+  } else {
+    // Fallback: enfocar los hatos globales cargados
+    if (type === 'hato' && hatoPolygonsMap.size > 0) {
+      const layersArr = Array.from(hatoPolygonsMap.values());
+      const boundsGroup = L.featureGroup(layersArr);
+      map.fitBounds(boundsGroup.getBounds(), { padding: [40, 40] });
+    }
   }
 }
 
@@ -574,9 +591,19 @@ export function enablePolygonEditing(type, id, onSaveCallback) {
   disablePolygonEditing();
 
   const mapObj = type === 'hato' ? hatoPolygonsMap : potreroPolygonsMap;
-  if (!mapObj.has(id)) return;
+  let layerGroup = mapObj.get(id);
 
-  const layerGroup = mapObj.get(id);
+  if (!layerGroup) {
+    for (let [k, v] of mapObj.entries()) {
+      if (String(k) === String(id)) {
+        layerGroup = v;
+        break;
+      }
+    }
+  }
+
+  if (!layerGroup) return;
+
   let latlngs = [];
 
   layerGroup.eachLayer(layer => {
