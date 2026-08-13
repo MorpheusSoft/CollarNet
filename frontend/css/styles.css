@@ -252,6 +252,11 @@ body.dark-theme {
   border: 1px solid rgba(56, 189, 248, 0.4);
 }
 
+.redo-icon {
+  background-color: rgba(236, 72, 153, 0.2);
+  border: 1px solid rgba(236, 72, 153, 0.4);
+}
+
 .map-layer-pill-switch {
   display: flex;
   align-items: center;

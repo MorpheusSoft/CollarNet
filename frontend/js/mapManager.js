@@ -478,6 +478,61 @@ export function disablePolygonEditing() {
 }
 
 /**
+ * Limpia y restablece los linderos trazados en el mapa
+ */
+export function resetGeofenceDrawing() {
+  cancelDrawing();
+  disablePolygonEditing();
+  
+  if (hatoPolygonsMap.has('temp')) {
+    map.removeLayer(hatoPolygonsMap.get('temp'));
+    hatoPolygonsMap.delete('temp');
+  }
+  if (potreroPolygonsMap.has('temp')) {
+    map.removeLayer(potreroPolygonsMap.get('temp'));
+    potreroPolygonsMap.delete('temp');
+  }
+}
+
+/**
+ * Activa la edición gráfica por tiradores/nodos en la geocerca activa o temporal
+ */
+export function enableActivePolygonEditing() {
+  cancelDrawing();
+
+  if (hatoPolygonsMap.has('temp')) {
+    enablePolygonEditing('hato', 'temp', () => {});
+    return true;
+  }
+  if (potreroPolygonsMap.has('temp')) {
+    enablePolygonEditing('potrero', 'temp', () => {});
+    return true;
+  }
+
+  for (let [id] of hatoPolygonsMap.entries()) {
+    enablePolygonEditing('hato', id, () => {});
+    return true;
+  }
+
+  for (let [id] of potreroPolygonsMap.entries()) {
+    enablePolygonEditing('potrero', id, () => {});
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Borra permanentemente las geocercas locales trazadas
+ */
+export function clearAllLocalGeofences() {
+  resetGeofenceDrawing();
+  localStorage.removeItem('collarnet_hatos');
+  localStorage.removeItem('collarnet_potreros');
+  drawGeocercas([], []);
+}
+
+/**
  * Renderiza el banner flotante sobre el mapa durante la edición gráfica
  */
 function showEditControlBanner() {

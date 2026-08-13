@@ -38,6 +38,9 @@ import {
   undoLastAction,
   searchLocationByCity,
   setFarmCustomLocation,
+  resetGeofenceDrawing,
+  enableActivePolygonEditing,
+  clearAllLocalGeofences,
   ESRI_SATELLITE,
   OSM_STREETS
 } from './mapManager.js';
@@ -387,6 +390,55 @@ function initUIEvents() {
   if (btnMapUndoAction) {
     btnMapUndoAction.addEventListener('click', () => {
       undoLastAction();
+    });
+  }
+
+  // Acción 5: Rehacer Geocerca / Redelimitar Linderos del Hato
+  const btnPopupRedoGeofence = document.getElementById('btn-popup-redo-geofence');
+  const btnMapRedoGeofence = document.getElementById('btn-map-redo-geofence');
+  const modalRedoGeofenceOptions = document.getElementById('modal-redo-geofence-options');
+
+  const openRedoModal = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (mapPopupMenu) mapPopupMenu.classList.remove('active');
+    if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
+    if (modalRedoGeofenceOptions) modalRedoGeofenceOptions.classList.add('active');
+  };
+
+  if (btnPopupRedoGeofence) btnPopupRedoGeofence.addEventListener('click', openRedoModal);
+  if (btnMapRedoGeofence) btnMapRedoGeofence.addEventListener('click', openRedoModal);
+
+  // Opciones del Modal de Rehacer Linderos
+  const btnOptionRedrawFresh = document.getElementById('btn-option-redraw-fresh');
+  const btnOptionDragCorners = document.getElementById('btn-option-drag-corners');
+  const btnOptionDeleteGeofence = document.getElementById('btn-option-delete-geofence');
+
+  if (btnOptionRedrawFresh) {
+    btnOptionRedrawFresh.addEventListener('click', () => {
+      if (modalRedoGeofenceOptions) modalRedoGeofenceOptions.classList.remove('active');
+      resetGeofenceDrawing();
+      startDrawing('hato');
+    });
+  }
+
+  if (btnOptionDragCorners) {
+    btnOptionDragCorners.addEventListener('click', () => {
+      if (modalRedoGeofenceOptions) modalRedoGeofenceOptions.classList.remove('active');
+      const found = enableActivePolygonEditing();
+      if (!found) {
+        alert('No hay geocercas trazadas activas para ajustar. Se abrirá el modo de trazado desde cero.');
+        startDrawing('hato');
+      }
+    });
+  }
+
+  if (btnOptionDeleteGeofence) {
+    btnOptionDeleteGeofence.addEventListener('click', () => {
+      if (confirm('¿Estás seguro de eliminar todos los linderos de geocerca del mapa?')) {
+        if (modalRedoGeofenceOptions) modalRedoGeofenceOptions.classList.remove('active');
+        clearAllLocalGeofences();
+        alert('Linderos eliminados correctamente.');
+      }
     });
   }
 

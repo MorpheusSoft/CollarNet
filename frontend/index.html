@@ -80,6 +80,15 @@
                   <span>Alternar mapa de calles OpenStreetMap</span>
                 </div>
               </button>
+
+              <!-- BOTÓN 5: REHACER GEOCERCA DE LINDEROS DE UN HATO -->
+              <button class="popup-action-card" id="btn-popup-redo-geofence">
+                <div class="action-card-icon redo-icon">🔄</div>
+                <div class="action-card-info">
+                  <strong>Rehacer Linderos de Hato</strong>
+                  <span>Redelimitar o ajustar esquinas en mapa</span>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -126,6 +135,7 @@
             <button class="layer-switch-btn" id="btn-layer-streets">🏙️ Calles</button>
           </div>
           <button class="map-tool-btn" id="btn-map-undo-action" title="Regresar Acción Recién Realizada (Deshacer)">↩️</button>
+          <button class="map-tool-btn" id="btn-map-redo-geofence" title="Rehacer / Redelimitar Geocerca de Linderos del Hato">🔄</button>
           <button class="map-tool-btn" id="btn-map-my-location" title="Ir a Mi Posición Actual GPS">📍</button>
           <button class="map-tool-btn" id="btn-map-search-location" title="Buscar Ciudad, Estado, País o Finca en el Mapa">🔍</button>
           <button class="map-tool-btn" title="Filtrar por Fecha">📅</button>
@@ -595,6 +605,70 @@
             <button type="submit" class="btn-save-geofence">📍 Centrar & Guardar Ubicación</button>
           </div>
         </form>
+      </div>
+    </div>
+  <!-- MODAL: REHACER / REDELIMITAR LINDEROS DE GEOCERCA -->
+  <div class="modal" id="modal-redo-geofence-options" style="z-index: 2500;" onclick="if(event.target === this) this.classList.remove('active')">
+    <div class="modal-content modal-geofence-card" style="width: 500px; max-width: 92vw;">
+      
+      <div class="modal-header-bar">
+        <h2>🔄 Rehacer Linderos de Geocerca</h2>
+        <button class="close-modal-btn" onclick="document.getElementById('modal-redo-geofence-options').classList.remove('active')">✕</button>
+      </div>
+
+      <div class="modal-body-content" style="padding: 20px;">
+        <p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 18px; line-height: 1.4;">
+          ¿Cómo deseas modificar los linderos de tu Hato o Potrero? Elige una opción:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- OPCIÓN 1: TRAZAR DESDE CERO -->
+          <button type="button" id="btn-option-redraw-fresh" style="
+            display: flex; align-items: center; gap: 14px; text-align: left;
+            background: rgba(16, 185, 129, 0.12); border: 2px solid #10b981;
+            padding: 14px 16px; border-radius: 12px; cursor: pointer; color: white;
+            transition: all 0.2s ease;
+          ">
+            <span style="font-size: 1.8rem;">✏️</span>
+            <div>
+              <strong style="color: #6ee7b7; font-size: 0.95rem; display: block;">Trazar Nuevos Linderos Desde Cero</strong>
+              <small style="color: #94a3b8; font-size: 0.8rem;">Limpia el perímetro actual y activa el pincel de dibujo en el mapa satelital.</small>
+            </div>
+          </button>
+
+          <!-- OPCIÓN 2: ARRASTRAR ESQUINAS (NODOS) -->
+          <button type="button" id="btn-option-drag-corners" style="
+            display: flex; align-items: center; gap: 14px; text-align: left;
+            background: rgba(56, 189, 248, 0.12); border: 2px solid #38bdf8;
+            padding: 14px 16px; border-radius: 12px; cursor: pointer; color: white;
+            transition: all 0.2s ease;
+          ">
+            <span style="font-size: 1.8rem;">✋</span>
+            <div>
+              <strong style="color: #7dd3fc; font-size: 0.95rem; display: block;">Ajustar Esquinas / Nodos (Edición Gráfica)</strong>
+              <small style="color: #94a3b8; font-size: 0.8rem;">Muestra tiradores arrastrables en cada vértice para moldear el perímetro actual.</small>
+            </div>
+          </button>
+
+          <!-- OPCIÓN 3: ELIMINAR LINDEROS ACTUALES -->
+          <button type="button" id="btn-option-delete-geofence" style="
+            display: flex; align-items: center; gap: 14px; text-align: left;
+            background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4);
+            padding: 12px 16px; border-radius: 12px; cursor: pointer; color: white;
+            transition: all 0.2s ease;
+          ">
+            <span style="font-size: 1.5rem;">🗑️</span>
+            <div>
+              <strong style="color: #fca5a5; font-size: 0.9rem; display: block;">Borrar Linderos Actuales</strong>
+              <small style="color: #94a3b8; font-size: 0.8rem;">Elimina la geocerca guardada para dejar el mapa totalmente despejado.</small>
+            </div>
+          </button>
+        </div>
+
+        <div style="margin-top: 20px; text-align: right;">
+          <button type="button" class="btn-cancel-modal" onclick="document.getElementById('modal-redo-geofence-options').classList.remove('active')">Cancelar</button>
+        </div>
+
       </div>
     </div>
   </div>
