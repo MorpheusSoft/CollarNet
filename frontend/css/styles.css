@@ -458,14 +458,30 @@ body.dark-theme {
 }
 
 .map-dropdown-select {
-  background-color: rgba(18, 25, 38, 0.85);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-color);
+  background-color: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 8px;
-  color: white;
+  color: #ffffff;
   padding: 8px 12px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   outline: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+.map-dropdown-select:hover {
+  border-color: #ef4444;
+  background-color: rgba(30, 41, 59, 0.95);
+}
+
+.map-dropdown-select option {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  padding: 10px !important;
+  font-size: 0.85rem !important;
 }
 
 /* OVERLAYS INFERIORES DEL MAPA */
