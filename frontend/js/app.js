@@ -231,6 +231,109 @@ async function refreshData() {
 }
 
 /**
+ * Renderiza la lista dinámica de Hatos cargados en el modal #modal-list-hatos
+ */
+function renderHatosList() {
+  const container = document.getElementById('container-loaded-hatos-list');
+  if (!container) return;
+
+  const hatos = currentGeocercasData.hatos || [];
+
+  if (hatos.length === 0) {
+    container.innerHTML = `
+      <div style="
+        text-align: center; padding: 30px 20px; background: rgba(30, 41, 59, 0.4);
+        border: 2px dashed rgba(255,255,255,0.15); border-radius: 14px;
+      ">
+        <span style="font-size: 2.5rem; display: block; margin-bottom: 8px;">🏞️</span>
+        <strong style="color: white; font-size: 1.05rem; display: block;">No hay Hatos cargados todavía</strong>
+        <p style="color: #94a3b8; font-size: 0.82rem; margin-top: 4px; margin-bottom: 16px;">
+          Aún no has delimitado el perímetro de tu Hato Principal en el mapa satelital.
+        </p>
+        <button type="button" id="btn-empty-draw-first-hato" style="
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: white; border: none; padding: 10px 18px; border-radius: 12px;
+          font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        ">✏️ Trazar Primer Hato Principal</button>
+      </div>
+    `;
+
+    document.getElementById('btn-empty-draw-first-hato')?.addEventListener('click', () => {
+      document.getElementById('modal-list-hatos')?.classList.remove('active');
+      startDrawing('hato');
+    });
+    return;
+  }
+
+  container.innerHTML = hatos.map(h => {
+    let numVertices = 0;
+    try {
+      const geo = typeof h.geojson === 'string' ? JSON.parse(h.geojson) : h.geojson;
+      if (geo && geo.coordinates && geo.coordinates[0]) {
+        numVertices = geo.coordinates[0].length;
+      }
+    } catch (_) {}
+
+    return `
+      <div class="hato-card-item" style="
+        background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.4rem;">🔴</span>
+            <div>
+              <strong style="color: #fca5a5; font-size: 1.05rem;">${h.nombre}</strong>
+              <small style="display: block; color: #94a3b8; font-size: 0.78rem;">ID Hato: ${h.id}</small>
+            </div>
+          </div>
+          <span style="
+            background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5);
+            padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+          ">Hato Principal</span>
+        </div>
+
+        <div style="display: flex; gap: 14px; background: rgba(15, 23, 42, 0.5); padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; color: #cbd5e1;">
+          <span>📍 Vértices GPS: <strong style="color: white;">${numVertices > 0 ? numVertices + ' Puntos' : 'Definido'}</strong></span>
+          <span>📐 Estado: <strong style="color: #6ee7b7;">Activo & Linderos Visibles</strong></span>
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;">
+          <button type="button" class="btn-focus-hato-linderos" data-id="${h.id}" style="
+            background: rgba(56, 189, 248, 0.18); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4);
+            padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
+          ">👁️ Ver Linderos en Mapa</button>
+
+          <button type="button" class="btn-edit-hato-linderos" data-id="${h.id}" style="
+            background: rgba(245, 158, 11, 0.18); color: #fde047; border: 1px solid rgba(245, 158, 11, 0.4);
+            padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
+          ">✏️ Ajustar Esquinas</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Eventos de botones dentro del listado de Hatos
+  container.querySelectorAll('.btn-focus-hato-linderos').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      document.getElementById('modal-list-hatos')?.classList.remove('active');
+      focusOnGeofence('hato', id);
+    });
+  });
+
+  container.querySelectorAll('.btn-edit-hato-linderos').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      document.getElementById('modal-list-hatos')?.classList.remove('active');
+      enablePolygonEditing('hato', id, () => {});
+    });
+  });
+}
+
+/**
  * Enlaza los listeners de todos los formularios e interacciones UI
  */
 function initUIEvents() {
@@ -455,6 +558,34 @@ function initUIEvents() {
         clearAllLocalGeofences();
         alert('Linderos eliminados correctamente.');
       }
+    });
+  }
+
+  // Acción 6: Ver Hatos Cargados y Linderos Perimetrales
+  const btnPopupListHatos = document.getElementById('btn-popup-list-hatos');
+  const btnMapListHatos = document.getElementById('btn-map-list-hatos');
+  const modalListHatos = document.getElementById('modal-list-hatos');
+  const btnModalListAddNewHato = document.getElementById('btn-modal-list-add-new-hato');
+
+  const openListHatosModal = async (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (mapPopupMenu) mapPopupMenu.classList.remove('active');
+    if (navDropdownWrapper) navDropdownWrapper.classList.remove('active');
+
+    // Cargar datos actualizados de geocercas
+    currentGeocercasData = await fetchGeocercasData();
+    renderHatosList();
+
+    if (modalListHatos) modalListHatos.classList.add('active');
+  };
+
+  if (btnPopupListHatos) btnPopupListHatos.addEventListener('click', openListHatosModal);
+  if (btnMapListHatos) btnMapListHatos.addEventListener('click', openListHatosModal);
+
+  if (btnModalListAddNewHato) {
+    btnModalListAddNewHato.addEventListener('click', () => {
+      if (modalListHatos) modalListHatos.classList.remove('active');
+      startDrawing('hato');
     });
   }
 

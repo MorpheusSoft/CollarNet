@@ -257,6 +257,11 @@ body.dark-theme {
   border: 1px solid rgba(236, 72, 153, 0.4);
 }
 
+.list-hatos-icon {
+  background-color: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
 .map-layer-pill-switch {
   display: flex;
   align-items: center;

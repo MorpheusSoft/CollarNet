@@ -89,6 +89,15 @@
                   <span>Redelimitar o ajustar esquinas en mapa</span>
                 </div>
               </button>
+
+              <!-- BOTÓN 6: VER HATOS CARGADOS Y SUS LINDEROS -->
+              <button class="popup-action-card" id="btn-popup-list-hatos">
+                <div class="action-card-icon list-hatos-icon">📜</div>
+                <div class="action-card-info">
+                  <strong>Ver Hatos y Linderos</strong>
+                  <span>Lista de hatos registrados y enfoque en mapa</span>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -136,6 +145,7 @@
           </div>
           <button class="map-tool-btn" id="btn-map-undo-action" title="Regresar Acción Recién Realizada (Deshacer)">↩️</button>
           <button class="map-tool-btn" id="btn-map-redo-geofence" title="Rehacer / Redelimitar Geocerca de Linderos del Hato">🔄</button>
+          <button class="map-tool-btn" id="btn-map-list-hatos" title="Ver Hatos Cargados y Linderos Perimetrales">📜</button>
           <button class="map-tool-btn" id="btn-map-my-location" title="Ir a Mi Posición Actual GPS">📍</button>
           <button class="map-tool-btn" id="btn-map-search-location" title="Buscar Ciudad, Estado, País o Finca en el Mapa">🔍</button>
           <button class="map-tool-btn" title="Filtrar por Fecha">📅</button>
@@ -732,6 +742,38 @@
         </div>
 
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LISTADO DE HATOS CARGADOS Y LINDEROS -->
+  <div class="modal" id="modal-list-hatos" style="z-index: 2500;" onclick="if(event.target === this) this.classList.remove('active')">
+    <div class="modal-content modal-geofence-card" style="width: 580px; max-width: 94vw; max-height: 85vh; display: flex; flex-direction: column;">
+      
+      <div class="modal-header-bar">
+        <h2>📜 Hatos Cargados & Linderos Perimetrales</h2>
+        <button class="close-modal-btn" onclick="document.getElementById('modal-list-hatos').classList.remove('active')">✕</button>
+      </div>
+
+      <div class="modal-body-content" style="padding: 20px; overflow-y: auto; flex: 1;">
+        <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 16px;">
+          A continuación se presentan los **Hatos Principales** registrados en el sistema. Puedes hacer clic en <strong>"👁️ Ver Linderos"</strong> para enfocar directamente su perímetro en el mapa satelital.
+        </p>
+
+        <!-- CONTENEDOR DINÁMICO DE HATOS -->
+        <div id="container-loaded-hatos-list" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Se puebla dinámicamente mediante JS -->
+        </div>
+      </div>
+
+      <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(15,23,42,0.6);">
+        <button type="button" id="btn-modal-list-add-new-hato" style="
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: white; border: none; padding: 8px 16px; border-radius: 10px;
+          font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        ">➕ Trazar Nuevo Hato</button>
+        <button type="button" class="btn-cancel-modal" onclick="document.getElementById('modal-list-hatos').classList.remove('active')">Cerrar</button>
+      </div>
+
     </div>
   </div>
 
