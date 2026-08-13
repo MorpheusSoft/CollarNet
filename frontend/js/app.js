@@ -202,6 +202,11 @@ async function refreshData() {
       scaleSelect.innerHTML = '<option value="">Selecciona un perímetro...</option>';
     }
 
+    const topMapSelect = document.getElementById('top-map-geofence-select');
+    if (topMapSelect) {
+      topMapSelect.innerHTML = '<option value="">🗺️ Ver Hatos / Potreros...</option>';
+    }
+
     geocercas.hatos.forEach(h => {
       syncHatoSelect.innerHTML += `<option value="${h.id}">${h.nombre} (ID: ${h.id})</option>`;
       if (manualHatoSelect) {
@@ -210,12 +215,18 @@ async function refreshData() {
       if (scaleSelect) {
         scaleSelect.innerHTML += `<option value="hato:${h.id}">🔴 Hato ${h.nombre} (ID: ${h.id})</option>`;
       }
+      if (topMapSelect) {
+        topMapSelect.innerHTML += `<option value="hato:${h.id}">🔴 ${h.nombre}</option>`;
+      }
     });
     geocercas.potreros.forEach(p => {
       syncPotreroSelect.innerHTML += `<option value="${p.id}">${p.nombre} (ID: ${p.id})</option>`;
       animPotreroSelect.innerHTML += `<option value="${p.id}">${p.nombre} (ID: ${p.id})</option>`;
       if (scaleSelect) {
         scaleSelect.innerHTML += `<option value="potrero:${p.id}">🟡 Potrero ${p.nombre} (ID: ${p.id})</option>`;
+      }
+      if (topMapSelect) {
+        topMapSelect.innerHTML += `<option value="potrero:${p.id}">🟡 Potrero: ${p.nombre}</option>`;
       }
     });
 
@@ -449,6 +460,18 @@ function initUIEvents() {
         e.preventDefault();
         handleCitySearchExecution();
       }
+    });
+  }
+
+  // Selector Rápido de Hatos y Potreros en la barra superior derecha del mapa
+  const topMapGeofenceSelect = document.getElementById('top-map-geofence-select');
+  if (topMapGeofenceSelect) {
+    topMapGeofenceSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (!val) return;
+      const [type, idStr] = val.split(':');
+      const id = isNaN(idStr) ? idStr : parseInt(idStr, 10);
+      focusOnGeofence(type, id);
     });
   }
 
