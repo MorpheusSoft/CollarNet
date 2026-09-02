@@ -1,0 +1,768 @@
+/* ==========================================================================
+   CollarNet - App Móvil de Campo (PWA)
+   Estilos Mobile-First de Alto Rendimiento y Contraste
+   ========================================================================== */
+
+:root {
+  --bg-main: #0B111A;
+  --bg-card: #151F2E;
+  --bg-card-hover: #1D2A3D;
+  --bg-surface: #0E1622;
+  
+  --primary: #10B981;
+  --primary-light: #34D399;
+  --primary-dark: #059669;
+  --primary-glow: rgba(16, 185, 129, 0.25);
+  
+  --accent-blue: #3B82F6;
+  --accent-amber: #F59E0B;
+  --accent-rose: #F43F5E;
+  
+  --text-main: #F9FAFB;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
+  
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(16, 185, 129, 0.4);
+  
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  
+  --font-title: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  --header-height: 60px;
+  --nav-height: 70px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  padding-top: var(--header-height);
+  padding-bottom: calc(var(--nav-height) + 15px);
+}
+
+/* ==========================================================================
+   1. CABECERA FIJA SUPERIOR
+   ========================================================================== */
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background-color: rgba(11, 17, 26, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-logo {
+  font-family: var(--font-title);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+
+.brand-logo span {
+  color: var(--primary);
+}
+
+.brand-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #059669, #10B981);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.online-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid var(--border-active);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-light);
+  transition: all 0.3s ease;
+}
+
+.online-pill.offline {
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #FBBF24;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
+  animation: pulse-glow 1.8s infinite;
+}
+
+.online-pill.offline .pulse-dot {
+  background-color: #FBBF24;
+  box-shadow: 0 0 8px #FBBF24;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.sync-badge {
+  background-color: var(--accent-rose);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  display: none;
+}
+
+.sync-badge.visible {
+  display: inline-block;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ==========================================================================
+   2. CONTENIDO PRINCIPAL Y PESTAÑAS
+   ========================================================================== */
+.tab-content {
+  display: none;
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view-title {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+/* ==========================================================================
+   3. TARJETAS Y CONTROLES TÁCTILES
+   ========================================================================== */
+.card-section {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.step-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Selectores táctiles grandes */
+.touch-select {
+  width: 100%;
+  background-color: var(--bg-surface);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-main);
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 18px;
+}
+
+.touch-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.touch-input {
+  width: 100%;
+  background-color: var(--bg-surface);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-main);
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.touch-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Botones principales de acción */
+.btn-giant {
+  width: 100%;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  color: white;
+  border: none;
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.btn-giant:active {
+  transform: scale(0.98);
+  filter: brightness(0.9);
+}
+
+.btn-secondary {
+  background-color: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.btn-secondary:active {
+  background-color: var(--bg-surface);
+}
+
+/* ==========================================================================
+   4. MÓDULO DE PESAJE ÁGIL Y GDP
+   ========================================================================== */
+.weight-display-box {
+  background-color: var(--bg-surface);
+  border: 2px solid var(--border-active);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.weight-huge-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: var(--font-title);
+  font-size: 3.2rem;
+  font-weight: 800;
+  text-align: center;
+  width: 100%;
+  outline: none;
+  letter-spacing: -1px;
+}
+
+.weight-unit {
+  font-size: 1.2rem;
+  color: var(--primary-light);
+  font-weight: 700;
+}
+
+.quick-weight-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.btn-add-weight {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 10px 0;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-add-weight:active {
+  background-color: var(--primary);
+  color: white;
+}
+
+.gdp-badge-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.gdp-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.gdp-val {
+  font-family: var(--font-title);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary-light);
+}
+
+/* ==========================================================================
+   5. MÓDULO BRÚJULA DE RESCATE / RASTREO
+   ========================================================================== */
+.compass-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.compass-dial {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #152233 0%, #0A0F17 100%);
+  border: 3px solid var(--border-active);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.15), inset 0 0 20px rgba(0,0,0,0.6);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.compass-points {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.compass-n, .compass-s, .compass-e, .compass-w {
+  position: absolute;
+  font-family: var(--font-title);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+.compass-n { top: 8px; left: 50%; transform: translateX(-50%); color: var(--accent-rose); }
+.compass-s { bottom: 8px; left: 50%; transform: translateX(-50%); color: var(--text-dim); }
+.compass-e { right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); }
+.compass-w { left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); }
+
+.compass-needle {
+  width: 10px;
+  height: 150px;
+  position: absolute;
+  transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transform-origin: center center;
+}
+
+.needle-north {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 75px solid var(--accent-rose);
+  position: absolute;
+  top: 0;
+  left: -5px;
+  filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.6));
+}
+
+.needle-south {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 75px solid #64748B;
+  position: absolute;
+  bottom: 0;
+  left: -5px;
+}
+
+.compass-center-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 0 10px #fff;
+  z-index: 5;
+}
+
+.target-info-card {
+  width: 100%;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  text-align: center;
+}
+
+.target-dist-huge {
+  font-family: var(--font-title);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--primary-light);
+  margin: 4px 0;
+}
+
+.target-bearing-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   6. MÓDULO DE CÁMARA / QR SCANNER
+   ========================================================================== */
+.qr-reader-container {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 2px dashed var(--border-active);
+  background-color: #000;
+  min-height: 260px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+#qr-video-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.qr-overlay-scanline {
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  right: 15%;
+  bottom: 15%;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 15px var(--primary-glow);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   7. LISTA OFFLINE / COLA DE TRANSACCIONES
+   ========================================================================== */
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.queue-item {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.queue-item-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-amber);
+  margin-bottom: 2px;
+}
+
+.queue-item-desc {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.queue-item-time {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* ==========================================================================
+   8. BARRA DE NAVEGACIÓN INFERIOR (BOTTOM NAV)
+   ========================================================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  background-color: rgba(11, 17, 26, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border-color);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 0 6px;
+  z-index: 100;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px 0;
+}
+
+.nav-btn .nav-icon {
+  font-size: 1.3rem;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.nav-btn .nav-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.nav-btn.active {
+  color: var(--primary-light);
+}
+
+.nav-btn.active .nav-icon {
+  transform: scale(1.18);
+  filter: drop-shadow(0 0 8px var(--primary-glow));
+}
+
+/* Notificación flotante Toast */
+.toast {
+  position: fixed;
+  bottom: calc(var(--nav-height) + 16px);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-active);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 200;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   9. PANTALLA DE AUTENTICACIÓN / LOGIN
+   ========================================================================== */
+.login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(11, 17, 26, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--bg-card);
+  border: 1.5px solid var(--border-active);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.login-logo {
+  font-family: var(--font-title);
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.login-logo span {
+  color: var(--primary);
+}
+
+.login-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+.quick-login-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.btn-quick-user {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-quick-user:hover, .btn-quick-user:active {
+  border-color: var(--primary);
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.btn-quick-user.superadmin {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.2));
+}
+
+.user-badge-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+
+.btn-logout {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+}
+
+.btn-logout:hover {
+  color: var(--accent-rose);
+}
+

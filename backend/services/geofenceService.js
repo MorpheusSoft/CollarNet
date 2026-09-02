@@ -95,24 +95,24 @@ export async function evaluateAnimalPosition(animalId, lat, lon) {
 /**
  * Guarda o actualiza la geocerca de un Hato.
  */
-export async function saveHato(id, nombre, vertices) {
+export async function saveHato(id, nombre, vertices, tenantId = 1) {
   const wkt = verticesToWKT(vertices);
   if (id) {
     const query = `
       UPDATE hatos 
-      SET nombre = $1, perimetro = ST_GeomFromText($2, 4326) 
-      WHERE id = $3 
+      SET nombre = $1, perimetro = ST_GeomFromText($2, 4326), tenant_id = COALESCE($3, tenant_id)
+      WHERE id = $4 
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [nombre, wkt, id]);
+    const { rows } = await pool.query(query, [nombre, wkt, tenantId, id]);
     return rows[0];
   } else {
     const query = `
-      INSERT INTO hatos (nombre, perimetro) 
-      VALUES ($1, ST_GeomFromText($2, 4326)) 
+      INSERT INTO hatos (nombre, perimetro, tenant_id) 
+      VALUES ($1, ST_GeomFromText($2, 4326), $3) 
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [nombre, wkt]);
+    const { rows } = await pool.query(query, [nombre, wkt, tenantId || 1]);
     return rows[0];
   }
 }
@@ -120,24 +120,24 @@ export async function saveHato(id, nombre, vertices) {
 /**
  * Guarda o actualiza la geocerca de un Potrero.
  */
-export async function savePotrero(id, hatoId, nombre, vertices, capacidad = 50) {
+export async function savePotrero(id, hatoId, nombre, vertices, capacidad = 50, margenAdvertencia = 10.00) {
   const wkt = verticesToWKT(vertices);
   if (id) {
     const query = `
       UPDATE potreros 
-      SET hato_id = $1, nombre = $2, perimetro = ST_GeomFromText($3, 4326), capacidad_max_cabezas = $4
-      WHERE id = $5 
+      SET hato_id = $1, nombre = $2, perimetro = ST_GeomFromText($3, 4326), capacidad_max_cabezas = $4, margen_advertencia_metros = $5
+      WHERE id = $6 
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [hatoId, nombre, wkt, capacidad, id]);
+    const { rows } = await pool.query(query, [hatoId, nombre, wkt, capacidad, margenAdvertencia, id]);
     return rows[0];
   } else {
     const query = `
-      INSERT INTO potreros (hato_id, nombre, perimetro, capacidad_max_cabezas) 
-      VALUES ($1, $2, ST_GeomFromText($3, 4326), $4) 
+      INSERT INTO potreros (hato_id, nombre, perimetro, capacidad_max_cabezas, margen_advertencia_metros) 
+      VALUES ($1, $2, ST_GeomFromText($3, 4326), $4, $5) 
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [hatoId, nombre, wkt, capacidad]);
+    const { rows } = await pool.query(query, [hatoId, nombre, wkt, capacidad, margenAdvertencia]);
     return rows[0];
   }
 }

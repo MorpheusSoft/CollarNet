@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CollarNet Campo - PWA</title>
+  
+  <!-- Manifest PWA y Meta Tags Móviles -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0B111A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CollarNet">
+  
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Estilos Mobile-First -->
+  <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       1. CABECERA SUPERIOR
+       ========================================================================== -->
+  <header class="mobile-header">
+    <div class="brand-wrapper">
+      <h1 class="brand-logo">Collar<span>Net</span></h1>
+      <span class="brand-badge">Campo</span>
+    </div>
+    
+    <div class="header-status">
+      <!-- Usuario Logueado -->
+      <div class="user-badge-header" id="user-header-badge" style="display: none;">
+        <span id="user-role-icon">👑</span>
+        <span id="user-name-short">Admin</span>
+        <button class="btn-logout" id="btn-header-logout" title="Cerrar sesión">🚪</button>
+      </div>
+
+      <div class="online-pill" id="status-pill">
+        <span class="pulse-dot"></span>
+        <span id="status-text">Online</span>
+      </div>
+      <span class="sync-badge" id="sync-count-badge">0</span>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       2. CONTENIDO DE PESTAÑAS
+       ========================================================================== -->
+  <main>
+    
+    <!-- ----------------------------------------------------
+         PESTAÑA 1: MANGA / CORRAL (VINCULACIÓN RÁPIDA 3 TOQUES)
+         ---------------------------------------------------- -->
+    <section class="tab-content active" id="tab-manga">
+      <h2 class="view-title">📌 Vinculación en Manga</h2>
+      <p class="view-subtitle">Asocia el arete de la res con el collar en 3 toques.</p>
+
+      <form id="form-manga-sync">
+        <!-- Paso 1: Res -->
+        <div class="card-section">
+          <div class="step-header">
+            <span class="step-num">1</span>
+            <span class="step-title">Seleccionar o Registrar Arete</span>
+          </div>
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <select class="touch-select" id="manga-select-animal" required style="flex: 1;">
+              <option value="">Selecciona Res existente...</option>
+            </select>
+            <button type="button" class="btn-secondary" id="btn-quick-new-animal" title="Alta rápida de res">➕ Nueva</button>
+          </div>
+          
+          <!-- Subformulario para nueva res si no existe -->
+          <div id="quick-new-animal-box" style="display: none; background: var(--bg-surface); padding: 12px; border-radius: var(--radius-md); margin-top: 8px; border: 1px dashed var(--border-active);">
+            <input type="text" class="touch-input" id="quick-arete" placeholder="Arete Visual (Ej: V-104)" style="margin-bottom: 8px;">
+            <div style="display: flex; gap: 8px;">
+              <input type="text" class="touch-input" id="quick-raza" placeholder="Raza (Ej: Nelore, Brahman)" style="flex: 1;">
+              <select class="touch-select" id="quick-categoria" style="flex: 1;">
+                <option value="Novillo">Novillo</option>
+                <option value="Toro">Toro</option>
+                <option value="Vaca">Vaca</option>
+                <option value="Ternero">Ternero</option>
+                <option value="Vaquillona">Vaquillona</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paso 2: Collar Físico -->
+        <div class="card-section">
+          <div class="step-header">
+            <span class="step-num">2</span>
+            <span class="step-title">Collar Físico Disponible</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <select class="touch-select" id="manga-select-collar" required style="flex: 1;">
+              <option value="">Selecciona Collar...</option>
+            </select>
+            <button type="button" class="btn-secondary" id="btn-manga-scan-qr" title="Escanear QR de Collar">📷 QR</button>
+          </div>
+        </div>
+
+        <!-- Paso 3: Potrero Inicial -->
+        <div class="card-section">
+          <div class="step-header">
+            <span class="step-num">3</span>
+            <span class="step-title">Asignar a Potrero</span>
+          </div>
+          <select class="touch-select" id="manga-select-potrero" required>
+            <option value="">Selecciona Potrero...</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-giant" id="btn-submit-manga">
+          <span>⚡</span> VINCULAR EN MANGA
+        </button>
+      </form>
+    </section>
+
+    <!-- ----------------------------------------------------
+         PESTAÑA 2: LECTOR QR / CÁMARA
+         ---------------------------------------------------- -->
+    <section class="tab-content" id="tab-qr">
+      <h2 class="view-title">📷 Escáner QR de Campo</h2>
+      <p class="view-subtitle">Apunta al código QR del collar o chapa de arete.</p>
+
+      <div class="card-section" style="padding: 12px;">
+        <div class="qr-reader-container" id="qr-container">
+          <video id="qr-video-preview" autoplay playsinline muted></video>
+          <div class="qr-overlay-scanline"></div>
+          <div id="qr-placeholder-msg" style="position: absolute; color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px;">
+            Presiona "Activar Cámara" para escanear
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button type="button" class="btn-giant" id="btn-toggle-camera" style="flex: 1; padding: 12px;">
+            📷 Activar Cámara
+          </button>
+          <button type="button" class="btn-secondary" id="btn-switch-camera" style="display: none;">
+            🔄 Girar
+          </button>
+        </div>
+
+        <!-- Simulador Rápido de QR para Pruebas en Navegador -->
+        <div style="background: var(--bg-surface); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Simular Lectura Directa:</span>
+          <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary btn-sim-qr" data-code="collar_test_001" style="font-size: 0.8rem; padding: 6px 10px;">🏷️ collar_test_001</button>
+            <button type="button" class="btn-secondary btn-sim-qr" data-code="COLLAR_002" style="font-size: 0.8rem; padding: 6px 10px;">🏷️ COLLAR_002</button>
+            <button type="button" class="btn-secondary btn-sim-qr" data-code="RES-TEST-001" style="font-size: 0.8rem; padding: 6px 10px;">🐂 RES-TEST-001</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Resultado de Escaneo -->
+      <div class="card-section" id="qr-result-card" style="display: none; border-color: var(--primary);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 700; text-transform: uppercase;">Código Detectado</span>
+          <span class="brand-badge" id="qr-code-type">Hardware Collar</span>
+        </div>
+        <div style="font-family: var(--font-title); font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 14px;" id="qr-result-text">
+          ---
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button class="btn-giant" id="btn-qr-action-manga" style="font-size: 0.9rem; padding: 12px;">📌 Ir a Manga</button>
+          <button class="btn-giant" id="btn-qr-action-peso" style="font-size: 0.9rem; padding: 12px; background: linear-gradient(135deg, #2563EB, #3B82F6);">⚖️ Pesar Res</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------
+         PESTAÑA 3: PESAJE ÁGIL Y GDP
+         ---------------------------------------------------- -->
+    <section class="tab-content" id="tab-pesaje">
+      <h2 class="view-title">⚖️ Módulo de Pesaje Ágil</h2>
+      <p class="view-subtitle">Registro en báscula con cálculo instantáneo de GDP.</p>
+
+      <form id="form-pesaje-campo">
+        <!-- Selector de Res -->
+        <div class="card-section">
+          <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 8px;">SELECCIONAR ANIMAL EN BÁSCULA</label>
+          <select class="touch-select" id="peso-select-animal" required>
+            <option value="">Selecciona la res...</option>
+          </select>
+          
+          <div id="peso-prev-info" style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); display: none;">
+            <span>Último peso: <strong id="val-prev-weight" style="color: #fff;">-- kg</strong></span> | 
+            <span>Fecha: <span id="val-prev-date">--</span></span>
+          </div>
+        </div>
+
+        <!-- Entrada de Peso Gigante -->
+        <div class="weight-display-box">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">PESO EN BÁSCULA</span>
+          <div style="display: flex; align-items: baseline; justify-content: center;">
+            <input type="number" step="0.5" class="weight-huge-input" id="input-weight-val" placeholder="0.0" required>
+            <span class="weight-unit">KG</span>
+          </div>
+        </div>
+
+        <!-- Botones de Ajuste Rápido -->
+        <div class="quick-weight-btns">
+          <button type="button" class="btn-add-weight" data-add="1">+1 kg</button>
+          <button type="button" class="btn-add-weight" data-add="5">+5 kg</button>
+          <button type="button" class="btn-add-weight" data-add="10">+10 kg</button>
+          <button type="button" class="btn-add-weight" data-add="50">+50 kg</button>
+        </div>
+
+        <!-- Cálculo en Tiempo Real de GDP -->
+        <div class="gdp-badge-card" id="gdp-live-card">
+          <div>
+            <div class="gdp-title">Ganancia Diaria (GDP)</div>
+            <span style="font-size: 0.75rem; color: var(--text-dim);" id="gdp-days-count">Comparando con pesaje anterior</span>
+          </div>
+          <div class="gdp-val" id="gdp-calculated-val">-- kg/día</div>
+        </div>
+
+        <button type="submit" class="btn-giant" id="btn-save-weight">
+          <span>⚖️</span> GUARDAR PESAJE
+        </button>
+      </form>
+    </section>
+
+    <!-- ----------------------------------------------------
+         PESTAÑA 4: BRÚJULA DE RESCATE / RASTREO ("BUSCAR RES")
+         ---------------------------------------------------- -->
+    <section class="tab-content" id="tab-brujula">
+      <h2 class="view-title">🧭 Brújula de Rescate</h2>
+      <p class="view-subtitle">Rastreo direccional hacia la posición de la res.</p>
+
+      <!-- Selector de Animal a Rastrear -->
+      <div class="card-section" style="margin-bottom: 12px;">
+        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 8px;">ANIMAL A RASTREAR</label>
+        <select class="touch-select" id="compass-select-animal">
+          <option value="">Selecciona res para rastreo...</option>
+        </select>
+      </div>
+
+      <!-- Dial de la Brújula Animada -->
+      <div class="compass-container">
+        <div class="compass-dial">
+          <div class="compass-points">
+            <span class="compass-n">N</span>
+            <span class="compass-e">E</span>
+            <span class="compass-s">S</span>
+            <span class="compass-w">O</span>
+          </div>
+          <div class="compass-needle" id="compass-needle">
+            <div class="needle-north"></div>
+            <div class="needle-south"></div>
+          </div>
+          <div class="compass-center-dot"></div>
+        </div>
+
+        <!-- Tarjeta de Distancia y Rumbo -->
+        <div class="target-info-card">
+          <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">DISTANCIA AL ANIMAL</span>
+          <div class="target-dist-huge" id="compass-dist-val">-- m</div>
+          <div class="target-bearing-text" id="compass-bearing-val">Rumbo: Esperando fijación GPS...</div>
+        </div>
+      </div>
+
+      <!-- Simulador de Orientación para Pruebas en Escritorio -->
+      <div class="card-section" style="margin-top: 12px; background: var(--bg-surface);">
+        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 8px;">Simulador de Giro y GPS:</span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn-secondary" id="btn-rotate-left" style="flex: 1;">⟲ Girar Izq</button>
+          <button type="button" class="btn-secondary" id="btn-rotate-right" style="flex: 1;">⟳ Girar Der</button>
+          <button type="button" class="btn-secondary" id="btn-gps-here" style="flex: 1;">📍 Mi GPS</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------
+         PESTAÑA 5: MODO OFFLINE Y COLA DE SINCRONIZACIÓN
+         ---------------------------------------------------- -->
+    <section class="tab-content" id="tab-offline">
+      <h2 class="view-title">📦 Almacenamiento & Sincronización</h2>
+      <p class="view-subtitle">Transacciones locales guardadas en el potrero sin cobertura.</p>
+
+      <div class="card-section">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">COLA DE ACCIONES PENDIENTES</span>
+            <div style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 800; color: #fff;" id="offline-queue-count">0 registros</div>
+          </div>
+          <button type="button" class="btn-giant" id="btn-sync-now" style="width: auto; padding: 10px 18px; font-size: 0.9rem;">
+            📡 Sincronizar
+          </button>
+        </div>
+
+        <button type="button" class="btn-secondary" id="btn-download-cache" style="width: 100%; margin-top: 6px;">
+          📥 Descargar Catálogos para Uso Offline
+        </button>
+
+        <div class="queue-list" id="offline-queue-list">
+          <p style="font-size: 0.85rem; color: var(--text-dim); text-align: center; padding: 20px;">
+            No hay operaciones pendientes en cola local.
+          </p>
+        </div>
+      </div>
+
+      <!-- Enlace al Dashboard de Oficina -->
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="index.html" class="btn-secondary" style="display: inline-flex; text-decoration: none; font-size: 0.85rem;">
+          🗺️ Ir al Dashboard de Monitoreo General
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       3. BARRA DE NAVEGACIÓN INFERIOR (BOTTOM NAV)
+       ========================================================================== -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="tab-manga">
+      <span class="nav-icon">📌</span>
+      <span class="nav-label">Manga</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-qr">
+      <span class="nav-icon">📷</span>
+      <span class="nav-label">QR</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-pesaje">
+      <span class="nav-icon">⚖️</span>
+      <span class="nav-label">Pesaje</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-brujula">
+      <span class="nav-icon">🧭</span>
+      <span class="nav-label">Buscar</span>
+    </button>
+    <button class="nav-btn" data-tab="tab-offline">
+      <span class="nav-icon">📦</span>
+      <span class="nav-label">Offline</span>
+    </button>
+  </nav>
+
+  <!-- PANTALLA MODAL DE INICIO DE SESIÓN (LOGIN) -->
+  <div class="login-overlay" id="login-overlay" style="display: flex;">
+    <div class="login-card">
+      <div class="brand-wrapper" style="justify-content: center; margin-bottom: 6px;">
+        <h2 class="login-logo">Collar<span>Net</span></h2>
+        <span class="brand-badge">Campo</span>
+      </div>
+      <p class="login-subtitle">Ingreso de Operarios y Administradores de Finca</p>
+
+      <!-- Selector Rápido para Pruebas Inmediatas -->
+      <div style="text-align: left; margin-bottom: 12px;">
+        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Acceso Rápido por Rol:</span>
+      </div>
+      <div class="quick-login-grid">
+        <button type="button" class="btn-quick-user superadmin" onclick="window.quickLoginMobile('admin@collarnet.com','admin123')">
+          <span>👑 <strong>Super Administrador</strong> (Control Total)</span>
+          <span>⚡</span>
+        </button>
+        <button type="button" class="btn-quick-user" onclick="window.quickLoginMobile('campo@collarnet.com','campo123')">
+          <span>🤠 <strong>Operario Manga</strong> (Vinculación/Pesaje)</span>
+          <span>⚡</span>
+        </button>
+        <button type="button" class="btn-quick-user" onclick="window.quickLoginMobile('finca@collarnet.com','finca123')">
+          <span>🚜 <strong>Gerente de Finca</strong> (Hato/Potreros)</span>
+          <span>⚡</span>
+        </button>
+      </div>
+
+      <div style="position: relative; margin: 16px 0; text-align: center;">
+        <hr style="border: none; border-top: 1px solid var(--border-color);">
+        <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--bg-card); padding: 0 10px; font-size: 0.75rem; color: var(--text-dim);">o ingresa credenciales</span>
+      </div>
+
+      <!-- Formulario Estándar de Login -->
+      <form id="form-login-mobile">
+        <div style="margin-bottom: 10px;">
+          <input type="email" class="touch-input" id="login-email" placeholder="Correo electrónico" required style="font-size: 0.9rem; padding: 12px;">
+        </div>
+        <div style="margin-bottom: 14px;">
+          <input type="password" class="touch-input" id="login-password" placeholder="Contraseña" required style="font-size: 0.9rem; padding: 12px;">
+        </div>
+        <button type="submit" class="btn-giant" id="btn-submit-login" style="padding: 14px; font-size: 1rem;">
+          🔐 Iniciar Sesión
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notificación Toast Flotante -->
+  <div class="toast" id="mobile-toast">
+    <span id="toast-icon">✅</span>
+    <span id="toast-message">Operación exitosa</span>
+  </div>
+
+  <!-- Librería ligera de escaneo QR (CDN con fallback seguro) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- Script Global Fallback para Login Inmediato Mobile -->
+  <script>
+    window.quickLoginMobile = async function(email, password) {
+      const emailInput = document.getElementById('login-email');
+      const pwdInput = document.getElementById('login-password');
+      if (emailInput) emailInput.value = email;
+      if (pwdInput) pwdInput.value = password;
+
+      const submitBtn = document.getElementById('btn-submit-login');
+      if (submitBtn) submitBtn.textContent = '⏳ Verificando...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Credenciales inválidas');
+
+        localStorage.setItem('collarnet_user', JSON.stringify(data.user));
+        const overlay = document.getElementById('login-overlay');
+        if (overlay) overlay.style.display = 'none';
+
+        const badge = document.getElementById('user-header-badge');
+        const roleIcon = document.getElementById('user-role-icon');
+        const nameShort = document.getElementById('user-name-short');
+        if (badge) badge.style.display = 'flex';
+        if (roleIcon) roleIcon.textContent = data.user.rol === 'SUPERADMIN' ? '👑' : (data.user.rol === 'ADMIN_FINCA' ? '🚜' : '🤠');
+        if (nameShort) nameShort.textContent = data.user.nombre.split(' ')[0];
+        if (submitBtn) submitBtn.textContent = '🔐 Iniciar Sesión';
+
+        const toast = document.getElementById('mobile-toast');
+        const msg = document.getElementById('toast-message');
+        if (toast && msg) {
+          msg.textContent = '¡Bienvenido, ' + data.user.nombre.split(' ')[0] + '!';
+          toast.className = 'toast success show';
+          setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+      } catch (err) {
+        if (submitBtn) submitBtn.textContent = '🔐 Iniciar Sesión';
+        alert('Error de inicio de sesión: ' + err.message);
+      }
+    };
+  </script>
+
+  <!-- Módulos de la Aplicación Móvil -->
+  <script type="module" src="js/dbLocal.js?v=3"></script>
+  <script type="module" src="js/mobileApp.js?v=3"></script>
+
+</body>
+</html>

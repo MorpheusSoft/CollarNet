@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #10b981;
+  --primary-dark: #059669;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #070D14;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #10B981;
+}
+
+/* Custom Utility Classes */
+.glass-panel {
+  background: rgba(14, 22, 36, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-elevated {
+  background: rgba(21, 34, 56, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.text-glow-emerald {
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+/* PrimeReact Dark Custom Overrides */
+.p-component {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.p-datatable .p-datatable-header {
+  background: transparent;
+  border: none;
+  padding: 1rem 0;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: #0E1624;
+  color: #94A3B8;
+  border-color: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  background: #0B121C;
+  color: #F8FAFC;
+  border-color: rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: #152238 !important;
+}
+
+.p-dialog {
+  background: #0E1624;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9);
+}
+
+.p-dialog .p-dialog-header {
+  background: #0E1624;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.p-dialog .p-dialog-content {
+  background: #0E1624;
+  color: #F8FAFC;
+  padding: 1.5rem;
+}
+
+.p-dialog .p-dialog-footer {
+  background: #0E1624;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* Custom leaflet map fixes */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 10;
+}

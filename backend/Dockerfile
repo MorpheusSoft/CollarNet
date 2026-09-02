@@ -7,9 +7,14 @@ WORKDIR /app
 COPY backend/package*.json ./backend/
 RUN cd backend && npm ci --only=production
 
-# Copiar código fuente del backend y frontend
+# Copiar e instalar dependencias del frontend y compilar Vite bundle
+COPY frontend/package*.json ./frontend/
+RUN cd frontend && npm install
+
+# Copiar código fuente
 COPY backend ./backend
 COPY frontend ./frontend
+RUN cd frontend && npm run build
 
 # Cambiar directorio de trabajo a backend
 WORKDIR /app/backend

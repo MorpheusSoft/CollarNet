@@ -29,8 +29,12 @@ const io = new Server(server, {
 // Middleware para procesar payloads JSON
 app.use(express.json());
 
-// Servir los archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Servir los archivos estáticos de producción compilados por Vite (React)
+const distPath = path.join(__dirname, '../frontend/dist');
+const rawFrontendPath = path.join(__dirname, '../frontend');
+
+app.use(express.static(distPath));
+app.use(express.static(rawFrontendPath));
 
 // Montar enrutador de la API REST
 app.use('/api', apiRouter);
@@ -39,7 +43,7 @@ app.use('/api', apiRouter);
 app.get('/api/status', (req, res) => {
   res.json({ 
     status: 'ONLINE', 
-    service: 'CollarNet IoT Backend', 
+    service: 'CowIA IoT & Virtual Fences Platform', 
     timestamp: new Date().toISOString() 
   });
 });
@@ -63,11 +67,12 @@ async function start() {
     initMQTT(io);
 
     // 3. Encender servidor HTTP y escuchar conexiones
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`=========================================`);
-      console.log(` Servidor CollarNet Iniciado Exitosamente`);
-      console.log(` Escuchando en el Puerto: http://localhost:${PORT}`);
-      console.log(` Prefijo MQTT Tópico: ${process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano'}`);
+      console.log(` Servidor CowIA Iniciado Exitosamente`);
+      console.log(` Plataforma de Ganadería Inteligente con IA`);
+      console.log(` Escuchando en el Puerto: http://0.0.0.0:${PORT}`);
+      console.log(` Prefijo MQTT Tópico: ${process.env.MQTT_TOPIC_PREFIX || 'cowia/lzambrano'}`);
       console.log(`=========================================`);
     });
 

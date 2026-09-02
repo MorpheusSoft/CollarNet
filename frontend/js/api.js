@@ -107,11 +107,11 @@ export async function registrarPropietario(nombre, documento, telefono, correo) 
 /**
  * Registra un nuevo Collar Físico
  */
-export async function registrarCollar(id, numeroSim, fechaInstalacion) {
+export async function registrarCollar(id, numeroSim, fechaInstalacion, versionFirmware = '1.0.0') {
   const res = await fetch(`${API_BASE}/collares`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, numeroSim, fechaInstalacion })
+    body: JSON.stringify({ id, numeroSim, fechaInstalacion, versionFirmware })
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -187,11 +187,11 @@ export async function apiGuardarHato(id, nombre, vertices) {
 /**
  * Guarda o actualiza un Potrero dibujado
  */
-export async function apiGuardarPotrero(id, hatoId, nombre, vertices, capacidad = 50) {
+export async function apiGuardarPotrero(id, hatoId, nombre, vertices, capacidad = 50, margenAdvertencia = 10.00) {
   const res = await fetch(`${API_BASE}/geocercas/potrero`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, hatoId, nombre, vertices, capacidad })
+    body: JSON.stringify({ id, hatoId, nombre, vertices, capacidad, margenAdvertencia })
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

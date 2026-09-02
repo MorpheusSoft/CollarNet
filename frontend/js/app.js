@@ -43,9 +43,12 @@ let allAnimals = [];
 let currentGeocercasData = { hatos: [], potreros: [] };
 
 /**
- * Inicialización Principal
+ * Inicialización Principal Robusta
  */
-document.addEventListener('DOMContentLoaded', async () => {
+async function initApp() {
+  // 0. Autenticación de usuario
+  setupDesktopAuth();
+
   // 1. Inicializar el mapa centrado en el hato de prueba
   initMap(9.1000, -67.1000, 15);
   
@@ -57,7 +60,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 4. Cargar datos iniciales desde el Servidor REST (incluyendo dibujar geocercas)
   await refreshData();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 /**
  * Establece conexión con el canal WebSockets
@@ -133,15 +142,19 @@ async function refreshData() {
     const animCollarSelect = document.getElementById('anim-collar');
     const pesoAnimalSelect = document.getElementById('peso-animal');
     const animPropietarioSelect = document.getElementById('anim-propietario');
+    const animMadreSelect = document.getElementById('anim-madre');
+    const animPadreSelect = document.getElementById('anim-padre');
 
     // Limpiar selectores
     syncCollarSelect.innerHTML = '<option value="">Selecciona un dispositivo...</option>';
     animCollarSelect.innerHTML = '<option value="">Asociar a Collar...</option>';
     pesoAnimalSelect.innerHTML = '<option value="">Selecciona el Animal...</option>';
     animPropietarioSelect.innerHTML = '<option value="">Asociar a Dueño...</option>';
+    if (animMadreSelect) animMadreSelect.innerHTML = '<option value="">Seleccionar Madre (Opcional)...</option>';
+    if (animPadreSelect) animPadreSelect.innerHTML = '<option value="">Seleccionar Padre (Opcional)...</option>';
 
     collares.forEach(c => {
-      syncCollarSelect.innerHTML += `<option value="${c.id}">${c.id} (${c.numero_sim})</option>`;
+      syncCollarSelect.innerHTML += `<option value="${c.id}">${c.id} (${c.numero_sim}) - FW: ${c.version_firmware || '1.0.0'}</option>`;
       animCollarSelect.innerHTML += `<option value="${c.id}">${c.id}</option>`;
     });
 
@@ -151,6 +164,8 @@ async function refreshData() {
 
     allAnimals.forEach(a => {
       pesoAnimalSelect.innerHTML += `<option value="${a.animal_id}">Arete: ${a.arete_visual}</option>`;
+      if (animMadreSelect) animMadreSelect.innerHTML += `<option value="${a.animal_id}">Arete: ${a.arete_visual} (${a.raza}${a.sexo ? ' - ' + a.sexo : ''})</option>`;
+      if (animPadreSelect) animPadreSelect.innerHTML += `<option value="${a.animal_id}">Arete: ${a.arete_visual} (${a.raza}${a.sexo ? ' - ' + a.sexo : ''})</option>`;
       // Dibujar marcadores estáticos de inicio
       if (a.latitud && a.longitud) {
         updateAnimalMarker({
@@ -349,6 +364,34 @@ function initUIEvents() {
   // FORMULARIOS DE REGISTRO
   // ==========================================
 
+  // Registro de Nuevo Usuario / Operario
+  const formNuevoUsuario = document.getElementById('form-nuevo-usuario');
+  if (formNuevoUsuario) {
+    formNuevoUsuario.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('user-new-nombre').value.trim();
+      const email = document.getElementById('user-new-email').value.trim();
+      const password = document.getElementById('user-new-password').value;
+      const rol = document.getElementById('user-new-rol').value;
+      const fincaAsignada = document.getElementById('user-new-finca').value.trim();
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, email, password, rol, fincaAsignada })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al registrar usuario');
+
+        alert(`¡Usuario "${data.user.nombre}" (${data.user.rol}) registrado con éxito!`);
+        e.target.reset();
+      } catch (err) {
+        alert(`Error al registrar usuario: ${err.message}`);
+      }
+    });
+  }
+
   // Registro Propietario
   document.getElementById('form-propietario').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -372,10 +415,11 @@ function initUIEvents() {
     e.preventDefault();
     const id = document.getElementById('coll-id').value;
     const numeroSim = document.getElementById('coll-sim').value;
+    const versionFirmware = document.getElementById('coll-firmware') ? document.getElementById('coll-firmware').value : '1.0.0';
     const fechaInstalacion = document.getElementById('coll-instalacion').value;
 
     try {
-      await registrarCollar(id, numeroSim, fechaInstalacion);
+      await registrarCollar(id, numeroSim, fechaInstalacion, versionFirmware);
       alert('Collar registrado exitosamente.');
       e.target.reset();
       await refreshData();
@@ -434,7 +478,12 @@ function initUIEvents() {
     const data = {
       areteVisual: document.getElementById('anim-arete').value,
       raza: document.getElementById('anim-raza').value,
+      sexo: document.getElementById('anim-sexo') ? document.getElementById('anim-sexo').value : null,
       categoria: document.getElementById('anim-categoria').value,
+      fotoUrl: document.getElementById('anim-foto') ? document.getElementById('anim-foto').value : null,
+      numeroHierro: document.getElementById('anim-hierro') ? document.getElementById('anim-hierro').value : null,
+      madreId: document.getElementById('anim-madre') ? document.getElementById('anim-madre').value : null,
+      padreId: document.getElementById('anim-padre') ? document.getElementById('anim-padre').value : null,
       fechaNacimiento: document.getElementById('anim-nacimiento').value,
       collarId: document.getElementById('anim-collar').value,
       propietarioId: parseInt(propietarioId, 10),
@@ -472,17 +521,24 @@ function initUIEvents() {
     renderAnimalList(filtered);
   });
 
-  // Mostrar/Ocultar Hato Asociado en Entrada Manual
+  // Mostrar/Ocultar Hato Asociado y Margen de Potrero en Entrada Manual
   const manualTypeSelect = document.getElementById('manual-type');
   const manualHatoGroup = document.getElementById('manual-hato-association-group');
-  if (manualTypeSelect && manualHatoGroup) {
+  const manualMargenGroup = document.getElementById('manual-potrero-margen-group');
+  if (manualTypeSelect) {
     manualTypeSelect.addEventListener('change', (e) => {
       if (e.target.value === 'potrero') {
-        manualHatoGroup.style.display = 'block';
-        document.getElementById('manual-hato-id').setAttribute('required', 'true');
+        if (manualHatoGroup) {
+          manualHatoGroup.style.display = 'block';
+          document.getElementById('manual-hato-id').setAttribute('required', 'true');
+        }
+        if (manualMargenGroup) manualMargenGroup.style.display = 'block';
       } else {
-        manualHatoGroup.style.display = 'none';
-        document.getElementById('manual-hato-id').removeAttribute('required');
+        if (manualHatoGroup) {
+          manualHatoGroup.style.display = 'none';
+          document.getElementById('manual-hato-id').removeAttribute('required');
+        }
+        if (manualMargenGroup) manualMargenGroup.style.display = 'none';
       }
     });
   }
@@ -636,14 +692,26 @@ function renderAnimalList(animals) {
       'ESCAPE_HATO': '🚨 ESCAPE'
     };
 
+    const imgHtml = a.foto_url ? `<img src="${a.foto_url}" alt="Foto ${a.arete_visual}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);" />` : `<span style="font-size: 1.5rem;">🐂</span>`;
+    const sexoTag = a.sexo ? `<span style="font-size: 0.75rem; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px;">${a.sexo === 'Macho' ? '♂️ Macho' : '♀️ Hembra'}</span>` : '';
+    const hierroTag = a.numero_hierro ? `<span style="font-size: 0.75rem; color: var(--accent-gold);">🏷️ Hierro: ${a.numero_hierro}</span>` : '';
+    const madreTag = a.arete_madre ? `<p style="font-size: 0.7rem; color: var(--text-secondary);"><strong>Madre:</strong> Arete ${a.arete_madre}</p>` : '';
+    const padreTag = a.arete_padre ? `<p style="font-size: 0.7rem; color: var(--text-secondary);"><strong>Padre:</strong> Arete ${a.arete_padre}</p>` : '';
+
     card.innerHTML = `
-      <div class="animal-card-header">
-        <span class="animal-arete">🐂 Arete: ${a.arete_visual}</span>
+      <div class="animal-card-header" style="display: flex; align-items: center; gap: 8px;">
+        ${imgHtml}
+        <div style="flex: 1;">
+          <span class="animal-arete" style="display: block;">Arete: ${a.arete_visual}</span>
+          ${sexoTag} ${hierroTag}
+        </div>
         <span class="animal-status-tag">${alertLabels[a.estado_alerta] || a.estado_alerta}</span>
       </div>
       <div class="animal-card-body">
         <p><strong>Potrero:</strong> ${a.potrero_asignado_nombre || 'Sin asignación'}</p>
         <p><strong>Clasificación:</strong> ${a.raza} (${a.categoria})</p>
+        ${madreTag}
+        ${padreTag}
       </div>
       <div class="animal-card-footer">
         <span class="stat-item">🔋 ${a.nivel_bateria || 0}%</span>
@@ -983,7 +1051,7 @@ function renderCollarsStatusList(collares = []) {
       <div style="display: flex; flex-direction: column; gap: 2px;">
         <span style="font-weight: 600; font-size: 0.8rem; color: var(--text-primary);">ID: ${c.id}</span>
         <span style="font-size: 0.7rem; color: var(--text-secondary);">${labelText} (${c.numero_sim})</span>
-        <span style="font-size: 0.65rem; color: var(--text-secondary);">🔋 ${bateriaText} | 📶 ${senalText} | 🕒 ${conexionText}</span>
+        <span style="font-size: 0.65rem; color: var(--text-secondary);">⚙️ FW: ${c.version_firmware || '1.0.0'} | 🔋 ${bateriaText} | 📶 ${senalText} | 🕒 ${conexionText}</span>
       </div>
       <button type="button" class="toggle-collar-btn" data-id="${c.id}" data-active="${c.activo}" style="
         padding: 4px 8px;
@@ -1020,4 +1088,100 @@ function renderCollarsStatusList(collares = []) {
 
     container.appendChild(row);
   });
+}
+
+/**
+ * Módulo de Autenticación Desktop
+ */
+function setupDesktopAuth() {
+  const loginOverlay = document.getElementById('login-overlay');
+  const loginForm = document.getElementById('form-login-desktop');
+  const userHeaderBadge = document.getElementById('user-header-badge');
+  const userRoleIcon = document.getElementById('user-role-icon');
+  const userNameShort = document.getElementById('user-name-short');
+  const btnLogout = document.getElementById('btn-header-logout');
+  const quickUserBtns = document.querySelectorAll('.btn-quick-user');
+  const emailInput = document.getElementById('login-email-desktop');
+  const pwdInput = document.getElementById('login-password-desktop');
+
+  // 1. Revisar sesión existente en localStorage
+  const savedUserStr = localStorage.getItem('collarnet_user');
+  if (savedUserStr) {
+    try {
+      const user = JSON.parse(savedUserStr);
+      renderUserSession(user);
+    } catch (e) {
+      localStorage.removeItem('collarnet_user');
+    }
+  }
+
+  // 2. Botones de acceso rápido
+  quickUserBtns.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = btn.getAttribute('data-email');
+      const password = btn.getAttribute('data-pwd');
+      if (emailInput) emailInput.value = email;
+      if (pwdInput) pwdInput.value = password;
+      await executeDesktopLogin(email, password);
+    });
+  });
+
+  // 3. Formulario de login
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = (emailInput ? emailInput.value : '').trim();
+      const password = pwdInput ? pwdInput.value : '';
+      await executeDesktopLogin(email, password);
+    });
+  }
+
+  // 4. Cerrar sesión
+  if (btnLogout) {
+    btnLogout.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      localStorage.removeItem('collarnet_user');
+      if (userHeaderBadge) userHeaderBadge.style.display = 'none';
+      if (loginOverlay) loginOverlay.style.display = 'flex';
+    });
+  }
+
+  async function executeDesktopLogin(email, password) {
+    try {
+      const submitBtn = document.querySelector('#form-login-desktop button[type="submit"]');
+      if (submitBtn) submitBtn.textContent = '⏳ Verificando...';
+
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Credenciales incorrectas');
+      }
+
+      localStorage.setItem('collarnet_user', JSON.stringify(data.user));
+      renderUserSession(data.user);
+      if (submitBtn) submitBtn.textContent = '🔐 Iniciar Sesión en CollarNet';
+    } catch (err) {
+      const submitBtn = document.querySelector('#form-login-desktop button[type="submit"]');
+      if (submitBtn) submitBtn.textContent = '🔐 Iniciar Sesión en CollarNet';
+      alert(`Error de autenticación: ${err.message}`);
+    }
+  }
+
+  function renderUserSession(user) {
+    if (!user) return;
+    if (loginOverlay) loginOverlay.style.display = 'none';
+    if (userHeaderBadge) {
+      userHeaderBadge.style.display = 'flex';
+      userRoleIcon.textContent = user.rol === 'SUPERADMIN' ? '👑' : (user.rol === 'ADMIN_FINCA' ? '🚜' : '🤠');
+      userNameShort.textContent = `${user.nombre.split(' ')[0]} (${user.rol})`;
+      userHeaderBadge.title = `${user.nombre} (${user.rol}) - ${user.email}`;
+    }
+  }
 }
