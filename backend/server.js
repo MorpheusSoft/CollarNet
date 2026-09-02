@@ -3,6 +3,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import apiRouter from './routes/api.js';
 import { initMQTT } from './services/mqttService.js';
@@ -33,11 +34,28 @@ app.use(express.json());
 const distPath = path.join(__dirname, '../frontend/dist');
 const rawFrontendPath = path.join(__dirname, '../frontend');
 
-app.use(express.static(distPath));
-app.use(express.static(rawFrontendPath));
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+} else {
+  app.use(express.static(rawFrontendPath));
+}
 
 // Montar enrutador de la API REST
 app.use('/api', apiRouter);
+
+// Fallback para SPA en cualquier ruta no-API
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  const indexHtml = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexHtml)) {
+    return res.sendFile(indexHtml);
+  }
+  const rawIndexHtml = path.join(rawFrontendPath, 'index.html');
+  if (fs.existsSync(rawIndexHtml)) {
+    return res.sendFile(rawIndexHtml);
+  }
+  next();
+});
 
 // Ruta base de estado de la API
 app.get('/api/status', (req, res) => {
