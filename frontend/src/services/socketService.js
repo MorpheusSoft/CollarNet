@@ -2,13 +2,20 @@ import { io } from 'socket.io-client';
 
 let socket = null;
 
-export function initSocket(onConnect, onTelemetry, onAlerta, onDisconnect) {
+export function initSocket(onConnect, onTelemetry, onAlerta, onDisconnect, onGeocercasUpdate, onDataUpdate) {
   if (socket) return socket;
 
-  socket = io(window.location.origin, {
-    transports: ['websocket', 'polling'],
-    reconnectionAttempts: 10,
-    reconnectionDelay: 2000
+  const targetOrigin = (typeof window !== 'undefined' && window.location.port === '5173')
+    ? `http://${window.location.hostname || '192.168.86.30'}:3500`
+    : (typeof window !== 'undefined' ? window.location.origin : 'http://192.168.86.30:3500');
+
+  socket = io(targetOrigin, {
+    transports: ['polling', 'websocket'],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 10000
   });
 
   socket.on('connect', () => {
@@ -22,6 +29,17 @@ export function initSocket(onConnect, onTelemetry, onAlerta, onDisconnect) {
 
   socket.on('alerta_collar', (data) => {
     if (onAlerta) onAlerta(data);
+  });
+
+  socket.on('geocercas_actualizadas', (data) => {
+    console.log('[Socket.io] Geocercas actualizadas en servidor:', data);
+    if (onGeocercasUpdate) onGeocercasUpdate(data);
+  });
+
+  socket.on('datos_actualizados', (data) => {
+    console.log('[Socket.io] Datos actualizados desde móvil/web:', data);
+    if (onDataUpdate) onDataUpdate(data);
+    if (onGeocercasUpdate) onGeocercasUpdate(data);
   });
 
   socket.on('disconnect', () => {

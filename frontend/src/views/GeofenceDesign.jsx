@@ -769,41 +769,58 @@ export default function GeofenceDesign({
               {geocercas?.potreros?.length === 0 ? (
                 <p className="text-xs text-slate-500">No hay potreros registrados.</p>
               ) : (
-                geocercas?.potreros?.map(p => (
-                  <div
-                    key={p.id}
-                    className="p-3 rounded-xl bg-slate-900/80 border border-emerald-500/20 flex items-center justify-between mb-2 hover:border-emerald-500/40 transition-all"
-                  >
-                    <div>
-                      <div className="font-bold text-xs text-white">{p.nombre}</div>
-                      <div className="text-[10px] text-slate-400">
-                        Hato ID: {p.hato_id} | Margen: {p.margen_advertencia_metros || 10}m | Cap: {p.capacidad_max_cabezas || 50} reses
+                geocercas?.potreros?.map(p => {
+                  const estado = (p.estado || 'ABIERTO').toUpperCase();
+                  const isArreo = !!p.modo_arreo_activo;
+                  const isDescanso = estado === 'DESCANSO' || estado === 'CERRADO';
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="p-3 rounded-xl bg-slate-900/80 border border-emerald-500/20 flex items-center justify-between mb-2 hover:border-emerald-500/40 transition-all"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-white">{p.nombre}</span>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
+                            isArreo 
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                              : (isDescanso 
+                                ? 'bg-slate-800 text-slate-300 border border-slate-600' 
+                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30')
+                          }`}>
+                            {isArreo ? '⚡ TRASLADO' : (isDescanso ? '💤 DESCANSO' : '🟢 ABIERTO')}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          Hato ID: {p.hato_id} | Margen: {p.margen_advertencia_metros || 10}m | Cap: {p.capacidad_max_cabezas || 50} reses | Ocupación: {p.total_animales || 0}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {canManagePotreros && (
+                          <button
+                            type="button"
+                            onClick={() => openEditPotrero(p)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                            title="Editar Potrero (Nombre, Hato, Margen, Coordenadas)"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {canManagePotreros && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGeofence('potrero', p.id, p.nombre)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            title="Eliminar potrero"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {canManagePotreros && (
-                        <button
-                          type="button"
-                          onClick={() => openEditPotrero(p)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                          title="Editar Potrero (Nombre, Hato, Margen, Coordenadas)"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      {canManagePotreros && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteGeofence('potrero', p.id, p.nombre)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                          title="Eliminar potrero"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 

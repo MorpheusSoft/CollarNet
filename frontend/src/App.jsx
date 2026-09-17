@@ -117,10 +117,16 @@ export default function App() {
     loadAllData();
   }, [user, selectedTenantId, selectedHatoId]);
 
+  // Keep ref to latest loadAllData for socket listeners
+  const loadAllDataRef = React.useRef(loadAllData);
+  useEffect(() => {
+    loadAllDataRef.current = loadAllData;
+  });
+
   // Initialize WebSockets Telemetry Listener
   useEffect(() => {
 
-    // Connect Socket.io for Real-Time Telemetry
+    // Connect Socket.io for Real-Time Telemetry & Geocercas Sync
     const socket = initSocket(
       () => setIsSocketConnected(true),
       (telemetry) => {
@@ -137,7 +143,25 @@ export default function App() {
       (alertData) => {
         console.warn('[Alerta Collar]', alertData);
       },
-      () => setIsSocketConnected(false)
+      () => setIsSocketConnected(false),
+      () => {
+        console.log('[Socket.io] Recibida notificación de geocercas_actualizadas, recargando datos...');
+        if (loadAllDataRef.current) loadAllDataRef.current();
+      },
+      (data) => {
+        console.log('[Socket.io] Recibida notificación de datos_actualizados:', data);
+        if (data?.tipo === 'pesaje' && (data.areteVisual || data.animalId)) {
+          setMonitoringData(prev => prev.map(a => {
+            const matchArete = data.areteVisual && (a.arete_visual?.toUpperCase() === String(data.areteVisual).toUpperCase());
+            const matchId = data.animalId && (String(a.id) === String(data.animalId) || String(a.animal_id) === String(data.animalId));
+            if (matchArete || matchId) {
+              return { ...a, peso_actual: parseFloat(data.peso) };
+            }
+            return a;
+          }));
+        }
+        if (loadAllDataRef.current) loadAllDataRef.current();
+      }
     );
 
     return () => {

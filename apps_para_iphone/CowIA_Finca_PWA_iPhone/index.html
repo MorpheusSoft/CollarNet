@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base href="/iphone/CowIA_Finca_PWA_iPhone/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="AgroGIS - Aplicación PWA para medición y registro topológico de terrenos agrícolas (Hatos y Potreros).">
+  
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AgroGIS">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AgroGIS - Medición y Registro Agrícola</title>
+  <link rel="manifest" href="manifest.json">
+  
+  <style>
+    body {
+      background-color: #061A14;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #loading-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #10B981;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(16, 185, 129, 0.2);
+      border-top: 4px solid #10B981;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-indicator">
+    <div class="spinner"></div>
+    <div style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">AgroGIS</div>
+    <div style="font-size: 0.85rem; color: #9CA3AF; margin-top: 6px;">Cargando motor topológico y mapas...</div>
+  </div>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

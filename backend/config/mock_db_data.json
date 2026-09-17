@@ -1,0 +1,412 @@
+{
+  "propietarios": [
+    {
+      "id": 1,
+      "nombre": "Luis Zambrano (Hacienda Demo)",
+      "documento_identidad": "V-12345678",
+      "telefono": "+58 412 111 2233",
+      "correo": "luis@collarnet.com",
+      "creado_en": "2026-08-31T13:39:52.913Z"
+    }
+  ],
+  "hatos": [
+    {
+      "id": 1,
+      "nombre": "Hato La Esperanza (Principal)",
+      "vertices": [
+        [
+          9.101,
+          -67.101
+        ],
+        [
+          9.101,
+          -67.099
+        ],
+        [
+          9.099,
+          -67.099
+        ],
+        [
+          9.099,
+          -67.101
+        ]
+      ],
+      "creado_en": "2026-08-31T13:39:52.913Z"
+    },
+    {
+      "id": 2,
+      "nombre": "Hato Prueba API",
+      "vertices": [
+        [
+          10.673,
+          -71.609
+        ],
+        [
+          10.682,
+          -71.606
+        ],
+        [
+          10.68,
+          -71.596
+        ],
+        [
+          10.672,
+          -71.6
+        ],
+        [
+          10.673,
+          -71.609
+        ]
+      ],
+      "creado_en": "2026-08-31T13:41:56.871Z"
+    },
+    {
+      "id": 3,
+      "nombre": "Hato 31/8 #4",
+      "vertices": [
+        [
+          10.666311517463006,
+          -71.61383474766149
+        ],
+        [
+          10.663143455919775,
+          -71.5986085572508
+        ],
+        [
+          10.651898390621067,
+          -71.60291056837254
+        ],
+        [
+          10.653814832545395,
+          -71.61893772784143
+        ],
+        [
+          10.666311517463006,
+          -71.61383474766149
+        ]
+      ],
+      "creado_en": "2026-08-31T13:45:54.414Z"
+    },
+    {
+      "id": 4,
+      "nombre": "Hato 31/8 #4",
+      "vertices": [
+        [
+          10.694685994914371,
+          -71.63558077738041
+        ],
+        [
+          10.683397153629423,
+          -71.61361941277
+        ],
+        [
+          10.65972585958862,
+          -71.62551800573027
+        ],
+        [
+          10.674287991676698,
+          -71.64459580783341
+        ],
+        [
+          10.694685994914371,
+          -71.63558077738041
+        ]
+      ],
+      "creado_en": "2026-08-31T13:47:10.702Z"
+    },
+    {
+      "id": 5,
+      "nombre": "Hato 31/8 #4",
+      "vertices": [
+        [
+          10.665552540891394,
+          -71.65191706307135
+        ],
+        [
+          10.650234818044906,
+          -71.63290786048516
+        ],
+        [
+          10.624290750938622,
+          -71.64791315497654
+        ],
+        [
+          10.638339985336257,
+          -71.66928533183409
+        ],
+        [
+          10.665552540891394,
+          -71.65191706307135
+        ]
+      ],
+      "creado_en": "2026-08-31T13:50:40.092Z"
+    }
+  ],
+  "potreros": [
+    {
+      "id": 1,
+      "hato_id": 1,
+      "nombre": "Potrero A1 - Pastura Norte",
+      "vertices": [
+        [
+          9.101,
+          -67.101
+        ],
+        [
+          9.101,
+          -67.1
+        ],
+        [
+          9.099,
+          -67.1
+        ],
+        [
+          9.099,
+          -67.101
+        ]
+      ],
+      "capacidad_max_cabezas": 35,
+      "creado_en": "2026-08-31T13:39:52.913Z"
+    },
+    {
+      "id": 2,
+      "hato_id": 1,
+      "nombre": "Potrero A2 - Pastura Este",
+      "vertices": [
+        [
+          9.101,
+          -67.1
+        ],
+        [
+          9.101,
+          -67.099
+        ],
+        [
+          9.099,
+          -67.099
+        ],
+        [
+          9.099,
+          -67.1
+        ]
+      ],
+      "capacidad_max_cabezas": 40,
+      "creado_en": "2026-08-31T13:39:52.913Z"
+    },
+    {
+      "id": 3,
+      "hato_id": 2,
+      "nombre": "Potrero Lote 1",
+      "vertices": [
+        [
+          10.675,
+          -71.608
+        ],
+        [
+          10.68,
+          -71.606
+        ],
+        [
+          10.68,
+          -71.6
+        ],
+        [
+          10.675,
+          -71.602
+        ],
+        [
+          10.675,
+          -71.608
+        ]
+      ],
+      "capacidad_max_cabezas": 50,
+      "creado_en": "2026-08-31T13:42:16.946Z"
+    },
+    {
+      "id": 4,
+      "hato_id": 3,
+      "nombre": "Potrero Lote 46",
+      "vertices": [
+        [
+          10.666311517463006,
+          -71.61383474766149
+        ],
+        [
+          10.66468334619903,
+          -71.60642116648837
+        ],
+        [
+          10.653814832545395,
+          -71.61893772784143
+        ],
+        [
+          10.666311517463006,
+          -71.61383474766149
+        ]
+      ],
+      "capacidad_max_cabezas": 10,
+      "creado_en": "2026-08-31T13:46:15.710Z"
+    },
+    {
+      "id": 5,
+      "hato_id": 3,
+      "nombre": "Potrero Lote 46",
+      "vertices": [
+        [
+          10.66468334619903,
+          -71.60642116648837
+        ],
+        [
+          10.653814832545395,
+          -71.61893772784143
+        ],
+        [
+          10.657891942032505,
+          -71.60521520569091
+        ],
+        [
+          10.66468334619903,
+          -71.60642116648837
+        ]
+      ],
+      "capacidad_max_cabezas": 10,
+      "creado_en": "2026-08-31T13:46:40.359Z"
+    },
+    {
+      "id": 6,
+      "hato_id": 4,
+      "nombre": "Potrero Lote 47",
+      "vertices": [
+        [
+          10.694685994914371,
+          -71.63558077738041
+        ],
+        [
+          10.674287991676698,
+          -71.64459580783341
+        ],
+        [
+          10.678175314607296,
+          -71.6299815346991
+        ],
+        [
+          10.694685994914371,
+          -71.63558077738041
+        ]
+      ],
+      "capacidad_max_cabezas": 10,
+      "creado_en": "2026-08-31T13:47:47.044Z"
+    }
+  ],
+  "collares": [
+    {
+      "id": "collar_test_001",
+      "numero_sim": "+584129990001",
+      "nivel_bateria": 94,
+      "senal_celular": 4,
+      "latitud": 9.1,
+      "longitud": -67.1005,
+      "ultima_conexion": "2026-08-31T13:39:52.913Z",
+      "fecha_instalacion": "2026-07-01",
+      "activo": true
+    },
+    {
+      "id": "collar_test_002",
+      "numero_sim": "+584129990002",
+      "nivel_bateria": 88,
+      "senal_celular": 5,
+      "latitud": 9.1002,
+      "longitud": -67.0995,
+      "ultima_conexion": "2026-08-31T13:39:52.913Z",
+      "fecha_instalacion": "2026-07-15",
+      "activo": true
+    }
+  ],
+  "animales": [
+    {
+      "id": 1,
+      "collar_id": "collar_test_001",
+      "propietario_id": 1,
+      "potrero_id": 1,
+      "arete_visual": "NEL-042",
+      "raza": "Nelore",
+      "categoria": "Novillo",
+      "fecha_nacimiento": "2025-01-15"
+    },
+    {
+      "id": 2,
+      "collar_id": "collar_test_002",
+      "propietario_id": 1,
+      "potrero_id": 2,
+      "arete_visual": "BRA-108",
+      "raza": "Nelore",
+      "categoria": "Novillo",
+      "fecha_nacimiento": "2024-11-20"
+    }
+  ],
+  "registro_pesajes": [
+    {
+      "id": 1,
+      "animal_id": 1,
+      "peso": 310,
+      "fecha_pesaje": "2026-06-25"
+    },
+    {
+      "id": 2,
+      "animal_id": 1,
+      "peso": 335.5,
+      "fecha_pesaje": "2026-07-25"
+    },
+    {
+      "id": 3,
+      "animal_id": 1,
+      "peso": 362,
+      "fecha_pesaje": "2026-08-25"
+    },
+    {
+      "id": 4,
+      "animal_id": 2,
+      "peso": 380,
+      "fecha_pesaje": "2026-08-01"
+    }
+  ],
+  "parametros_rendimiento": [
+    {
+      "id": 1,
+      "raza": "Nelore",
+      "categoria": "Novillo",
+      "gdp_promedio": 0.85,
+      "peso_adulto_esperado": 550,
+      "costo_diario_manutencion": 1.2,
+      "precio_mercado_por_kg": 2.1
+    },
+    {
+      "id": 2,
+      "raza": "Nelore",
+      "categoria": "Toro",
+      "gdp_promedio": 1.05,
+      "peso_adulto_esperado": 800,
+      "costo_diario_manutencion": 1.6,
+      "precio_mercado_por_kg": 2.25
+    },
+    {
+      "id": 3,
+      "raza": "Nelore",
+      "categoria": "Vaca",
+      "gdp_promedio": 0.72,
+      "peso_adulto_esperado": 480,
+      "costo_diario_manutencion": 1.1,
+      "precio_mercado_por_kg": 2
+    }
+  ],
+  "telemetria": [],
+  "alertas": [],
+  "nextId": {
+    "propietarios": 2,
+    "hatos": 6,
+    "potreros": 7,
+    "animales": 3,
+    "pesajes": 5,
+    "alertas": 1
+  }
+}

@@ -28,6 +28,7 @@ import {
   aplicarTratamientoSanitario, 
   fetchSanidadKpis 
 } from '../services/apiService';
+import { getSocket } from '../services/socketService';
 import { fireQuickSuccess, fireCelebration } from '../services/confettiHelper';
 
 export default function VeterinaryHealthView({ monitoringData = [], currentUser, selectedTenantId }) {
@@ -99,6 +100,23 @@ export default function VeterinaryHealthView({ monitoringData = [], currentUser,
 
   useEffect(() => {
     loadAllData();
+  }, [selectedTenantId]);
+
+  // Real-time WebSocket listener for live vaccinations from mobile/web
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleDataUpdate = (data) => {
+      if (data?.tipo === 'sanidad' || data?.tipo === 'vacunacion_lote' || data?.tipo === 'pesaje') {
+        loadAllData();
+      }
+    };
+
+    socket.on('datos_actualizados', handleDataUpdate);
+    return () => {
+      socket.off('datos_actualizados', handleDataUpdate);
+    };
   }, [selectedTenantId]);
 
   // Manejo de Aplicación de Tratamiento

@@ -141,6 +141,28 @@ export async function apiEliminarPotrero(id) {
   return data;
 }
 
+export async function apiCambiarEstadoPotrero(id, estado) {
+  const res = await fetch(`${API_BASE}/potreros/${id}/estado`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ estado })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error al cambiar estado del potrero');
+  return data;
+}
+
+export async function apiIniciarModoArreo(origen, destino, duracionMinutos = 45, activo = true) {
+  const res = await fetch(`${API_BASE}/potreros/arreo`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ origen, destino, duracionMinutos, activo })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error al gestionar modo arreo');
+  return data;
+}
+
 export async function apiCrearManual(tipo, nombre, hatoId, vertices, margenAdvertencia = 10) {
   const res = await fetch(`${API_BASE}/geocercas/crear-manual`, {
     method: 'POST',

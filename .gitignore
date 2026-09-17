@@ -11,10 +11,11 @@ yarn-error.log*
 .env
 backend/.env
 
-# Archivos binarios y compilados de Arduino/Linux
+# Archivos binarios y compilados de Arduino/Linux/Android
 *.elf
 *.hex
 *.bin
+*.apk
 bin/
 *.deb
 *.tar.zst
@@ -28,6 +29,15 @@ scratch/
 walk_log.txt
 mosquitto/data/
 mosquitto/log/
+
+# Flutter & Dart
+**/.dart_tool/
+**/build/
+**/.pub/
+**/.pub-cache/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.jdk/
 
 # Sistema Operativo y Editores
 .DS_Store
