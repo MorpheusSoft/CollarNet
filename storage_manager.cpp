@@ -56,15 +56,6 @@ bool loadGeofenceConfig() {
         return false;
     }
 
-    // Validar si la geocerca guardada es obsoleta (ej. ID 7 de Guárico a 524 km)
-    int savedHId = doc.containsKey("h_id") ? doc["h_id"].as<int>() : 0;
-    if (savedHId != 5) {
-        Serial.printf("[Storage] Geocerca obsoleta detectada (ID %d). Eliminando y cargando Hato Oficina (ID 5)...\n", savedHId);
-        LittleFS.remove(CONFIG_FILE);
-        loadDefaultGeofence();
-        return false;
-    }
-
     // 1. Cargar Hato Maestro
     if (doc.containsKey("h_id") && doc.containsKey("h_v")) {
         hatoMaster.id = doc["h_id"];
@@ -99,11 +90,17 @@ bool loadGeofenceConfig() {
         numPotreros = 0; // Sin potreros asignados
     }
 
-    // 3. Cargar Umbral de Alerta
+    // 3. Cargar Estado de Potrero (Abierto / Cerrado)
+    if (doc.containsKey("p_open")) {
+        potreroAbierto = (doc["p_open"].as<int>() == 1);
+        Serial.printf("[Storage] Estado de potrero: %s\n", potreroAbierto ? "ABIERTO (Modo Traslado)" : "CERRADO (Cerca Activa)");
+    }
+
+    // 4. Cargar Umbral de Alerta
     if (doc.containsKey("t_w")) {
         hatoWarningThreshold = doc["t_w"];
     } else {
-        hatoWarningThreshold = 10.0;
+        hatoWarningThreshold = 3.0;
     }
     Serial.printf("[Storage] Umbral de distancia configurado a: %.1f metros.\n", hatoWarningThreshold);
 

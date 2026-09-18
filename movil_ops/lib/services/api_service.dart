@@ -8,7 +8,7 @@ import '../models/potrero.dart';
 
 class ApiService {
   // IP local de la computadora y puerto 3500 del backend de CollarNet
-  static const String defaultBaseUrl = 'http://192.168.86.30:3500/api';
+  static const String defaultBaseUrl = 'http://192.168.86.23:3500/api';
 
   static Future<String> getBaseUrl() async {
     try {

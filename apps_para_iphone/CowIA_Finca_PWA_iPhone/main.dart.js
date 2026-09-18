@@ -8261,7 +8261,7 @@ o_:function o_(a,b,c,d,e,f,g){var _=this
 _.a=a
 _.b=!0
 _.d=!1
-_.e="192.168.86.30:3500"
+_.e="192.168.86.23:3500"
 _.f=null
 _.r=1
 _.w="Hacienda La Esperanza"
@@ -8589,7 +8589,7 @@ s=7
 return A.x(A.ld(),$async$i0)
 case 7:n=b
 l=A.cB(n.a.h(0,"finca_server_ip"))
-m=l==null?"192.168.86.30:3500":l
+m=l==null?"192.168.86.23:3500":l
 k=A.j(m)
 q="http://"+k+"/api"
 s=1
@@ -8599,7 +8599,7 @@ s=6
 break
 case 4:p=3
 i=o.pop()
-q="http://192.168.86.30:3500/api"
+q="http://192.168.86.23:3500/api"
 s=1
 break
 s=6
@@ -47894,7 +47894,7 @@ s=6
 return A.x(A.ld(),$async$vN)
 case 6:n=b
 l=A.cB(n.a.h(0,"finca_server_ip"))
-o.e=l==null?"192.168.86.30:3500":l
+o.e=l==null?"192.168.86.23:3500":l
 l=A.f0(n.a.h(0,"finca_selected_hato_id"))
 o.r=l==null?1:l
 l=A.cB(n.a.h(0,"finca_selected_hato_nombre"))
@@ -48744,7 +48744,7 @@ s=A.fu(h?B.L8:B.LV,B.ae,k,16)
 j=A.b([j,B.nU,B.a5c,B.bY,B.a5x,B.Yo,i,B.nU,r,B.dv,A.aKu(s,A.af(h?"Ocultar conexi\xf3n de servidor":"Configurar IP / Servidor",k,k,k,k,B.cp,k,k),new A.az8(l))],o)
 if(l.y){i=A.ah(12)
 h=A.bq(B.ao,1)
-B.b.P(j,A.b([B.cG,A.at(k,A.aW(A.b([B.a4O,B.bY,A.y1(l.f,A.wl(k,new A.e5(4,A.ah(8),B.c0),k,B.lR,k,k,k,k,!0,k,k,k,k,k,k,B.aF,!0,k,k,k,k,k,k,k,k,k,k,k,k,k,B.cp,"192.168.86.30:3500",k,k,k,k,k,k,k,k,k,!0,!0,!1,k,B.Nd,k,k,k,k,k,k,k,k,k,k,k,k),1,!1,k,k,B.fn)],o),B.J,B.l,B.m),B.k,k,k,new A.ap(B.ad,k,h,i,k,k,B.t),k,k,k,B.h5,k,k,k)],o))}j.push(B.bP)
+B.b.P(j,A.b([B.cG,A.at(k,A.aW(A.b([B.a4O,B.bY,A.y1(l.f,A.wl(k,new A.e5(4,A.ah(8),B.c0),k,B.lR,k,k,k,k,!0,k,k,k,k,k,k,B.aF,!0,k,k,k,k,k,k,k,k,k,k,k,k,k,B.cp,"192.168.86.23:3500",k,k,k,k,k,k,k,k,k,!0,!0,!1,k,B.Nd,k,k,k,k,k,k,k,k,k,k,k,k),1,!1,k,k,B.fn)],o),B.J,B.l,B.m),B.k,k,k,new A.ap(B.ad,k,h,i,k,k,B.t),k,k,k,B.h5,k,k,k)],o))}j.push(B.bP)
 j.push(B.a4D)
 return A.oX(k,B.bh,A.hb(!0,A.f6(A.le(A.aW(j,B.dg,B.cB,B.m),k,B.X,B.Ks,k,B.a7),k,k),B.Z,!0),k,k)}}
 A.az9.prototype={
@@ -108493,7 +108493,7 @@ B.NK=new A.mb("\ufffc",null,null,null,!0,!0,B.aY)
 B.NL=new A.D0(null,null,null,null,null,null,null,null,null,B.qR,B.p9,!1,null,!1,null,null,null,null,null,null,null,null,!1,null,null,null,null,null,null,null,null,null,null,null,!1,null,null)
 B.oU=new A.aU(B.o,1,B.z,-1)
 B.hC=new A.e5(4,B.fE,B.oU)
-B.NM=new A.kQ(null,null,null,"Direcci\xf3n IP y Puerto",null,null,null,null,null,null,"192.168.86.30:3500",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.hC,!0,null,null,null,null)
+B.NM=new A.kQ(null,null,null,"Direcci\xf3n IP y Puerto",null,null,null,null,null,null,"192.168.86.23:3500",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.hC,!0,null,null,null,null)
 B.a9g=new A.kQ(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
 B.NO=new A.kQ(null,null,null,"Tipo de Biol\xf3gico / Vacuna",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.hC,!0,null,null,null,null)
 B.NP=new A.kQ(null,null,null,"Seleccionar Potrero a Tratar",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.hC,!0,null,null,null,null)

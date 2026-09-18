@@ -980,6 +980,10 @@ function setupAuthModule() {
       localStorage.removeItem('collarnet_user');
       state.currentUser = null;
       if (userHeaderBadge) userHeaderBadge.style.display = 'none';
+      const btnTecnico = document.getElementById('btn-tecnico-header');
+      if (btnTecnico) btnTecnico.style.display = 'none';
+      const modalTecnico = document.getElementById('modal-tecnico-mobile');
+      if (modalTecnico) modalTecnico.style.display = 'none';
       if (loginOverlay) loginOverlay.style.display = 'flex';
       showToast('Sesión cerrada', 'warn');
     });
@@ -1018,6 +1022,10 @@ function setupAuthModule() {
       userRoleIcon.textContent = role === 'SUPERADMIN' ? '👑' : (role === 'ADMIN_FINCA' ? '🚜' : '🤠');
       userNameShort.textContent = state.currentUser.nombre.split(' ')[0];
       userHeaderBadge.title = `${state.currentUser.nombre} (${state.currentUser.rol}) - ${state.currentUser.email}`;
+    }
+    const btnTecnico = document.getElementById('btn-tecnico-header');
+    if (btnTecnico) {
+      btnTecnico.style.display = state.currentUser.rol === 'SUPERADMIN' ? 'inline-flex' : 'none';
     }
   }
 }

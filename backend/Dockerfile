@@ -14,6 +14,7 @@ RUN cd frontend && npm install
 # Copiar código fuente
 COPY backend ./backend
 COPY frontend ./frontend
+COPY apps_para_iphone ./apps_para_iphone
 RUN cd frontend && npm run build
 
 # Cambiar directorio de trabajo a backend

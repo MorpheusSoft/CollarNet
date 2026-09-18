@@ -25,6 +25,7 @@ local_ctags/
 
 # Archivos de logs y datos de prueba
 *.log
+test_buzzer*.py
 scratch/
 walk_log.txt
 mosquitto/data/

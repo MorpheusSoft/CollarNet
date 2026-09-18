@@ -1165,12 +1165,14 @@ router.post('/geocercas/sincronizar', async (req, res) => {
     const margenAdvertencia = parseFloat(potreroRows[0].margen_advertencia_metros) || 10;
 
     // 3. Formatear payload comprimido para 2G / ESP32
+    const isPotreroOpen = (potreroRows[0].estado === 'ABIERTO' || potreroRows[0].modo_arreo_activo === true);
     const payload = {
       h_id: parseInt(hatoId, 10),
       h_v: flattenCoordinates(hatoVertices),
       p_id: parseInt(potreroId, 10),
       p_v: flattenCoordinates(potreroVertices),
-      t_w: margenAdvertencia // Umbral de alerta dinámico en metros según potrero
+      t_w: margenAdvertencia, // Umbral de alerta dinámico en metros según potrero
+      p_open: isPotreroOpen ? 1 : 0
     };
 
     // 4. Actualizar la res vinculada a este potrero en la base de datos
@@ -5311,6 +5313,23 @@ router.patch('/potreros/:id/estado', async (req, res) => {
     notifyGeocercasUpdated(req);
     notifyDataUpdated(req, 'estado_potrero', { potreroId: parseInt(id, 10), estado: cleanEstado });
 
+    const isOpen = (cleanEstado === 'ABIERTO');
+    try {
+      const { rows: collarRows } = await pool.query(
+        'SELECT DISTINCT a.collar_id FROM animales a WHERE a.potrero_id = $1 AND a.collar_id IS NOT NULL;',
+        [parseInt(id, 10)]
+      );
+      for (const row of collarRows) {
+        publishToCollar(row.collar_id, {
+          cmd: 'potrero_estado',
+          p_id: parseInt(id, 10),
+          p_open: isOpen ? 1 : 0
+        });
+      }
+    } catch (e) {
+      console.warn('[MQTT Publish Potrero Estado Warning]', e.message);
+    }
+
     res.json({ success: true, potreroId: id, estado: cleanEstado });
   } catch (err) {
     console.warn('[Fallback cambio estado potrero]', err.message);
@@ -5340,6 +5359,23 @@ router.post('/potreros/:id/estado', async (req, res) => {
 
     notifyGeocercasUpdated(req);
     notifyDataUpdated(req, 'estado_potrero', { potreroId: parseInt(id, 10), estado: cleanEstado });
+
+    const isOpen = (cleanEstado === 'ABIERTO');
+    try {
+      const { rows: collarRows } = await pool.query(
+        'SELECT DISTINCT a.collar_id FROM animales a WHERE a.potrero_id = $1 AND a.collar_id IS NOT NULL;',
+        [parseInt(id, 10)]
+      );
+      for (const row of collarRows) {
+        publishToCollar(row.collar_id, {
+          cmd: 'potrero_estado',
+          p_id: parseInt(id, 10),
+          p_open: isOpen ? 1 : 0
+        });
+      }
+    } catch (e) {
+      console.warn('[MQTT Publish Potrero Estado Warning]', e.message);
+    }
 
     res.json({ success: true, potreroId: id, estado: cleanEstado });
   } catch (err) {

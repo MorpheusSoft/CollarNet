@@ -31520,7 +31520,7 @@ s=7
 return A.o(A.yl(),$async$hl)
 case 7:n=b
 m=A.cE(n.a.h(0,"custom_server_url"))
-if(m==null)m="http://192.168.86.30:3500/api"
+if(m==null)m="http://192.168.86.23:3500/api"
 q=m
 s=1
 break
@@ -31529,7 +31529,7 @@ s=6
 break
 case 4:p=3
 k=o.pop()
-q="http://192.168.86.30:3500/api"
+q="http://192.168.86.23:3500/api"
 s=1
 break
 s=6
@@ -107334,8 +107334,8 @@ r.toString
 return s.wP(r)},
 $S:0}
 A.aDy.prototype={
-$1(a){var s,r=null,q=A.a8(18),p=t.p,o=A.ad(A.b([B.NI,B.aw,A.B("Servidor Backend CollarNet",r,r,r,r,A.b7().$3$color$fontSize$fontWeight(B.E,16,B.v),r,r,r)],p),B.l,B.h,B.e,0),n=A.B("Ingresa la direcci\xf3n IP y puerto del servidor local o nube (ej: http://192.168.86.30:3500/api):",r,r,r,r,A.V().$2$color$fontSize(B.M,12),r,r,r),m=this.a,l=A.V().$2$color$fontSize(B.E,13)
-l=A.aH(A.b([n,B.b8,A.jE(r,B.bn,!1,r,!0,B.y,r,A.kT(),m,r,r,r,r,r,2,A.iB(r,new A.dA(4,A.a8(12),B.l7),r,r,r,r,r,r,!0,r,r,r,r,r,r,B.ae,!0,r,r,r,r,r,r,r,r,r,r,r,r,r,r,"http://192.168.86.30:3500/api",r,r,r,r,r,r,r,r,r,!0,!0,!1,r,B.Nb,r,r,r,r,r,r,r,r,r,r,r,r),B.W,!0,r,!0,r,!1,r,B.bu,r,r,r,r,r,r,r,r,1,r,r,!1,"\u2022",r,r,r,r,r,!1,r,r,!1,r,!0,r,B.bJ,r,r,r,r,r,r,r,r,r,r,r,l,!0,B.au,r,B.c1,r,r,r,r)],p),B.C,B.h,B.af)
+$1(a){var s,r=null,q=A.a8(18),p=t.p,o=A.ad(A.b([B.NI,B.aw,A.B("Servidor Backend CollarNet",r,r,r,r,A.b7().$3$color$fontSize$fontWeight(B.E,16,B.v),r,r,r)],p),B.l,B.h,B.e,0),n=A.B("Ingresa la direcci\xf3n IP y puerto del servidor local o nube (ej: http://192.168.86.23:3500/api):",r,r,r,r,A.V().$2$color$fontSize(B.M,12),r,r,r),m=this.a,l=A.V().$2$color$fontSize(B.E,13)
+l=A.aH(A.b([n,B.b8,A.jE(r,B.bn,!1,r,!0,B.y,r,A.kT(),m,r,r,r,r,r,2,A.iB(r,new A.dA(4,A.a8(12),B.l7),r,r,r,r,r,r,!0,r,r,r,r,r,r,B.ae,!0,r,r,r,r,r,r,r,r,r,r,r,r,r,r,"http://192.168.86.23:3500/api",r,r,r,r,r,r,r,r,r,!0,!0,!1,r,B.Nb,r,r,r,r,r,r,r,r,r,r,r,r),B.W,!0,r,!0,r,!1,r,B.bu,r,r,r,r,r,r,r,r,1,r,r,!1,"\u2022",r,r,r,r,r,!1,r,r,!1,r,!0,r,B.bJ,r,r,r,r,r,r,r,r,r,r,r,l,!0,B.au,r,B.c1,r,r,r,r)],p),B.C,B.h,B.af)
 n=A.lY(A.B("Cancelar",r,r,r,r,A.V().$1$color(B.z),r,r,r),new A.aDw(a),r)
 s=A.fS(r,r,B.t,r,r,r,r,r,r,B.o,r,r,r,r,r,r,r,r,r,r)
 return A.Bb(A.b([n,A.ww(A.B("Guardar",r,r,r,r,A.V().$1$fontWeight(B.v),r,r,r),new A.aDx(m,a,this.b),s)],p),B.Q,l,new A.bS(q,B.c2),o)},

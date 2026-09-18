@@ -107,22 +107,32 @@ export function initMQTT(io) {
       // 6. Broadcast en tiempo real al panel Web usando Socket.io
       const broadcastData = {
         collarId,
+        collar_id: collarId,
         animalId: animalId || null,
+        animal_id: animalId || null,
         areteVisual: areteVisual || 'SIN VÍNCULO',
-        lat,
-        lon,
-        bateria,
-        senal,
+        arete_visual: areteVisual || 'SIN VÍNCULO',
+        lat: parseFloat(lat),
+        lon: parseFloat(lon),
+        bateria: parseInt(bateria || 100, 10),
+        senal: parseInt(senal || 5, 10),
         timestamp: new Date().toISOString(),
         alertType: (activo && checkResult) ? checkResult.alertType : (activo ? 'NORMAL' : 'INACTIVO'),
+        alerta: (activo && checkResult) ? checkResult.alertType : (activo ? 'NORMAL' : 'INACTIVO'),
         potreroActual: checkResult ? checkResult.potreroActualNombre : (activo ? 'Desconocido' : 'TRÁNSITO / DESACTIVADO'),
+        potrero_nombre: checkResult ? checkResult.potreroActualNombre : (activo ? 'Desconocido' : 'TRÁNSITO / DESACTIVADO'),
         distanciaHato: checkResult ? checkResult.distanciaHato : 0.0,
+        distancia_hato: checkResult ? checkResult.distanciaHato : 0.0,
         dentroHato: checkResult ? checkResult.dentroHato : true,
+        dentro_hato: checkResult ? checkResult.dentroHato : true,
         dentroPotrero: checkResult ? checkResult.dentroPotrero : true,
-        collarActivo: activo
+        dentro_potrero: checkResult ? checkResult.dentroPotrero : true,
+        collarActivo: activo,
+        activo: activo
       };
 
       io.emit('telemetria_realtime', broadcastData);
+      io.emit('telemetria_actualizada', broadcastData);
       console.log(`[Live IoT] Collar: ${collarId} | Res: ${broadcastData.areteVisual} | Lat: ${lat}, Lon: ${lon} | Alerta: ${broadcastData.alertType}`);
 
     } catch (err) {

@@ -7,20 +7,11 @@
 TinyGPSPlus gps;
 
 void initGPS() {
-    // En el ESP32, Serial2 es un periférico de hardware dedicado.
-    // Lo inicializamos a la velocidad por defecto del NEO-6M (9600 bps)
-    // asignando explícitamente los pines RX2 (GPIO 16) y TX2 (GPIO 17).
-    Serial2.begin(GPS_BAUD, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
-    Serial.printf("[GPS] Puerto Serial2 inicializado a %d baudios en Pines RX2=%d, TX2=%d\n", 
-                  GPS_BAUD, GPS_RX_PIN, GPS_TX_PIN);
+    Serial.println("[GPS] Módulo GNSS integrado en SIM7670G gestionado vía SerialAT.");
 }
 
 void updateGPS() {
-    // Leemos todos los caracteres que hayan llegado al búfer FIFO de hardware
-    // y los pasamos al decodificador NMEA de la librería.
-    while (Serial2.available() > 0) {
-        gps.encode(Serial2.read());
-    }
+    // La adquisición satelital se maneja directamente vía módem SIM7670G en el loop principal
 }
 
 Coordinate getGPSLocation() {

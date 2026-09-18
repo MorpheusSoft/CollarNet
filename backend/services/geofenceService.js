@@ -41,6 +41,7 @@ export async function evaluateAnimalPosition(animalId, lat, lon) {
       -- ¿Está en el Potrero asignado?
       CASE 
         WHEN a.potrero_id IS NULL THEN true
+        WHEN p_asig.estado = 'ABIERTO' OR p_asig.modo_arreo_activo = TRUE THEN true
         ELSE ST_Contains(p_asig.perimetro, ST_SetSRID(ST_Point($2, $1), 4326))
       END AS dentro_potrero,
       -- Distancia al límite del Hato (en metros) usando geografía

@@ -766,3 +766,88 @@ body {
   color: var(--accent-rose);
 }
 
+/* Botón Descargar App Técnica en Cabecera */
+.btn-tecnico-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(14, 165, 233, 0.35));
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  padding: 4px 9px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-tecnico-header:hover, .btn-tecnico-header:active {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 380px) {
+  .tecnico-btn-text {
+    display: none;
+  }
+}
+
+/* Modal Overlay Móvil para App Técnica */
+.modal-overlay-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(5, 10, 16, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-card-mobile {
+  width: 100%;
+  max-width: 400px;
+  background-color: var(--bg-card);
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  animation: modal-pop 0.25s ease-out;
+}
+
+.modal-header-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.btn-close-modal {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: rgba(244, 63, 94, 0.2);
+  color: var(--accent-rose);
+}
+

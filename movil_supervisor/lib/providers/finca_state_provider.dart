@@ -10,7 +10,7 @@ class FincaStateProvider with ChangeNotifier {
   bool _isOnline = true;
   bool _isLoading = false;
   bool _authLoaded = false;
-  String _serverIp = '192.168.86.30:3500';
+  String _serverIp = '192.168.86.23:3500';
 
   // Información del Usuario Autenticado (Web / Central)
   Map<String, dynamic>? _currentUser;
@@ -147,7 +147,7 @@ class FincaStateProvider with ChangeNotifier {
   Future<void> _loadConfig() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _serverIp = prefs.getString('finca_server_ip') ?? '192.168.86.30:3500';
+      _serverIp = prefs.getString('finca_server_ip') ?? '192.168.86.23:3500';
       _hatoId = prefs.getInt('finca_selected_hato_id') ?? 1;
       _hatoNombre = prefs.getString('finca_selected_hato_nombre') ?? 'Hacienda La Esperanza';
       

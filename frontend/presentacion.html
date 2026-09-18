@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CowIA 2026 - Presentación Ejecutiva</title>
+  
+  <!-- Reveal.js CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css">
+  
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    :root {
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+    body, .reveal {
+      font-family: var(--font-body);
+      background-color: #070D14;
+      color: #E2E8F0;
+    }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      font-family: var(--font-title);
+      text-transform: none;
+      letter-spacing: -0.02em;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1.25rem;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+    }
+    .gradient-text-emerald {
+      background: linear-gradient(135deg, #10B981 0%, #06B6D4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-text-amber {
+      background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    /* Optimización para controles táctiles en tablet */
+    .reveal .controls {
+      bottom: 24px;
+      right: 24px;
+    }
+    .reveal .progress {
+      height: 6px;
+      color: #10B981;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ==========================================
+           SLIDE 1: PORTADA PRINCIPAL
+           ========================================== -->
+      <section data-background-gradient="radial-gradient(circle at 50% 30%, #0F232A 0%, #070D14 80%)">
+        <div class="max-w-4xl mx-auto text-center px-4">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-6 tracking-wide">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            ECOSISTEMA COWIA 2026
+          </div>
+          
+          <h1 class="text-6xl md:text-7xl font-extrabold text-white mb-4">
+            Cow<span class="gradient-text-emerald">IA</span>
+          </h1>
+          
+          <p class="text-xl md:text-2xl text-slate-300 font-light mb-8 max-w-2xl mx-auto leading-relaxed">
+            Plataforma Integral de <span class="text-emerald-400 font-semibold">Ganadería Inteligente</span>, Cercas Virtuales, Analítica IA y Teledetección con Drones.
+          </p>
+          
+          <div class="grid grid-cols-3 gap-4 max-w-2xl mx-auto pt-6 border-t border-slate-800/80 text-left">
+            <div class="glass-card p-4 text-center">
+              <div class="text-2xl mb-1">🛰️</div>
+              <div class="text-xs text-slate-400 font-medium">Cercas Virtuales</div>
+              <div class="text-sm font-bold text-white">ESP32 + PostGIS</div>
+            </div>
+            <div class="glass-card p-4 text-center">
+              <div class="text-2xl mb-1">📱</div>
+              <div class="text-xs text-slate-400 font-medium">Doble App Nativa</div>
+              <div class="text-sm font-bold text-emerald-400">Flutter Mobile</div>
+            </div>
+            <div class="glass-card p-4 text-center">
+              <div class="text-2xl mb-1">🛸</div>
+              <div class="text-xs text-slate-400 font-medium">Aforo de Pastos</div>
+              <div class="text-sm font-bold text-cyan-400">Dron UAV + VARI</div>
+            </div>
+          </div>
+          
+          <div class="mt-8 text-xs text-slate-500">
+            👉 Desliza la pantalla en tu tablet para avanzar
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 2: LAS DOS APPS FLUTTER
+           ========================================== -->
+      <section data-background-gradient="radial-gradient(circle at 80% 20%, #0c1a2e 0%, #070D14 80%)">
+        <div class="max-w-5xl mx-auto text-left px-4">
+          <span class="badge-pill bg-blue-500/10 text-blue-400 border border-blue-500/30 mb-3">Arquitectura Móvil</span>
+          <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-2">
+            Desacoplamiento en <span class="gradient-text-emerald">2 Apps Flutter</span>
+          </h2>
+          <p class="text-slate-400 text-sm md:text-base mb-8">
+            Separamos la ingeniería de hardware de la operación zootécnica de corral para máxima seguridad y agilidad.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- App 1: CowIA Ops -->
+            <div class="glass-card p-6 border-l-4 border-l-cyan-500 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-3xl">🛠️</span>
+                <span class="px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 text-xs font-bold uppercase">Uso Interno</span>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-1">CowIA Ops</h3>
+              <p class="text-xs text-slate-400 mb-4 font-medium">Técnica, Laboratorio y Despliegue de Campo</p>
+              
+              <ul class="text-xs space-y-2.5 text-slate-300">
+                <li class="flex items-start gap-2">
+                  <span class="text-cyan-400 font-bold">✓</span>
+                  <span><strong>Alta de Adquirientes (Tenants)</strong> y creación del <strong>HATO MAESTRO</strong>.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-cyan-400 font-bold">✓</span>
+                  <span><strong>Test de Hardware BLE</strong>: GNSS 3D, sensor IMU MPU-6050, pulsos y buzzer.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-cyan-400 font-bold">✓</span>
+                  <span><strong>Recepción masiva de lotes</strong> de 50 a 200 collares con escáner QR continuo.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-cyan-400 font-bold">✓</span>
+                  <span>Flasheo OTA de firmware y monitor de tramas MQTT crudas.</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- App 2: CowIA Finca -->
+            <div class="glass-card p-6 border-l-4 border-l-emerald-500 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-3xl">🤠</span>
+                <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase">Uso Ganadero</span>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-1">CowIA Finca</h3>
+              <p class="text-xs text-slate-400 mb-4 font-medium">Productor, Administrador, Manga y Potrero</p>
+              
+              <ul class="text-xs space-y-2.5 text-slate-300">
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">✓</span>
+                  <span><strong>Subdivisión de Potreros</strong> contenidos en el Hato y control <strong>Abrir / Cerrar</strong>.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">✓</span>
+                  <span><strong>Modo Arreo</strong>: Ventana de tránsito para mover ganado sin falsas alarmas.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">✓</span>
+                  <span><strong>Manga y Pesaje Ágil</strong>: Enlace Bluetooth con básculas (Tru-Test / Gallagher) y GDP.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">✓</span>
+                  <span><strong>Brújula de Rescate</strong> ("Buscar Res") 100% Offline con GPS del móvil.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 3: CONTROL ESPACIAL (HATO VS POTREROS)
+           ========================================== -->
+      <section data-background-gradient="radial-gradient(circle at 20% 80%, #0d281e 0%, #070D14 80%)">
+        <div class="max-w-5xl mx-auto text-left px-4">
+          <span class="badge-pill bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-3">Motor GIS PostGIS</span>
+          <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-4">
+            Jerarquía Espacial: <span class="gradient-text-emerald">Hato vs. Potreros</span>
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+            <!-- Hato Maestro -->
+            <div class="glass-card p-5">
+              <div class="text-emerald-400 font-bold text-lg mb-1 flex items-center gap-2">
+                <span>🛡️</span> HATO MAESTRO
+              </div>
+              <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                Lindero legal y frontera de contingencia exterior. Lo configura el <strong>técnico</strong> con plano PDF (IA Gemini) o GPS en terreno.
+              </p>
+              <div class="p-2.5 rounded bg-red-500/10 border border-red-500/20 text-[11px] text-red-300">
+                <strong>Escape Crítico:</strong> Dispara alerta policial, SMS y Telegram inmediato.
+              </div>
+            </div>
+
+            <!-- Potrero Dinámico -->
+            <div class="glass-card p-5">
+              <div class="text-cyan-400 font-bold text-lg mb-1 flex items-center gap-2">
+                <span>🌿</span> POTRERO DINÁMICO
+              </div>
+              <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                Subdivisiones creadas por el <strong>productor</strong>. La base de datos valida matemáticamente que esté dentro del Hato (<code class="text-emerald-300">ST_Within</code>).
+              </p>
+              <div class="p-2.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[11px] text-cyan-300">
+                <strong>Estados:</strong> <span class="text-emerald-400">ABIERTO</span> (pastoreo) o <span class="text-amber-400">EN_DESCANSO</span> (recuperación).
+              </div>
+            </div>
+
+            <!-- Modo Arreo -->
+            <div class="glass-card p-5">
+              <div class="text-amber-400 font-bold text-lg mb-1 flex items-center gap-2">
+                <span>⚡</span> MODO ARREO TÁCTICO
+              </div>
+              <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                El vaquero pulsa <em>"Iniciar Traslado"</em>. Se abre la compuerta virtual entre potreros durante 45-60 min.
+              </p>
+              <div class="p-2.5 rounded bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300">
+                <strong>Cero Falsas Alarmas:</strong> El ganado camina por el callejón sin pitidos ni descargas.
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card p-4 flex items-center justify-between text-xs text-slate-300">
+            <span class="flex items-center gap-2">
+              <span class="text-emerald-400 text-lg">💡</span>
+              <span><strong>Regla de Negocio:</strong> El ganadero tiene autonomía total en sus potreros sin riesgo de vulnerar los linderos perimetrales.</span>
+            </span>
+            <span class="px-3 py-1 rounded bg-slate-800 text-slate-400 font-mono text-[11px]">PostGIS ST_Contains</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 4: AFORO DE PASTOS CON DRON
+           ========================================== -->
+      <section data-background-gradient="radial-gradient(circle at 70% 30%, #1e1b4b 0%, #070D14 80%)">
+        <div class="max-w-5xl mx-auto text-left px-4">
+          <span class="badge-pill bg-purple-500/10 text-purple-300 border border-purple-500/30 mb-3">Innovación Agro-Tech</span>
+          <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-2">
+            Aforo de Pasturas con <span class="gradient-text-emerald">Dron (UAV)</span>
+          </h2>
+          <p class="text-slate-400 text-sm mb-6">
+            Determinación científica del <strong>Punto Óptimo de Reposo (Leyes Voisin)</strong> y cálculo de días de espera.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+            <!-- 1. Captura -->
+            <div class="glass-card p-5">
+              <div class="text-2xl mb-2">🛸</div>
+              <h4 class="font-bold text-white text-base mb-1">1. Vuelo y Captura</h4>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Compatible con <strong>drones comerciales</strong> (DJI Mini/Air/Mavic) mediante índice <strong>VARI</strong> (RGB) o drones agrícolas con <strong>NDVI</strong> (Multiespectral).
+              </p>
+            </div>
+
+            <!-- 2. Cálculo en Nube -->
+            <div class="glass-card p-5">
+              <div class="text-2xl mb-2">🧠</div>
+              <h4 class="font-bold text-white text-base mb-1">2. Procesamiento Cloud</h4>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                El backend recorta el ortomosaico por cada potrero en PostGIS, calcula la biomasa en <strong>kg MS/ha</strong> y estima los días de recuperación restantes.
+              </p>
+            </div>
+
+            <!-- 3. Semáforo en la App -->
+            <div class="glass-card p-5">
+              <div class="text-2xl mb-2">📱</div>
+              <h4 class="font-bold text-white text-base mb-1">3. Semáforo en App</h4>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                El vaquero en el corral abre el mapa y ve qué potrero tiene luz verde para pastoreo hoy y cuáles deben esperar $X$ días.
+              </p>
+            </div>
+          </div>
+
+          <!-- Semáforo Visual -->
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+              <div class="text-lg font-bold text-emerald-400">🟢 LISTO PARA PASTOREO</div>
+              <div class="text-[11px] text-slate-300 mt-1">Punto Óptimo alcanzado (2.800 kg MS/ha). Entrada sugerida: HOY.</div>
+            </div>
+            <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <div class="text-lg font-bold text-amber-400">🟡 EN CRECIMIENTO</div>
+              <div class="text-[11px] text-slate-300 mt-1">Masa crítica en desarrollo. Faltan 8 días estimados de descanso.</div>
+            </div>
+            <div class="p-3 rounded-xl bg-red-500/10 border border-red-500/30">
+              <div class="text-lg font-bold text-red-400">🔴 DESCANSO CRÍTICO</div>
+              <div class="text-[11px] text-slate-300 mt-1">Pasto recién pastoreado. Prohibido ingresar por los próximos 24 días.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 5: RESUMEN Y PRÓXIMOS PASOS
+           ========================================== -->
+      <section data-background-gradient="radial-gradient(circle at 50% 50%, #0F232A 0%, #070D14 90%)">
+        <div class="max-w-4xl mx-auto text-center px-4">
+          <span class="badge-pill bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-4">Estado y Ruta Crítica</span>
+          <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-6">
+            Todo el Software Listo para <span class="gradient-text-emerald">Pruebas E2E</span>
+          </h2>
+
+          <div class="glass-card p-6 text-left mb-8 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <span class="text-sm font-semibold text-white">1. Backend PostGIS, Broker MQTT y WebSockets</span>
+              <span class="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold">100% LISTO</span>
+            </div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <span class="text-sm font-semibold text-white">2. Especificación Técnica de las 2 Apps Flutter</span>
+              <span class="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold">DOCUMENTADO</span>
+            </div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <span class="text-sm font-semibold text-white">3. Módulo Agronómico de Pastos con Dron</span>
+              <span class="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold">DISEÑADO</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-white">4. Primera Prueba Integral de Simulación de Flota</span>
+              <span class="px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-xs font-bold">LISTO PARA CORRER</span>
+            </div>
+          </div>
+
+          <div class="text-center">
+            <p class="text-sm text-slate-400 mb-2">
+              ¡Disfruta la navegación táctil desde tu tablet!
+            </p>
+            <span class="text-xs text-slate-500 font-mono">CowIA IoT Platform © 2026</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Reveal.js JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      controls: true,
+      progress: true,
+      center: true,
+      touch: true, // Gestos táctiles nativos en tablet
+      transition: 'slide',
+      backgroundTransition: 'fade',
+      width: 1200,
+      height: 700,
+      margin: 0.08
+    });
+  </script>
+</body>
+</html>

@@ -39,6 +39,12 @@
         <button class="btn-logout" id="btn-header-logout" title="Cerrar sesión">🚪</button>
       </div>
 
+      <!-- Botón Exclusivo para Superadministrador: Descargar App Técnica -->
+      <button type="button" class="btn-tecnico-header" id="btn-tecnico-header" style="display: none;" title="Descargar App Técnica">
+        <span>🛠️</span>
+        <span class="tecnico-btn-text">App Técnica</span>
+      </button>
+
       <div class="online-pill" id="status-pill">
         <span class="pulse-dot"></span>
         <span id="status-text">Online</span>
@@ -389,6 +395,57 @@
     </div>
   </div>
 
+  <!-- ==========================================================================
+       MODAL DE DESCARGA / ACCESO A APP TÉCNICA (SOLO SUPERADMIN)
+       ========================================================================== -->
+  <div class="modal-overlay-mobile" id="modal-tecnico-mobile" style="display: none;">
+    <div class="modal-card-mobile">
+      <div class="modal-header-mobile">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">🛠️</span>
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; line-height: 1.2;">CowIA Técnico (Ops)</h3>
+            <span style="font-size: 0.68rem; color: #38bdf8; font-weight: 700; text-transform: uppercase;">Exclusivo Superadmin</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="btn-close-tecnico-modal">✕</button>
+      </div>
+      
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 12px 0 14px; line-height: 1.4;">
+        Herramienta de campo para configuración de hatos maestros, calibración de collares y pruebas de hardware.
+      </p>
+
+      <!-- Botones de Acción Móvil -->
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+        <a id="link-pwa-iphone" href="/iphone/CowIA_Tecnico_PWA_iPhone/" target="_blank" class="btn-giant" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; padding: 12px; background: linear-gradient(135deg, #059669, #10b981);">
+          🍏 <span>Abrir en iPhone / Safari</span>
+        </a>
+        <div style="font-size: 0.72rem; color: #94a3b8; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 6px 10px; border-radius: 8px;">
+          💡 <b>En iPhone:</b> Abre en Safari, toca <b>Compartir</b> (<span style="font-size: 0.9rem;">􀈂</span>) y selecciona <b>"Añadir a pantalla de inicio"</b>.
+        </div>
+
+        <a id="link-apk-android" href="/apk/CowIA-Tecnico-Release.apk" download class="btn-giant" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; padding: 12px; background: linear-gradient(135deg, #0284c7, #38bdf8);">
+          🤖 <span>Descargar APK (Android)</span>
+        </a>
+      </div>
+
+      <!-- Escaneo QR Dinámico -->
+      <div style="background: var(--bg-surface); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); text-align: center;">
+        <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 8px;">
+          📱 Escanea con tu celular para instalar:
+        </span>
+        <div style="background: #fff; padding: 8px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+          <img id="qr-tecnico-img" src="" alt="QR App Técnica" style="width: 130px; height: 130px; display: block;">
+        </div>
+        <div style="margin-top: 10px;">
+          <button type="button" class="btn-secondary" id="btn-copy-tecnico-link" style="width: 100%; font-size: 0.78rem; padding: 8px;">
+            📋 Copiar Enlace Directo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Notificación Toast Flotante -->
   <div class="toast" id="mobile-toast">
     <span id="toast-icon">✅</span>
@@ -398,8 +455,70 @@
   <!-- Librería ligera de escaneo QR (CDN con fallback seguro) -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-  <!-- Script Global Fallback para Login Inmediato Mobile -->
+  <!-- Script Global Fallback para Login Inmediato Mobile & Modal Técnico -->
   <script>
+    function updateSuperAdminUI(rol) {
+      const btnTecnico = document.getElementById('btn-tecnico-header');
+      if (btnTecnico) {
+        btnTecnico.style.display = rol === 'SUPERADMIN' ? 'inline-flex' : 'none';
+      }
+    }
+
+    function openTecnicoModal() {
+      const modal = document.getElementById('modal-tecnico-mobile');
+      if (!modal) return;
+      const fullPwaUrl = window.location.origin + '/iphone/CowIA_Tecnico_PWA_iPhone/';
+      const qrImg = document.getElementById('qr-tecnico-img');
+      if (qrImg) {
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(fullPwaUrl);
+      }
+      modal.style.display = 'flex';
+    }
+
+    function closeTecnicoModal() {
+      const modal = document.getElementById('modal-tecnico-mobile');
+      if (modal) modal.style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Configurar botones del modal técnico
+      const btnTecnico = document.getElementById('btn-tecnico-header');
+      if (btnTecnico) btnTecnico.addEventListener('click', openTecnicoModal);
+
+      const btnClose = document.getElementById('btn-close-tecnico-modal');
+      if (btnClose) btnClose.addEventListener('click', closeTecnicoModal);
+
+      const modalOverlay = document.getElementById('modal-tecnico-mobile');
+      if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+          if (e.target === modalOverlay) closeTecnicoModal();
+        });
+      }
+
+      const btnCopy = document.getElementById('btn-copy-tecnico-link');
+      if (btnCopy) {
+        btnCopy.addEventListener('click', async () => {
+          const fullPwaUrl = window.location.origin + '/iphone/CowIA_Tecnico_PWA_iPhone/';
+          try {
+            await navigator.clipboard.writeText(fullPwaUrl);
+            btnCopy.textContent = '✅ ¡Enlace Copiado!';
+            setTimeout(() => { btnCopy.textContent = '📋 Copiar Enlace Directo'; }, 2000);
+          } catch (e) {
+            prompt('Copia este enlace para abrir en Safari / Navegador:', fullPwaUrl);
+          }
+        });
+      }
+
+      // Verificar sesión guardada
+      try {
+        const saved = localStorage.getItem('collarnet_user');
+        if (saved) {
+          const u = JSON.parse(saved);
+          updateSuperAdminUI(u.rol);
+        }
+      } catch (e) {}
+    });
+
     window.quickLoginMobile = async function(email, password) {
       const emailInput = document.getElementById('login-email');
       const pwdInput = document.getElementById('login-password');
@@ -429,6 +548,8 @@
         if (roleIcon) roleIcon.textContent = data.user.rol === 'SUPERADMIN' ? '👑' : (data.user.rol === 'ADMIN_FINCA' ? '🚜' : '🤠');
         if (nameShort) nameShort.textContent = data.user.nombre.split(' ')[0];
         if (submitBtn) submitBtn.textContent = '🔐 Iniciar Sesión';
+
+        updateSuperAdminUI(data.user.rol);
 
         const toast = document.getElementById('mobile-toast');
         const msg = document.getElementById('toast-message');

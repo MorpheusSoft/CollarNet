@@ -25,6 +25,7 @@ extern Polygon hatoMaster;
 extern Polygon potrerosList[];
 extern int numPotreros;
 extern double hatoWarningThreshold;
+extern bool potreroAbierto;
 
 // Algoritmo de "Punto en Polígono" (Ray-Casting)
 bool isPointInPolygon(Coordinate p, Coordinate* poly, int numVertices);

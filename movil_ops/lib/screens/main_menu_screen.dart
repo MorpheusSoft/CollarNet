@@ -355,7 +355,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ingresa la dirección IP y puerto del servidor local o nube (ej: http://192.168.86.30:3500/api):',
+              'Ingresa la dirección IP y puerto del servidor local o nube (ej: http://192.168.86.23:3500/api):',
               style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 14),
@@ -365,7 +365,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: AppTheme.surfaceLight,
-                hintText: 'http://192.168.86.30:3500/api',
+                hintText: 'http://192.168.86.23:3500/api',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.link, color: AppTheme.primaryCyan, size: 20),
               ),

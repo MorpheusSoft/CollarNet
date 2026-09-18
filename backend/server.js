@@ -52,15 +52,17 @@ app.use('/apk', express.static(rootDir, {
   }
 }));
 
-// Servir versiones web / PWA para iPhone
+// Servir versiones web / PWA para iPhone y alias directos
 const iphoneAppsPath = path.join(__dirname, '../apps_para_iphone');
 if (fs.existsSync(iphoneAppsPath)) {
   app.use('/iphone', express.static(iphoneAppsPath));
+  app.use('/apps/tecnico', express.static(path.join(iphoneAppsPath, 'CowIA_Tecnico_PWA_iPhone')));
+  app.use('/apps/finca', express.static(path.join(iphoneAppsPath, 'CowIA_Finca_PWA_iPhone')));
 }
 
 // Ruta amigable y moderna para ver y descargar APKs y PWAs desde el móvil
 app.get('/descargas', (req, res) => {
-  const host = req.get('host') || `192.168.86.30:${PORT}`;
+  const host = req.get('host') || `192.168.86.23:${PORT}`;
   res.send(`
     <!DOCTYPE html>
     <html lang="es">
@@ -241,7 +243,7 @@ app.use('/api', apiRouter);
 
 // Fallback para SPA en cualquier ruta no-API y no-móvil
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/iphone') || req.path.startsWith('/apk')) {
+  if (req.path.startsWith('/api') || req.path.startsWith('/iphone') || req.path.startsWith('/apps') || req.path.startsWith('/apk') || req.path.startsWith('/descargas')) {
     return next();
   }
   const indexHtml = path.join(distPath, 'index.html');
@@ -297,8 +299,8 @@ async function start() {
       console.log(` Servidor CollarNet / CowIA Iniciado`);
       console.log(` Escuchando en: http://0.0.0.0:${PORT}`);
       console.log(` Acceso Local: http://localhost:${PORT}`);
-      console.log(` Acceso Red Wi-Fi: http://192.168.86.30:${PORT}`);
-      console.log(` Portal Descargas Móvil: http://192.168.86.30:${PORT}/descargas`);
+      console.log(` Acceso Red Wi-Fi: http://192.168.86.23:${PORT}`);
+      console.log(` Portal Descargas Móvil: http://192.168.86.23:${PORT}/descargas`);
       console.log(` Prefijo MQTT: ${process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano'}`);
       console.log(`=========================================`);
     });

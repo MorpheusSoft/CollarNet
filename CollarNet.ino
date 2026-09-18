@@ -1,4 +1,7 @@
 #include <WiFi.h>
+#define TINY_GSM_MODEM_SIM7600
+#define TINY_GSM_RX_BUFFER 1024
+#include <TinyGsmClient.h>
 #include "config.h"
 #include "secrets.h"
 #include "wifi_manager.h"
@@ -10,6 +13,15 @@
 #include "storage_manager.h"
 #include "mqtt_manager.h"
 
+// Hardware Serial para módem SIM7670G (ESP32-S3 UART1: RX=17, TX=18)
+HardwareSerial SerialAT(1);
+TinyGsm modem(SerialAT);
+TinyGsmClient gsmClient(modem);
+WiFiClient wifiClient;
+
+bool gsmActive = false;
+bool wifiActive = false;
+
 // Temporizador para procesar la telemetría y geocercas cada 1 segundo (Tiempo Real Instantáneo)
 unsigned long lastGPSCheckTime = 0;
 const unsigned long GPS_CHECK_INTERVAL = 1000;
@@ -17,14 +29,11 @@ const unsigned long GPS_CHECK_INTERVAL = 1000;
 void setup() {
     // Inicializar puerto Serial de depuración (USB)
     Serial.begin(SERIAL_BAUD);
-    while (!Serial) {
-        ; // Espera para puertos USB nativos
-    }
     delay(1000); // Pausa estética
     
     Serial.println("=========================================");
-    Serial.println("   COLLAR GANADERO - PROTOTIPO FASE 4     ");
-    Serial.println("   (Geocerca, MQTT, Storage y GPS)        ");
+    Serial.println("   COLLAR GANADERO - HARDWARE 4G LTE     ");
+    Serial.println("   (Waveshare ESP32-S3 + SIM7670G)        ");
     Serial.println("=========================================");
     
     // Inicializar subsistemas
@@ -38,18 +47,50 @@ void setup() {
     // Carga la geocerca previamente guardada, o los valores por defecto si es el primer arranque
     loadGeofenceConfig();
     
-    // Conectar Wi-Fi
+    // Alimentar e iniciar UART1 con módem SIM7670G
+    #if defined(MODEM_POWER_PIN) && (MODEM_POWER_PIN >= 0)
+    pinMode(MODEM_POWER_PIN, OUTPUT);
+    digitalWrite(MODEM_POWER_PIN, HIGH);
+    delay(500);
+    #endif
+
+    Serial.printf("[Módem] Iniciando comunicación UART1 (RX=%d, TX=%d) a %d baud...\n", 
+                  MODEM_RX_PIN, MODEM_TX_PIN, MODEM_BAUD);
+    SerialAT.begin(MODEM_BAUD, SERIAL_8N1, MODEM_RX_PIN, MODEM_TX_PIN);
+    delay(1000);
+
+    // Encender GPS satelital interno del SIM7670G
+    Serial.println("[GNSS] Encendiendo receptor GNSS satelital del SIM7670G...");
+    modem.sendAT("+CGNSSPWR=1");
+    delay(500);
+    modem.sendAT("+CGNSSTST=1");
+    delay(300);
+
+    // Conectar Wi-Fi primero para asegurar conectividad de desarrollo y broker
+    Serial.println("[Red] Inicializando conectividad...");
     initWiFi();
-    
-    // Inicializar cliente MQTT y suscribirse
-    initMQTT(COLLAR_ID);
+    if (WiFi.status() == WL_CONNECTED) {
+        wifiActive = true;
+        Serial.println("[Red] ¡Conectado a Wi-Fi de alta velocidad!");
+        initMQTT(COLLAR_ID, &wifiClient);
+    } else {
+        Serial.printf("[Celular] Conectando a red de datos APN: %s...\n", MODEM_APN);
+        if (modem.gprsConnect(MODEM_APN, "", "")) {
+            Serial.println("[Celular] ¡Conexión de datos 4G LTE DIGITEL establecida con éxito!");
+            gsmActive = true;
+            initMQTT(COLLAR_ID, &gsmClient);
+        } else {
+            Serial.println("[Red] Sin conexión celular ni Wi-Fi inicial. Reintentando de fondo...");
+            initMQTT(COLLAR_ID, &wifiClient);
+        }
+    }
     
     // Inicializar receptor GPS físico o Emulador según configuración
     if (USE_EMULATOR) {
         Serial.println("[Sistema] Modo SIMULACIÓN activo (Caminata de pruebas).");
         initGPSEmulator();
     } else {
-        Serial.println("[Sistema] Modo GPS FÍSICO activo.");
+        Serial.println("[Sistema] Modo GPS FÍSICO GNSS activo.");
         initGPS();
     }
     
@@ -74,8 +115,12 @@ void loop() {
     } else if (moving && powerSaveModeActive) {
         powerSaveModeActive = false;
         Serial.println("\n[Energía] MOVIMIENTO DETECTADO! Saliendo del Modo Ahorro...");
-        initWiFi(); // Re-conectar a la red Wi-Fi
-        initMQTT(COLLAR_ID); // Re-conectar al Broker MQTT
+        if (gsmActive) {
+            initMQTT(COLLAR_ID, &gsmClient);
+        } else {
+            initWiFi();
+            initMQTT(COLLAR_ID, &wifiClient);
+        }
     }
     
     // 3. Mantener la conexión Wi-Fi de fondo (solo si no está en ahorro)
@@ -115,16 +160,24 @@ void loop() {
             sats = 8;
             age = 0;
         } else {
-            // Obtener coordenada del GPS físico y requerir mínimo 4 satélites para estabilidad 3D
-            bool rawHasPosition = isGPSLocationValid();
-            sats = getGPSSatellites();
-            age = getGPSAge();
-            bool validFix = rawHasPosition && (sats >= 4);
+            // Obtener coordenada del receptor GNSS del módem SIM7670G
+            float gLat = 0.0, gLon = 0.0, gSpeed = 0.0, gAlt = 0.0;
+            int gVsat = 0, gUsat = 0;
+            bool rawHasPosition = false;
+            Coordinate rawPos = {0.0, 0.0};
 
-            if (validFix) {
-                Coordinate rawPos = getGPSLocation();
+            if (modem.getGPS(&gLat, &gLon, &gSpeed, &gAlt, &gVsat, &gUsat)) {
+                if (abs(gLat) > 0.001) {
+                    rawPos.lat = gLat;
+                    rawPos.lon = gLon;
+                    sats = (gUsat > 0) ? gUsat : gVsat;
+                    rawHasPosition = true;
+                }
+            }
+
+            if (rawHasPosition) {
                 if (everHadFix) {
-                    // Filtro Exponencial EMA para eliminar deriva y parpadeos de 2-3m en el GPS (70% lectura actual, 30% anterior)
+                    // Filtro Exponencial EMA para eliminar deriva y parpadeos (70% lectura actual, 30% anterior)
                     currentPos.lat = 0.7 * rawPos.lat + 0.3 * lastKnownPos.lat;
                     currentPos.lon = 0.7 * rawPos.lon + 0.3 * lastKnownPos.lon;
                 } else {
@@ -133,23 +186,22 @@ void loop() {
                 lastKnownPos = currentPos;
                 everHadFix = true;
                 hasPosition = true;
-            } else if (everHadFix && age < 15000) {
-                // Retener última posición conocida por 15s si hubo caída/parpadeo de satélites (<4 sats)
+                age = 0;
+            } else if (everHadFix) {
+                // Retener última posición conocida
                 currentPos = lastKnownPos;
                 hasPosition = true;
+                age = millis() - lastGPSCheckTime;
             } else {
                 hasPosition = false;
             }
         }
         
-        // Si no tenemos una posición válida del GPS físico (ej. sin señal en interiores)
+        // Si no tenemos una posición válida del GPS (ej. sin cobertura en interiores)
         if (!hasPosition) {
             Serial.println("\n------------------------------------------------");
-            Serial.println("[GPS] Esperando señal satelital válida...");
-            Serial.printf("Satélites en vista: %d | Antigüedad del dato: %d ms\n", sats, age);
-            if (!USE_EMULATOR) {
-                Serial.printf("Caracteres procesados del GPS: %u\n", getGPSCharsProcessed());
-            }
+            Serial.println("[GNSS SIM7670G] Esperando enganche de satélites en cielo abierto...");
+            Serial.printf("Satélites detectados: %d\n", sats);
             Serial.println("------------------------------------------------");
             
             // Colocar alerta en NONE y silenciar de inmediato
@@ -157,7 +209,7 @@ void loop() {
             return;
         }
         
-        // --- PROCESAMIENTO DE GEOCERCAS ---
+        // --- PROCESAMIENTO DE GEOCERCAS JERÁRQUICAS (HATO Y POTRERO) ---
         
         // A. Evaluar si está dentro del Hato Principal
         bool insideHato = (hatoMaster.numVertices > 0) ? isPointInPolygon(currentPos, hatoMaster.vertices, hatoMaster.numVertices) : true;
@@ -174,60 +226,78 @@ void loop() {
         double warningThreshold = (hatoWarningThreshold > 0) ? hatoWarningThreshold : 3.0;
 
         if (!insideHato) {
-            // Fuera del Hato (¡Escape real!)
-            nextAlertLevel = ALERT_DANGER;
+            // FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA Y MÁS FUERTE
+            nextAlertLevel = ALERT_CRITICAL_HATO;
             alertStr = "ESCAPE_HATO";
-            currentUbicacion = "FUERA DEL HATO (¡ESCAPE!)";
-        } else if (!insidePotrero) {
-            // Fuera del Potrero asignado (Infracción de rotación real)
-            nextAlertLevel = ALERT_DANGER;
-            alertStr = "INFRACCION_ROTACION";
-            currentUbicacion = "Fuera de Potrero Asignado (Infracción Rotación)";
-        } else if (distToPotreroBorder <= warningThreshold || distToHatoBorder <= warningThreshold) {
-            // Dentro del Potrero pero A MENOS DE 3 METROS de la cerca (Advertencia Preventiva)
+            currentUbicacion = "¡¡FUERA DEL HATO (ESCAPE MAYOR)!!";
+        } else if (distToHatoBorder <= warningThreshold) {
+            // APROXIMÁNDOSE AL LÍMITE EXTERIOR DEL HATO (<3m): ADVERTENCIA
             nextAlertLevel = ALERT_WARNING;
-            alertStr = "PROXIMIDAD_CERCA";
-            currentUbicacion = "Aproximándose a cerca virtual (Advertencia 3m)";
+            alertStr = "PROXIMIDAD_HATO";
+            currentUbicacion = "Aproximándose a lindero de Hato (Advertencia 3m)";
+        } else if (!potreroAbierto) {
+            // MODO POTRERO CERRADO (Pastoreo regular con contención en potrero)
+            if (!insidePotrero) {
+                // Fuera del Potrero asignado (Infracción de rotación)
+                nextAlertLevel = ALERT_DANGER;
+                alertStr = "INFRACCION_ROTACION";
+                currentUbicacion = "Fuera de Potrero Asignado (Infracción Rotación)";
+            } else if (distToPotreroBorder <= warningThreshold) {
+                // Dentro del Potrero pero a menos del umbral de advertencia (<3m)
+                nextAlertLevel = ALERT_WARNING;
+                alertStr = "PROXIMIDAD_CERCA";
+                currentUbicacion = "Aproximándose a cerca de potrero (Advertencia 3m)";
+            } else {
+                // Dentro del Potrero seguro
+                nextAlertLevel = ALERT_NONE;
+                alertStr = "NORMAL";
+                currentUbicacion = (numPotreros > 0) ? potrerosList[0].name : "Potrero Asignado";
+            }
         } else {
-            // Dentro del Potrero y A MÁS DE 3 METROS de la cerca (Zona Segura Centro)
+            // MODO TRASLADO / TALANQUERA ABIERTA:
+            // Permite salir del potrero sin emitir alarma de potrero.
+            // Solo sonará si se acerca o cruza los límites exteriores del Hato (evaluado arriba).
             nextAlertLevel = ALERT_NONE;
-            alertStr = "NORMAL";
-            currentUbicacion = (numPotreros > 0) ? potrerosList[0].name : "Hato Principal";
+            alertStr = "MODO_TRASLADO";
+            currentUbicacion = "Modo Traslado (Talanquera Abierta - Tránsito Libre)";
         }
         
-        // C. Actualizar nivel de alertas local (led y buzzer)
+        // C. Actualizar nivel de alertas local (led y buzzer en IO5 a 4000 Hz)
         updateAlerts(nextAlertLevel);
         
         // D. Publicar telemetría por MQTT
-        int mockBattery = 92; // Simular nivel de batería
-        int mockSignal = 5;  // Simular señal celular de red
+        int mockBattery = 95; // Nivel de batería estimado
+        int mockSignal = (sats > 4) ? 5 : 3;
         publishTelemetry(currentPos.lat, currentPos.lon, mockBattery, mockSignal, alertStr);
         
         // E. Registrar muestra en la Caja Negra de memoria Flash (LittleFS)
-        String timeStr = getGPSTimeString();
+        String timeStr = String(millis() / 1000) + "s";
         logWalkPoint(timeStr.c_str(), currentPos.lat, currentPos.lon, sats, age, nextAlertLevel, distToHatoBorder, distToPotreroBorder, insideHato, insidePotrero);
         
-        // E. Imprimir reporte de depuración por consola serial (USB)
+        // F. Imprimir reporte de depuración por consola serial (USB)
         Serial.println("\n------------------------------------------------");
         if (USE_EMULATOR) {
             int stepIdx = getMockGPSIndex();
             int totalSteps = getMockGPSTotalPoints();
             Serial.printf("[Telemetría (SIMULADO)] Paso: %d/%d\n", stepIdx + 1, totalSteps);
         } else {
-            Serial.printf("[Telemetría (GPS REAL)] Satélites: %d | Edad: %d ms\n", sats, age);
+            Serial.printf("[Telemetría (GNSS 4G)] Satélites: %d | Potrero: %s\n", 
+                          sats, potreroAbierto ? "ABIERTO (Traslado)" : "CERRADO");
         }
         Serial.printf("Coordenadas: Lat: %.6f, Lon: %.6f\n", currentPos.lat, currentPos.lon);
         Serial.printf("Ubicación Actual: %s\n", currentUbicacion);
         Serial.printf("¿En Hato?: %s | ¿En Potrero?: %s\n", insideHato ? "SÍ" : "NO", insidePotrero ? "SÍ" : "NO");
-        Serial.printf("Distancia al límite exterior: %.2f metros\n", distToHatoBorder);
+        Serial.printf("Distancia lindero Hato: %.2f m | Distancia lindero Potrero: %.2f m\n", distToHatoBorder, distToPotreroBorder);
         
         Serial.print("Nivel de Alerta: ");
         if (currentAlert == ALERT_NONE) {
-            Serial.println("NORMAL (Seguro)");
+            Serial.println("NORMAL (Silencio / Seguro)");
         } else if (currentAlert == ALERT_WARNING) {
-            Serial.println("ADVERTENCIA (Rotación/Límite)");
+            Serial.println("ADVERTENCIA (Lindero a < 3m - Bips lentos 4000Hz)");
         } else if (currentAlert == ALERT_DANGER) {
-            Serial.println("PELIGRO (¡Escape!)");
+            Serial.println("PELIGRO (Infracción Potrero - Bips rápidos 4000Hz)");
+        } else if (currentAlert == ALERT_CRITICAL_HATO) {
+            Serial.println("¡¡ESCAPE CRÍTICO DE HATO (SONIDO CONTINUO MÁS FUERTE 4000Hz)!!");
         }
         Serial.println("------------------------------------------------");
     }

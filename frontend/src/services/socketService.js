@@ -6,8 +6,8 @@ export function initSocket(onConnect, onTelemetry, onAlerta, onDisconnect, onGeo
   if (socket) return socket;
 
   const targetOrigin = (typeof window !== 'undefined' && window.location.port === '5173')
-    ? `http://${window.location.hostname || '192.168.86.30'}:3500`
-    : (typeof window !== 'undefined' ? window.location.origin : 'http://192.168.86.30:3500');
+    ? `http://${window.location.hostname || '192.168.86.23'}:3500`
+    : (typeof window !== 'undefined' ? window.location.origin : 'http://192.168.86.23:3500');
 
   socket = io(targetOrigin, {
     transports: ['polling', 'websocket'],

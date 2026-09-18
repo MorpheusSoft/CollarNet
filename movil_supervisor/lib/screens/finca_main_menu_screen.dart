@@ -583,7 +583,7 @@ class FincaMainMenuScreen extends StatelessWidget {
                 style: const TextStyle(color: FincaTheme.textLight),
                 decoration: const InputDecoration(
                   labelText: 'Dirección IP y Puerto',
-                  hintText: '192.168.86.30:3500',
+                  hintText: '192.168.86.23:3500',
                   border: OutlineInputBorder(),
                 ),
               ),

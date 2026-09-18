@@ -5,7 +5,7 @@ import '../models/hato.dart';
 import '../models/potrero.dart';
 
 class ApiService {
-  static String defaultHost = '192.168.86.30:3500';
+  static String defaultHost = '192.168.86.23:3500';
 
   static Future<String> getBaseUrl() async {
     try {
