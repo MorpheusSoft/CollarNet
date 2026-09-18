@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Radio, 
   LogOut, 
@@ -6,11 +6,8 @@ import {
   Building2, 
   Layers, 
   ChevronDown,
-  Briefcase,
-  Wrench,
-  Download
+  Briefcase
 } from 'lucide-react';
-import TecnicoDownloadModal from './TecnicoDownloadModal';
 
 export default function Header({ 
   user, 
@@ -35,7 +32,6 @@ export default function Header({
 
   const isSuperAdmin = user?.rol === 'SUPERADMIN';
   const isPropietario = user?.rol === 'PROPIETARIO';
-  const [showTecnicoModal, setShowTecnicoModal] = useState(false);
 
   return (
     <header className="h-16 bg-[#0B121C] border-b border-white/10 px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0">
@@ -123,21 +119,6 @@ export default function Header({
           </span>
         </div>
 
-        {/* 🛠️ Botón Exclusivo para Super Administrador: Descargar App Técnica */}
-        {isSuperAdmin && (
-          <button
-            type="button"
-            onClick={() => setShowTecnicoModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-sky-500/15 to-blue-600/15 hover:from-sky-500/25 hover:to-blue-600/25 border border-sky-400/40 hover:border-sky-400/70 text-sky-300 hover:text-white text-xs font-semibold shadow-sm shadow-sky-500/10 transition-all duration-200 group cursor-pointer"
-            title="Descargar o Abrir Aplicación Técnica CowIA Ops (Exclusivo Superadmin)"
-          >
-            <Wrench className="w-3.5 h-3.5 text-sky-400 group-hover:rotate-45 transition-transform" />
-            <span className="hidden sm:inline">Descargar App Técnica</span>
-            <span className="sm:hidden">App Técnica</span>
-            <Download className="w-3 h-3 text-sky-400 opacity-75 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all" />
-          </button>
-        )}
-
         {/* User Profile Chip */}
         {user && (
           <div className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-slate-900 border border-white/10">
@@ -164,14 +145,6 @@ export default function Header({
         </button>
 
       </div>
-
-      {/* Modal de Descarga de App Técnica (Exclusivo Superadmin) */}
-      {isSuperAdmin && (
-        <TecnicoDownloadModal 
-          visible={showTecnicoModal} 
-          onHide={() => setShowTecnicoModal(false)} 
-        />
-      )}
 
     </header>
   );

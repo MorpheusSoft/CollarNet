@@ -39,18 +39,36 @@ const rawFrontendPath = path.join(__dirname, '../frontend');
 
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
+} else {
+  app.use(express.static(rawFrontendPath));
 }
-app.use(express.static(rawFrontendPath));
 
-// Servir descargas directas de APKs generados en la raíz del proyecto
+// Redirigir /app-campo.html al dashboard principal SPA de CowIA
+app.get('/app-campo.html', (req, res) => {
+  const indexHtml = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
+  return res.sendFile(path.join(rawFrontendPath, 'index.html'));
+});
+
+// Servir descargas directas de APKs de aplicaciones móviles
+const apkPublicPath = path.join(__dirname, '../frontend/public/apk');
+const apkDistPath = path.join(__dirname, '../frontend/dist/apk');
 const rootDir = path.join(__dirname, '..');
-app.use('/apk', express.static(rootDir, {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.apk')) {
-      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-    }
+
+const apkHeaders = (res, filePath) => {
+  if (filePath.endsWith('.apk')) {
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
   }
-}));
+};
+
+if (fs.existsSync(apkPublicPath)) {
+  app.use('/apk', express.static(apkPublicPath, { setHeaders: apkHeaders }));
+}
+if (fs.existsSync(apkDistPath)) {
+  app.use('/apk', express.static(apkDistPath, { setHeaders: apkHeaders }));
+}
+app.use('/apk', express.static(rootDir, { setHeaders: apkHeaders }));
 
 // Servir versiones web / PWA para iPhone y alias directos
 const iphoneAppsPath = path.join(__dirname, '../apps_para_iphone');

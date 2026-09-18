@@ -16,6 +16,7 @@ import VeterinaryHealthView from './views/VeterinaryHealthView';
 import ReproductionView from './views/ReproductionView';
 import NotificationsConfigView from './views/NotificationsConfigView';
 import HealthRuminationView from './views/HealthRuminationView';
+import ApkDownloadModal from './components/ApkDownloadModal';
 
 import { 
   fetchMonitoreo, 
@@ -60,6 +61,7 @@ export default function App() {
   const [geocercas, setGeocercas] = useState({ hatos: [], potreros: [] });
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [selectedAnimalForProjection, setSelectedAnimalForProjection] = useState(null);
+  const [showApkModal, setShowApkModal] = useState(false);
 
   // Load Core Data based on User Role, Selected Tenant & Selected Hato
   const loadAllData = async () => {
@@ -242,6 +244,7 @@ export default function App() {
           onChangeTab={setCurrentTab}
           user={user}
           onGoToLanding={() => setCurrentView('landing')}
+          onOpenApkDownload={() => setShowApkModal(true)}
         />
 
         <main className="flex-1 overflow-y-auto bg-[#070D14]">
@@ -361,6 +364,13 @@ export default function App() {
         </main>
 
       </div>
+
+      {/* Modal de Descarga de APKs (según rol del usuario) */}
+      <ApkDownloadModal
+        visible={showApkModal}
+        onHide={() => setShowApkModal(false)}
+        user={user}
+      />
 
     </div>
   );

@@ -17,10 +17,11 @@ import {
   Syringe,
   Heart,
   HeartPulse,
-  Bell
+  Bell,
+  Wrench
 } from 'lucide-react';
 
-export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding }) {
+export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding, onOpenApkDownload }) {
   const [collapsed, setCollapsed] = useState(false);
 
   let menuItems = [];
@@ -117,14 +118,28 @@ export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding }
 
       {/* Bottom Shortcuts */}
       <div className="p-3 border-t border-white/10 space-y-1.5">
-        <a
-          href="app-campo.html"
-          className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-900/40 transition-colors"
-          title="App Móvil de Campo (Manga y Pesaje)"
+        {/* Descargar APK según Rol */}
+        <button
+          type="button"
+          onClick={onOpenApkDownload}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-left shadow-sm ${
+            user?.rol === 'SUPERADMIN'
+              ? 'text-cyan-400 bg-cyan-950/40 border border-cyan-500/40 hover:bg-cyan-900/50 hover:border-cyan-400'
+              : 'text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-900/40 hover:border-emerald-400'
+          }`}
+          title={user?.rol === 'SUPERADMIN' ? 'Descargar App Técnico (APK)' : 'Descargar App de Campo (APK)'}
         >
-          <Smartphone className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>App de Campo PWA</span>}
-        </a>
+          {user?.rol === 'SUPERADMIN' ? (
+            <Wrench className="w-4 h-4 shrink-0 text-cyan-400" />
+          ) : (
+            <Smartphone className="w-4 h-4 shrink-0 text-emerald-400" />
+          )}
+          {!collapsed && (
+            <span className="truncate">
+              {user?.rol === 'SUPERADMIN' ? 'Descargar App Técnico (APK)' : 'Descargar App de Campo (APK)'}
+            </span>
+          )}
+        </button>
 
         <button
           type="button"
