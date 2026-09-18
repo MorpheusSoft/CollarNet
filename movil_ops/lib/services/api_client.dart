@@ -6,8 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/hato_maestro.dart';
 
 class ApiClient {
-  // IP local / VPS del backend CollarNet
-  static const String defaultBaseUrl = 'http://192.168.86.23:3500/api';
+  // IP local / VPS del backend CollarNet (Cloud VPS por defecto)
+  static const String defaultBaseUrl = 'https://www.cowai.net/api';
 
   static Future<String> getBaseUrl() async {
     try {

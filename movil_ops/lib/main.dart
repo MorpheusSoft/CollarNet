@@ -5,6 +5,7 @@ import 'providers/agro_provider.dart';
 import 'providers/drawing_provider.dart';
 import 'providers/inventory_provider.dart';
 import 'providers/ops_provider.dart';
+import 'screens/login_screen.dart';
 import 'screens/main_menu_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -35,12 +36,52 @@ class CowIAOpsApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DrawingProvider()),
         ChangeNotifierProvider(create: (_) => InventoryProvider()),
       ],
+      child: const CowIAOpsMaterialApp(),
+    );
+  }
+}
+
+class CowIAOpsMaterialApp extends StatelessWidget {
+  const CowIAOpsMaterialApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final ops = context.watch<OpsProvider>();
+
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => ops.recordActivity(),
+      onPointerMove: (_) => ops.recordActivity(),
       child: MaterialApp(
         title: 'CowIA Ops — Suite Técnica & Despliegue',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        home: const MainMenuScreen(),
+        home: const AuthGate(),
       ),
     );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final ops = context.watch<OpsProvider>();
+
+    if (!ops.isAuthChecked) {
+      return const Scaffold(
+        backgroundColor: AppTheme.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.primaryCyan),
+        ),
+      );
+    }
+
+    if (!ops.isAuthenticated) {
+      return const LoginScreen();
+    }
+
+    return const MainMenuScreen();
   }
 }

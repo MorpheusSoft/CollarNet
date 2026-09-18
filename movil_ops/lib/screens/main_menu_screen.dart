@@ -24,6 +24,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   int _currentBottomNavIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OpsProvider>().refreshServerData();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ops = context.watch<OpsProvider>();
 
@@ -235,91 +243,159 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Widget _buildHeader(OpsProvider ops) {
+    final isOnline = ops.isCloudServerOnline;
+    final latency = ops.serverLatencyMs;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppTheme.primaryGradient,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryCyan.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppTheme.primaryGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryCyan.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(Icons.person, color: Colors.white, size: 22),
+                ),
               ),
-              child: const Center(
-                child: Icon(Icons.person, color: Colors.white, size: 24),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ops.operatorName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      ops.operatorRole,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: () {
+                ops.refreshServerData();
+                _showSettingsDialog(context);
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isOnline
+                      ? AppTheme.emeraldGreen.withValues(alpha: 0.12)
+                      : AppTheme.dangerRed.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isOnline
+                        ? AppTheme.emeraldGreen.withValues(alpha: 0.4)
+                        : AppTheme.dangerRed.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isOnline ? AppTheme.emeraldGreen : AppTheme.dangerRed,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isOnline ? 'Cloud VPS (${latency}ms)' : 'Desconectado',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: isOnline ? AppTheme.emeraldGreen : AppTheme.dangerRed,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  ops.operatorName,
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                Text(
-                  ops.operatorRole,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 2),
+            IconButton(
+              icon: const Icon(Icons.logout_rounded, size: 20, color: AppTheme.textMuted),
+              tooltip: 'Cerrar Sesión',
+              onPressed: () => _confirmLogout(context),
             ),
           ],
         ),
-        InkWell(
-          onTap: () => _showSettingsDialog(context),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.emeraldGreen.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppTheme.emeraldGreen.withValues(alpha: 0.4),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.emeraldGreen,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Cloud VPS (${ops.serverLatencyMs}ms)',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.emeraldGreen,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ],
+    );
+  }
+
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: Text(
+          '¿Cerrar Sesión?',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+        ),
+        content: Text(
+          'Se cerrará tu sesión activa y deberás ingresar usuario y clave nuevamente.',
+          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancelar', style: GoogleFonts.inter(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.dangerRed,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<OpsProvider>().logout();
+            },
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -341,7 +417,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             const Icon(Icons.settings_ethernet_rounded, color: AppTheme.primaryCyan, size: 24),
             const SizedBox(width: 8),
             Text(
-              'Servidor Backend CollarNet',
+              'Servidor Cloud VPS',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -355,7 +431,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ingresa la dirección IP y puerto del servidor local o nube (ej: http://192.168.86.23:3500/api):',
+              'Dirección de conexión al backend en la nube:',
               style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 14),
@@ -365,7 +441,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: AppTheme.surfaceLight,
-                hintText: 'http://192.168.86.23:3500/api',
+                hintText: 'https://www.cowai.net/api',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.link, color: AppTheme.primaryCyan, size: 20),
               ),
@@ -388,6 +464,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 await ApiService.setCustomBaseUrl(newUrl);
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (context.mounted) {
+                  context.read<OpsProvider>().refreshServerData();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       backgroundColor: AppTheme.emeraldGreen,

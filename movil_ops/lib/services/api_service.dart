@@ -7,8 +7,8 @@ import '../models/hato.dart';
 import '../models/potrero.dart';
 
 class ApiService {
-  // IP local de la computadora y puerto 3500 del backend de CollarNet
-  static const String defaultBaseUrl = 'http://192.168.86.23:3500/api';
+  // IP local / VPS de producción (Cloud VPS)
+  static const String defaultBaseUrl = 'https://www.cowai.net/api';
 
   static Future<String> getBaseUrl() async {
     try {
@@ -22,6 +22,77 @@ class ApiService {
   static Future<void> setCustomBaseUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('custom_server_url', url);
+  }
+
+  /// Autentica al usuario en el VPS
+  Future<Map<String, dynamic>> login(String identifier, String password) async {
+    final baseUrl = await getBaseUrl();
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': identifier.trim(),
+          'password': password.trim(),
+        }),
+      ).timeout(const Duration(seconds: 8));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'user': data['user']};
+      } else {
+        return {'success': false, 'error': data['error'] ?? 'Credenciales inválidas'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'No se pudo conectar al servidor ($e)'};
+    }
+  }
+
+  /// Verifica conectividad y latencia al VPS
+  Future<Map<String, dynamic>> checkServerHealth() async {
+    final baseUrl = await getBaseUrl();
+    final sw = Stopwatch()..start();
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/collares/kpis'), headers: {'x-user-role': 'SUPERADMIN'})
+          .timeout(const Duration(seconds: 5));
+      sw.stop();
+      if (response.statusCode == 200) {
+        return {'online': true, 'latencyMs': sw.elapsedMilliseconds};
+      }
+    } catch (_) {}
+    return {'online': false, 'latencyMs': 0};
+  }
+
+  /// Obtiene los KPIs de inventario reales del VPS
+  Future<Map<String, dynamic>?> fetchKpis(String userRole) async {
+    final baseUrl = await getBaseUrl();
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/collares/kpis'), headers: {'x-user-role': userRole})
+          .timeout(const Duration(seconds: 6));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Obtiene el conteo de lotes registrados
+  Future<int> fetchLotesCount(String userRole) async {
+    final baseUrl = await getBaseUrl();
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/collares/lotes'), headers: {'x-user-role': userRole})
+          .timeout(const Duration(seconds: 6));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        return list.length;
+      }
+    } catch (_) {}
+    return 0;
   }
 
   Future<List<Hato>> fetchHatos() async {
