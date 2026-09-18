@@ -96,8 +96,9 @@ export async function evaluateAnimalPosition(animalId, lat, lon) {
 /**
  * Guarda o actualiza la geocerca de un Hato.
  */
-export async function saveHato(id, nombre, vertices, tenantId = 1) {
+export async function saveHato(id, nombre, vertices, tenantId = null) {
   const wkt = verticesToWKT(vertices);
+  const cleanTenant = tenantId ? parseInt(tenantId, 10) : null;
   if (id) {
     const query = `
       UPDATE hatos 
@@ -105,7 +106,7 @@ export async function saveHato(id, nombre, vertices, tenantId = 1) {
       WHERE id = $4 
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [nombre, wkt, tenantId, id]);
+    const { rows } = await pool.query(query, [nombre, wkt, cleanTenant, id]);
     return rows[0];
   } else {
     const query = `
@@ -113,7 +114,7 @@ export async function saveHato(id, nombre, vertices, tenantId = 1) {
       VALUES ($1, ST_GeomFromText($2, 4326), $3) 
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [nombre, wkt, tenantId || 1]);
+    const { rows } = await pool.query(query, [nombre, wkt, cleanTenant]);
     return rows[0];
   }
 }

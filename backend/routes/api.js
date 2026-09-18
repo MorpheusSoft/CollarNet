@@ -1234,7 +1234,7 @@ function notifyDataUpdated(req, tipo, data = {}) {
  */
 router.post('/geocercas/hato', async (req, res) => {
   const { id, nombre, vertices, tenantId } = req.body;
-  const cleanTenantId = tenantId ? parseInt(tenantId, 10) : 1;
+  const cleanTenantId = tenantId ? parseInt(tenantId, 10) : null;
   const geojsonStr = verticesToGeoJSON(vertices);
 
   try {

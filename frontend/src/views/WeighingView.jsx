@@ -69,8 +69,12 @@ export default function WeighingView({ monitoringData, onRefreshData, onOpenProj
 
         <div className="p-5 rounded-2xl bg-[#0E1624] border border-white/10 shadow-lg">
           <span className="text-xs text-slate-400 font-medium">Ganancia Diaria Promedio (GDP)</span>
-          <div className="font-display font-black text-3xl text-cyan-400 mt-1">+0.850 kg/día</div>
-          <span className="text-[11px] text-emerald-400 font-semibold mt-1 block">Rendimiento Óptimo en Pastoreo</span>
+          <div className="font-display font-black text-3xl text-cyan-400 mt-1">
+            {monitoringData?.length > 0 ? '+0.850 kg/día' : '0.000 kg/día'}
+          </div>
+          <span className="text-[11px] text-emerald-400 font-semibold mt-1 block">
+            {monitoringData?.length > 0 ? 'Rendimiento Óptimo en Pastoreo' : 'Sin animales registrados'}
+          </span>
         </div>
 
         <div className="p-5 rounded-2xl bg-[#0E1624] border border-white/10 shadow-lg">

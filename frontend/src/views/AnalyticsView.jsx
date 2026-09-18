@@ -58,9 +58,9 @@ export default function AnalyticsView({ monitoringData, initialSelectedAnimal })
   }, [selectedAnimalId]);
 
   // Build Chart Data
-  const chartLabels = projectionData?.proyecciones?.map(p => `+${p.dias} Días`) || ['Hoy', '+30d', '+60d', '+90d', '+180d', '+365d'];
-  const weightData = projectionData?.proyecciones?.map(p => p.pesoProyectado) || [350, 375, 400, 425, 500, 550];
-  const profitData = projectionData?.proyecciones?.map(p => p.beneficioNeto) || [0, 25, 48, 65, 110, 140];
+  const chartLabels = projectionData?.proyecciones?.map(p => `+${p.dias} Días`) || [];
+  const weightData = projectionData?.proyecciones?.map(p => p.pesoProyectado) || [];
+  const profitData = projectionData?.proyecciones?.map(p => p.beneficioNeto) || [];
 
   const chartConfig = {
     labels: chartLabels,
@@ -126,6 +126,37 @@ export default function AnalyticsView({ monitoringData, initialSelectedAnimal })
     }
   };
 
+  if (!monitoringData || monitoringData.length === 0) {
+    return (
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+          <div>
+            <h1 className="font-display font-black text-2xl text-white flex items-center gap-2.5">
+              <TrendingUp className="w-6 h-6 text-emerald-400" />
+              Analítica Zootécnica y Curvas de Rentabilidad
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Simulación financiera a 30, 60, 90, 180 y 365 días considerando costos de forraje y precio en pie.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-[#0E1624] border border-white/10 rounded-2xl shadow-xl">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
+            <TrendingUp className="w-8 h-8 text-emerald-400" />
+          </div>
+          <h3 className="font-display font-bold text-lg text-white mb-2">Sin datos zootécnicos registrados</h3>
+          <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+            No hay animales registrados en el sistema para calcular curvas de ganancia diaria de peso (GDP), proyección de forraje y márgenes de rentabilidad.
+          </p>
+          <span className="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20">
+            Registra hatos, potreros y vincula animales con collares para iniciar las simulaciones.
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       
@@ -149,7 +180,7 @@ export default function AnalyticsView({ monitoringData, initialSelectedAnimal })
             onChange={(e) => setSelectedAnimalId(e.target.value)}
             className="bg-[#080D15] border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-400 outline-none focus:border-emerald-500"
           >
-            {monitoringData?.map(a => (
+            {monitoringData.map(a => (
               <option key={a.id} value={a.id}>
                 Arete #{a.arete_visual || a.id} - {a.raza} ({a.peso_actual || 0} kg)
               </option>
@@ -163,6 +194,14 @@ export default function AnalyticsView({ monitoringData, initialSelectedAnimal })
           <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
           <span>Calculando curvas zootécnicas...</span>
         </div>
+      ) : !projectionData ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-[#0E1624] border border-white/10 rounded-2xl">
+          <AlertCircle className="w-10 h-10 text-amber-400 mb-3" />
+          <h3 className="text-sm font-bold text-white mb-1">Sin proyección disponible para este animal</h3>
+          <p className="text-xs text-slate-400 max-w-sm">
+            Verifica que la raza y categoría del animal tengan parámetros de rendimiento registrados.
+          </p>
+        </div>
       ) : (
         <>
           {/* KPI Cards */}
@@ -170,15 +209,15 @@ export default function AnalyticsView({ monitoringData, initialSelectedAnimal })
             <div className="p-5 rounded-2xl bg-[#0E1624] border border-white/10 shadow-lg">
               <span className="text-xs text-slate-400 font-medium">Peso Actual</span>
               <div className="font-display font-black text-2xl text-white mt-1">
-                {projectionData?.pesoActual || 0} kg
+                {projectionData.pesoActual || 0} kg
               </div>
-              <span className="text-[11px] text-slate-400 mt-1 block">Raza: {projectionData?.raza || 'Nelore'}</span>
+              <span className="text-[11px] text-slate-400 mt-1 block">Raza: {projectionData.raza || '--'}</span>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#0E1624] border border-white/10 shadow-lg">
               <span className="text-xs text-slate-400 font-medium">Ganancia Diaria (GDP)</span>
               <div className="font-display font-black text-2xl text-emerald-400 mt-1">
-                +{projectionData?.gdpPromedioDiario || 0.85} kg/día
+                +{projectionData.gdpPromedioDiario || 0} kg/día
               </div>
               <span className="text-[11px] text-emerald-400/80 font-semibold mt-1 block">Rendimiento Forrajero</span>
             </div>
@@ -186,7 +225,7 @@ export default function AnalyticsView({ monitoringData, initialSelectedAnimal })
             <div className="p-5 rounded-2xl bg-[#0E1624] border border-white/10 shadow-lg">
               <span className="text-xs text-slate-400 font-medium">Precio Mercado Estimado</span>
               <div className="font-display font-black text-2xl text-cyan-400 mt-1">
-                ${projectionData?.precioPorKgMercado || 2.10} / kg
+                ${projectionData.precioPorKgMercado || 0} / kg
               </div>
               <span className="text-[11px] text-slate-400 mt-1 block">Venta en Pie</span>
             </div>
@@ -194,10 +233,10 @@ export default function AnalyticsView({ monitoringData, initialSelectedAnimal })
             <div className="p-5 rounded-2xl bg-[#0E1624] border border-white/10 shadow-lg">
               <span className="text-xs text-slate-400 font-medium">Recomendación Zootécnica</span>
               <div className="font-display font-black text-xl text-emerald-400 mt-1">
-                {projectionData?.pesoActual >= 480 ? '🎯 Venta Inmediata' : '🌿 Mantener en Pastoreo'}
+                {projectionData.pesoActual >= 480 ? '🎯 Venta Inmediata' : '🌿 Mantener en Pastoreo'}
               </div>
               <span className="text-[11px] text-slate-400 mt-1 block">
-                {projectionData?.pesoActual >= 480 ? 'Peso óptimo comercial alcanzado' : 'Ganando peso con margen positivo'}
+                {projectionData.pesoActual >= 480 ? 'Peso óptimo comercial alcanzado' : 'Ganando peso con margen positivo'}
               </span>
             </div>
           </div>
@@ -231,7 +270,7 @@ export default function AnalyticsView({ monitoringData, initialSelectedAnimal })
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                  {projectionData?.proyecciones?.map((item) => (
+                  {projectionData.proyecciones?.map((item) => (
                     <tr key={item.dias} className="hover:bg-slate-900/60 transition-colors">
                       <td className="py-3 font-semibold text-white">+{item.dias} Días</td>
                       <td className="py-3 font-bold text-emerald-400">{item.pesoProyectado} kg</td>
