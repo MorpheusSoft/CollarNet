@@ -6,16 +6,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/hato_maestro.dart';
 
 class ApiClient {
-  // Servidor backend local CollarNet
-  static const String defaultBaseUrl = 'http://192.168.86.30:3500/api';
+  // Servidor VPS de producción Cloud CowIA
+  static const String defaultBaseUrl = 'https://www.cowai.net/api';
 
   static Future<String> getBaseUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       var savedUrl = prefs.getString('custom_server_url');
-      if (savedUrl == null || savedUrl.contains('cowai.net') || savedUrl.contains('192.168.86.23') || savedUrl.isEmpty) {
-        savedUrl = defaultBaseUrl;
-        await prefs.setString('custom_server_url', defaultBaseUrl);
+      if (savedUrl == null || savedUrl.trim().isEmpty) {
+        return defaultBaseUrl;
       }
       final clean = savedUrl.trim();
       if (clean.startsWith('http://') || clean.startsWith('https://')) {
