@@ -12,6 +12,7 @@ import 'hardware_test_screen.dart';
 import 'hatos_screen.dart';
 import 'lotes_screen.dart';
 import 'ota_screen.dart';
+import '../services/update_service.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -28,6 +29,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<OpsProvider>().refreshServerData();
+      UpdateService().checkForUpdates(context, manual: false);
     });
   }
 
@@ -351,6 +353,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             ),
             const SizedBox(width: 2),
             IconButton(
+              icon: const Icon(Icons.system_update_rounded, size: 20, color: AppTheme.primaryCyan),
+              tooltip: 'Buscar Actualizaciones',
+              onPressed: () => UpdateService().checkForUpdates(context, manual: true),
+            ),
+            IconButton(
               icon: const Icon(Icons.logout_rounded, size: 20, color: AppTheme.textMuted),
               tooltip: 'Cerrar Sesión',
               onPressed: () => _confirmLogout(context),
@@ -444,6 +451,37 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 hintText: 'https://www.cowai.net/api',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.link, color: AppTheme.primaryCyan, size: 20),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(color: AppTheme.cardBorder),
+            const SizedBox(height: 10),
+            Text(
+              'Actualizaciones de Software (OTA):',
+              style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppTheme.primaryCyan),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.system_update_rounded, color: AppTheme.primaryCyan, size: 18),
+                label: Text(
+                  'Buscar Actualizaciones Ahora',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primaryCyan,
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  UpdateService().checkForUpdates(context, manual: true);
+                },
               ),
             ),
           ],

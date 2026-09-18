@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/ops_provider.dart';
 import '../services/api_service.dart';
+import '../services/update_service.dart';
 import '../theme/app_theme.dart';
 import 'main_menu_screen.dart';
 
@@ -50,6 +51,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ? 'Cloud VPS Activo (${health['latencyMs']}ms)'
             : 'Sin conexión al VPS';
       });
+      if (_isServerOk) {
+        UpdateService().checkForUpdates(context, manual: false);
+      }
     }
   }
 
@@ -421,6 +425,29 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => UpdateService().checkForUpdates(context, manual: true),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.system_update_rounded, size: 14, color: AppTheme.primaryCyan),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Buscar Actualizaciones OTA',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppTheme.primaryCyan,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

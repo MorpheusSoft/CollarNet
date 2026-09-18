@@ -5278,4 +5278,35 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/app/version
+ * Retorna la última versión disponible para actualización OTA de las aplicaciones móviles CowIA.
+ * Soporta query ?app=cowia-tecnico (default) o ?app=cowia-finca
+ */
+router.get('/app/version', (req, res) => {
+  const appParam = (req.query.app || 'cowia-tecnico').toLowerCase().trim();
+
+  if (appParam === 'cowia-finca' || appParam === 'finca' || appParam === 'supervisor') {
+    return res.json({
+      appName: 'CowIA Finca',
+      version: '1.0.0',
+      versionCode: 1,
+      downloadUrl: 'https://www.cowai.net/apk/CowIA-Finca-Release.apk',
+      mandatory: false,
+      releaseNotes: 'Versión inicial de supervisión de hato, potreros y manga.'
+    });
+  }
+
+  // Default: CowIA Técnico (movil_ops)
+  return res.json({
+    appName: 'CowIA Técnico',
+    version: '1.0.1',
+    versionCode: 2,
+    downloadUrl: 'https://www.cowai.net/apk/CowIA-Tecnico.apk',
+    mandatory: false,
+    releaseNotes: 'Actualización automática de versiones, mejoras en conectividad VPS y estabilidad de sesión.'
+  });
+});
+
 export default router;
+

@@ -70,6 +70,11 @@ if (fs.existsSync(apkDistPath)) {
 }
 app.use('/apk', express.static(rootDir, { setHeaders: apkHeaders }));
 
+// Aliases de compatibilidad para nombres de APK
+app.get('/apk/CowIA-Tecnico-Release.apk', (req, res) => res.redirect('/apk/CowIA-Tecnico.apk'));
+app.get('/apk/CowIA-Finca-Release.apk', (req, res) => res.redirect('/apk/CowIA-Campo.apk'));
+
+
 // Servir versiones web / PWA para iPhone y alias directos
 const iphoneAppsPath = path.join(__dirname, '../apps_para_iphone');
 if (fs.existsSync(iphoneAppsPath)) {
@@ -208,7 +213,7 @@ app.get('/descargas', (req, res) => {
           </div>
           <p class="card-desc">Subdivisión de potreros, modo arreo en vivo, pesaje ágil con báscula Bluetooth, brújula de rescate offline y alertas de celo/sanidad.</p>
           <div class="btn-group">
-            <a class="btn btn-apk-finca" href="/apk/CowIA-Finca-Release.apk" download>🤖 Descargar APK (Android)</a>
+            <a class="btn btn-apk-finca" href="/apk/CowIA-Campo.apk" download>🤖 Descargar APK (Android)</a>
             <a class="btn btn-ios" href="/iphone/CowIA_Finca_PWA_iPhone/" target="_blank">🍏 Abrir en iPhone / Safari</a>
           </div>
           <div class="ios-tip">💡 <b>En iPhone:</b> Abre el enlace en Safari, toca <b>Compartir</b> (<span style="font-size: 1rem;">􀈂</span>) y selecciona <b>"Añadir a pantalla de inicio"</b>.</div>
@@ -225,7 +230,7 @@ app.get('/descargas', (req, res) => {
           </div>
           <p class="card-desc">Alta de hatos perimetrales maestros, suite de pruebas de hardware (GNSS/IMU/Shock), escaneo masivo de lotes y flasheo OTA.</p>
           <div class="btn-group">
-            <a class="btn btn-apk-ops" href="/apk/CowIA-Tecnico-Release.apk" download>🤖 Descargar APK (Android)</a>
+            <a class="btn btn-apk-ops" href="/apk/CowIA-Tecnico.apk" download>🤖 Descargar APK (Android)</a>
             <a class="btn btn-ios" href="/iphone/CowIA_Tecnico_PWA_iPhone/" target="_blank">🍏 Abrir en iPhone / Safari</a>
           </div>
           <div class="ios-tip">💡 <b>En iPhone:</b> Abre en Safari y selecciona <b>"Añadir a pantalla de inicio"</b> para usarla a pantalla completa.</div>
