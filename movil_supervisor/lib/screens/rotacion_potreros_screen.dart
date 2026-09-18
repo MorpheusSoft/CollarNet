@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/finca_state_provider.dart';
 import '../theme/finca_theme.dart';
 import 'arreo_traslado_screen.dart';
+import 'map_screen.dart';
 
 class RotacionPotrerosScreen extends StatelessWidget {
   const RotacionPotrerosScreen({Key? key}) : super(key: key);
@@ -40,7 +41,7 @@ class RotacionPotrerosScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: FincaTheme.primaryGreen.withOpacity(0.15),
+                      color: FincaTheme.primaryGreen.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.sync_alt, color: FincaTheme.primaryGreen, size: 28),
@@ -87,7 +88,7 @@ class RotacionPotrerosScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: FincaTheme.warningAmber.withOpacity(0.15),
+                    color: FincaTheme.warningAmber.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: FincaTheme.warningAmber, width: 2),
                   ),
@@ -159,8 +160,74 @@ class RotacionPotrerosScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
             ],
+
+            // Botón Trazar / Crear Nuevo Potrero (Controlado por Permiso Técnico)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: fincaState.permiteCrearPotreros
+                        ? FincaTheme.primaryGreen
+                        : FincaTheme.textMuted.withValues(alpha: 0.5),
+                    width: 1.5,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  if (!fincaState.permiteCrearPotreros) {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: FincaTheme.bgCardElevated,
+                        title: const Row(
+                          children: [
+                            Icon(Icons.lock, color: FincaTheme.warningAmber),
+                            SizedBox(width: 8),
+                            Text('Función Restringida', style: TextStyle(color: FincaTheme.textLight, fontSize: 16)),
+                          ],
+                        ),
+                        content: const Text(
+                          'La creación y trazado de nuevos potreros no está habilitada para esta finca o requiere activación en la App del Técnico.',
+                          style: TextStyle(color: FincaTheme.textMuted),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Entendido', style: TextStyle(color: FincaTheme.accentGreenLight)),
+                          ),
+                        ],
+                      ),
+                    );
+                    return;
+                  }
+                  // Abrir Módulo 1 (Mapa) para trazar el potrero
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MapScreen()),
+                  );
+                },
+                icon: Icon(
+                  fincaState.permiteCrearPotreros ? Icons.add_location_alt : Icons.lock_outline,
+                  color: fincaState.permiteCrearPotreros ? FincaTheme.accentGreenLight : FincaTheme.textMuted,
+                  size: 20,
+                ),
+                label: Text(
+                  fincaState.permiteCrearPotreros
+                      ? 'TRAZAR NUEVO POTRERO EN EL MAPA'
+                      : 'TRAZAR POTRERO (SIN PERMISO TÉCNICO)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: fincaState.permiteCrearPotreros ? FincaTheme.textLight : FincaTheme.textMuted,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
             const Text(
               'CONTROL DE COMPUERTAS Y ROTACIÓN',

@@ -10,7 +10,7 @@ class FincaStateProvider with ChangeNotifier {
   bool _isOnline = true;
   bool _isLoading = false;
   bool _authLoaded = false;
-  String _serverIp = '192.168.86.23:3500';
+  String _serverIp = '192.168.86.30:3500';
 
   // Información del Usuario Autenticado (Web / Central)
   Map<String, dynamic>? _currentUser;
@@ -78,6 +78,7 @@ class FincaStateProvider with ChangeNotifier {
   ];
 
   List<Map<String, dynamic>> _animales = [
+    {'id': 999, 'areteVisual': 'V-999 (EXTRAVIADA 100m)', 'collarId': 'COL-0999', 'raza': 'Brahman Mestizo', 'categoria': 'Vaca Extraviada', 'potreroNombre': 'FUERA DE LINDERO (100m)', 'latitud': 8.5395, 'longitud': -70.3570, 'bateria': 76, 'ultimoPeso': 485.0, 'estadoAlerta': 'EXTRAVIADA'},
     {'id': 1, 'areteVisual': 'V-042', 'collarId': 'COL-0014', 'raza': 'Brahman', 'categoria': 'Vaca', 'potreroNombre': 'Potrero Norte 1', 'latitud': 8.5385, 'longitud': -70.3580, 'bateria': 92, 'ultimoPeso': 460.0},
     {'id': 2, 'areteVisual': 'N-019', 'collarId': 'COL-0003', 'raza': 'Nelore', 'categoria': 'Novillo', 'potreroNombre': 'Potrero Norte 1', 'latitud': 8.5390, 'longitud': -70.3575, 'bateria': 85, 'ultimoPeso': 395.0},
     {'id': 3, 'areteVisual': 'G-108', 'collarId': 'COL-0022', 'raza': 'Guzerá', 'categoria': 'Toro', 'potreroNombre': 'Potrero Este 3', 'latitud': 8.5375, 'longitud': -70.3590, 'bateria': 98, 'ultimoPeso': 720.0},
@@ -86,6 +87,13 @@ class FincaStateProvider with ChangeNotifier {
   List<String> _collaresDisponibles = ['COL-0010', 'COL-0011', 'COL-0012', 'COL-0015', 'COL-0020'];
 
   List<Map<String, dynamic>> _alertas = [
+    {
+      'arete': 'V-999',
+      'tipo': '🚨 FUERA DE CERCA (EXTRAVIADA 100m)',
+      'hora': 'Hace 2 min',
+      'detalle': 'Animal fuera de potrero. Activar brújula táctica (Módulo 5) para búsqueda y rescate.',
+      'collar': 'COL-0999',
+    },
     {
       'arete': 'V-042',
       'tipo': 'CELO DETECTADO',
@@ -147,7 +155,11 @@ class FincaStateProvider with ChangeNotifier {
   Future<void> _loadConfig() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _serverIp = prefs.getString('finca_server_ip') ?? '192.168.86.23:3500';
+      _serverIp = prefs.getString('finca_server_ip') ?? '192.168.86.30:3500';
+      if (_serverIp.contains('cowai.net') || _serverIp.contains('192.168.86.23') || _serverIp.isEmpty) {
+        _serverIp = '192.168.86.30:3500';
+        await prefs.setString('finca_server_ip', '192.168.86.30:3500');
+      }
       _hatoId = prefs.getInt('finca_selected_hato_id') ?? 1;
       _hatoNombre = prefs.getString('finca_selected_hato_nombre') ?? 'Hacienda La Esperanza';
       
@@ -241,9 +253,10 @@ class FincaStateProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Obtener la lista completa de Hatos disponibles
+      // 1. Obtener la lista de Hatos asignados al Tenant / Adquiriente (Hacienda Santa Inés = 1)
+      final tenantId = _currentUser?['tenantId'] as int? ?? 1;
       try {
-        final hatos = await _apiService.fetchHatos();
+        final hatos = await _apiService.fetchHatos(tenantId: tenantId);
         if (hatos.isNotEmpty) {
           _hatosDisponibles = hatos.asMap().entries.map((entry) {
             final idx = entry.key + 1;
@@ -261,10 +274,13 @@ class FincaStateProvider with ChangeNotifier {
             };
           }).toList();
 
-          // Buscar el hato actual en la lista disponible
+          // Buscar el hato actual en la lista disponible o seleccionar el primero de la hacienda
           final matchingIndex = _hatosDisponibles.indexWhere((h) => h['id'] == _hatoId || h['id'].toString() == _hatoId.toString());
           if (matchingIndex >= 0) {
             _hatoNombre = _hatosDisponibles[matchingIndex]['nombre'] as String;
+          } else if (_hatosDisponibles.isNotEmpty) {
+            _hatoId = _hatosDisponibles.first['id'] as int;
+            _hatoNombre = _hatosDisponibles.first['nombre'] as String;
           }
         }
       } catch (e) {

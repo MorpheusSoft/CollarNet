@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/finca_state_provider.dart';
 import '../theme/finca_theme.dart';
 import 'finca_main_menu_screen.dart';
@@ -12,22 +13,44 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _userCtrl = TextEditingController(text: 'david');
-  final TextEditingController _passCtrl = TextEditingController(text: '12345678');
+  final TextEditingController _userCtrl = TextEditingController();
+  final TextEditingController _passCtrl = TextEditingController();
   final TextEditingController _serverIpCtrl = TextEditingController();
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _rememberMe = false;
   String? _errorMessage;
   bool _showAdvancedConfig = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = context.read<FincaStateProvider>();
-      _serverIpCtrl.text = state.serverIp;
-    });
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final remember = prefs.getBool('finca_remember_me') ?? false;
+      final savedUser = prefs.getString('finca_saved_user') ?? '';
+      
+      if (mounted) {
+        setState(() {
+          _rememberMe = remember;
+          if (remember && savedUser.isNotEmpty) {
+            _userCtrl.text = savedUser;
+          }
+        });
+      }
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final state = context.read<FincaStateProvider>();
+          _serverIpCtrl.text = state.serverIp;
+        }
+      });
+    } catch (_) {}
   }
 
   @override
@@ -44,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (user.isEmpty || pass.isEmpty) {
       setState(() {
-        _errorMessage = 'Por favor ingresa usuario y contraseña.';
+        _errorMessage = 'Por favor ingresa tu usuario o correo y contraseña.';
       });
       return;
     }
@@ -70,6 +93,17 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (res['success'] == true) {
+      // Guardar o limpiar preferencia de "Recordar mis datos"
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('finca_remember_me', _rememberMe);
+        if (_rememberMe) {
+          await prefs.setString('finca_saved_user', user);
+        } else {
+          await prefs.remove('finca_saved_user');
+        }
+      } catch (_) {}
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: FincaTheme.primaryGreen,
@@ -100,6 +134,15 @@ class _LoginScreenState extends State<LoginScreen> {
         _errorMessage = res['error'] ?? 'Error de autenticación. Verifica tus credenciales.';
       });
     }
+  }
+
+  void _fillAndLogin(String user, String pass) {
+    setState(() {
+      _userCtrl.text = user;
+      _passCtrl.text = pass;
+      _errorMessage = null;
+    });
+    _handleLogin();
   }
 
   void _fillDemoCredentials() {
@@ -288,6 +331,41 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onSubmitted: (_) => _handleLogin(),
                       ),
+                      const SizedBox(height: 10),
+
+                      // Switch / Checkbox Recordar mis datos
+                      InkWell(
+                        onTap: () => setState(() => _rememberMe = !_rememberMe),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  activeColor: FincaTheme.primaryGreen,
+                                  checkColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                  side: const BorderSide(color: FincaTheme.textMuted, width: 1.5),
+                                  onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Recordar mis datos',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: FincaTheme.textLight,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 12),
 
                       // Mensaje de Error
@@ -360,61 +438,60 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // 3. Chip de Credenciales de Prueba Rápida
-                InkWell(
-                  onTap: _fillDemoCredentials,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: FincaTheme.primaryGreen.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: FincaTheme.primaryGreen.withOpacity(0.25)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: FincaTheme.primaryGreen.withOpacity(0.2),
-                            shape: BoxShape.circle,
+                // 3. Accesos Rápidos de 1-Toque (Demostración / Offline)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: FincaTheme.bgCard,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: FincaTheme.borderCard),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.flash_on_rounded, color: FincaTheme.accentGreenLight, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'ACCESO RÁPIDO DIRECTO (1-TOQUE)',
+                            style: TextStyle(
+                              color: FincaTheme.accentGreenLight,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.8,
+                            ),
                           ),
-                          child: const Icon(Icons.flash_on_rounded, color: FincaTheme.accentGreenLight, size: 16),
-                        ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Credenciales de Prueba',
-                                style: TextStyle(
-                                  color: FincaTheme.textLight,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'Usuario: david | Clave: 12345678',
-                                style: TextStyle(
-                                  color: FincaTheme.accentGreenLight,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ActionChip(
+                            avatar: const Icon(Icons.person, size: 16, color: Colors.black),
+                            label: const Text('David (Supervisor)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black)),
+                            backgroundColor: FincaTheme.primaryGreen,
+                            onPressed: () => _fillAndLogin('david', '12345678'),
                           ),
-                        ),
-                        const Text(
-                          'Rellenar',
-                          style: TextStyle(
-                            color: FincaTheme.accentGreenLight,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
+                          ActionChip(
+                            avatar: const Icon(Icons.manage_accounts, size: 16, color: FincaTheme.accentGreenLight),
+                            label: const Text('Gerente Finca', style: TextStyle(fontSize: 12, color: FincaTheme.textLight)),
+                            backgroundColor: FincaTheme.bgCardElevated,
+                            side: const BorderSide(color: FincaTheme.borderCard),
+                            onPressed: () => _fillAndLogin('finca', 'finca123'),
                           ),
-                        ),
-                      ],
-                    ),
+                          ActionChip(
+                            avatar: const Icon(Icons.admin_panel_settings, size: 16, color: FincaTheme.warningAmber),
+                            label: const Text('Admin General', style: TextStyle(fontSize: 12, color: FincaTheme.textLight)),
+                            backgroundColor: FincaTheme.bgCardElevated,
+                            side: const BorderSide(color: FincaTheme.borderCard),
+                            onPressed: () => _fillAndLogin('admin', 'admin123'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -454,7 +531,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _serverIpCtrl,
                           style: const TextStyle(color: FincaTheme.textLight, fontSize: 13),
                           decoration: InputDecoration(
-                            hintText: '192.168.86.23:3500',
+                            hintText: '192.168.86.30:3500',
                             hintStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 12),
                             prefixIcon: const Icon(Icons.dns_rounded, color: FincaTheme.accentGreenLight, size: 18),
                             filled: true,

@@ -35,11 +35,35 @@ class TopologyValidationResult {
   }
 }
 
+enum SnapCandidateType {
+  draftVertex,
+  hatoVertex,
+  potreroVertex,
+  edgeSegment,
+}
+
+class SnapCandidate {
+  final LatLng point;
+  final double distanceMeters;
+  final SnapCandidateType type;
+  final String title;
+  final String subtitle;
+
+  const SnapCandidate({
+    required this.point,
+    required this.distanceMeters,
+    required this.type,
+    required this.title,
+    required this.subtitle,
+  });
+}
+
 /// Motor de Geometría Computacional y Topología Vectorial Pura (WGS84)
 class GISService {
   static const double earthRadiusWGS84 = 6378137.0; // Metros
   static const double epsilon = 1e-9;
-  static const double snappingToleranceDegrees = 0.00045; // ~45 metros para imanes táctiles de alta precisión
+  static const double snappingToleranceMeters = 1.0; // Máximo 1 metro para detección de cercanía
+  static const double snappingToleranceDegrees = 0.000009; // ~1 metro en WGS84
 
   // ==========================================
   // 1. CÁLCULO DE ÁREA Y PERÍMETRO (WGS84)
@@ -836,5 +860,117 @@ class GISService {
     }
 
     return applyEdgeSnapping(rawPoint, polygonsToSnap, edgeTolMeters);
+  }
+
+  /// Busca todos los vértices y linderos cercanos dentro de maxDistanceMeters (por defecto 1.0 metro)
+  static List<SnapCandidate> findNearbySnapCandidates({
+    required LatLng rawPoint,
+    required List<Hato> existingHatos,
+    List<LatLng>? draftVertices,
+    bool isHato = true,
+    Hato? parentHato,
+    List<Potrero>? siblingPotreros,
+    double maxDistanceMeters = snappingToleranceMeters,
+  }) {
+    final List<SnapCandidate> candidates = [];
+
+    // 1. Vértices del borrador actual en dibujo
+    // Excluimos el vértice inmediatamente anterior recién colocado (draftVertices.last)
+    // para permitir agregar el siguiente vértice a cualquier distancia libremente sin bloquear ni sugerir auto-snap
+    if (draftVertices != null && draftVertices.length >= 2) {
+      for (int i = 0; i < draftVertices.length - 1; i++) {
+        final v = draftVertices[i];
+        final dist = calculateDistanceM(rawPoint, v);
+        if (dist <= maxDistanceMeters) {
+          final isFirst = (i == 0);
+          candidates.add(SnapCandidate(
+            point: v,
+            distanceMeters: dist,
+            type: SnapCandidateType.draftVertex,
+            title: isFirst ? 'Vértice Inicial (Cierre de Polígono)' : 'Vértice #${i + 1} del trazado actual',
+            subtitle: 'Distancia: ${dist < 1.0 ? "${(dist * 100).toStringAsFixed(0)} cm" : "${dist.toStringAsFixed(2)} m"}',
+          ));
+        }
+      }
+    }
+
+    // 2. Vértices de Hatos existentes
+    for (final hato in existingHatos) {
+      for (int i = 0; i < hato.vertices.length; i++) {
+        final v = hato.vertices[i];
+        final dist = calculateDistanceM(rawPoint, v);
+        if (dist <= maxDistanceMeters) {
+          candidates.add(SnapCandidate(
+            point: v,
+            distanceMeters: dist,
+            type: SnapCandidateType.hatoVertex,
+            title: 'Vértice #${i + 1} (${hato.nombre})',
+            subtitle: 'Distancia: ${dist < 1.0 ? "${(dist * 100).toStringAsFixed(0)} cm" : "${dist.toStringAsFixed(2)} m"}',
+          ));
+        }
+      }
+      for (final pot in hato.potreros) {
+        for (int i = 0; i < pot.vertices.length; i++) {
+          final v = pot.vertices[i];
+          final dist = calculateDistanceM(rawPoint, v);
+          if (dist <= maxDistanceMeters) {
+            candidates.add(SnapCandidate(
+              point: v,
+              distanceMeters: dist,
+              type: SnapCandidateType.potreroVertex,
+              title: 'Vértice #${i + 1} Potrero (${pot.nombre})',
+              subtitle: 'Distancia: ${dist < 1.0 ? "${(dist * 100).toStringAsFixed(0)} cm" : "${dist.toStringAsFixed(2)} m"}',
+            ));
+          }
+        }
+      }
+    }
+
+    // 3. Proyecciones a Linderos / Bordes (Edge snapping)
+    final List<Map<String, dynamic>> polygonsWithNames = [];
+    if (isHato) {
+      for (final h in existingHatos) {
+        if (h.vertices.length >= 2) {
+          polygonsWithNames.add({'name': 'Hato ${h.nombre}', 'poly': h.vertices});
+        }
+      }
+    } else {
+      if (parentHato != null && parentHato.vertices.length >= 2) {
+        polygonsWithNames.add({'name': 'Perímetro ${parentHato.nombre}', 'poly': parentHato.vertices});
+      }
+      final potreros = siblingPotreros ?? parentHato?.potreros ?? [];
+      for (final p in potreros) {
+        if (p.vertices.length >= 2) {
+          polygonsWithNames.add({'name': 'Lindero Potrero ${p.nombre}', 'poly': p.vertices});
+        }
+      }
+    }
+
+    for (final item in polygonsWithNames) {
+      final String name = item['name'] as String;
+      final List<LatLng> poly = item['poly'] as List<LatLng>;
+      final int n = poly.length;
+      for (int i = 0; i < n; i++) {
+        final p1 = poly[i];
+        final p2 = poly[(i + 1) % n];
+        final proj = projectPointToSegment(rawPoint, p1, p2);
+        final dist = calculateDistanceM(rawPoint, proj);
+        // Evitar duplicar si la proyección coincide con un vértice ya agregado
+        final alreadyAdded = candidates.any((c) => arePointsEqual(c.point, proj));
+        if (dist <= maxDistanceMeters && !alreadyAdded) {
+          candidates.add(SnapCandidate(
+            point: proj,
+            distanceMeters: dist,
+            type: SnapCandidateType.edgeSegment,
+            title: 'Lindero / Borde ($name)',
+            subtitle: 'Distancia ortogonal: ${dist < 1.0 ? "${(dist * 100).toStringAsFixed(0)} cm" : "${dist.toStringAsFixed(2)} m"}',
+          ));
+        }
+      }
+    }
+
+    // Ordenar de menor a mayor distancia
+    candidates.sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+    return candidates;
   }
 }

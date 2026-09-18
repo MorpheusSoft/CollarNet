@@ -85,7 +85,8 @@ if (fs.existsSync(iphoneAppsPath)) {
 
 // Ruta amigable y moderna para ver y descargar APKs y PWAs desde el móvil
 app.get('/descargas', (req, res) => {
-  const host = req.get('host') || `192.168.86.23:${PORT}`;
+  const host = req.get('host') || 'cowai.net';
+  const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
   res.send(`
     <!DOCTYPE html>
     <html lang="es">
@@ -322,8 +323,8 @@ async function start() {
       console.log(` Servidor CollarNet / CowIA Iniciado`);
       console.log(` Escuchando en: http://0.0.0.0:${PORT}`);
       console.log(` Acceso Local: http://localhost:${PORT}`);
-      console.log(` Acceso Red Wi-Fi: http://192.168.86.23:${PORT}`);
-      console.log(` Portal Descargas Móvil: http://192.168.86.23:${PORT}/descargas`);
+      console.log(` Acceso Red Wi-Fi: http://192.168.86.30:${PORT}`);
+      console.log(` Portal Descargas Móvil: http://192.168.86.30:${PORT}/descargas`);
       console.log(` Prefijo MQTT: ${process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano'}`);
       console.log(`=========================================`);
     });

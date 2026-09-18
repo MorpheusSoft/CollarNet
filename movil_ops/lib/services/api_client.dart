@@ -6,13 +6,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/hato_maestro.dart';
 
 class ApiClient {
-  // IP local / VPS del backend CollarNet (Cloud VPS por defecto)
-  static const String defaultBaseUrl = 'https://www.cowai.net/api';
+  // Servidor backend local CollarNet
+  static const String defaultBaseUrl = 'http://192.168.86.30:3500/api';
 
   static Future<String> getBaseUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('custom_server_url') ?? defaultBaseUrl;
+      var savedUrl = prefs.getString('custom_server_url');
+      if (savedUrl == null || savedUrl.contains('cowai.net') || savedUrl.contains('192.168.86.23') || savedUrl.isEmpty) {
+        savedUrl = defaultBaseUrl;
+        await prefs.setString('custom_server_url', defaultBaseUrl);
+      }
+      final clean = savedUrl.trim();
+      if (clean.startsWith('http://') || clean.startsWith('https://')) {
+        return clean.endsWith('/api') ? clean : (clean.endsWith('/') ? '${clean}api' : '$clean/api');
+      }
+      if (clean.contains('cowai.net') || (!clean.contains(':') && !RegExp(r'^\d+\.\d+\.\d+\.\d+').hasMatch(clean))) {
+        return 'https://$clean/api';
+      }
+      return 'http://$clean/api';
     } catch (_) {
       return defaultBaseUrl;
     }

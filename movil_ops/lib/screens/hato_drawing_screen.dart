@@ -807,29 +807,11 @@ class _HatoDrawingScreenState extends State<HatoDrawingScreen> {
                 if (_currentMethod == CreationMethod.satelliteMap &&
                     drawing.isDrawing &&
                     !drawing.isEraserMode) {
-                  final added = drawing.addVertex(point, agro);
-                  if (added && drawing.lastPointWasSnapped && mounted) {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: AppTheme.warningAmber,
-                        duration: const Duration(milliseconds: 1500),
-                        behavior: SnackBarBehavior.floating,
-                        margin: const EdgeInsets.only(bottom: 90, left: 24, right: 24),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        content: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.auto_fix_high, color: Colors.black, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              '🧲 Vértice auto-aproximado a la geocerca',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: Colors.black, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
+                  final candidates = drawing.getNearbyCandidates(point, agro);
+                  if (candidates.isEmpty) {
+                    drawing.addExactVertex(point, agro, isSnapped: false);
+                  } else {
+                    _showSnapChoiceBottomSheet(point, candidates, drawing, agro);
                   }
                 }
               },
@@ -1476,6 +1458,210 @@ class _HatoDrawingScreenState extends State<HatoDrawingScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showSnapChoiceBottomSheet(LatLng rawPoint, List<SnapCandidate> candidates, DrawingProvider drawing, AgroProvider agro) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        side: BorderSide(color: AppTheme.cardBorder),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryCyan.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.join_inner_rounded, color: AppTheme.primaryCyan, size: 22),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'PROXIMIDAD DETECTADA',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.primaryCyan,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            Text(
+                              '¿Deseas unir el punto o colocarlo libre?',
+                              style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppTheme.textMuted, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Opción 1: Mantener punto libre / exacto
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    drawing.addExactVertex(rawPoint, agro, isSnapped: false);
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceLight,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppTheme.cardBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white10,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '📍 Mantener posición exacta tocada',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Coloca el vértice libremente sin unir a otros elementos',
+                                style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: AppTheme.textMuted, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+                Text(
+                  'O SELECCIONA EL VÉRTICE / LINDERO AL QUE DESEAS UNIRTE:',
+                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 8),
+
+                // Lista de Candidatos (a <= 1 metro)
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: candidates.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final c = candidates[index];
+                      IconData iconData = Icons.adjust_rounded;
+                      Color iconColor = AppTheme.warningAmber;
+
+                      if (c.type == SnapCandidateType.draftVertex) {
+                        iconData = Icons.trip_origin_rounded;
+                        iconColor = AppTheme.emeraldGreen;
+                      } else if (c.type == SnapCandidateType.edgeSegment) {
+                        iconData = Icons.polyline_rounded;
+                        iconColor = AppTheme.accentPurple;
+                      }
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          drawing.addExactVertex(c.point, agro, isSnapped: true);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: iconColor.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: iconColor.withOpacity(0.35)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(iconData, color: iconColor, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '🧲 ${c.title}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      c.subtitle,
+                                      style: GoogleFonts.inter(fontSize: 11, color: iconColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: iconColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Unir',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: iconColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

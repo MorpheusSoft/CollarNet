@@ -15,6 +15,7 @@ import '../widgets/eraser_hud.dart';
 import '../widgets/gps_floating_controls.dart';
 import '../widgets/hato_drawer.dart';
 import '../widgets/topology_alert_banner.dart';
+import '../theme/finca_theme.dart';
 import 'buscar_res_screen.dart';
 
 enum MapTileType { satellite, osm, dark }
@@ -140,7 +141,12 @@ class _MapScreenState extends State<MapScreen> {
               initialZoom: 15.5,
               onTap: (tapPosition, point) {
                 if (drawingProvider.isDrawing && !drawingProvider.isEraserMode) {
-                  drawingProvider.addVertex(point, agroProvider);
+                  final candidates = drawingProvider.getNearbyCandidates(point, agroProvider);
+                  if (candidates.isEmpty) {
+                    drawingProvider.addExactVertex(point, agroProvider, isSnapped: false);
+                  } else {
+                    _showSnapChoiceBottomSheet(point, candidates, drawingProvider, agroProvider);
+                  }
                 }
               },
             ),
@@ -784,6 +790,215 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSnapChoiceBottomSheet(
+    LatLng rawPoint,
+    List<SnapCandidate> candidates,
+    DrawingProvider drawing,
+    AgroProvider agro,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: FincaTheme.bgCardElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        side: BorderSide(color: FincaTheme.borderCard),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: FincaTheme.accentGreenLight.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.join_inner_rounded, color: FincaTheme.accentGreenLight, size: 22),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'PROXIMIDAD DETECTADA',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: FincaTheme.accentGreenLight,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            Text(
+                              '¿Deseas unir el punto o colocarlo libre?',
+                              style: TextStyle(fontSize: 12, color: FincaTheme.textMuted),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: FincaTheme.textMuted, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Opción 1: Mantener posición exacta tocada
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    drawing.addExactVertex(rawPoint, agro, isSnapped: false);
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: FincaTheme.bgCard,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: FincaTheme.borderCard),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white10,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '📍 Mantener posición exacta tocada',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: FincaTheme.textLight,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Coloca el vértice libremente sin unir a otros elementos',
+                                style: TextStyle(fontSize: 11, color: FincaTheme.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: FincaTheme.textMuted, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+                Text(
+                  'O SELECCIONA EL VÉRTICE / LINDERO AL QUE DESEAS UNIRTE:',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: FincaTheme.textMuted),
+                ),
+                const SizedBox(height: 8),
+
+                // Lista de Candidatos (a <= 1 metro)
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: candidates.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final c = candidates[index];
+                      IconData iconData = Icons.adjust_rounded;
+                      Color iconColor = FincaTheme.warningAmber;
+
+                      if (c.type == SnapCandidateType.draftVertex) {
+                        iconData = Icons.trip_origin_rounded;
+                        iconColor = FincaTheme.primaryGreen;
+                      } else if (c.type == SnapCandidateType.edgeSegment) {
+                        iconData = Icons.polyline_rounded;
+                        iconColor = FincaTheme.infoBlue;
+                      }
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          drawing.addExactVertex(c.point, agro, isSnapped: true);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: iconColor.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: iconColor.withOpacity(0.35)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(iconData, color: iconColor, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '🧲 ${c.title}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: FincaTheme.textLight,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      c.subtitle,
+                                      style: TextStyle(fontSize: 11, color: iconColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: iconColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Unir',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: iconColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         );
       },

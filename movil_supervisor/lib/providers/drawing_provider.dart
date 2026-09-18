@@ -78,19 +78,10 @@ class DrawingProvider extends ChangeNotifier {
   // AGREGADO DE VÉRTICES Y SNAPPING
   // ==========================================
 
-  /// Intenta agregar un nuevo vértice aplicando snapping y validación topológica
-  bool addVertex(LatLng rawPoint, AgroProvider agroProvider) {
-    if (!_isDrawing || _isEraserMode) return false;
+  /// Obtiene la lista de candidatos cercanos (<= 1m) para confirmación interactiva
+  List<SnapCandidate> getNearbyCandidates(LatLng rawPoint, AgroProvider agroProvider) {
+    if (!_isDrawing || _isEraserMode) return [];
 
-    // 1. Aplicar Snapping con tolerancia
-    final LatLng snappedPoint = GISService.applySnapping(rawPoint, _activeSnapPoints);
-
-    // Evitar agregar el mismo punto duplicado consecutivo
-    if (_draftVertices.isNotEmpty && GISService.arePointsEqual(_draftVertices.last, snappedPoint)) {
-      return false;
-    }
-
-    // 2. Obtener contexto de Hatos y Potreros
     final bool isHato = _drawingType == DrawingType.hato;
     final existingHatos = agroProvider.hatos;
     Hato? parentHato;
@@ -103,10 +94,42 @@ class DrawingProvider extends ChangeNotifier {
       } catch (_) {}
     }
 
-    // 3. Validación topológica estricta del nuevo tramo
+    return GISService.findNearbySnapCandidates(
+      rawPoint: rawPoint,
+      existingHatos: existingHatos,
+      draftVertices: _draftVertices,
+      isHato: isHato,
+      parentHato: parentHato,
+      siblingPotreros: siblingPotreros,
+      maxDistanceMeters: GISService.snappingToleranceMeters,
+    );
+  }
+
+  /// Agrega un vértice exactamente en la posición indicada (libre o seleccionada) con validación topológica
+  bool addExactVertex(LatLng point, AgroProvider agroProvider, {bool isSnapped = false}) {
+    if (!_isDrawing || _isEraserMode) return false;
+
+    // Evitar agregar el mismo punto duplicado consecutivo
+    if (_draftVertices.isNotEmpty && GISService.arePointsEqual(_draftVertices.last, point)) {
+      return false;
+    }
+
+    final bool isHato = _drawingType == DrawingType.hato;
+    final existingHatos = agroProvider.hatos;
+    Hato? parentHato;
+    List<Potrero>? siblingPotreros;
+
+    if (!isHato && _parentHatoId != null) {
+      try {
+        parentHato = existingHatos.firstWhere((h) => h.id == _parentHatoId);
+        siblingPotreros = parentHato.potreros;
+      } catch (_) {}
+    }
+
+    // Validación topológica
     final validation = GISService.validateNewVertex(
       currentVertices: _draftVertices,
-      newVertex: snappedPoint,
+      newVertex: point,
       isHato: isHato,
       existingHatos: existingHatos,
       parentHato: parentHato,
@@ -114,7 +137,6 @@ class DrawingProvider extends ChangeNotifier {
     );
 
     if (!validation.isValid) {
-      // Disparar sistema de alerta visual en el mapa
       agroProvider.showTopologyAlert(
         validation.errorMessage ?? 'Error de validación topológica',
         conflictPoint: validation.conflictPoint,
@@ -123,10 +145,21 @@ class DrawingProvider extends ChangeNotifier {
       return false;
     }
 
-    // 4. Agregar vértice y actualizar métricas
-    _draftVertices.add(snappedPoint);
+    _draftVertices.add(point);
+    _activeSnapPoints = GISService.collectAllSnapPoints(existingHatos);
     notifyListeners();
     return true;
+  }
+
+  /// Intenta agregar un nuevo vértice aplicando snapping y validación topológica (modo retrocompatible)
+  bool addVertex(LatLng rawPoint, AgroProvider agroProvider) {
+    if (!_isDrawing || _isEraserMode) return false;
+
+    final candidates = getNearbyCandidates(rawPoint, agroProvider);
+    if (candidates.isNotEmpty) {
+      return addExactVertex(candidates.first.point, agroProvider, isSnapped: true);
+    }
+    return addExactVertex(rawPoint, agroProvider, isSnapped: false);
   }
 
   /// Deshacer último punto ingresado
