@@ -459,9 +459,21 @@ class ApiService {
       numId = int.tryParse(digits);
     }
     if (numId != null) {
-      await http.delete(
+      final response = await http.delete(
         Uri.parse('$baseUrl/geocercas/potrero/$numId'),
       ).timeout(const Duration(seconds: 6));
+      if (response.statusCode != 200) {
+        String msg = 'No se pudo eliminar el potrero.';
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map && body['error'] != null) {
+            msg = body['error'].toString();
+          }
+        } catch (_) {
+          msg = response.body;
+        }
+        throw Exception(msg);
+      }
     }
   }
 }

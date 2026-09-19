@@ -1819,7 +1819,34 @@ class _HatosScreenState extends State<HatosScreen> {
                                 ),
                               );
                               if (confirm == true) {
-                                await agro.deletePotrero(hato.id, potrero.id);
+                                final res = await agro.deletePotrero(hato.id, potrero.id);
+                                if (!res.canDelete && context.mounted) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      backgroundColor: AppTheme.surface,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      title: Row(
+                                        children: [
+                                          const Icon(Icons.gpp_bad_rounded, color: AppTheme.warningAmber, size: 26),
+                                          const SizedBox(width: 8),
+                                          Expanded(child: Text('Potrero Ocupado', style: GoogleFonts.outfit(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold))),
+                                        ],
+                                      ),
+                                      content: Text(
+                                        res.reason ?? 'No se puede eliminar el potrero porque contiene animales activos. Reubique el ganado antes de eliminar.',
+                                        style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13, height: 1.4),
+                                      ),
+                                      actions: [
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryCyan),
+                                          onPressed: () => Navigator.pop(context),
+                                          child: const Text('Entendido', style: TextStyle(color: Colors.white)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
                               }
                             },
                           ),
@@ -1877,7 +1904,34 @@ class _HatosScreenState extends State<HatosScreen> {
                         ),
                       );
                       if (confirm == true) {
-                        await agro.deleteHato(hato.id);
+                        final res = await agro.deleteHato(hato.id);
+                        if (!res.canDelete && context.mounted) {
+                          showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              backgroundColor: AppTheme.surface,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: Row(
+                                children: [
+                                  const Icon(Icons.gpp_bad_rounded, color: AppTheme.warningAmber, size: 26),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text('Hato Ocupado', style: GoogleFonts.outfit(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold))),
+                                ],
+                              ),
+                              content: Text(
+                                res.reason ?? 'No se puede eliminar el hato porque contiene animales activos asociados a sus potreros. Reubique el ganado antes de eliminar.',
+                                style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13, height: 1.4),
+                              ),
+                              actions: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryCyan),
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Entendido', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
                       }
                     },
                   ),

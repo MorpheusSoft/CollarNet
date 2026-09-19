@@ -6,6 +6,25 @@ import '../models/potrero.dart';
 import '../models/topology_alert.dart';
 import '../services/storage_service.dart';
 import '../services/api_service.dart';
+import '../services/gis_service.dart';
+
+class DeletionCheckResult {
+  final bool canDelete;
+  final String? reason;
+  final int totalAnimals;
+  final int assignedCount;
+  final int gpsCount;
+  final List<String> animalAretes;
+
+  DeletionCheckResult({
+    required this.canDelete,
+    this.reason,
+    this.totalAnimals = 0,
+    this.assignedCount = 0,
+    this.gpsCount = 0,
+    this.animalAretes = const [],
+  });
+}
 
 class AgroProvider extends ChangeNotifier {
   static final ApiService _apiService = ApiService();
@@ -248,19 +267,138 @@ class AgroProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteHato(String hatoId) async {
+  /// Comprueba si un Hato puede eliminarse (sin animales asignados ni adentro por GPS)
+  Future<DeletionCheckResult> canDeleteHato(String hatoId) async {
+    final hato = _hatos.where((h) => h.id == hatoId).firstOrNull;
+    final hatoName = hato?.nombre ?? 'Hato';
+
+    final monitoreo = await _apiService.fetchMonitoreo();
+    final Set<String> assigned = {};
+    final Set<String> gpsInside = {};
+    final Set<String> allAretes = {};
+
+    final potreroIds = hato?.potreros.map((p) => p.id).toSet() ?? {};
+    final potreroNames = hato?.potreros.map((p) => p.nombre).toSet() ?? {};
+
+    for (final a in monitoreo) {
+      final arete = a['areteVisual'] ?? a['arete_visual'] ?? a['id']?.toString() ?? 'Animal';
+      final hId = a['hatoId']?.toString() ?? a['hato_id']?.toString();
+      final pId = a['potreroId']?.toString() ?? a['potrero_id']?.toString();
+      final pName = a['potreroNombre'] ?? a['potrero_nombre'];
+
+      final bool isAssigned = (hId == hatoId || (hato != null && hId == hato.id)) ||
+                             potreroIds.contains(pId) ||
+                             potreroNames.contains(pName);
+
+      bool isInsideGps = false;
+      final lat = (a['latitud'] != null) ? double.tryParse(a['latitud'].toString()) : null;
+      final lon = (a['longitud'] != null) ? double.tryParse(a['longitud'].toString()) : null;
+
+      if (lat != null && lon != null && hato != null) {
+        if (hato.vertices.length >= 3 && GISService.isPointInPolygonOrBoundary(LatLng(lat, lon), hato.vertices)) {
+          isInsideGps = true;
+        } else {
+          for (final pot in hato.potreros) {
+            if (pot.vertices.length >= 3 && GISService.isPointInPolygonOrBoundary(LatLng(lat, lon), pot.vertices)) {
+              isInsideGps = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (isAssigned || isInsideGps) {
+        allAretes.add(arete.toString());
+        if (isAssigned) assigned.add(arete.toString());
+        if (isInsideGps) gpsInside.add(arete.toString());
+      }
+    }
+
+    if (allAretes.isNotEmpty) {
+      final aretesStr = allAretes.take(4).join(', ') + (allAretes.length > 4 ? '...' : '');
+      return DeletionCheckResult(
+        canDelete: false,
+        reason: 'No se puede eliminar "$hatoName" porque contiene ${allAretes.length} animal(es) activo(s) ($aretesStr). Debe reubicar o desvincular el ganado antes de eliminar.',
+        totalAnimals: allAretes.length,
+        assignedCount: assigned.length,
+        gpsCount: gpsInside.length,
+        animalAretes: allAretes.toList(),
+      );
+    }
+
+    return DeletionCheckResult(canDelete: true);
+  }
+
+  /// Comprueba si un Potrero puede eliminarse (sin animales asignados ni adentro por GPS)
+  Future<DeletionCheckResult> canDeletePotrero(String hatoId, String potreroId) async {
+    final hato = _hatos.where((h) => h.id == hatoId).firstOrNull;
+    final potrero = hato?.potreros.where((p) => p.id == potreroId).firstOrNull;
+    final potName = potrero?.nombre ?? 'Potrero';
+
+    final monitoreo = await _apiService.fetchMonitoreo();
+    final Set<String> assigned = {};
+    final Set<String> gpsInside = {};
+    final Set<String> allAretes = {};
+
+    for (final a in monitoreo) {
+      final arete = a['areteVisual'] ?? a['arete_visual'] ?? a['id']?.toString() ?? 'Animal';
+      final pId = a['potreroId']?.toString() ?? a['potrero_id']?.toString();
+      final pName = a['potreroNombre'] ?? a['potrero_nombre'];
+
+      final bool isAssigned = (pId == potreroId || (potrero != null && (pId == potrero.id || pName == potrero.nombre)));
+
+      bool isInsideGps = false;
+      final lat = (a['latitud'] != null) ? double.tryParse(a['latitud'].toString()) : null;
+      final lon = (a['longitud'] != null) ? double.tryParse(a['longitud'].toString()) : null;
+
+      if (lat != null && lon != null && potrero != null && potrero.vertices.length >= 3) {
+        if (GISService.isPointInPolygonOrBoundary(LatLng(lat, lon), potrero.vertices)) {
+          isInsideGps = true;
+        }
+      }
+
+      if (isAssigned || isInsideGps) {
+        allAretes.add(arete.toString());
+        if (isAssigned) assigned.add(arete.toString());
+        if (isInsideGps) gpsInside.add(arete.toString());
+      }
+    }
+
+    if (allAretes.isNotEmpty) {
+      final aretesStr = allAretes.take(4).join(', ') + (allAretes.length > 4 ? '...' : '');
+      return DeletionCheckResult(
+        canDelete: false,
+        reason: 'No se puede eliminar "$potName" porque contiene ${allAretes.length} animal(es) activo(s) ($aretesStr). Debe reubicar o desvincular el ganado antes de eliminar.',
+        totalAnimals: allAretes.length,
+        assignedCount: assigned.length,
+        gpsCount: gpsInside.length,
+        animalAretes: allAretes.toList(),
+      );
+    }
+
+    return DeletionCheckResult(canDelete: true);
+  }
+
+  Future<DeletionCheckResult> deleteHato(String hatoId) async {
+    final check = await canDeleteHato(hatoId);
+    if (!check.canDelete) {
+      return check;
+    }
+
     try {
       await _apiService.deleteHato(hatoId);
+      _hatos.removeWhere((h) => h.id == hatoId);
+      if (_selectedHato?.id == hatoId) {
+        _selectedHato = null;
+        _selectedPotrero = null;
+      }
+      await StorageService.cacheLocally(_hatos);
+      notifyListeners();
+      return DeletionCheckResult(canDelete: true);
     } catch (e) {
-      debugPrint('Aviso: Error eliminando hato en API: $e');
+      final msg = e.toString().replaceAll('Exception: ', '');
+      return DeletionCheckResult(canDelete: false, reason: msg);
     }
-    _hatos.removeWhere((h) => h.id == hatoId);
-    if (_selectedHato?.id == hatoId) {
-      _selectedHato = null;
-      _selectedPotrero = null;
-    }
-    await StorageService.cacheLocally(_hatos);
-    notifyListeners();
   }
 
   Future<Potrero> addPotreroToHato(String hatoId, Potrero potrero) async {
@@ -294,23 +432,30 @@ class AgroProvider extends ChangeNotifier {
     return toSave;
   }
 
-  Future<void> deletePotrero(String hatoId, String potreroId) async {
+  Future<DeletionCheckResult> deletePotrero(String hatoId, String potreroId) async {
+    final check = await canDeletePotrero(hatoId, potreroId);
+    if (!check.canDelete) {
+      return check;
+    }
+
     try {
       await _apiService.deletePotrero(potreroId);
-    } catch (e) {
-      debugPrint('Aviso: Error eliminando potrero en API: $e');
-    }
-    final index = _hatos.indexWhere((h) => h.id == hatoId);
-    if (index != -1) {
-      final hato = _hatos[index];
-      final updatedPotreros = List<Potrero>.from(hato.potreros)
-        ..removeWhere((p) => p.id == potreroId);
-      _hatos[index] = hato.copyWith(potreros: updatedPotreros);
-      if (_selectedPotrero?.id == potreroId) {
-        _selectedPotrero = null;
+      final index = _hatos.indexWhere((h) => h.id == hatoId);
+      if (index != -1) {
+        final hato = _hatos[index];
+        final updatedPotreros = List<Potrero>.from(hato.potreros)
+          ..removeWhere((p) => p.id == potreroId);
+        _hatos[index] = hato.copyWith(potreros: updatedPotreros);
+        if (_selectedPotrero?.id == potreroId) {
+          _selectedPotrero = null;
+        }
+        await StorageService.cacheLocally(_hatos);
+        notifyListeners();
       }
-      await StorageService.cacheLocally(_hatos);
-      notifyListeners();
+      return DeletionCheckResult(canDelete: true);
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
+      return DeletionCheckResult(canDelete: false, reason: msg);
     }
   }
 

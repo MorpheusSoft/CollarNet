@@ -298,6 +298,21 @@ class ApiService {
     return potrero;
   }
 
+  Future<List<Map<String, dynamic>>> fetchMonitoreo({String? hatoId}) async {
+    final baseUrl = await getBaseUrl();
+    try {
+      final query = (hatoId != null && hatoId.isNotEmpty && hatoId != 'ALL') ? '?hatoId=$hatoId' : '';
+      final res = await http.get(Uri.parse('$baseUrl/monitoreo$query')).timeout(const Duration(seconds: 5));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
   Future<void> deleteHato(String hatoId) async {
     final baseUrl = await getBaseUrl();
     int? numId = int.tryParse(hatoId);
@@ -312,7 +327,16 @@ class ApiService {
         Uri.parse('$baseUrl/geocercas/hato/$numId'),
       ).timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) {
-        throw Exception('Fallo al eliminar hato: ${response.body}');
+        String msg = 'No se pudo eliminar el hato.';
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map && body['error'] != null) {
+            msg = body['error'].toString();
+          }
+        } catch (_) {
+          msg = response.body;
+        }
+        throw Exception(msg);
       }
     }
   }
@@ -331,7 +355,16 @@ class ApiService {
         Uri.parse('$baseUrl/geocercas/potrero/$numId'),
       ).timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) {
-        throw Exception('Fallo al eliminar potrero: ${response.body}');
+        String msg = 'No se pudo eliminar el potrero.';
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map && body['error'] != null) {
+            msg = body['error'].toString();
+          }
+        } catch (_) {
+          msg = response.body;
+        }
+        throw Exception(msg);
       }
     }
   }

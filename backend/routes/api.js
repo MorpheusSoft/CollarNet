@@ -68,6 +68,22 @@ function verticesToGeoJSON(vertices) {
   });
 }
 
+/**
+ * Helper para verificar si un punto [lat, lon] está dentro de un polígono [[lat, lon], ...]
+ */
+function pointInPolygon(point, polygon) {
+  if (!point || !polygon || polygon.length < 3) return false;
+  const lat = point[0], lon = point[1];
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    const intersect = ((yi > lon) !== (yj > lon)) && (lat < (xj - xi) * (lon - yi) / (yj - yi + 0.0000000001) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
 // ==========================================
 // ALMACÉN EN MEMORIA GLOBAL PARA DESARROLLO LOCAL & FALLBACK
 // ==========================================
@@ -1006,47 +1022,215 @@ router.get('/geocercas/potreros', async (req, res) => {
 });
 
 /**
+ * Helper para verificar si un Potrero contiene animales activos (asignados en ficha o por GPS dentro de su polígono)
+ */
+async function checkPotreroOccupied(potreroId) {
+  const cleanId = parseInt(potreroId, 10);
+  const potObj = memPotreros.find(p => p.id === cleanId || String(p.id) === String(potreroId));
+  const potName = potObj ? potObj.nombre : `Potrero #${potreroId}`;
+  
+  let potVertices = [];
+  if (potObj) {
+    if (potObj.geojson) {
+      try { potVertices = extractVerticesFromGeoJSON(potObj.geojson); } catch (_) {}
+    } else if (Array.isArray(potObj.vertices)) {
+      potVertices = potObj.vertices;
+    }
+  }
+
+  const assignedAnimals = new Set();
+  const gpsAnimals = new Set();
+  const allAretes = new Set();
+
+  // 1. Verificación en PostgreSQL si está disponible
+  try {
+    const dbRes = await pool.query(`
+      SELECT 
+        a.id, a.arete_visual, a.potrero_id,
+        ST_Y(c.ultima_ubicacion) AS lat,
+        ST_X(c.ultima_ubicacion) AS lon,
+        ST_Contains(p.perimetro, c.ultima_ubicacion) AS inside_geo
+      FROM animales a
+      LEFT JOIN collares c ON a.collar_id = c.id
+      LEFT JOIN potreros p ON p.id = $1
+      WHERE (a.potrero_id = $1 OR (c.ultima_ubicacion IS NOT NULL AND ST_Contains(p.perimetro, c.ultima_ubicacion)))
+        AND a.activo IS NOT FALSE;
+    `, [cleanId]);
+
+    for (const row of dbRes.rows) {
+      const arete = row.arete_visual || `A-${row.id}`;
+      allAretes.add(arete);
+      if (String(row.potrero_id) === String(cleanId)) {
+        assignedAnimals.add(row.id);
+      }
+      if (row.inside_geo) {
+        gpsAnimals.add(row.id);
+      }
+    }
+  } catch (_) {}
+
+  // 2. Verificación en memoria (memAnimales)
+  for (const a of memAnimales) {
+    if (a.activo === false) continue;
+    const isAssigned = String(a.potrero_id) === String(cleanId) || 
+                       (potObj && (a.potrero_nombre === potObj.nombre || a.potrero_asignado_nombre === potObj.nombre));
+    
+    let isInsideGps = false;
+    if (potVertices.length >= 3 && a.latitud != null && a.longitud != null) {
+      isInsideGps = pointInPolygon([parseFloat(a.latitud), parseFloat(a.longitud)], potVertices);
+    }
+
+    if (isAssigned || isInsideGps) {
+      const arete = a.arete_visual || a.arete || `A-${a.id || a.animal_id}`;
+      allAretes.add(arete);
+      if (isAssigned) assignedAnimals.add(a.id || a.animal_id || arete);
+      if (isInsideGps) gpsAnimals.add(a.id || a.animal_id || arete);
+    }
+  }
+
+  const totalCount = allAretes.size;
+  return {
+    isOccupied: totalCount > 0,
+    potreroNombre: potName,
+    totalCount,
+    assignedCount: assignedAnimals.size,
+    gpsCount: gpsAnimals.size,
+    animalAretes: Array.from(allAretes)
+  };
+}
+
+/**
+ * Helper para verificar si un Hato (o sus potreros) contiene animales activos
+ */
+async function checkHatoOccupied(hatoId) {
+  const cleanId = parseInt(hatoId, 10);
+  const hatoObj = memHatos.find(h => h.id === cleanId || String(h.id) === String(hatoId));
+  const hatoName = hatoObj ? hatoObj.nombre : `Hato #${hatoId}`;
+
+  let hatoVertices = [];
+  if (hatoObj) {
+    if (hatoObj.geojson) {
+      try { hatoVertices = extractVerticesFromGeoJSON(hatoObj.geojson); } catch (_) {}
+    } else if (Array.isArray(hatoObj.vertices)) {
+      hatoVertices = hatoObj.vertices;
+    }
+  }
+
+  const hatoPotreros = memPotreros.filter(p => p.hato_id === cleanId || String(p.hato_id) === String(hatoId));
+  const assignedAnimals = new Set();
+  const gpsAnimals = new Set();
+  const allAretes = new Set();
+
+  // 1. Verificación en PostgreSQL si está disponible
+  try {
+    const dbRes = await pool.query(`
+      SELECT 
+        a.id, a.arete_visual, a.potrero_id, p.hato_id,
+        ST_Y(c.ultima_ubicacion) AS lat,
+        ST_X(c.ultima_ubicacion) AS lon,
+        ST_Contains(h.perimetro, c.ultima_ubicacion) AS inside_geo
+      FROM animales a
+      LEFT JOIN collares c ON a.collar_id = c.id
+      LEFT JOIN potreros p ON a.potrero_id = p.id
+      LEFT JOIN hatos h ON h.id = $1
+      WHERE (p.hato_id = $1 OR (c.ultima_ubicacion IS NOT NULL AND ST_Contains(h.perimetro, c.ultima_ubicacion)))
+        AND a.activo IS NOT FALSE;
+    `, [cleanId]);
+
+    for (const row of dbRes.rows) {
+      const arete = row.arete_visual || `A-${row.id}`;
+      allAretes.add(arete);
+      if (String(row.hato_id) === String(cleanId)) {
+        assignedAnimals.add(row.id);
+      }
+      if (row.inside_geo) {
+        gpsAnimals.add(row.id);
+      }
+    }
+  } catch (_) {}
+
+  // 2. Verificación en memoria
+  const potreroIds = new Set(hatoPotreros.map(p => String(p.id)));
+  const potreroNames = new Set(hatoPotreros.map(p => p.nombre));
+
+  for (const a of memAnimales) {
+    if (a.activo === false) continue;
+    const isAssigned = (Number(a.hato_id) === cleanId || String(a.hato_id) === String(hatoId)) ||
+                       potreroIds.has(String(a.potrero_id)) ||
+                       potreroNames.has(a.potrero_nombre) ||
+                       potreroNames.has(a.potrero_asignado_nombre);
+
+    let isInsideGps = false;
+    if (hatoVertices.length >= 3 && a.latitud != null && a.longitud != null) {
+      isInsideGps = pointInPolygon([parseFloat(a.latitud), parseFloat(a.longitud)], hatoVertices);
+    }
+    if (!isInsideGps) {
+      for (const pot of hatoPotreros) {
+        let potV = [];
+        if (pot.geojson) {
+          try { potV = extractVerticesFromGeoJSON(pot.geojson); } catch (_) {}
+        }
+        if (potV.length >= 3 && a.latitud != null && a.longitud != null) {
+          if (pointInPolygon([parseFloat(a.latitud), parseFloat(a.longitud)], potV)) {
+            isInsideGps = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (isAssigned || isInsideGps) {
+      const arete = a.arete_visual || a.arete || `A-${a.id || a.animal_id}`;
+      allAretes.add(arete);
+      if (isAssigned) assignedAnimals.add(a.id || a.animal_id || arete);
+      if (isInsideGps) gpsAnimals.add(a.id || a.animal_id || arete);
+    }
+  }
+
+  const totalCount = allAretes.size;
+  return {
+    isOccupied: totalCount > 0,
+    hatoNombre: hatoName,
+    totalCount,
+    assignedCount: assignedAnimals.size,
+    gpsCount: gpsAnimals.size,
+    animalAretes: Array.from(allAretes)
+  };
+}
+
+/**
  * DELETE /api/geocercas/hato/:id
- * Elimina un Hato y todas sus pasturas (potreros) en cascada si no tienen collares activos.
+ * Elimina un Hato y sus pasturas solo si NO contiene animales activos.
  */
 router.delete('/geocercas/hato/:id', async (req, res) => {
   const { id } = req.params;
-  try {
-    const checkQuery = `
-      SELECT a.id, a.arete_visual, a.collar_id 
-      FROM animales a 
-      WHERE a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = $1) 
-        AND a.collar_id IS NOT NULL;
-    `;
-    const { rows } = await pool.query(checkQuery, [id]);
-    if (rows.length > 0) {
-      const collarList = rows.map(r => r.collar_id).slice(0, 5).join(', ');
-      return res.status(400).json({ 
-        error: `No se puede eliminar el hato porque tiene ${rows.length} collares activos asociados (${collarList}${rows.length > 5 ? '...' : ''}). Reubica o desvincula los animales primero.` 
-      });
-    }
+  const numId = parseInt(id, 10);
 
-    await pool.query('DELETE FROM potreros WHERE hato_id = $1;', [id]);
+  const check = await checkHatoOccupied(id);
+  if (check.isOccupied) {
+    const aretesStr = check.animalAretes.slice(0, 5).join(', ') + (check.animalAretes.length > 5 ? '...' : '');
+    return res.status(400).json({
+      error: `No se puede eliminar el hato "${check.hatoNombre}" porque contiene ${check.totalCount} animal(es) activo(s) (${check.assignedCount} asignados, ${check.gpsCount} detectados por GPS: ${aretesStr}). Debe reubicar o desvincular el ganado antes de eliminar.`,
+      isOccupied: true,
+      totalCount: check.totalCount,
+      assignedCount: check.assignedCount,
+      gpsCount: check.gpsCount,
+      animalAretes: check.animalAretes
+    });
+  }
+
+  try {
     await pool.query('DELETE FROM hatos WHERE id = $1;', [id]);
     notifyGeocercasUpdated(req);
     res.json({ success: true, message: `Hato con ID ${id} y sus potreros asociados eliminados con éxito.` });
   } catch (err) {
     console.warn('[Delete Hato Fallback Memory]');
-    const numId = parseInt(id, 10);
-    const potreroIds = memPotreros.filter(p => p.hato_id === numId).map(p => p.id);
-    const animalesConCollar = memAnimales.filter(a => 
-      (a.hato_id === numId || potreroIds.includes(a.potrero_id)) && 
-      a.collar_id != null
-    );
-    if (animalesConCollar.length > 0) {
-      return res.status(400).json({ 
-        error: `No se puede eliminar el hato porque tiene ${animalesConCollar.length} collares activos asociados.` 
-      });
-    }
-    const idx = memHatos.findIndex(h => h.id === numId);
+    const idx = memHatos.findIndex(h => h.id === numId || String(h.id) === String(id));
     if (idx !== -1) memHatos.splice(idx, 1);
     for (let i = memPotreros.length - 1; i >= 0; i--) {
-      if (memPotreros[i].hato_id === numId) memPotreros.splice(i, 1);
+      if (memPotreros[i].hato_id === numId || String(memPotreros[i].hato_id) === String(id)) {
+        memPotreros.splice(i, 1);
+      }
     }
     notifyGeocercasUpdated(req);
     res.json({ success: true, message: `Hato con ID ${id} eliminado con éxito.` });
@@ -1055,40 +1239,14 @@ router.delete('/geocercas/hato/:id', async (req, res) => {
 
 /**
  * DELETE /api/geocercas/potrero/:id
- * Elimina un Potrero específico si no tiene collares activos.
- */
-router.delete('/geocercas/potrero/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const checkQuery = `
-      SELECT a.id, a.arete_visual, a.collar_id 
-      FROM animales a 
-      WHERE a.potrero_id = $1 AND a.collar_id IS NOT NULL;
-    `;
-    const { rows } = await pool.query(checkQuery, [id]);
-    if (rows.length > 0) {
-      const collarList = rows.map(r => r.collar_id).slice(0, 5).join(', ');
-      return res.status(400).json({ 
-        error: `No se puede eliminar el potrero porque tiene ${rows.length} collares activos asociados (${collarList}${rows.length > 5 ? '...' : ''}). Reubica o desvincula los animales primero.` 
-      });
-    }
-
+ * Elimina un Potrero específico solo si NO contiene animales activos.
     await pool.query('DELETE FROM potreros WHERE id = $1;', [id]);
     notifyGeocercasUpdated(req);
     res.json({ success: true, message: `Potrero con ID ${id} eliminado con éxito.` });
   } catch (err) {
     console.warn('[Delete Potrero Fallback Memory]');
-    const numId = parseInt(id, 10);
-    const animalesConCollar = memAnimales.filter(a => 
-      (a.potrero_id === numId || a.potrero_nombre === String(numId)) && 
-      a.collar_id != null
-    );
-    if (animalesConCollar.length > 0) {
-      return res.status(400).json({ 
-        error: `No se puede eliminar el potrero porque tiene ${animalesConCollar.length} collares activos asociados.` 
-      });
-    }
-    const idx = memPotreros.findIndex(p => p.id === numId);
+    const idx = memPotreros.findIndex(p => p.id === numId || String(p.id) === String(id));
+>>>>>>> b26d2f9 (feat: proteccion contra eliminacion de hatos y potreros con animales activos)
     if (idx !== -1) memPotreros.splice(idx, 1);
     notifyGeocercasUpdated(req);
     res.json({ success: true, message: `Potrero con ID ${id} eliminado con éxito.` });

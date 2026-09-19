@@ -270,10 +270,46 @@ class _HatoDrawerState extends State<HatoDrawer> {
     );
   }
 
-  void _confirmDeleteHato(BuildContext context, Hato hato, AgroProvider provider) {
+  void _showOccupiedWarningDialog(BuildContext context, String title, String reason) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.gpp_bad_rounded, color: Color(0xFFF59E0B), size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          reason,
+          style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Entendido', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteHato(BuildContext context, Hato hato, AgroProvider provider) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: const Color(0xFF0F172A),
         title: const Text('¿Eliminar Hato?', style: TextStyle(color: Colors.white)),
         content: Text(
@@ -282,14 +318,21 @@ class _HatoDrawerState extends State<HatoDrawer> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogCtx).pop(),
             child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
-            onPressed: () {
-              provider.deleteHato(hato.id);
-              Navigator.of(context).pop();
+            onPressed: () async {
+              Navigator.of(dialogCtx).pop();
+              final res = await provider.deleteHato(hato.id);
+              if (!res.canDelete && context.mounted) {
+                _showOccupiedWarningDialog(
+                  context,
+                  'No se puede eliminar Hato',
+                  res.reason ?? 'El hato contiene animales activos asignados o presentes dentro de sus linderos. Reubique el ganado antes de eliminar.',
+                );
+              }
             },
             child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
           ),
@@ -302,7 +345,7 @@ class _HatoDrawerState extends State<HatoDrawer> {
       BuildContext context, Hato hato, Potrero potrero, AgroProvider provider) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: const Color(0xFF0F172A),
         title: const Text('¿Eliminar Potrero?', style: TextStyle(color: Colors.white)),
         content: Text(
@@ -311,14 +354,21 @@ class _HatoDrawerState extends State<HatoDrawer> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogCtx).pop(),
             child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
-            onPressed: () {
-              provider.deletePotrero(hato.id, potrero.id);
-              Navigator.of(context).pop();
+            onPressed: () async {
+              Navigator.of(dialogCtx).pop();
+              final res = await provider.deletePotrero(hato.id, potrero.id);
+              if (!res.canDelete && context.mounted) {
+                _showOccupiedWarningDialog(
+                  context,
+                  'No se puede eliminar Potrero',
+                  res.reason ?? 'El potrero contiene animales activos asignados o presentes dentro de su cerca. Reubique el ganado antes de eliminar.',
+                );
+              }
             },
             child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
           ),
