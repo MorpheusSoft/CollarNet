@@ -497,7 +497,7 @@ async function handleMonitoreoQuery(req, res) {
         p.margen_advertencia_metros AS potrero_margen_advertencia,
         COALESCE(h.id, a.hato_id) AS hato_id,
         COALESCE(h.nombre, h_dir.nombre, 'Sin Hato') AS hato_nombre,
-        COALESCE((SELECT peso FROM registro_pesajes WHERE animal_id = a.id ORDER BY fecha_pesaje DESC LIMIT 1), 350.00) AS peso_actual,
+        (SELECT peso FROM registro_pesajes WHERE animal_id = a.id ORDER BY fecha_pesaje DESC LIMIT 1) AS peso_actual,
         COALESCE(
           (SELECT tipo FROM alertas WHERE animal_id = a.id AND estado = 'ACTIVO' LIMIT 1),
           'NORMAL'
@@ -2724,7 +2724,7 @@ router.get('/propietarios/:id/portfolio', async (req, res) => {
         c.ultima_conexion,
         ST_Y(c.ultima_ubicacion) AS latitud,
         ST_X(c.ultima_ubicacion) AS longitud,
-        COALESCE((SELECT peso FROM registro_pesajes WHERE animal_id = a.id ORDER BY fecha_pesaje DESC LIMIT 1), 350.00) AS ultimo_peso
+        (SELECT peso FROM registro_pesajes WHERE animal_id = a.id ORDER BY fecha_pesaje DESC LIMIT 1) AS ultimo_peso
       FROM animales a
       LEFT JOIN tenants t ON a.tenant_id = t.id
       LEFT JOIN potreros p ON a.potrero_id = p.id
@@ -3056,7 +3056,7 @@ router.post('/animales', async (req, res) => {
       potrero_asignado_nombre: pot.nombre || 'Sin Potrero',
       hato_id: cleanHatoId,
       hato_nombre: hato.nombre || 'Sin Hato',
-      peso_actual: 350.0,
+      peso_actual: null,
       estado_alerta: 'NORMAL',
       estado_cerca: cleanCollarId ? 'DENTRO' : 'SIN_MONITOREO',
       activo: true

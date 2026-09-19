@@ -437,16 +437,39 @@ export default function LivestockTable({
     );
   };
 
-  const pesoBody = (row) => (
-    <div className="text-right">
-      <div className="font-bold text-white text-xs font-mono">
-        {parseFloat(row.peso_actual || 350).toFixed(1)} kg
+  const pesoBody = (row) => {
+    const rawPeso = row.peso_actual;
+    if (rawPeso === null || rawPeso === undefined || rawPeso === '') {
+      return (
+        <div className="text-right">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+            Sin pesar
+          </span>
+          <div className="text-[10px] text-slate-500 italic mt-0.5">
+            Pendiente báscula
+          </div>
+        </div>
+      );
+    }
+
+    const numPeso = parseFloat(rawPeso);
+    return (
+      <div className="text-right">
+        <div className="font-bold text-white text-xs font-mono">
+          {numPeso.toFixed(1)} kg
+        </div>
+        {row.gdp ? (
+          <div className="text-[10px] text-emerald-400 font-semibold">
+            +{parseFloat(row.gdp).toFixed(2)} kg/día
+          </div>
+        ) : (
+          <div className="text-[10px] text-slate-400">
+            1er pesaje
+          </div>
+        )}
       </div>
-      <div className="text-[10px] text-emerald-400 font-semibold">
-        +0.85 kg/día
-      </div>
-    </div>
-  );
+    );
+  };
 
   const actionsBody = (row) => (
     <div className="flex items-center justify-end gap-1.5">
@@ -1240,7 +1263,9 @@ export default function LivestockTable({
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Peso Actual:</span>
-                <span className="font-mono text-emerald-400 font-bold">{selectedAnimalDetail.peso_actual || 350} kg</span>
+                <span className="font-mono text-emerald-400 font-bold">
+                  {selectedAnimalDetail.peso_actual ? `${parseFloat(selectedAnimalDetail.peso_actual).toFixed(1)} kg` : 'Sin pesar'}
+                </span>
               </div>
             </div>
 
