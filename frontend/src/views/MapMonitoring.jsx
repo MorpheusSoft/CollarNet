@@ -474,14 +474,18 @@ export default function MapMonitoring({
       } else {
         const marker = L.marker([lat, lon], { icon: customIcon }).addTo(mapInstanceRef.current);
         
+        const bat = animal.nivel_bateria ?? animal.bateria_nivel ?? 100;
+        const isCharging = animal.esta_cargando === true;
+        const batColor = bat > 50 ? '#059669' : bat > 20 ? '#d97706' : '#e11d48';
+
         marker.bindPopup(`
-          <div style="font-family: sans-serif; font-size: 12px; color: #1e293b; padding: 4px; min-width:180px;">
+          <div style="font-family: sans-serif; font-size: 12px; color: #1e293b; padding: 4px; min-width:190px;">
             <div style="font-weight: bold; font-size: 14px; color: #0f172a; margin-bottom: 4px;">
               🐂 Arete: ${animal.arete_visual || 'Sin Arete'} (${animal.raza || 'Ganado'})
             </div>
             <div><strong>Collar ID:</strong> ${animal.collar_id}</div>
             <div><strong>Estado Cerca:</strong> <span style="font-weight:bold; color:${isEscape ? '#e11d48' : (isWarn ? '#d97706' : '#059669')}">${estado}</span></div>
-            <div><strong>Batería:</strong> 🔋 ${animal.bateria_nivel || 100}%</div>
+            <div><strong>Batería:</strong> <span style="font-weight:bold; color:${batColor};">🔋 ${bat}%</span> ${isCharging ? '<span style="background:#fef08a; color:#854d0e; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚡ En Carga / USB</span>' : ''}</div>
             <div><strong>Potrero Actual:</strong> 🌱 ${animal.potrero_nombre || 'No asignado'}</div>
             <div><strong>Última Señal:</strong> ${animal.fecha_hora ? new Date(animal.fecha_hora).toLocaleTimeString() : 'En vivo'}</div>
           </div>
@@ -860,10 +864,18 @@ export default function MapMonitoring({
                     </div>
 
                     <div className="grid grid-cols-3 gap-1 mt-2 text-[11px] text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Battery className="w-3 h-3 text-emerald-400" />
-                        {animal.bateria_nivel || 100}%
-                      </span>
+                      {(() => {
+                        const batVal = animal.nivel_bateria ?? animal.bateria_nivel ?? 100;
+                        const isChg = animal.esta_cargando === true;
+                        const col = batVal > 50 ? 'text-emerald-400' : batVal > 20 ? 'text-amber-400' : 'text-rose-400 font-bold animate-pulse';
+                        return (
+                          <span className={`flex items-center gap-1 ${col}`} title={isChg ? 'Alimentación USB / En Carga' : `Batería: ${batVal}%`}>
+                            <Battery className="w-3 h-3" />
+                            {batVal}%
+                            {isChg && <Zap className="w-2.5 h-2.5 text-yellow-300 fill-yellow-300 animate-bounce" />}
+                          </span>
+                        );
+                      })()}
                       <span className="flex items-center gap-1">
                         <Signal className="w-3 h-3 text-cyan-400" />
                         {animal.senial_dbm || -75} dBm

@@ -13,6 +13,7 @@ import {
   Scale, 
   CheckCircle2, 
   Battery, 
+  Zap,
   Signal, 
   Loader2,
   Calendar,
@@ -387,6 +388,10 @@ export default function LivestockTable({
         </span>
       );
     }
+    const bat = row.nivel_bateria ?? 100;
+    const isCharging = row.esta_cargando === true;
+    const batColor = bat > 50 ? 'text-emerald-400' : bat > 20 ? 'text-amber-400' : 'text-rose-400 font-bold animate-pulse';
+
     return (
       <div className="flex flex-col text-xs text-slate-300 gap-0.5">
         <div className="flex items-center gap-1 font-mono text-cyan-300 font-semibold">
@@ -394,10 +399,11 @@ export default function LivestockTable({
           <span>{row.collar_id}</span>
         </div>
         <div className="text-[10px] text-slate-400 flex items-center gap-2">
-          <span className="flex items-center gap-0.5 text-emerald-400">
-            <Battery size={11} /> {row.nivel_bateria ?? 100}%
+          <span className={`flex items-center gap-1 ${batColor}`} title={isCharging ? 'Alimentación USB / Cargando' : `Nivel de Batería: ${bat}%`}>
+            <Battery size={11} /> {bat}%
+            {isCharging && <Zap size={11} className="text-yellow-300 fill-yellow-300 animate-bounce" />}
           </span>
-          <span className="flex items-center gap-0.5 text-cyan-400">
+          <span className="flex items-center gap-0.5 text-cyan-400" title={`Señal LTE: ${row.senal_celular ?? 4}/5`}>
             <Signal size={11} /> {row.senal_celular ?? 4}/5
           </span>
         </div>

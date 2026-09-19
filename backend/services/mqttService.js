@@ -42,8 +42,11 @@ export function initMQTT(io) {
       // Soportar claves optimizadas o legibles
       const lat = parseFloat(payload.lat !== undefined ? payload.lat : payload.latitude);
       const lon = parseFloat(payload.lon !== undefined ? payload.lon : payload.longitude);
-      const bateria = parseInt(payload.bat !== undefined ? payload.bat : payload.battery, 10);
-      const senal = parseInt(payload.sig !== undefined ? payload.sig : payload.signal, 10);
+      const bateria = Math.min(100, Math.max(0, parseInt(payload.bat !== undefined ? payload.bat : (payload.battery !== undefined ? payload.battery : 100), 10)));
+      const senal = Math.min(5, Math.max(0, parseInt(payload.sig !== undefined ? payload.sig : (payload.signal !== undefined ? payload.signal : 4), 10)));
+      const imei = payload.imei ? String(payload.imei).trim() : null;
+      const vbat = payload.vbat !== undefined ? parseInt(payload.vbat, 10) : null;
+      const estaCargando = payload.charging === true || (vbat !== null && vbat >= 4220);
 
       if (isNaN(lat) || isNaN(lon)) {
         console.warn(`[MQTT] Telemetría inválida del collar ${collarId}: coordenadas no numéricas.`);
@@ -51,21 +54,29 @@ export function initMQTT(io) {
       }
 
       // 1. Buscar si hay un animal vinculado a este collar y el estado activo del collar
+      // Permite búsqueda por ID de collar o por IMEI del hardware
       const collarQuery = `
-        SELECT a.id AS animal_id, a.arete_visual, c.activo 
+        SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.imei AS db_imei 
         FROM collares c 
         LEFT JOIN animales a ON a.collar_id = c.id 
-        WHERE c.id = $1;
+        WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar);
       `;
-      const { rows: collarRows } = await pool.query(collarQuery, [collarId]);
+      const { rows: collarRows } = await pool.query(collarQuery, [collarId, imei]);
       
       if (collarRows.length === 0) {
-        console.warn(`[MQTT] Collar ${collarId} no está registrado en el inventario.`);
+        console.warn(`[MQTT] Collar ${collarId} (IMEI: ${imei || 'N/A'}) no está registrado en el inventario.`);
         return;
       }
 
-      const { animal_id: animalId, arete_visual: areteVisual, activo } = collarRows[0];
+      const activeCollar = collarRows[0];
+      const matchedCollarId = activeCollar.collar_id;
+      const { animal_id: animalId, arete_visual: areteVisual, activo, db_imei: dbImei } = activeCollar;
       let checkResult = null;
+
+      // Validación de Seguridad de Hardware por IMEI
+      if (dbImei && imei && dbImei !== imei) {
+        console.warn(`[MQTT Seguridad] Advertencia: Dispositivo con IMEI ${imei} transmitiendo para el collar ${matchedCollarId} (registrado con IMEI: ${dbImei}).`);
+      }
 
       if (animalId) {
         if (activo) {
@@ -83,7 +94,7 @@ export function initMQTT(io) {
           await handleAlertLifecycle(animalId, checkResult.alertType, lat, lon);
         } else {
           // El collar está DESHABILITADO: Guardar telemetría pero silenciar alarmas
-          console.log(`[Live IoT] Collar ${collarId} está deshabilitado. Omitiendo geocercas y alertas.`);
+          console.log(`[Live IoT] Collar ${matchedCollarId} está deshabilitado. Omitiendo geocercas y alertas.`);
           
           // Cerramos cualquier alerta activa que haya quedado huérfana de este animal
           const resolveAlertsQuery = `
@@ -95,27 +106,47 @@ export function initMQTT(io) {
         }
       }
 
-      // 5. Actualizar el estado actual del dispositivo físico (Collar)
+      // 5. Actualizar el estado actual del dispositivo físico (Collar) con batería y carga
       const updateCollarQuery = `
         UPDATE collares 
-        SET nivel_bateria = $1, senal_celular = $2, ultima_conexion = NOW(),
-            ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326)
-        WHERE id = $5;
+        SET nivel_bateria = $1, 
+            senal_celular = $2, 
+            ultima_conexion = NOW(),
+            ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
+            esta_cargando = $5,
+            voltaje_mv = $6
+        WHERE id = $7;
       `;
-      await pool.query(updateCollarQuery, [bateria, senal, lat, lon, collarId]);
+      try {
+        await pool.query(updateCollarQuery, [bateria, senal, lat, lon, estaCargando, vbat, matchedCollarId]);
+      } catch (_) {
+        // Fallback si columnas opcionales no existen en esquema antiguo
+        await pool.query(`
+          UPDATE collares 
+          SET nivel_bateria = $1, senal_celular = $2, ultima_conexion = NOW(),
+              ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326)
+          WHERE id = $5;
+        `, [bateria, senal, lat, lon, matchedCollarId]);
+      }
 
       // 6. Broadcast en tiempo real al panel Web usando Socket.io
       const broadcastData = {
-        collarId,
-        collar_id: collarId,
+        collarId: matchedCollarId,
+        collar_id: matchedCollarId,
         animalId: animalId || null,
         animal_id: animalId || null,
         areteVisual: areteVisual || 'SIN VÍNCULO',
         arete_visual: areteVisual || 'SIN VÍNCULO',
         lat: parseFloat(lat),
         lon: parseFloat(lon),
-        bateria: parseInt(bateria || 100, 10),
-        senal: parseInt(senal || 5, 10),
+        bateria: parseInt(bateria, 10),
+        nivel_bateria: parseInt(bateria, 10),
+        senal: parseInt(senal, 10),
+        senal_celular: parseInt(senal, 10),
+        esta_cargando: Boolean(estaCargando),
+        charging: Boolean(estaCargando),
+        voltaje_mv: vbat,
+        imei: imei || dbImei || null,
         timestamp: new Date().toISOString(),
         alertType: (activo && checkResult) ? checkResult.alertType : (activo ? 'NORMAL' : 'INACTIVO'),
         alerta: (activo && checkResult) ? checkResult.alertType : (activo ? 'NORMAL' : 'INACTIVO'),
@@ -133,7 +164,7 @@ export function initMQTT(io) {
 
       io.emit('telemetria_realtime', broadcastData);
       io.emit('telemetria_actualizada', broadcastData);
-      console.log(`[Live IoT] Collar: ${collarId} | Res: ${broadcastData.areteVisual} | Lat: ${lat}, Lon: ${lon} | Alerta: ${broadcastData.alertType}`);
+      console.log(`[Live IoT] Collar: ${matchedCollarId} | IMEI: ${broadcastData.imei || 'N/A'} | Bat: ${bateria}% (⚡ ${estaCargando ? 'USB/Cargando' : 'Batería'}) | Res: ${broadcastData.areteVisual} | Alerta: ${broadcastData.alertType}`);
 
     } catch (err) {
       console.error('[MQTT] Error procesando mensaje de telemetría:', err);

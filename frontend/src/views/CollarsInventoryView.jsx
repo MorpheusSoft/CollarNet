@@ -7,6 +7,7 @@ import {
   Battery, 
   BatteryCharging, 
   BatteryWarning, 
+  Zap,
   Signal, 
   AlertTriangle, 
   CheckCircle2, 
@@ -733,11 +734,16 @@ export default function CollarsInventoryView({ user }) {
                           {/* Batería */}
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-400 flex items-center gap-1">
-                              <Battery className={`w-3 h-3 ${batPercent < 25 ? 'text-rose-400' : 'text-emerald-400'}`} />
+                              {c.esta_cargando ? (
+                                <BatteryCharging className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                              ) : (
+                                <Battery className={`w-3 h-3 ${batPercent < 25 ? 'text-rose-400' : 'text-emerald-400'}`} />
+                              )}
                               Bat:
                             </span>
-                            <span className={`font-mono font-bold ${batPercent < 25 ? 'text-rose-400' : 'text-slate-200'}`}>
+                            <span className={`font-mono font-bold flex items-center gap-1 ${batPercent < 25 ? 'text-rose-400' : 'text-slate-200'}`}>
                               {batPercent}%
+                              {c.esta_cargando && <Zap className="w-2.5 h-2.5 text-yellow-300 fill-yellow-300 animate-bounce" title="Alimentación USB / Cargando" />}
                             </span>
                           </div>
                           <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">

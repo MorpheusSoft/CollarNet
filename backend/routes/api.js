@@ -484,6 +484,8 @@ async function handleMonitoreoQuery(req, res) {
         c.numero_sim,
         COALESCE(c.nivel_bateria, 100) AS nivel_bateria,
         COALESCE(c.senal_celular, 5) AS senal_celular,
+        COALESCE(c.esta_cargando, false) AS esta_cargando,
+        c.voltaje_mv,
         c.ultima_conexion,
         c.version_firmware,
         c.activo AS collar_activo,
@@ -1824,6 +1826,8 @@ router.get('/collares/inventario', async (req, res) => {
         c.motivo_estado,
         c.nivel_bateria,
         c.senal_celular,
+        COALESCE(c.esta_cargando, false) AS esta_cargando,
+        c.voltaje_mv,
         c.ultima_conexion,
         c.fecha_instalacion,
         c.version_firmware,
@@ -2632,7 +2636,7 @@ router.get('/collares/:id/historial', async (req, res) => {
 router.get('/collares', async (req, res) => {
   const { tenantId, estado } = req.query;
   try {
-    let query = 'SELECT id, tenant_id, COALESCE(estado, \'EN_ALMACEN\') AS estado, numero_sim, imei, nivel_bateria, senal_celular, ultima_conexion, version_firmware, activo FROM collares';
+    let query = 'SELECT id, tenant_id, COALESCE(estado, \'EN_ALMACEN\') AS estado, numero_sim, imei, nivel_bateria, senal_celular, ultima_conexion, version_firmware, activo, COALESCE(esta_cargando, false) AS esta_cargando, voltaje_mv FROM collares';
     let params = [];
     let where = [];
     if (tenantId) {

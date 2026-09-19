@@ -94,18 +94,25 @@ void handleMQTT() {
     }
 }
 
-bool publishTelemetry(double lat, double lon, int bateria, int senal, const String& alertType) {
+bool publishTelemetry(double lat, double lon, int bateria, int senal, const String& alertType, const String& imei, int vbat, bool isCharging) {
     if (!client.connected()) {
         Serial.println("[MQTT] Envío omitido: Cliente MQTT desconectado.");
         return false;
     }
 
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<384> doc;
     doc["lat"] = lat;
     doc["lon"] = lon;
     doc["bat"] = bateria;
     doc["sig"] = senal;
     doc["alert"] = alertType;
+    if (imei.length() > 0) {
+        doc["imei"] = imei;
+    }
+    if (vbat > 0) {
+        doc["vbat"] = vbat;
+    }
+    doc["charging"] = isCharging;
 
     String jsonString;
     serializeJson(doc, jsonString);

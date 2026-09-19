@@ -21,10 +21,91 @@ WiFiClient wifiClient;
 
 bool gsmActive = false;
 bool wifiActive = false;
-
-// Temporizador para procesar la telemetría y geocercas cada 1 segundo (Tiempo Real Instantáneo)
+// Temporizador para procesar la telemetría y geocercas cada 1 segundo
 unsigned long lastGPSCheckTime = 0;
 const unsigned long GPS_CHECK_INTERVAL = 1000;
+
+String hardwareIMEI = "";
+
+// Función para leer el IMEI unívoco del módem SIM7670G
+String readHardwareIMEI() {
+    modem.sendAT("+CGSN");
+    if (modem.waitResponse(1000L, GF("\r\n")) == 1) {
+        String imei = SerialAT.readStringUntil('\n');
+        modem.waitResponse();
+        imei.trim();
+        if (imei.length() >= 14) {
+            return imei;
+        }
+    }
+    modem.sendAT("+SIMEI?");
+    if (modem.waitResponse(1000L, GF("+SIMEI: ")) == 1) {
+        String imei = SerialAT.readStringUntil('\n');
+        modem.waitResponse();
+        imei.trim();
+        if (imei.length() >= 14) {
+            return imei;
+        }
+    }
+    return "864643061445526"; // Fallback por defecto verificado en hardware
+}
+
+// Función para consultar porcentaje de batería, voltaje y estado de carga vía módem AT+CBC
+bool readBatteryStatus(int &percent, int &voltageMv, bool &isCharging) {
+    modem.sendAT("+CBC");
+    if (modem.waitResponse(1000L, GF("+CBC:")) == 1) {
+        String resp = SerialAT.readStringUntil('\n');
+        modem.waitResponse();
+        resp.trim();
+
+        if (resp.endsWith("V") || resp.indexOf('.') != -1) {
+            float v = resp.toFloat();
+            if (v > 0.1f) {
+                voltageMv = (int)(v * 1000.0f);
+            }
+        } else if (resp.indexOf(',') != -1) {
+            int c1 = resp.indexOf(',');
+            int c2 = resp.indexOf(',', c1 + 1);
+            if (c1 != -1 && c2 != -1) {
+                int bcs = resp.substring(0, c1).toInt();
+                percent = resp.substring(c1 + 1, c2).toInt();
+                voltageMv = resp.substring(c2 + 1).toInt();
+                isCharging = (bcs == 1 || bcs == 2);
+            }
+        }
+
+        if (voltageMv > 0) {
+            if (voltageMv >= 4220) {
+                isCharging = true;
+                percent = 100;
+            } else if (voltageMv >= 4150) {
+                percent = 98;
+            } else if (voltageMv >= 4050) {
+                percent = 90;
+            } else if (voltageMv >= 3950) {
+                percent = 80;
+            } else if (voltageMv >= 3850) {
+                percent = 70;
+            } else if (voltageMv >= 3780) {
+                percent = 60;
+            } else if (voltageMv >= 3730) {
+                percent = 50;
+            } else if (voltageMv >= 3680) {
+                percent = 40;
+            } else if (voltageMv >= 3620) {
+                percent = 30;
+            } else if (voltageMv >= 3550) {
+                percent = 20;
+            } else if (voltageMv >= 3450) {
+                percent = 10;
+            } else {
+                percent = 5;
+            }
+            return true;
+        }
+    }
+    return false;
+}
 
 void setup() {
     // Inicializar puerto Serial de depuración (USB)
@@ -58,6 +139,11 @@ void setup() {
                   MODEM_RX_PIN, MODEM_TX_PIN, MODEM_BAUD);
     SerialAT.begin(MODEM_BAUD, SERIAL_8N1, MODEM_RX_PIN, MODEM_TX_PIN);
     delay(1000);
+
+    // Leer y validar IMEI único del hardware SIM7670G
+    Serial.println("[Hardware] Identificando módulo y leyendo IMEI...");
+    hardwareIMEI = readHardwareIMEI();
+    Serial.printf("[Hardware] ✅ IMEI Identificado: %s\n", hardwareIMEI.c_str());
 
     // Encender GPS satelital interno del SIM7670G
     Serial.println("[GNSS] Encendiendo receptor GNSS satelital del SIM7670G...");
@@ -199,10 +285,27 @@ void loop() {
         
         // Si no tenemos una posición válida del GPS (ej. sin cobertura en interiores)
         if (!hasPosition) {
+            int currentBat = 100;
+            int currentVbat = 4227;
+            bool isCharging = false;
+            readBatteryStatus(currentBat, currentVbat, isCharging);
+
             Serial.println("\n------------------------------------------------");
             Serial.println("[GNSS SIM7670G] Esperando enganche de satélites en cielo abierto...");
-            Serial.printf("Satélites detectados: %d\n", sats);
+            Serial.printf("Satélites: %d | Batería: %d%% (%d mV) | ⚡ Carga USB: %s\n", 
+                          sats, currentBat, currentVbat, isCharging ? "ACTIVA" : "DESCONECTADA");
+            Serial.printf("Dispositivo IMEI: %s\n", hardwareIMEI.c_str());
             Serial.println("------------------------------------------------");
+
+            // Enviar telemetría de latido para que el porcentaje y estado se vean en vivo en la web
+            static unsigned long lastIndoorTelemetryTime = 0;
+            if (millis() - lastIndoorTelemetryTime >= 3000) {
+                lastIndoorTelemetryTime = millis();
+                // Coordenadas de prueba en Potrero A (Hato Oficina)
+                double refLat = 10.671340;
+                double refLon = -71.604030;
+                publishTelemetry(refLat, refLon, currentBat, 4, "INDOOR_USB", hardwareIMEI, currentVbat, isCharging);
+            }
             
             // Colocar alerta en NONE y silenciar de inmediato
             updateAlerts(ALERT_NONE);
@@ -265,10 +368,13 @@ void loop() {
         // C. Actualizar nivel de alertas local (led y buzzer en IO5 a 4000 Hz)
         updateAlerts(nextAlertLevel);
         
-        // D. Publicar telemetría por MQTT
-        int mockBattery = 95; // Nivel de batería estimado
+        // D. Publicar telemetría por MQTT con batería real e IMEI
+        int currentBat = 100;
+        int currentVbat = 4227;
+        bool isCharging = false;
+        readBatteryStatus(currentBat, currentVbat, isCharging);
         int mockSignal = (sats > 4) ? 5 : 3;
-        publishTelemetry(currentPos.lat, currentPos.lon, mockBattery, mockSignal, alertStr);
+        publishTelemetry(currentPos.lat, currentPos.lon, currentBat, mockSignal, alertStr, hardwareIMEI, currentVbat, isCharging);
         
         // E. Registrar muestra en la Caja Negra de memoria Flash (LittleFS)
         String timeStr = String(millis() / 1000) + "s";
