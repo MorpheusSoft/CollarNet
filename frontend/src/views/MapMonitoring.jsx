@@ -29,6 +29,7 @@ const OSM_STREETS = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 export default function MapMonitoring({ 
   monitoringData, 
   geocercas, 
+  selectedHatoId,
   onSelectAnimalForProjection 
 }) {
   const mapContainerRef = useRef(null);
@@ -37,6 +38,7 @@ export default function MapMonitoring({
   const markersRef = useRef({});
   const polygonsGroupRef = useRef(null);
   const potreroLayersRef = useRef({});
+  const hatoLayersRef = useRef({});
 
   const [currentLayer, setCurrentLayer] = useState('satellite');
   const [sidebarTab, setSidebarTab] = useState('animals'); // 'animals' | 'potreros'
@@ -62,12 +64,70 @@ export default function MapMonitoring({
     p.rol_arreo === 'LLEGADA' || (arreoInfo?.activo && p.nombre === arreoInfo?.destino)
   ) || (hasActiveArreo && activeArreoPotreros.length > 1 ? activeArreoPotreros[1] : null);
 
+  // Center on specific Hato or fallback to all geocercas
+  const centerOnHato = (hatoIdToFind) => {
+    if (!mapInstanceRef.current || !geocercas?.hatos) return;
+
+    let targetHato = null;
+    if (hatoIdToFind && hatoIdToFind !== 'ALL') {
+      targetHato = geocercas.hatos.find(h => String(h.id) === String(hatoIdToFind));
+    }
+    
+    // Si no se especifica o es ALL, tomar el primer hato registrado
+    if (!targetHato && geocercas.hatos.length > 0) {
+      targetHato = geocercas.hatos[0];
+    }
+
+    if (targetHato) {
+      const layer = hatoLayersRef.current[targetHato.id];
+      if (layer) {
+        mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 17, animate: true });
+        layer.openPopup();
+        return;
+      }
+      if (targetHato.geojson) {
+        try {
+          const geo = typeof targetHato.geojson === 'string' ? JSON.parse(targetHato.geojson) : targetHato.geojson;
+          if (geo.coordinates && geo.coordinates[0]) {
+            const latlngs = geo.coordinates[0].map(c => [c[1], c[0]]);
+            const bounds = L.latLngBounds(latlngs);
+            mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 17, animate: true });
+            return;
+          }
+        } catch (e) {
+          console.error('Error parse geojson hato:', e);
+        }
+      }
+    }
+
+    // Fallback: si hay polígonos dibujados, encuadrar todo el grupo
+    if (polygonsGroupRef.current && polygonsGroupRef.current.getLayers().length > 0) {
+      mapInstanceRef.current.fitBounds(polygonsGroupRef.current.getBounds(), { padding: [40, 40], maxZoom: 16, animate: true });
+    }
+  };
+
+  const handleLocateHato = () => {
+    centerOnHato(selectedHatoId);
+  };
+
   // 1. Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    const initialLat = 9.1000;
-    const initialLon = -67.1000;
+    // Buscar si ya existe algún hato para no arrancar fijamente en el llano
+    let initialLat = 9.1000;
+    let initialLon = -67.1000;
+    if (geocercas?.hatos && geocercas.hatos.length > 0) {
+      try {
+        const geo = typeof geocercas.hatos[0].geojson === 'string' 
+          ? JSON.parse(geocercas.hatos[0].geojson) 
+          : geocercas.hatos[0].geojson;
+        if (geo?.coordinates?.[0]?.[0]) {
+          initialLat = geo.coordinates[0][0][1];
+          initialLon = geo.coordinates[0][0][0];
+        }
+      } catch (_) {}
+    }
 
     const map = L.map(mapContainerRef.current, {
       center: [initialLat, initialLon],
@@ -126,6 +186,7 @@ export default function MapMonitoring({
 
     polygonsGroupRef.current.clearLayers();
     potreroLayersRef.current = {};
+    hatoLayersRef.current = {};
 
     // A. Render Hatos (Límites Generales Maestros con Nombre Flotante Permanente)
     if (geocercas.hatos) {
@@ -163,10 +224,18 @@ export default function MapMonitoring({
           });
 
           polygonsGroupRef.current.addLayer(poly);
+          hatoLayersRef.current[hato.id] = poly;
         } catch (e) {
           console.error('Error al dibujar hato:', e);
         }
       });
+    }
+
+    // Auto-centrar en el hato seleccionado al renderizar las geocercas
+    if (selectedHatoId && selectedHatoId !== 'ALL') {
+      setTimeout(() => centerOnHato(selectedHatoId), 300);
+    } else if (geocercas.hatos && geocercas.hatos.length > 0) {
+      setTimeout(() => centerOnHato(geocercas.hatos[0].id), 300);
     }
 
     // B. Render Potreros (Subdivisiones con Estados Operativos y Rol de Traslado)
@@ -525,6 +594,18 @@ export default function MapMonitoring({
 
         {/* Floating Layer Controls (Top Right) */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-[#0E1624]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/10 shadow-xl">
+          <button
+            type="button"
+            onClick={handleLocateHato}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/20 transition-all active:scale-95"
+            title="Centrar y enfocar en el Hato seleccionado"
+          >
+            <MapPin className="w-3.5 h-3.5 text-emerald-200 animate-bounce" />
+            <span>🎯 Ubicar Hato</span>
+          </button>
+
+          <div className="w-px h-5 bg-white/10 mx-0.5"></div>
+
           <button
             type="button"
             onClick={() => switchLayer('satellite')}

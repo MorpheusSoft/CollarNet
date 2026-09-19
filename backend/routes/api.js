@@ -918,22 +918,45 @@ router.get('/geocercas', async (req, res) => {
 
 /**
  * GET /api/geocercas/hatos
- * Retorna todos los Hatos creados, incluyendo su representación GeoJSON.
+ * Retorna todos los Hatos creados, incluyendo su representación GeoJSON y collares activos.
  */
 router.get('/geocercas/hatos', async (req, res) => {
   const { tenantId } = req.query;
   try {
-    let query = 'SELECT id, nombre, tenant_id, ST_AsGeoJSON(perimetro) AS geojson FROM hatos';
+    let query = `
+      SELECT 
+        h.id, 
+        h.nombre, 
+        h.tenant_id, 
+        t.nombre AS tenant_nombre,
+        (SELECT COUNT(*)::INTEGER FROM potreros p WHERE p.hato_id = h.id) AS total_potreros,
+        (SELECT COUNT(*)::INTEGER FROM animales a WHERE (a.hato_id = h.id OR a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = h.id)) AND a.collar_id IS NOT NULL) AS collares_activos,
+        (SELECT COUNT(*)::INTEGER FROM animales a WHERE (a.hato_id = h.id OR a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = h.id))) AS total_animales,
+        ST_AsGeoJSON(h.perimetro) AS geojson 
+      FROM hatos h
+      LEFT JOIN tenants t ON h.tenant_id = t.id
+    `;
     let params = [];
-    if (tenantId) {
+    if (tenantId && tenantId !== 'ALL') {
       params.push(parseInt(tenantId, 10));
-      query += ' WHERE tenant_id = $1';
+      query += ' WHERE h.tenant_id = $1';
     }
+    query += ' ORDER BY h.id ASC';
     const { rows } = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
     console.warn('[Geocercas Hatos Fallback Memory]');
-    let hatos = [...memHatos];
+    let hatos = memHatos.map(h => {
+      const potrerosDelHato = memPotreros.filter(p => p.hato_id === h.id);
+      const potreroIds = potrerosDelHato.map(p => p.id);
+      const animalesHato = memAnimales.filter(a => a.hato_id === h.id || potreroIds.includes(a.potrero_id));
+      return {
+        ...h,
+        total_potreros: potrerosDelHato.length,
+        collares_activos: animalesHato.filter(a => a.collar_id != null).length,
+        total_animales: animalesHato.length
+      };
+    });
     if (tenantId && tenantId !== 'ALL') {
       hatos = hatos.filter(h => String(h.tenant_id) === String(tenantId));
     }
@@ -943,24 +966,28 @@ router.get('/geocercas/hatos', async (req, res) => {
 
 /**
  * GET /api/geocercas/potreros
- * Retorna todos los Potreros creados, incluyendo su representación GeoJSON.
+ * Retorna todos los Potreros creados, incluyendo su representación GeoJSON y collares activos.
  */
 router.get('/geocercas/potreros', async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT 
-        id, 
-        hato_id, 
-        nombre, 
-        capacidad_max_cabezas, 
-        margen_advertencia_metros, 
-        COALESCE(estado, 'ABIERTO') AS estado,
-        COALESCE(modo_arreo_activo, FALSE) AS modo_arreo_activo,
-        COALESCE(dias_descanso, 0) AS dias_descanso,
-        COALESCE(dias_ocupacion, 0) AS dias_ocupacion,
-        (SELECT COUNT(*)::INTEGER FROM animales a WHERE a.potrero_id = potreros.id) AS total_animales,
-        ST_AsGeoJSON(perimetro) AS geojson 
-      FROM potreros;
+        p.id, 
+        p.hato_id, 
+        h.nombre AS hato_nombre,
+        p.nombre, 
+        p.capacidad_max_cabezas, 
+        p.margen_advertencia_metros, 
+        COALESCE(p.estado, 'ABIERTO') AS estado,
+        COALESCE(p.modo_arreo_activo, FALSE) AS modo_arreo_activo,
+        COALESCE(p.dias_descanso, 0) AS dias_descanso,
+        COALESCE(p.dias_ocupacion, 0) AS dias_ocupacion,
+        (SELECT COUNT(*)::INTEGER FROM animales a WHERE a.potrero_id = p.id) AS total_animales,
+        (SELECT COUNT(*)::INTEGER FROM animales a WHERE a.potrero_id = p.id AND a.collar_id IS NOT NULL) AS collares_activos,
+        ST_AsGeoJSON(p.perimetro) AS geojson 
+      FROM potreros p
+      LEFT JOIN hatos h ON p.hato_id = h.id
+      ORDER BY p.id ASC;
     `);
     res.json(rows);
   } catch (err) {
@@ -971,7 +998,8 @@ router.get('/geocercas/potreros', async (req, res) => {
       modo_arreo_activo: !!p.modo_arreo_activo,
       dias_descanso: p.dias_descanso || 0,
       dias_ocupacion: p.dias_ocupacion || 0,
-      total_animales: memAnimales.filter(a => a.potrero_id === p.id || a.potrero_nombre === p.nombre).length
+      total_animales: memAnimales.filter(a => a.potrero_id === p.id || a.potrero_nombre === p.nombre).length,
+      collares_activos: memAnimales.filter(a => (a.potrero_id === p.id || a.potrero_nombre === p.nombre) && a.collar_id != null).length
     }));
     res.json(enriched);
   }
@@ -979,27 +1007,42 @@ router.get('/geocercas/potreros', async (req, res) => {
 
 /**
  * DELETE /api/geocercas/hato/:id
- * Elimina un Hato y todas sus pasturas (potreros) en cascada.
+ * Elimina un Hato y todas sus pasturas (potreros) en cascada si no tienen collares activos.
  */
 router.delete('/geocercas/hato/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const checkQuery = `
-      SELECT COUNT(*) FROM animales a 
-      INNER JOIN potreros p ON a.potrero_id = p.id 
-      WHERE p.hato_id = $1 AND a.collar_id IS NOT NULL;
+      SELECT a.id, a.arete_visual, a.collar_id 
+      FROM animales a 
+      WHERE (a.hato_id = $1 OR a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = $1)) 
+        AND a.collar_id IS NOT NULL;
     `;
     const { rows } = await pool.query(checkQuery, [id]);
-    if (parseInt(rows[0].count, 10) > 0) {
-      return res.status(400).json({ error: 'No se puede eliminar el hato porque tiene collares activos asociados a sus potreros.' });
+    if (rows.length > 0) {
+      const collarList = rows.map(r => r.collar_id).slice(0, 5).join(', ');
+      return res.status(400).json({ 
+        error: `No se puede eliminar el hato porque tiene ${rows.length} collares activos asociados (${collarList}${rows.length > 5 ? '...' : ''}). Reubica o desvincula los animales primero.` 
+      });
     }
 
+    await pool.query('DELETE FROM potreros WHERE hato_id = $1;', [id]);
     await pool.query('DELETE FROM hatos WHERE id = $1;', [id]);
     notifyGeocercasUpdated(req);
-    res.json({ success: true, message: `Hato con ID ${id} eliminado con éxito.` });
+    res.json({ success: true, message: `Hato con ID ${id} y sus potreros asociados eliminados con éxito.` });
   } catch (err) {
     console.warn('[Delete Hato Fallback Memory]');
     const numId = parseInt(id, 10);
+    const potreroIds = memPotreros.filter(p => p.hato_id === numId).map(p => p.id);
+    const animalesConCollar = memAnimales.filter(a => 
+      (a.hato_id === numId || potreroIds.includes(a.potrero_id)) && 
+      a.collar_id != null
+    );
+    if (animalesConCollar.length > 0) {
+      return res.status(400).json({ 
+        error: `No se puede eliminar el hato porque tiene ${animalesConCollar.length} collares activos asociados.` 
+      });
+    }
     const idx = memHatos.findIndex(h => h.id === numId);
     if (idx !== -1) memHatos.splice(idx, 1);
     for (let i = memPotreros.length - 1; i >= 0; i--) {
@@ -1012,18 +1055,22 @@ router.delete('/geocercas/hato/:id', async (req, res) => {
 
 /**
  * DELETE /api/geocercas/potrero/:id
- * Elimina un Potrero específico.
+ * Elimina un Potrero específico si no tiene collares activos.
  */
 router.delete('/geocercas/potrero/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const checkQuery = `
-      SELECT COUNT(*) FROM animales 
-      WHERE potrero_id = $1 AND collar_id IS NOT NULL;
+      SELECT a.id, a.arete_visual, a.collar_id 
+      FROM animales a 
+      WHERE a.potrero_id = $1 AND a.collar_id IS NOT NULL;
     `;
     const { rows } = await pool.query(checkQuery, [id]);
-    if (parseInt(rows[0].count, 10) > 0) {
-      return res.status(400).json({ error: 'No se puede eliminar el potrero porque tiene collares activos asociados.' });
+    if (rows.length > 0) {
+      const collarList = rows.map(r => r.collar_id).slice(0, 5).join(', ');
+      return res.status(400).json({ 
+        error: `No se puede eliminar el potrero porque tiene ${rows.length} collares activos asociados (${collarList}${rows.length > 5 ? '...' : ''}). Reubica o desvincula los animales primero.` 
+      });
     }
 
     await pool.query('DELETE FROM potreros WHERE id = $1;', [id]);
@@ -1032,6 +1079,15 @@ router.delete('/geocercas/potrero/:id', async (req, res) => {
   } catch (err) {
     console.warn('[Delete Potrero Fallback Memory]');
     const numId = parseInt(id, 10);
+    const animalesConCollar = memAnimales.filter(a => 
+      (a.potrero_id === numId || a.potrero_nombre === String(numId)) && 
+      a.collar_id != null
+    );
+    if (animalesConCollar.length > 0) {
+      return res.status(400).json({ 
+        error: `No se puede eliminar el potrero porque tiene ${animalesConCollar.length} collares activos asociados.` 
+      });
+    }
     const idx = memPotreros.findIndex(p => p.id === numId);
     if (idx !== -1) memPotreros.splice(idx, 1);
     notifyGeocercasUpdated(req);

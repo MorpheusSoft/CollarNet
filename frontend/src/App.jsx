@@ -272,6 +272,7 @@ export default function App() {
             <MapMonitoring
               monitoringData={monitoringData}
               geocercas={geocercas}
+              selectedHatoId={selectedHatoId}
               onSelectAnimalForProjection={handleOpenProjection}
             />
           )}
@@ -282,6 +283,8 @@ export default function App() {
               collares={collares}
               tenants={tenants}
               selectedTenantId={selectedTenantId}
+              selectedHatoId={selectedHatoId}
+              monitoringData={monitoringData}
               currentUser={user}
               onRefreshData={loadAllData}
             />
