@@ -38,8 +38,8 @@ class FincaStateProvider with ChangeNotifier {
       'id': '1',
       'nombre': 'Potrero Norte 1',
       'estado': 'ABIERTO',
-      'animales': 25,
-      'diasOcupacion': 4,
+      'animales': 0,
+      'diasOcupacion': 0,
       'diasDescanso': 0,
       'capacidad': 50,
       'calidadPasto': 'Excelente (2.8k kg/ha)',
@@ -50,7 +50,7 @@ class FincaStateProvider with ChangeNotifier {
       'estado': 'DESCANSO',
       'animales': 0,
       'diasOcupacion': 0,
-      'diasDescanso': 18,
+      'diasDescanso': 0,
       'capacidad': 40,
       'calidadPasto': 'En Recuperación (1.9k kg/ha)',
     },
@@ -58,56 +58,19 @@ class FincaStateProvider with ChangeNotifier {
       'id': '3',
       'nombre': 'Potrero Este 3',
       'estado': 'ABIERTO',
-      'animales': 20,
-      'diasOcupacion': 2,
+      'animales': 0,
+      'diasOcupacion': 0,
       'diasDescanso': 0,
       'capacidad': 45,
       'calidadPasto': 'Óptima (3.1k kg/ha)',
-    },
-    {
-      'id': '4',
-      'nombre': 'Potrero Maternidad',
-      'estado': 'DESCANSO',
-      'animales': 0,
-      'diasOcupacion': 0,
-      'diasDescanso': 30,
-      'capacidad': 20,
-      'calidadPasto': 'Lista para Pastoreo',
-    },
+    }
   ];
 
-  List<Map<String, dynamic>> _animales = [
-    {'id': 999, 'areteVisual': 'V-999 (EXTRAVIADA 100m)', 'collarId': 'COL-0999', 'raza': 'Brahman Mestizo', 'categoria': 'Vaca Extraviada', 'potreroNombre': 'FUERA DE LINDERO (100m)', 'latitud': 8.5395, 'longitud': -70.3570, 'bateria': 76, 'ultimoPeso': 485.0, 'estadoAlerta': 'EXTRAVIADA'},
-    {'id': 1, 'areteVisual': 'V-042', 'collarId': 'COL-0014', 'raza': 'Brahman', 'categoria': 'Vaca', 'potreroNombre': 'Potrero Norte 1', 'latitud': 8.5385, 'longitud': -70.3580, 'bateria': 92, 'ultimoPeso': 460.0},
-    {'id': 2, 'areteVisual': 'N-019', 'collarId': 'COL-0003', 'raza': 'Nelore', 'categoria': 'Novillo', 'potreroNombre': 'Potrero Norte 1', 'latitud': 8.5390, 'longitud': -70.3575, 'bateria': 85, 'ultimoPeso': 395.0},
-    {'id': 3, 'areteVisual': 'G-108', 'collarId': 'COL-0022', 'raza': 'Guzerá', 'categoria': 'Toro', 'potreroNombre': 'Potrero Este 3', 'latitud': 8.5375, 'longitud': -70.3590, 'bateria': 98, 'ultimoPeso': 720.0},
-  ];
+  List<Map<String, dynamic>> _animales = [];
 
-  List<String> _collaresDisponibles = ['COL-0010', 'COL-0011', 'COL-0012', 'COL-0015', 'COL-0020'];
+  List<String> _collaresDisponibles = [];
 
-  List<Map<String, dynamic>> _alertas = [
-    {
-      'arete': 'V-999',
-      'tipo': '🚨 FUERA DE CERCA (EXTRAVIADA 100m)',
-      'hora': 'Hace 2 min',
-      'detalle': 'Animal fuera de potrero. Activar brújula táctica (Módulo 5) para búsqueda y rescate.',
-      'collar': 'COL-0999',
-    },
-    {
-      'arete': 'V-042',
-      'tipo': 'CELO DETECTADO',
-      'hora': 'Hoy 05:40 AM',
-      'detalle': 'Pico de actividad motriz (+180% sobre media basal). Ventana de inseminación: Próximas 12h.',
-      'collar': 'COL-0014',
-    },
-    {
-      'arete': 'V-019',
-      'tipo': 'BAJA RUMIA / SOSPECHA DE FIEBRE',
-      'hora': 'Ayer 11:20 PM',
-      'detalle': 'Caída de masticación del 62%. Posible malestar o timpanismo.',
-      'collar': 'COL-0003',
-    },
-  ];
+  List<Map<String, dynamic>> _alertas = [];
 
   // Getters
   bool get isOnline => _isOnline;

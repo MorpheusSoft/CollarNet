@@ -88,7 +88,7 @@ function pointInPolygon(point, polygon) {
 // ALMACÉN EN MEMORIA GLOBAL PARA DESARROLLO LOCAL & FALLBACK
 // ==========================================
 const memTenants = [
-  { id: 1, nombre: 'Hacienda Santa Inés', rif: 'J-12345678-0', contacto: 'Luis Zambrano', telefono: '+58 412 111 2233', email: 'luis@collarnet.com', total_collares: 12, permite_crear_potreros: true, activo: true, creado_en: new Date().toISOString() }
+  { id: 1, nombre: 'Hacienda Santa Inés', rif: 'J-12345678-0', contacto: 'Luis Zambrano', telefono: '+58 412 111 2233', email: 'luis@collarnet.com', total_collares: 0, permite_crear_potreros: true, activo: true, creado_en: new Date().toISOString() }
 ];
 
 const memPropietarios = [
@@ -127,9 +127,9 @@ const memPotreros = [
     hato_id: 1,
     nombre: 'Potrero Norte 1',
     estado: 'ABIERTO',
-    total_animales: 25,
+    total_animales: 0,
     dias_descanso: 0,
-    dias_ocupacion: 4,
+    dias_ocupacion: 0,
     capacidad_max_cabezas: 50,
     margen_advertencia_metros: 10,
     calidad_pasto: 'Excelente (2.8k kg/ha)',
@@ -157,7 +157,7 @@ const memPotreros = [
     nombre: 'Potrero Sur 2',
     estado: 'DESCANSO',
     total_animales: 0,
-    dias_descanso: 18,
+    dias_descanso: 0,
     dias_ocupacion: 0,
     capacidad_max_cabezas: 40,
     margen_advertencia_metros: 10,
@@ -185,9 +185,9 @@ const memPotreros = [
     hato_id: 1,
     nombre: 'Potrero Este 3',
     estado: 'ABIERTO',
-    total_animales: 20,
+    total_animales: 0,
     dias_descanso: 0,
-    dias_ocupacion: 2,
+    dias_ocupacion: 0,
     capacidad_max_cabezas: 45,
     margen_advertencia_metros: 10,
     calidad_pasto: 'Óptima (3.1k kg/ha)',
@@ -211,40 +211,9 @@ const memPotreros = [
   }
 ];
 
-const memLotes = [
-  {
-    id: 1,
-    codigo_lote: 'LOT-2026-001',
-    proveedor: 'CowIA Hardware Labs Inc.',
-    fecha_recepcion: '2026-01-15',
-    cantidad_total: 100,
-    version_hardware: 'HW-v2.1',
-    version_firmware_inicial: '1.2.0',
-    tenant_id: 1,
-    tenant_nombre: 'Hacienda Santa Inés',
-    notas: 'Lote principal de collares GPS solares con telemetría LoRa/Celular',
-    collares_registrados: 12,
-    collares_activos: 7,
-    collares_en_almacen: 5,
-    collares_en_revision: 0,
-    creado_en: new Date().toISOString()
-  }
-];
+const memLotes = [];
 
-const memCollares = [
-  { id: 'COL-0022', numero_sim: '+584129990022', imei: '860123450000022', mac_address: '00:1A:2B:3C:4D:22', numero_serie: 'SN-COL-0022', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Toro G-108', nivel_bateria: 98, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'G-108', animal_raza: 'Guzerá', creado_en: new Date().toISOString() },
-  { id: 'COL-0008', numero_sim: '+584129990008', imei: '860123450000008', mac_address: '00:1A:2B:3C:4D:08', numero_serie: 'SN-COL-0008', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Toro T-015', nivel_bateria: 92, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'T-015', animal_raza: 'Senepol', creado_en: new Date().toISOString() },
-  { id: 'COL-0003', numero_sim: '+584129990003', imei: '860123450000003', mac_address: '00:1A:2B:3C:4D:03', numero_serie: 'SN-COL-0003', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Novilla V-019', nivel_bateria: 78, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'V-019', animal_raza: 'Brahman', creado_en: new Date().toISOString() },
-  { id: 'COL-0015', numero_sim: '+584129990015', imei: '860123450000015', mac_address: '00:1A:2B:3C:4D:15', numero_serie: 'SN-COL-0015', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Maute M-088', nivel_bateria: 88, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'M-088', animal_raza: 'Brahman Gris', creado_en: new Date().toISOString() },
-  { id: 'collar_test_001', numero_sim: '+584129990001', imei: '860123450000001', mac_address: '00:1A:2B:3C:4D:01', numero_serie: 'SN-TEST-0001', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Novillo NEL-042', nivel_bateria: 94, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'NEL-042', animal_raza: 'Nelore', creado_en: new Date().toISOString() },
-  { id: 'COL-0999', numero_sim: '+584129990999', imei: '860123450000999', mac_address: '00:1A:2B:3C:4D:99', numero_serie: 'SN-COL-0999', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Vaca V-999', nivel_bateria: 76, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'V-999', animal_raza: 'Brahman Mestizo', creado_en: new Date().toISOString() },
-  { id: 'COL-0014', numero_sim: '+584129990014', imei: '860123450000014', mac_address: '00:1A:2B:3C:4D:14', numero_serie: 'SN-COL-0014', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Vaca V-042', nivel_bateria: 95, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'V-042', animal_raza: 'Brahman', creado_en: new Date().toISOString() },
-  { id: 'COL-0101', numero_sim: '+584129990101', imei: '860123450000101', mac_address: '00:1A:2B:3C:4D:A1', numero_serie: 'SN-COL-0101', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 100, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() },
-  { id: 'COL-0102', numero_sim: '+584129990102', imei: '860123450000102', mac_address: '00:1A:2B:3C:4D:A2', numero_serie: 'SN-COL-0102', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 100, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() },
-  { id: 'COL-0103', numero_sim: '+584129990103', imei: '860123450000103', mac_address: '00:1A:2B:3C:4D:A3', numero_serie: 'SN-COL-0103', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 100, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() },
-  { id: 'COL-0104', numero_sim: '+584129990104', imei: '860123450000104', mac_address: '00:1A:2B:3C:4D:A4', numero_serie: 'SN-COL-0104', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 98, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() },
-  { id: 'COL-0105', numero_sim: '+584129990105', imei: '860123450000105', mac_address: '00:1A:2B:3C:4D:A5', numero_serie: 'SN-COL-0105', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 99, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() }
-];
+const memCollares = [];
 
 const memHistorial = [];
 
@@ -283,21 +252,21 @@ function enrichEventoSanitario(e) {
   return {
     id: e.id,
     animal_id: e.animal_id || animal.id || 1,
-    arete_visual: e.arete_visual || animal.arete_visual || 'V-042',
+    arete_visual: e.arete_visual || animal.arete_visual || 'V-001',
     raza_animal: animal.raza || 'Brahman',
     categoria_animal: animal.categoria || 'Vaca',
     medicamento_id: e.medicamento_id || med.id || 1,
-    medicamento_nombre: e.medicamento_nombre || med.nombre || 'Fiebre Aftosa Bivalente',
+    medicamento_nombre: e.medicamento_nombre || med.nombre || 'Vacuna',
     medicamento_tipo: e.medicamento_tipo || med.tipo || 'VACUNA',
     fecha_aplicacion: typeof e.fecha_aplicacion === 'string' ? e.fecha_aplicacion : fechaApp.toISOString().split('T')[0],
     fecha_proxima_dosis: typeof e.fecha_proxima_dosis === 'string' ? e.fecha_proxima_dosis : fechaProx.toISOString().split('T')[0],
     dias_para_revacunacion: diffDays,
     estado_revacunacion: estadoRevacunacion,
-    dosis_aplicada: e.dosis_aplicada || med.dosis_recomendada || '2 ml Subcutánea',
-    lote_medicamento: e.lote_medicamento || 'L-2026-V01',
-    veterinario_responsable: e.veterinario_responsable || 'Dr. Médico Veterinario',
-    costo_aplicado: parseFloat(e.costo_aplicado || med.costo_unitario_estimado || 2.50),
-    observaciones: e.observaciones || 'Aplicación preventiva de rutina',
+    dosis_aplicada: e.dosis_aplicada || med.dosis_recomendada || '2 ml',
+    lote_medicamento: e.lote_medicamento || 'L-2026',
+    veterinario_responsable: e.veterinario_responsable || 'Médico Veterinario',
+    costo_aplicado: parseFloat(e.costo_aplicado || med.costo_unitario_estimado || 0),
+    observaciones: e.observaciones || 'Aplicación preventiva',
     tenant_id: e.tenant_id || 1,
     creado_en: e.creado_en || new Date().toISOString()
   };
@@ -322,261 +291,7 @@ const memUsuarios = [
   }
 ];
 
-const memAnimales = [
-  {
-    id: 1,
-    animal_id: 1,
-    arete_visual: 'V-042',
-    raza: 'Brahman',
-    categoria: 'Vaca',
-    sexo: 'H',
-    foto_url: '',
-    numero_hierro: 'H-042',
-    madre_id: '',
-    padre_id: '',
-    tenant_id: 1,
-    tenant_nombre: 'Hacienda Santa Inés',
-    propietario_id: 1,
-    propietario_nombre: 'Don Fernando Álvarez',
-    fecha_nacimiento: '2022-05-14',
-    edad_dias: 1500,
-    collar_id: 'COL-0014',
-    numero_sim: '+584129990014',
-    nivel_bateria: 95,
-    senal_celular: 4,
-    ultima_conexion: new Date().toISOString(),
-    version_firmware: '1.2.0',
-    collar_activo: true,
-    latitud: 8.5385,
-    longitud: -70.3580,
-    potrero_id: 1,
-    potrero_nombre: 'Potrero Norte 1',
-    potrero_asignado_nombre: 'Potrero Norte 1',
-    potrero_margen_advertencia: 10,
-    hato_id: 1,
-    hato_nombre: 'Hato La Esperanza',
-    peso_actual: 460.0,
-    estado_alerta: 'NORMAL',
-    estado_cerca: 'DENTRO'
-  },
-  {
-    id: 3,
-    animal_id: 3,
-    arete_visual: 'G-108',
-    raza: 'Guzerá',
-    categoria: 'Toro',
-    sexo: 'M',
-    foto_url: '',
-    numero_hierro: 'H-108',
-    madre_id: '',
-    padre_id: '',
-    tenant_id: 1,
-    tenant_nombre: 'Hacienda Santa Inés',
-    propietario_id: 1,
-    propietario_nombre: 'Don Fernando Álvarez',
-    fecha_nacimiento: '2021-08-20',
-    edad_dias: 1800,
-    collar_id: 'COL-0022',
-    numero_sim: '+584129990022',
-    nivel_bateria: 98,
-    senal_celular: 4,
-    ultima_conexion: new Date().toISOString(),
-    version_firmware: '1.2.0',
-    collar_activo: true,
-    latitud: 8.5375,
-    longitud: -70.3590,
-    potrero_id: 3,
-    potrero_nombre: 'Potrero Este 3',
-    potrero_asignado_nombre: 'Potrero Este 3',
-    potrero_margen_advertencia: 10,
-    hato_id: 1,
-    hato_nombre: 'Hato La Esperanza',
-    peso_actual: 720.0,
-    estado_alerta: 'NORMAL',
-    estado_cerca: 'DENTRO'
-  },
-  {
-    id: 4,
-    animal_id: 4,
-    arete_visual: 'T-015',
-    raza: 'Senepol',
-    categoria: 'Toro',
-    sexo: 'M',
-    foto_url: '',
-    numero_hierro: 'H-015',
-    madre_id: '',
-    padre_id: '',
-    tenant_id: 1,
-    tenant_nombre: 'Hacienda Santa Inés',
-    propietario_id: 1,
-    propietario_nombre: 'Don Fernando Álvarez',
-    fecha_nacimiento: '2022-02-12',
-    edad_dias: 1600,
-    collar_id: 'COL-0008',
-    numero_sim: '+584129990008',
-    nivel_bateria: 92,
-    senal_celular: 4,
-    ultima_conexion: new Date().toISOString(),
-    version_firmware: '1.2.0',
-    collar_activo: true,
-    latitud: 8.5360,
-    longitud: -70.3560,
-    potrero_id: 1,
-    potrero_nombre: 'Potrero Norte 1',
-    potrero_asignado_nombre: 'Potrero Norte 1',
-    potrero_margen_advertencia: 10,
-    hato_id: 1,
-    hato_nombre: 'Hato La Esperanza',
-    peso_actual: 640.0,
-    estado_alerta: 'NORMAL',
-    estado_cerca: 'DENTRO'
-  },
-  {
-    id: 5,
-    animal_id: 5,
-    arete_visual: 'V-019',
-    raza: 'Brahman',
-    categoria: 'Novilla',
-    sexo: 'H',
-    foto_url: '',
-    numero_hierro: 'H-019B',
-    madre_id: '',
-    padre_id: '',
-    tenant_id: 1,
-    tenant_nombre: 'Hacienda Santa Inés',
-    propietario_id: 1,
-    propietario_nombre: 'Don Fernando Álvarez',
-    fecha_nacimiento: '2023-06-10',
-    edad_dias: 1100,
-    collar_id: 'COL-0003',
-    numero_sim: '+584129990003',
-    nivel_bateria: 78,
-    senal_celular: 4,
-    ultima_conexion: new Date().toISOString(),
-    version_firmware: '1.2.0',
-    collar_activo: true,
-    latitud: 8.5355,
-    longitud: -70.3565,
-    potrero_id: 2,
-    potrero_nombre: 'Potrero Sur 2',
-    potrero_asignado_nombre: 'Potrero Sur 2',
-    potrero_margen_advertencia: 10,
-    hato_id: 1,
-    hato_nombre: 'Hato La Esperanza',
-    peso_actual: 380.0,
-    estado_alerta: 'NORMAL',
-    estado_cerca: 'DENTRO'
-  },
-  {
-    id: 6,
-    animal_id: 6,
-    arete_visual: 'M-088',
-    raza: 'Brahman Gris',
-    categoria: 'Maute',
-    sexo: 'M',
-    foto_url: '',
-    numero_hierro: 'H-088',
-    madre_id: '',
-    padre_id: '',
-    tenant_id: 1,
-    tenant_nombre: 'Hacienda Santa Inés',
-    propietario_id: 1,
-    propietario_nombre: 'Don Fernando Álvarez',
-    fecha_nacimiento: '2024-05-01',
-    edad_dias: 600,
-    collar_id: 'COL-0015',
-    numero_sim: '+584129990015',
-    nivel_bateria: 88,
-    senal_celular: 4,
-    ultima_conexion: new Date().toISOString(),
-    version_firmware: '1.2.0',
-    collar_activo: true,
-    latitud: 8.5370,
-    longitud: -70.3585,
-    potrero_id: 3,
-    potrero_nombre: 'Potrero Este 3',
-    potrero_asignado_nombre: 'Potrero Este 3',
-    potrero_margen_advertencia: 10,
-    hato_id: 1,
-    hato_nombre: 'Hato La Esperanza',
-    peso_actual: 295.0,
-    estado_alerta: 'NORMAL',
-    estado_cerca: 'DENTRO'
-  },
-  {
-    id: 7,
-    animal_id: 7,
-    arete_visual: 'NEL-042',
-    raza: 'Nelore',
-    categoria: 'Novillo',
-    sexo: 'M',
-    foto_url: '',
-    numero_hierro: 'H-042',
-    madre_id: '',
-    padre_id: '',
-    tenant_id: 1,
-    tenant_nombre: 'Hacienda Santa Inés',
-    propietario_id: 1,
-    propietario_nombre: 'Don Fernando Álvarez',
-    fecha_nacimiento: '2024-03-15',
-    edad_dias: 900,
-    collar_id: 'collar_test_001',
-    numero_sim: '+584129990001',
-    nivel_bateria: 94,
-    senal_celular: 4,
-    ultima_conexion: new Date().toISOString(),
-    version_firmware: '1.2.0',
-    collar_activo: true,
-    latitud: 8.5380,
-    longitud: -70.3575,
-    potrero_id: 1,
-    potrero_nombre: 'Potrero Norte 1',
-    potrero_asignado_nombre: 'Potrero Norte 1',
-    potrero_margen_advertencia: 10,
-    hato_id: 1,
-    hato_nombre: 'Hato La Esperanza',
-    peso_actual: 420.5,
-    estado_alerta: 'NORMAL',
-    estado_cerca: 'DENTRO'
-  },
-  {
-    id: 999,
-    animal_id: 999,
-    arete_visual: 'V-999',
-    nombre_alias: 'Mariposa (EXTRAVIADA 100m)',
-    raza: 'Brahman Mestizo',
-    categoria: 'Vaca Extraviada',
-    sexo: 'H',
-    foto_url: '',
-    numero_hierro: 'H-999',
-    madre_id: '',
-    padre_id: '',
-    tenant_id: 1,
-    tenant_nombre: 'Hacienda Santa Inés',
-    propietario_id: 1,
-    propietario_nombre: 'Don Fernando Álvarez',
-    fecha_nacimiento: '2023-01-10',
-    edad_dias: 1200,
-    collar_id: 'COL-0999',
-    numero_sim: '+584129990999',
-    nivel_bateria: 76,
-    senal_celular: 4,
-    ultima_conexion: new Date().toISOString(),
-    version_firmware: '1.2.0',
-    collar_activo: true,
-    latitud: 8.5395,
-    longitud: -70.3570,
-    potrero_id: null,
-    potrero_nombre: '¡FUERA DE POTRERO! (100m)',
-    potrero_asignado_nombre: 'Potrero Norte 1',
-    potrero_margen_advertencia: 10,
-    hato_id: 1,
-    hato_nombre: 'Hato La Esperanza',
-    peso_actual: 485.0,
-    estado_alerta: 'CRITICA_FUERA_CERCA',
-    estado_cerca: 'FUERA'
-  }
-];
+const memAnimales = [];
 
 function _updateMemAnimalWeight(id, arete, peso) {
   const numPeso = parseFloat(peso) || 400.0;
@@ -5820,14 +5535,11 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
     if (collaresDisponibles.length === 0) {
       collaresDisponibles = memCollares.filter(c => c.estado === 'EN_ALMACEN' || c.estado === 'DESACTIVADO' || !c.activo).map(c => c.id);
     }
-    if (collaresDisponibles.length === 0) {
-      collaresDisponibles = ['COL-0010', 'COL-0011', 'COL-0012', 'COL-0015', 'COW-2026-0048', 'COW-2026-0047'];
-    }
 
     // 5. Métricas consolidadas
     const potrerosActivos = potrerosList.filter(p => p.estado === 'ABIERTO').length;
     const potrerosDescanso = potrerosList.filter(p => p.estado === 'DESCANSO').length;
-    const totalAnimales = animalesList.length > 0 ? animalesList.length : 45;
+    const totalAnimales = animalesList.length;
 
     res.json({
       hato: {
@@ -5841,22 +5553,15 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
       potreros: potrerosList,
       animales: animalesList,
       collaresDisponibles,
-      alertas: [
+      alertas: animalesList.length > 0 ? [
         {
-          arete: animalesList[0]?.areteVisual || 'V-042',
+          arete: animalesList[0]?.areteVisual || 'V-001',
           tipo: 'CELO DETECTADO',
           hora: 'Hoy 05:40 AM',
           detalle: 'Pico de actividad motriz (+180% sobre media basal). Ventana de inseminación: Próximas 12h.',
-          collar: animalesList[0]?.collarId || 'COL-0014'
-        },
-        {
-          arete: animalesList[1]?.areteVisual || 'V-019',
-          tipo: 'BAJA RUMIA / SOSPECHA DE FIEBRE',
-          hora: 'Ayer 11:20 PM',
-          detalle: 'Caída de masticación del 62%. Posible malestar en potrero activo.',
-          collar: animalesList[1]?.collarId || 'COL-0003'
+          collar: animalesList[0]?.collarId || 'SIN_COLLAR'
         }
-      ]
+      ] : []
     });
   } catch (err) {
     console.warn('[Fallback resumen finca dynamic]', err.message);
@@ -5872,7 +5577,7 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
         estado: 'ABIERTO',
         total_animales: 0,
         dias_descanso: 0,
-        dias_ocupacion: 1,
+        dias_ocupacion: 0,
         capacidad_max_cabezas: 50,
         margen_advertencia_metros: 10,
         geojson: foundHato.geojson || null,
@@ -5887,10 +5592,10 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
       return {
         id: String(p.id),
         nombre: p.nombre,
-        estado: p.estado || (idx % 2 === 0 ? 'ABIERTO' : 'DESCANSO'),
+        estado: p.estado || 'ABIERTO',
         animales: animalCount,
-        diasDescanso: p.dias_descanso || (idx % 2 !== 0 ? 15 : 0),
-        diasOcupacion: p.dias_ocupacion || (idx % 2 === 0 ? 4 : 0),
+        diasDescanso: p.dias_descanso || 0,
+        diasOcupacion: p.dias_ocupacion || 0,
         calidadPasto: 'Excelente (2.8k kg/ha)',
         modoArreoActivo: !!p.modo_arreo_activo
       };
@@ -5899,7 +5604,7 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
     const activeMemAnimals = memAnimales.filter(a => (Number(a.hato_id) === cleanHatoId || String(a.hato_id) === String(rawId)) && a.activo !== false);
     const animalesList = activeMemAnimals.map(a => ({
       id: a.id || a.animal_id || 1,
-      areteVisual: a.arete_visual || a.arete || 'V-042',
+      areteVisual: a.arete_visual || a.arete || 'V-001',
       collarId: a.collar_id || 'SIN_COLLAR',
       raza: a.raza || 'Brahman',
       categoria: a.categoria || 'Novillo',
@@ -5913,9 +5618,6 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
     }));
 
     let collaresDisponibles = memCollares.filter(c => c.estado === 'EN_ALMACEN' || c.estado === 'DESACTIVADO' || !c.activo).map(c => c.id);
-    if (collaresDisponibles.length === 0) {
-      collaresDisponibles = ['COL-0010', 'COL-0011', 'COL-0012', 'COL-0015', 'COW-2026-0048', 'COW-2026-0047'];
-    }
 
     res.json({
       hato: {
@@ -5931,11 +5633,11 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
       collaresDisponibles,
       alertas: animalesList.length > 0 ? [
         {
-          arete: animalesList[0]?.areteVisual || 'V-042',
+          arete: animalesList[0]?.areteVisual || 'V-001',
           tipo: 'CELO DETECTADO',
           hora: 'Hoy 05:40 AM',
           detalle: 'Pico de actividad (+180%). Inseminación: Próximas 12h.',
-          collar: animalesList[0]?.collarId || 'COL-0014'
+          collar: animalesList[0]?.collarId || 'SIN_COLLAR'
         }
       ] : []
     });
