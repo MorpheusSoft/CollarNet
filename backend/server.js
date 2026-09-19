@@ -305,9 +305,15 @@ async function start() {
     // 1. Probar conexión física a la base de datos PostgreSQL
     try {
       await pool.query('SELECT 1;');
-      console.log('✅ Base de datos PostgreSQL conectada exitosamente.');
+      await pool.query(`
+        ALTER TABLE propietarios ADD COLUMN IF NOT EXISTS tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE;
+        ALTER TABLE animales ADD COLUMN IF NOT EXISTS hato_id INTEGER REFERENCES hatos(id) ON DELETE SET NULL;
+        UPDATE propietarios SET tenant_id = (SELECT id FROM tenants ORDER BY id ASC LIMIT 1) WHERE tenant_id IS NULL;
+        UPDATE animales SET hato_id = (SELECT hato_id FROM potreros WHERE id = animales.potrero_id) WHERE hato_id IS NULL AND potrero_id IS NOT NULL;
+      `);
+      console.log('✅ Base de datos PostgreSQL conectada y esquema verificado exitosamente.');
     } catch (dbErr) {
-      console.warn('⚠️ Aviso: PostgreSQL no está respondiendo en localhost:5432. Modo memoria/fallback activo.');
+      console.warn('⚠️ Aviso: PostgreSQL no está respondiendo en localhost:5432 o error en migración:', dbErr.message);
     }
     
     // 2. Arrancar conectividad MQTT y enlazar con Socket.io

@@ -101,7 +101,7 @@ export default function LivestockTable({
   const getInitialAnimalForm = () => {
     const defaultTenant = (currentUser?.tenantId && String(currentUser.tenantId)) || 
       (selectedTenantFilter !== 'ALL' ? String(selectedTenantFilter) : '') ||
-      (safeTenants.length > 0 ? String(safeTenants[0].id) : '1');
+      (safeTenants.length > 0 ? String(safeTenants[0].id) : '');
 
     const defaultHato = (selectedHatoFilter !== 'ALL' ? String(selectedHatoFilter) : '') ||
       (safeHatos.length > 0 ? String(safeHatos[0].id) : '');
@@ -193,7 +193,11 @@ export default function LivestockTable({
   }, [safeCollares, safeMonitoring]);
 
   const handleOpenAnimalDialog = () => {
-    setAnimalForm(getInitialAnimalForm());
+    const init = getInitialAnimalForm();
+    if (!init.tenantId && safeTenants.length > 0) {
+      init.tenantId = String(safeTenants[0].id);
+    }
+    setAnimalForm(init);
     setShowAnimalDialog(true);
   };
 

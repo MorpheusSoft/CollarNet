@@ -448,7 +448,7 @@ async function handleMonitoreoQuery(req, res) {
 
     if (hatoId) {
       params.push(parseInt(hatoId, 10));
-      whereClauses.push(`p.hato_id = $${params.length}`);
+      whereClauses.push(`(p.hato_id = $${params.length} OR a.hato_id = $${params.length})`);
     }
 
     if (propietarioId) {
@@ -495,8 +495,8 @@ async function handleMonitoreoQuery(req, res) {
         p.nombre AS potrero_nombre,
         p.nombre AS potrero_asignado_nombre,
         p.margen_advertencia_metros AS potrero_margen_advertencia,
-        h.id AS hato_id,
-        h.nombre AS hato_nombre,
+        COALESCE(h.id, a.hato_id) AS hato_id,
+        COALESCE(h.nombre, h_dir.nombre, 'Sin Hato') AS hato_nombre,
         COALESCE((SELECT peso FROM registro_pesajes WHERE animal_id = a.id ORDER BY fecha_pesaje DESC LIMIT 1), 350.00) AS peso_actual,
         COALESCE(
           (SELECT tipo FROM alertas WHERE animal_id = a.id AND estado = 'ACTIVO' LIMIT 1),
@@ -514,6 +514,7 @@ async function handleMonitoreoQuery(req, res) {
       LEFT JOIN propietarios pr ON a.propietario_id = pr.id
       LEFT JOIN potreros p ON a.potrero_id = p.id
       LEFT JOIN hatos h ON p.hato_id = h.id
+      LEFT JOIN hatos h_dir ON a.hato_id = h_dir.id
       LEFT JOIN animales am ON a.madre_id = am.id
       LEFT JOIN animales ap ON a.padre_id = ap.id
       ${whereSQL}
@@ -2862,50 +2863,119 @@ router.post('/animales', async (req, res) => {
   const { collarId, propietarioId, potreroId, hatoId, areteVisual, raza, categoria, sexo, fotoUrl, numeroHierro, madreId, padreId, fechaNacimiento, tenantId } = req.body;
 
   let cleanPotreroId = potreroId && potreroId !== '' ? parseInt(potreroId, 10) : null;
-  const cleanHatoId = hatoId && hatoId !== '' && hatoId !== 'ALL' ? parseInt(hatoId, 10) : null;
+  let cleanHatoId = hatoId && hatoId !== '' && hatoId !== 'ALL' ? parseInt(hatoId, 10) : null;
   const cleanCollarId = collarId && String(collarId).trim() !== '' ? String(collarId).trim() : null;
-  const cleanPropietarioId = propietarioId && propietarioId !== '' ? parseInt(propietarioId, 10) : null;
+  let cleanPropietarioId = propietarioId && propietarioId !== '' ? parseInt(propietarioId, 10) : null;
   const cleanMadreId = madreId && madreId !== '' ? parseInt(madreId, 10) : null;
   const cleanPadreId = padreId && padreId !== '' ? parseInt(padreId, 10) : null;
   const cleanArete = String(areteVisual || `RES-${memAnimales.length + 1}`).trim().toUpperCase();
 
   try {
-    // Si no se proporcionó potreroId pero sí hatoId, buscar potrero por defecto del hato
+    // Si no se proporcionó hatoId pero sí potreroId, resolver hato desde potrero
+    if (!cleanHatoId && cleanPotreroId) {
+      try {
+        const hatoCheck = await pool.query('SELECT hato_id FROM potreros WHERE id = $1', [cleanPotreroId]);
+        if (hatoCheck.rows.length > 0 && hatoCheck.rows[0].hato_id) {
+          cleanHatoId = hatoCheck.rows[0].hato_id;
+        }
+      } catch (_) {}
+    }
+
+    // Si no se proporcionó potreroId pero sí hatoId, buscar potrero por defecto del hato si existe
     if (!cleanPotreroId && cleanHatoId) {
-      const potCheck = await pool.query('SELECT id FROM potreros WHERE hato_id = $1 ORDER BY id ASC LIMIT 1', [cleanHatoId]);
-      if (potCheck.rows.length > 0) {
-        cleanPotreroId = potCheck.rows[0].id;
+      try {
+        const potCheck = await pool.query('SELECT id FROM potreros WHERE hato_id = $1 ORDER BY id ASC LIMIT 1', [cleanHatoId]);
+        if (potCheck.rows.length > 0) {
+          cleanPotreroId = potCheck.rows[0].id;
+        }
+      } catch (_) {}
+    }
+
+    // Determinar tenantId válido comprobando existencia en tabla tenants
+    let resolvedTenantId = tenantId && tenantId !== 'ALL' && tenantId !== '' ? parseInt(tenantId, 10) : null;
+    if (resolvedTenantId) {
+      try {
+        const tCheck = await pool.query('SELECT id FROM tenants WHERE id = $1', [resolvedTenantId]);
+        if (tCheck.rows.length === 0) {
+          resolvedTenantId = null;
+        }
+      } catch (_) {
+        resolvedTenantId = null;
+      }
+    }
+    if (!resolvedTenantId && cleanPotreroId) {
+      try {
+        const tenantCheck = await pool.query('SELECT h.tenant_id FROM potreros p JOIN hatos h ON p.hato_id = h.id WHERE p.id = $1', [cleanPotreroId]);
+        if (tenantCheck.rows.length > 0 && tenantCheck.rows[0].tenant_id) {
+          resolvedTenantId = tenantCheck.rows[0].tenant_id;
+        }
+      } catch (_) {}
+    }
+    if (!resolvedTenantId && cleanHatoId) {
+      try {
+        const hatoTenantCheck = await pool.query('SELECT tenant_id FROM hatos WHERE id = $1', [cleanHatoId]);
+        if (hatoTenantCheck.rows.length > 0 && hatoTenantCheck.rows[0].tenant_id) {
+          resolvedTenantId = hatoTenantCheck.rows[0].tenant_id;
+        }
+      } catch (_) {}
+    }
+    if (!resolvedTenantId && cleanPropietarioId) {
+      try {
+        const propTenantCheck = await pool.query('SELECT tenant_id FROM propietarios WHERE id = $1', [cleanPropietarioId]);
+        if (propTenantCheck.rows.length > 0 && propTenantCheck.rows[0].tenant_id) {
+          resolvedTenantId = propTenantCheck.rows[0].tenant_id;
+        }
+      } catch (_) {}
+    }
+    if (!resolvedTenantId && cleanCollarId) {
+      try {
+        const colTenantCheck = await pool.query('SELECT tenant_id FROM collares WHERE id = $1', [cleanCollarId]);
+        if (colTenantCheck.rows.length > 0 && colTenantCheck.rows[0].tenant_id) {
+          resolvedTenantId = colTenantCheck.rows[0].tenant_id;
+        }
+      } catch (_) {}
+    }
+    if (!resolvedTenantId) {
+      try {
+        const defaultTenantQuery = await pool.query('SELECT id FROM tenants ORDER BY id ASC LIMIT 1');
+        resolvedTenantId = defaultTenantQuery.rows.length > 0 ? defaultTenantQuery.rows[0].id : null;
+      } catch (_) {
+        resolvedTenantId = null;
       }
     }
 
-    // Determinar tenantId a partir del potrero, hato, propietario, collar o payload
-    let resolvedTenantId = tenantId && tenantId !== 'ALL' ? parseInt(tenantId, 10) : null;
-    if (!resolvedTenantId && cleanPotreroId) {
-      const tenantCheck = await pool.query('SELECT h.tenant_id FROM potreros p JOIN hatos h ON p.hato_id = h.id WHERE p.id = $1', [cleanPotreroId]);
-      if (tenantCheck.rows.length > 0 && tenantCheck.rows[0].tenant_id) {
-        resolvedTenantId = tenantCheck.rows[0].tenant_id;
+    // Resolver propietario válido para evitar violación de FK
+    if (cleanPropietarioId) {
+      try {
+        const pCheck = await pool.query('SELECT id FROM propietarios WHERE id = $1', [cleanPropietarioId]);
+        if (pCheck.rows.length === 0) {
+          cleanPropietarioId = null;
+        }
+      } catch (_) {
+        cleanPropietarioId = null;
       }
     }
-    if (!resolvedTenantId && cleanHatoId) {
-      const hatoTenantCheck = await pool.query('SELECT tenant_id FROM hatos WHERE id = $1', [cleanHatoId]);
-      if (hatoTenantCheck.rows.length > 0 && hatoTenantCheck.rows[0].tenant_id) {
-        resolvedTenantId = hatoTenantCheck.rows[0].tenant_id;
-      }
+    if (!cleanPropietarioId && resolvedTenantId) {
+      try {
+        const defProp = await pool.query('SELECT id FROM propietarios WHERE tenant_id = $1 ORDER BY id ASC LIMIT 1', [resolvedTenantId]);
+        if (defProp.rows.length > 0) {
+          cleanPropietarioId = defProp.rows[0].id;
+        }
+      } catch (_) {}
     }
-    if (!resolvedTenantId && cleanPropietarioId) {
-      const propTenantCheck = await pool.query('SELECT tenant_id FROM propietarios WHERE id = $1', [cleanPropietarioId]);
-      if (propTenantCheck.rows.length > 0 && propTenantCheck.rows[0].tenant_id) {
-        resolvedTenantId = propTenantCheck.rows[0].tenant_id;
-      }
+    if (!cleanPropietarioId) {
+      try {
+        const anyProp = await pool.query('SELECT id FROM propietarios ORDER BY id ASC LIMIT 1');
+        if (anyProp.rows.length > 0) {
+          cleanPropietarioId = anyProp.rows[0].id;
+        }
+      } catch (_) {}
     }
-    if (!resolvedTenantId && cleanCollarId) {
-      const colTenantCheck = await pool.query('SELECT tenant_id FROM collares WHERE id = $1', [cleanCollarId]);
-      if (colTenantCheck.rows.length > 0 && colTenantCheck.rows[0].tenant_id) {
-        resolvedTenantId = colTenantCheck.rows[0].tenant_id;
-      }
-    }
-    if (!resolvedTenantId) {
-      resolvedTenantId = 1;
+
+    // Validar unicidad del arete visual
+    const checkArete = await pool.query('SELECT id FROM animales WHERE arete_visual = $1', [cleanArete]);
+    if (checkArete.rows.length > 0) {
+      return res.status(400).json({ error: `El arete visual '${cleanArete}' ya se encuentra registrado en el sistema.` });
     }
 
     // Validar si el collar ya está asignado a otro animal
@@ -2920,13 +2990,14 @@ router.post('/animales', async (req, res) => {
     }
 
     const query = `
-      INSERT INTO animales (collar_id, propietario_id, potrero_id, arete_visual, raza, categoria, sexo, foto_url, numero_hierro, madre_id, padre_id, fecha_nacimiento, tenant_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *;
+      INSERT INTO animales (collar_id, propietario_id, potrero_id, hato_id, arete_visual, raza, categoria, sexo, foto_url, numero_hierro, madre_id, padre_id, fecha_nacimiento, tenant_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *;
     `;
     const { rows } = await pool.query(query, [
       cleanCollarId, 
       cleanPropietarioId, 
       cleanPotreroId, 
+      cleanHatoId,
       cleanArete, 
       raza || 'Brahman', 
       categoria || 'Novillo', 
@@ -2939,7 +3010,7 @@ router.post('/animales', async (req, res) => {
       resolvedTenantId
     ]);
 
-    // Sincronizar estado del collar a ACTIVO
+    // Sincronizar estado del collar a ACTIVO si se asignó uno
     if (cleanCollarId && rows.length > 0) {
       await pool.query("UPDATE collares SET estado = 'ACTIVO', tenant_id = $1 WHERE id = $2;", [resolvedTenantId, cleanCollarId]);
       await pool.query(
@@ -2947,11 +3018,17 @@ router.post('/animales', async (req, res) => {
          VALUES ($1, 'DESACTIVADO', 'ACTIVO', $2, $3, $4);`,
         [cleanCollarId, rows[0].id, resolvedTenantId, `Vinculado al animal arete ${cleanArete}`]
       );
+      const cIdx = memCollares.findIndex(c => c.id === cleanCollarId);
+      if (cIdx !== -1) {
+        memCollares[cIdx].estado = 'ACTIVO';
+        memCollares[cIdx].animal_arete = cleanArete;
+        memCollares[cIdx].animal_raza = raza || 'Brahman';
+      }
     }
 
-    // Actualizar también almacén en memoria
+    // Mantener sincronizado memAnimales
     const pot = memPotreros.find(p => p.id === cleanPotreroId) || {};
-    const hato = memHatos.find(h => h.id === (pot.hato_id || cleanHatoId)) || {};
+    const hato = memHatos.find(h => h.id === (cleanHatoId || pot.hato_id)) || {};
     const prop = memPropietarios.find(pr => pr.id === cleanPropietarioId) || {};
 
     const memObj = {
@@ -2962,92 +3039,36 @@ router.post('/animales', async (req, res) => {
       categoria: categoria || 'Novillo',
       sexo: sexo || 'Macho',
       foto_url: fotoUrl || null,
-      numero_hierro: numeroHierro || 'H-001',
+      numero_hierro: numeroHierro || null,
       tenant_id: resolvedTenantId,
-      tenant_nombre: hato.nombre || 'Hacienda La Esperanza',
-      propietario_id: cleanPropietarioId || 1,
-      propietario_nombre: prop.nombre || 'Don Fernando Álvarez',
-      fecha_nacimiento: fechaNacimiento || '2024-01-01',
+      tenant_nombre: hato.nombre || 'Organización Ganadera',
+      propietario_id: cleanPropietarioId,
+      propietario_nombre: prop.nombre || 'Propietario',
+      fecha_nacimiento: fechaNacimiento || new Date().toISOString().split('T')[0],
       collar_id: cleanCollarId,
-      nivel_bateria: cleanCollarId ? 95 : 100,
-      senal_celular: cleanCollarId ? 4 : 5,
+      nivel_bateria: cleanCollarId ? 100 : null,
+      senal_celular: cleanCollarId ? 5 : null,
       ultima_conexion: new Date().toISOString(),
-      latitud: cleanCollarId ? 8.5385 : null,
-      longitud: cleanCollarId ? -70.3580 : null,
-      potrero_id: cleanPotreroId || null,
+      latitud: null,
+      longitud: null,
+      potrero_id: cleanPotreroId,
       potrero_nombre: pot.nombre || 'Sin Potrero',
       potrero_asignado_nombre: pot.nombre || 'Sin Potrero',
-      hato_id: hato.id || pot.hato_id || cleanHatoId || null,
+      hato_id: cleanHatoId,
       hato_nombre: hato.nombre || 'Sin Hato',
-      peso_actual: 380.0,
+      peso_actual: 350.0,
       estado_alerta: 'NORMAL',
       estado_cerca: cleanCollarId ? 'DENTRO' : 'SIN_MONITOREO',
       activo: true
     };
     memAnimales.push(memObj);
-    if (cleanCollarId) {
-      const cIdx = memCollares.findIndex(c => c.id === cleanCollarId);
-      if (cIdx !== -1) {
-        memCollares[cIdx].estado = 'ACTIVO';
-        memCollares[cIdx].animal_arete = cleanArete;
-        memCollares[cIdx].animal_raza = raza || 'Brahman';
-      }
-    }
 
     notifyDataUpdated(req, 'animal_creado', { animal: rows[0] });
     notifyDataUpdated(req, 'animales');
     res.status(201).json(rows[0]);
   } catch (err) {
-    console.warn('[Post Animales Fallback Memory]', err.message);
-    const pot = memPotreros.find(p => p.id === cleanPotreroId) || memPotreros[0] || {};
-    const hato = memHatos.find(h => h.id === (pot.hato_id || cleanHatoId)) || memHatos[0] || {};
-    const prop = memPropietarios.find(pr => pr.id === cleanPropietarioId) || memPropietarios[0] || {};
-    const nextId = memAnimales.length > 0 ? Math.max(...memAnimales.map(a => a.id || a.animal_id || 0)) + 1 : 1;
-
-    const newAnimal = {
-      id: nextId,
-      animal_id: nextId,
-      arete_visual: cleanArete,
-      raza: raza || 'Brahman',
-      categoria: categoria || 'Novillo',
-      sexo: sexo || 'Macho',
-      foto_url: fotoUrl || null,
-      numero_hierro: numeroHierro || 'H-001',
-      tenant_id: tenantId ? parseInt(tenantId, 10) : 1,
-      tenant_nombre: hato.nombre || 'Hacienda La Esperanza',
-      propietario_id: cleanPropietarioId || 1,
-      propietario_nombre: prop.nombre || 'Don Fernando Álvarez',
-      fecha_nacimiento: fechaNacimiento || '2024-01-01',
-      collar_id: cleanCollarId,
-      nivel_bateria: cleanCollarId ? 95 : 100,
-      senal_celular: cleanCollarId ? 4 : 5,
-      ultima_conexion: new Date().toISOString(),
-      latitud: cleanCollarId ? 8.5385 : null,
-      longitud: cleanCollarId ? -70.3580 : null,
-      potrero_id: cleanPotreroId || pot.id || null,
-      potrero_nombre: pot.nombre || 'Sin Potrero',
-      potrero_asignado_nombre: pot.nombre || 'Sin Potrero',
-      hato_id: pot.hato_id || hato.id || cleanHatoId || null,
-      hato_nombre: hato.nombre || 'Sin Hato',
-      peso_actual: 380.0,
-      estado_alerta: 'NORMAL',
-      estado_cerca: cleanCollarId ? 'DENTRO' : 'SIN_MONITOREO',
-      activo: true
-    };
-    memAnimales.push(newAnimal);
-
-    if (cleanCollarId) {
-      const cIdx = memCollares.findIndex(c => c.id === cleanCollarId);
-      if (cIdx !== -1) {
-        memCollares[cIdx].estado = 'ACTIVO';
-        memCollares[cIdx].animal_arete = cleanArete;
-        memCollares[cIdx].animal_raza = raza || 'Brahman';
-      }
-    }
-
-    notifyDataUpdated(req, 'animal_creado', { animal: newAnimal });
-    notifyDataUpdated(req, 'animales');
-    res.status(201).json(newAnimal);
+    console.error('[Post Animales Error]', err.message);
+    res.status(500).json({ error: 'Error al registrar animal en la base de datos: ' + err.message });
   }
 });
 
