@@ -254,6 +254,16 @@ export async function registrarAnimal(payload) {
   return data;
 }
 
+export async function desvincularCollarAnimal(animalId) {
+  const res = await fetch(`${API_BASE}/animales/${animalId}/desvincular-collar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error al desvincular collar');
+  return data;
+}
+
 export async function registrarPesaje(payload) {
   const res = await fetch(`${API_BASE}/pesajes`, {
     method: 'POST',

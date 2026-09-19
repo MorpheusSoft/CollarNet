@@ -29,7 +29,8 @@ import {
   LogOut,
   AlertTriangle,
   FileSpreadsheet,
-  FileText
+  FileText,
+  Unlink
 } from 'lucide-react';
 import { 
   registrarAnimal, 
@@ -38,7 +39,8 @@ import {
   fetchAnimalGenealogia,
   traspasarAnimal,
   darBajaAnimal,
-  fetchAnimalHistorialPropietarios
+  fetchAnimalHistorialPropietarios,
+  desvincularCollarAnimal
 } from '../services/apiService';
 import { exportFichaAnimalPDF, exportInventarioGanaderoExcel } from '../services/reportExportService';
 import { fireQuickSuccess, fireCelebration } from '../services/confettiHelper';
@@ -276,6 +278,26 @@ export default function LivestockTable({
     }
   };
 
+  // Desvincular collar IoT de un animal
+  const handleDesvincularCollar = async (animalId, collarId, areteVisual) => {
+    if (!window.confirm(`¿Deseas desvincular el collar "${collarId}" de la res arete "${areteVisual}"? El animal pasará de inmediato a estado "SIN MONITOREO" y el collar quedará disponible en inventario.`)) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await desvincularCollarAnimal(animalId);
+      fireQuickSuccess();
+      if (selectedAnimalDetail && selectedAnimalDetail.id === animalId) {
+        setSelectedAnimalDetail(prev => prev ? { ...prev, collar_id: null, estado_cerca: 'SIN_MONITOREO' } : null);
+      }
+      await onRefreshData();
+    } catch (err) {
+      alert('Error al desvincular collar: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 1. Submit Animal
   const handleAnimalSubmit = async (e) => {
     e.preventDefault();
@@ -454,6 +476,17 @@ export default function LivestockTable({
       >
         <ArrowRightLeft className="w-3.5 h-3.5" />
       </button>
+
+      {row.collar_id && (
+        <button
+          type="button"
+          onClick={() => handleDesvincularCollar(row.id, row.collar_id, row.arete_visual)}
+          className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs transition-all"
+          title={`Desvincular collar IoT (${row.collar_id}) de esta res`}
+        >
+          <Unlink className="w-3.5 h-3.5" />
+        </button>
+      )}
 
       <button
         type="button"
@@ -1194,6 +1227,16 @@ export default function LivestockTable({
                   <Radio size={12} className="text-cyan-400" />
                   {selectedAnimalDetail.collar_id || 'Sin Collar'}
                 </span>
+                {selectedAnimalDetail.collar_id && (
+                  <button
+                    type="button"
+                    onClick={() => handleDesvincularCollar(selectedAnimalDetail.id, selectedAnimalDetail.collar_id, selectedAnimalDetail.arete_visual)}
+                    className="mt-1 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-semibold flex items-center gap-1 transition-all"
+                    title="Desvincular collar IoT de esta res"
+                  >
+                    <Unlink size={10} /> Quitar Collar
+                  </button>
+                )}
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Peso Actual:</span>

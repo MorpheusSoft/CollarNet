@@ -3073,6 +3073,69 @@ router.post('/animales', async (req, res) => {
 });
 
 /**
+ * POST /api/animales/:id/desvincular-collar
+ * Desvincula el collar IoT de una res, pasando el animal a 'SIN_MONITOREO' y liberando el collar
+ */
+router.post('/animales/:id/desvincular-collar', async (req, res) => {
+  const { id } = req.params;
+  const numId = parseInt(id, 10);
+  try {
+    const { rows: animalRows } = await pool.query('SELECT id, collar_id, arete_visual, tenant_id FROM animales WHERE id = $1', [numId]);
+    if (animalRows.length === 0) {
+      return res.status(404).json({ error: 'Animal no encontrado' });
+    }
+    const animal = animalRows[0];
+    const oldCollarId = animal.collar_id;
+
+    if (!oldCollarId) {
+      return res.json({ success: true, message: 'El animal no tiene collar vinculado.' });
+    }
+
+    // 1. Desvincular en animales
+    await pool.query('UPDATE animales SET collar_id = NULL WHERE id = $1', [numId]);
+
+    // 2. Liberar collar a estado DESACTIVADO en collares
+    await pool.query("UPDATE collares SET estado = 'DESACTIVADO' WHERE id = $1", [oldCollarId]);
+
+    // 3. Registrar en historial de auditoría
+    await pool.query(`
+      INSERT INTO historial_collares (collar_id, estado_anterior, estado_nuevo, animal_id_anterior, motivo)
+      VALUES ($1, 'ACTIVO', 'DESACTIVADO', $2, 'Desvinculación manual de res');
+    `, [oldCollarId, numId]);
+
+    // 4. Resolver alertas activas de geocerca para este animal
+    await pool.query(`
+      UPDATE alertas SET estado = 'RESUELTO', fecha_fin = NOW()
+      WHERE animal_id = $1 AND estado = 'ACTIVO';
+    `, [numId]);
+
+    // 5. Actualizar en memoria
+    const a = memAnimales.find(m => m.id === numId || m.animal_id === numId);
+    if (a) {
+      a.collar_id = null;
+      a.estado_cerca = 'SIN_MONITOREO';
+      a.latitud = null;
+      a.longitud = null;
+      a.nivel_bateria = null;
+      a.senal_celular = null;
+    }
+    const cIdx = memCollares.findIndex(c => c.id === oldCollarId);
+    if (cIdx !== -1) {
+      memCollares[cIdx].estado = 'DESACTIVADO';
+      delete memCollares[cIdx].animal_arete;
+      delete memCollares[cIdx].animal_id;
+    }
+
+    notifyDataUpdated(req, 'animales', { animalId: numId });
+    notifyDataUpdated(req, 'collares');
+    res.json({ success: true, message: `Collar ${oldCollarId} desvinculado exitosamente de la res ${animal.arete_visual}` });
+  } catch (err) {
+    console.error('[Desvincular Collar Error]', err);
+    res.status(500).json({ error: 'Error al desvincular collar: ' + err.message });
+  }
+});
+
+/**
  * PUT /api/animales/:id
  * Actualiza los datos de un animal
  */
