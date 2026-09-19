@@ -391,15 +391,17 @@ export default function PropietariosView({ onOpenProjection, onRefreshData }) {
 
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-1">Documento de Identidad (C.I. / RIF) *</label>
-            <InputMask
-              mask="a-99999999-9"
+            <input
+              type="text"
               value={formData.documento}
-              onChange={(e) => setFormData({ ...formData, documento: e.value })}
-              placeholder="V-12345678-0"
+              onChange={(e) => setFormData({ ...formData, documento: e.target.value.toUpperCase() })}
+              placeholder="Ej: V-11608546 (C.I.) o V11608546-8 (RIF)"
               required
-              className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2.5 text-xs text-white outline-none focus:border-blue-500 font-mono"
+              className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2.5 text-xs text-white outline-none focus:border-blue-500 font-mono tracking-wide"
             />
-            <span className="text-[10px] text-slate-500 mt-0.5 block">Formato: Letra (V, J, E, G) - Cédula/RIF de 8 dígitos - Dígito</span>
+            <span className="text-[10px] text-slate-400 mt-0.5 block">
+              Permite registrar Cédula de Identidad (ej: V-11608546) o RIF (ej: V11608546-8, J-12345678-9)
+            </span>
           </div>
 
           <div>
@@ -510,13 +512,17 @@ export default function PropietariosView({ onOpenProjection, onRefreshData }) {
 
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-1">Documento de Identidad (C.I. / RIF) *</label>
-            <InputMask
-              mask="a-99999999-9"
+            <input
+              type="text"
               value={editFormData.documento}
-              onChange={(e) => setEditFormData({ ...editFormData, documento: e.value })}
+              onChange={(e) => setEditFormData({ ...editFormData, documento: e.target.value.toUpperCase() })}
+              placeholder="Ej: V-11608546 (C.I.) o V11608546-8 (RIF)"
               required
-              className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2.5 text-xs text-white outline-none focus:border-emerald-500 font-mono"
+              className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2.5 text-xs text-white outline-none focus:border-emerald-500 font-mono tracking-wide"
             />
+            <span className="text-[10px] text-slate-400 mt-0.5 block">
+              Permite registrar Cédula de Identidad (ej: V-11608546) o RIF (ej: V11608546-8, J-12345678-9)
+            </span>
           </div>
 
           <div>
