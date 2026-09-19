@@ -87,13 +87,166 @@ function pointInPolygon(point, polygon) {
 // ==========================================
 // ALMACÉN EN MEMORIA GLOBAL PARA DESARROLLO LOCAL & FALLBACK
 // ==========================================
-const memTenants = [];
-const memLotes = [];
-const memCollares = [];
+const memTenants = [
+  { id: 1, nombre: 'Hacienda Santa Inés', rif: 'J-12345678-0', contacto: 'Luis Zambrano', telefono: '+58 412 111 2233', email: 'luis@collarnet.com', total_collares: 12, permite_crear_potreros: true, activo: true, creado_en: new Date().toISOString() }
+];
+
+const memPropietarios = [
+  { id: 1, nombre: 'Don Fernando Álvarez', documento_identidad: 'V-12345678', telefono: '+58 412 111 2233', correo: 'fernando@collarnet.com', creado_en: new Date().toISOString() }
+];
+
+const memHatos = [
+  {
+    id: 1,
+    nombre: 'Hato La Esperanza',
+    tenant_id: 1,
+    geojson: {
+      type: 'Polygon',
+      coordinates: [[
+        [-70.3620, 8.5350],
+        [-70.3520, 8.5350],
+        [-70.3520, 8.5420],
+        [-70.3620, 8.5420],
+        [-70.3620, 8.5350]
+      ]]
+    },
+    vertices: [
+      [8.5350, -70.3620],
+      [8.5350, -70.3520],
+      [8.5420, -70.3520],
+      [8.5420, -70.3620]
+    ],
+    area_hectareas: 85.4,
+    creado_en: new Date().toISOString()
+  }
+];
+
+const memPotreros = [
+  {
+    id: 1,
+    hato_id: 1,
+    nombre: 'Potrero Norte 1',
+    estado: 'ABIERTO',
+    total_animales: 25,
+    dias_descanso: 0,
+    dias_ocupacion: 4,
+    capacidad_max_cabezas: 50,
+    margen_advertencia_metros: 10,
+    calidad_pasto: 'Excelente (2.8k kg/ha)',
+    geojson: {
+      type: 'Polygon',
+      coordinates: [[
+        [-70.3600, 8.5375],
+        [-70.3550, 8.5375],
+        [-70.3550, 8.5410],
+        [-70.3600, 8.5410],
+        [-70.3600, 8.5375]
+      ]]
+    },
+    vertices: [
+      [8.5375, -70.3600],
+      [8.5375, -70.3550],
+      [8.5410, -70.3550],
+      [8.5410, -70.3600]
+    ],
+    creado_en: new Date().toISOString()
+  },
+  {
+    id: 2,
+    hato_id: 1,
+    nombre: 'Potrero Sur 2',
+    estado: 'DESCANSO',
+    total_animales: 0,
+    dias_descanso: 18,
+    dias_ocupacion: 0,
+    capacidad_max_cabezas: 40,
+    margen_advertencia_metros: 10,
+    calidad_pasto: 'En Recuperación (1.9k kg/ha)',
+    geojson: {
+      type: 'Polygon',
+      coordinates: [[
+        [-70.3600, 8.5350],
+        [-70.3550, 8.5350],
+        [-70.3550, 8.5375],
+        [-70.3600, 8.5375],
+        [-70.3600, 8.5350]
+      ]]
+    },
+    vertices: [
+      [8.5350, -70.3600],
+      [8.5350, -70.3550],
+      [8.5375, -70.3550],
+      [8.5375, -70.3600]
+    ],
+    creado_en: new Date().toISOString()
+  },
+  {
+    id: 3,
+    hato_id: 1,
+    nombre: 'Potrero Este 3',
+    estado: 'ABIERTO',
+    total_animales: 20,
+    dias_descanso: 0,
+    dias_ocupacion: 2,
+    capacidad_max_cabezas: 45,
+    margen_advertencia_metros: 10,
+    calidad_pasto: 'Óptima (3.1k kg/ha)',
+    geojson: {
+      type: 'Polygon',
+      coordinates: [[
+        [-70.3550, 8.5350],
+        [-70.3520, 8.5350],
+        [-70.3520, 8.5410],
+        [-70.3550, 8.5410],
+        [-70.3550, 8.5350]
+      ]]
+    },
+    vertices: [
+      [8.5350, -70.3550],
+      [8.5350, -70.3520],
+      [8.5410, -70.3520],
+      [8.5410, -70.3550]
+    ],
+    creado_en: new Date().toISOString()
+  }
+];
+
+const memLotes = [
+  {
+    id: 1,
+    codigo_lote: 'LOT-2026-001',
+    proveedor: 'CowIA Hardware Labs Inc.',
+    fecha_recepcion: '2026-01-15',
+    cantidad_total: 100,
+    version_hardware: 'HW-v2.1',
+    version_firmware_inicial: '1.2.0',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    notas: 'Lote principal de collares GPS solares con telemetría LoRa/Celular',
+    collares_registrados: 12,
+    collares_activos: 7,
+    collares_en_almacen: 5,
+    collares_en_revision: 0,
+    creado_en: new Date().toISOString()
+  }
+];
+
+const memCollares = [
+  { id: 'COL-0022', numero_sim: '+584129990022', imei: '860123450000022', mac_address: '00:1A:2B:3C:4D:22', numero_serie: 'SN-COL-0022', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Toro G-108', nivel_bateria: 98, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'G-108', animal_raza: 'Guzerá', creado_en: new Date().toISOString() },
+  { id: 'COL-0008', numero_sim: '+584129990008', imei: '860123450000008', mac_address: '00:1A:2B:3C:4D:08', numero_serie: 'SN-COL-0008', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Toro T-015', nivel_bateria: 92, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'T-015', animal_raza: 'Senepol', creado_en: new Date().toISOString() },
+  { id: 'COL-0003', numero_sim: '+584129990003', imei: '860123450000003', mac_address: '00:1A:2B:3C:4D:03', numero_serie: 'SN-COL-0003', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Novilla V-019', nivel_bateria: 78, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'V-019', animal_raza: 'Brahman', creado_en: new Date().toISOString() },
+  { id: 'COL-0015', numero_sim: '+584129990015', imei: '860123450000015', mac_address: '00:1A:2B:3C:4D:15', numero_serie: 'SN-COL-0015', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Maute M-088', nivel_bateria: 88, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'M-088', animal_raza: 'Brahman Gris', creado_en: new Date().toISOString() },
+  { id: 'collar_test_001', numero_sim: '+584129990001', imei: '860123450000001', mac_address: '00:1A:2B:3C:4D:01', numero_serie: 'SN-TEST-0001', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Novillo NEL-042', nivel_bateria: 94, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'NEL-042', animal_raza: 'Nelore', creado_en: new Date().toISOString() },
+  { id: 'COL-0999', numero_sim: '+584129990999', imei: '860123450000999', mac_address: '00:1A:2B:3C:4D:99', numero_serie: 'SN-COL-0999', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Vaca V-999', nivel_bateria: 76, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'V-999', animal_raza: 'Brahman Mestizo', creado_en: new Date().toISOString() },
+  { id: 'COL-0014', numero_sim: '+584129990014', imei: '860123450000014', mac_address: '00:1A:2B:3C:4D:14', numero_serie: 'SN-COL-0014', estado: 'ACTIVO', lote_id: 1, tenant_id: 1, ubicacion_almacen: 'Hacienda Santa Inés', motivo_estado: 'Asignado a Vaca V-042', nivel_bateria: 95, senal_celular: 4, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: true, animal_arete: 'V-042', animal_raza: 'Brahman', creado_en: new Date().toISOString() },
+  { id: 'COL-0101', numero_sim: '+584129990101', imei: '860123450000101', mac_address: '00:1A:2B:3C:4D:A1', numero_serie: 'SN-COL-0101', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 100, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() },
+  { id: 'COL-0102', numero_sim: '+584129990102', imei: '860123450000102', mac_address: '00:1A:2B:3C:4D:A2', numero_serie: 'SN-COL-0102', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 100, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() },
+  { id: 'COL-0103', numero_sim: '+584129990103', imei: '860123450000103', mac_address: '00:1A:2B:3C:4D:A3', numero_serie: 'SN-COL-0103', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 100, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() },
+  { id: 'COL-0104', numero_sim: '+584129990104', imei: '860123450000104', mac_address: '00:1A:2B:3C:4D:A4', numero_serie: 'SN-COL-0104', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 98, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() },
+  { id: 'COL-0105', numero_sim: '+584129990105', imei: '860123450000105', mac_address: '00:1A:2B:3C:4D:A5', numero_serie: 'SN-COL-0105', estado: 'EN_ALMACEN', lote_id: 1, tenant_id: null, ubicacion_almacen: 'Almacén Central CowIA', motivo_estado: 'Stock disponible para asignación', nivel_bateria: 99, senal_celular: 5, ultima_conexion: new Date().toISOString(), version_firmware: '1.2.0', activo: false, creado_en: new Date().toISOString() }
+];
+
 const memHistorial = [];
-const memPropietarios = [];
-const memHatos = [];
-const memPotreros = [];
 
 let memArreoActivo = {
   activo: false,
@@ -169,7 +322,261 @@ const memUsuarios = [
   }
 ];
 
-const memAnimales = [];
+const memAnimales = [
+  {
+    id: 1,
+    animal_id: 1,
+    arete_visual: 'V-042',
+    raza: 'Brahman',
+    categoria: 'Vaca',
+    sexo: 'H',
+    foto_url: '',
+    numero_hierro: 'H-042',
+    madre_id: '',
+    padre_id: '',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: 1,
+    propietario_nombre: 'Don Fernando Álvarez',
+    fecha_nacimiento: '2022-05-14',
+    edad_dias: 1500,
+    collar_id: 'COL-0014',
+    numero_sim: '+584129990014',
+    nivel_bateria: 95,
+    senal_celular: 4,
+    ultima_conexion: new Date().toISOString(),
+    version_firmware: '1.2.0',
+    collar_activo: true,
+    latitud: 8.5385,
+    longitud: -70.3580,
+    potrero_id: 1,
+    potrero_nombre: 'Potrero Norte 1',
+    potrero_asignado_nombre: 'Potrero Norte 1',
+    potrero_margen_advertencia: 10,
+    hato_id: 1,
+    hato_nombre: 'Hato La Esperanza',
+    peso_actual: 460.0,
+    estado_alerta: 'NORMAL',
+    estado_cerca: 'DENTRO'
+  },
+  {
+    id: 3,
+    animal_id: 3,
+    arete_visual: 'G-108',
+    raza: 'Guzerá',
+    categoria: 'Toro',
+    sexo: 'M',
+    foto_url: '',
+    numero_hierro: 'H-108',
+    madre_id: '',
+    padre_id: '',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: 1,
+    propietario_nombre: 'Don Fernando Álvarez',
+    fecha_nacimiento: '2021-08-20',
+    edad_dias: 1800,
+    collar_id: 'COL-0022',
+    numero_sim: '+584129990022',
+    nivel_bateria: 98,
+    senal_celular: 4,
+    ultima_conexion: new Date().toISOString(),
+    version_firmware: '1.2.0',
+    collar_activo: true,
+    latitud: 8.5375,
+    longitud: -70.3590,
+    potrero_id: 3,
+    potrero_nombre: 'Potrero Este 3',
+    potrero_asignado_nombre: 'Potrero Este 3',
+    potrero_margen_advertencia: 10,
+    hato_id: 1,
+    hato_nombre: 'Hato La Esperanza',
+    peso_actual: 720.0,
+    estado_alerta: 'NORMAL',
+    estado_cerca: 'DENTRO'
+  },
+  {
+    id: 4,
+    animal_id: 4,
+    arete_visual: 'T-015',
+    raza: 'Senepol',
+    categoria: 'Toro',
+    sexo: 'M',
+    foto_url: '',
+    numero_hierro: 'H-015',
+    madre_id: '',
+    padre_id: '',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: 1,
+    propietario_nombre: 'Don Fernando Álvarez',
+    fecha_nacimiento: '2022-02-12',
+    edad_dias: 1600,
+    collar_id: 'COL-0008',
+    numero_sim: '+584129990008',
+    nivel_bateria: 92,
+    senal_celular: 4,
+    ultima_conexion: new Date().toISOString(),
+    version_firmware: '1.2.0',
+    collar_activo: true,
+    latitud: 8.5360,
+    longitud: -70.3560,
+    potrero_id: 1,
+    potrero_nombre: 'Potrero Norte 1',
+    potrero_asignado_nombre: 'Potrero Norte 1',
+    potrero_margen_advertencia: 10,
+    hato_id: 1,
+    hato_nombre: 'Hato La Esperanza',
+    peso_actual: 640.0,
+    estado_alerta: 'NORMAL',
+    estado_cerca: 'DENTRO'
+  },
+  {
+    id: 5,
+    animal_id: 5,
+    arete_visual: 'V-019',
+    raza: 'Brahman',
+    categoria: 'Novilla',
+    sexo: 'H',
+    foto_url: '',
+    numero_hierro: 'H-019B',
+    madre_id: '',
+    padre_id: '',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: 1,
+    propietario_nombre: 'Don Fernando Álvarez',
+    fecha_nacimiento: '2023-06-10',
+    edad_dias: 1100,
+    collar_id: 'COL-0003',
+    numero_sim: '+584129990003',
+    nivel_bateria: 78,
+    senal_celular: 4,
+    ultima_conexion: new Date().toISOString(),
+    version_firmware: '1.2.0',
+    collar_activo: true,
+    latitud: 8.5355,
+    longitud: -70.3565,
+    potrero_id: 2,
+    potrero_nombre: 'Potrero Sur 2',
+    potrero_asignado_nombre: 'Potrero Sur 2',
+    potrero_margen_advertencia: 10,
+    hato_id: 1,
+    hato_nombre: 'Hato La Esperanza',
+    peso_actual: 380.0,
+    estado_alerta: 'NORMAL',
+    estado_cerca: 'DENTRO'
+  },
+  {
+    id: 6,
+    animal_id: 6,
+    arete_visual: 'M-088',
+    raza: 'Brahman Gris',
+    categoria: 'Maute',
+    sexo: 'M',
+    foto_url: '',
+    numero_hierro: 'H-088',
+    madre_id: '',
+    padre_id: '',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: 1,
+    propietario_nombre: 'Don Fernando Álvarez',
+    fecha_nacimiento: '2024-05-01',
+    edad_dias: 600,
+    collar_id: 'COL-0015',
+    numero_sim: '+584129990015',
+    nivel_bateria: 88,
+    senal_celular: 4,
+    ultima_conexion: new Date().toISOString(),
+    version_firmware: '1.2.0',
+    collar_activo: true,
+    latitud: 8.5370,
+    longitud: -70.3585,
+    potrero_id: 3,
+    potrero_nombre: 'Potrero Este 3',
+    potrero_asignado_nombre: 'Potrero Este 3',
+    potrero_margen_advertencia: 10,
+    hato_id: 1,
+    hato_nombre: 'Hato La Esperanza',
+    peso_actual: 295.0,
+    estado_alerta: 'NORMAL',
+    estado_cerca: 'DENTRO'
+  },
+  {
+    id: 7,
+    animal_id: 7,
+    arete_visual: 'NEL-042',
+    raza: 'Nelore',
+    categoria: 'Novillo',
+    sexo: 'M',
+    foto_url: '',
+    numero_hierro: 'H-042',
+    madre_id: '',
+    padre_id: '',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: 1,
+    propietario_nombre: 'Don Fernando Álvarez',
+    fecha_nacimiento: '2024-03-15',
+    edad_dias: 900,
+    collar_id: 'collar_test_001',
+    numero_sim: '+584129990001',
+    nivel_bateria: 94,
+    senal_celular: 4,
+    ultima_conexion: new Date().toISOString(),
+    version_firmware: '1.2.0',
+    collar_activo: true,
+    latitud: 8.5380,
+    longitud: -70.3575,
+    potrero_id: 1,
+    potrero_nombre: 'Potrero Norte 1',
+    potrero_asignado_nombre: 'Potrero Norte 1',
+    potrero_margen_advertencia: 10,
+    hato_id: 1,
+    hato_nombre: 'Hato La Esperanza',
+    peso_actual: 420.5,
+    estado_alerta: 'NORMAL',
+    estado_cerca: 'DENTRO'
+  },
+  {
+    id: 999,
+    animal_id: 999,
+    arete_visual: 'V-999',
+    nombre_alias: 'Mariposa (EXTRAVIADA 100m)',
+    raza: 'Brahman Mestizo',
+    categoria: 'Vaca Extraviada',
+    sexo: 'H',
+    foto_url: '',
+    numero_hierro: 'H-999',
+    madre_id: '',
+    padre_id: '',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: 1,
+    propietario_nombre: 'Don Fernando Álvarez',
+    fecha_nacimiento: '2023-01-10',
+    edad_dias: 1200,
+    collar_id: 'COL-0999',
+    numero_sim: '+584129990999',
+    nivel_bateria: 76,
+    senal_celular: 4,
+    ultima_conexion: new Date().toISOString(),
+    version_firmware: '1.2.0',
+    collar_activo: true,
+    latitud: 8.5395,
+    longitud: -70.3570,
+    potrero_id: null,
+    potrero_nombre: '¡FUERA DE POTRERO! (100m)',
+    potrero_asignado_nombre: 'Potrero Norte 1',
+    potrero_margen_advertencia: 10,
+    hato_id: 1,
+    hato_nombre: 'Hato La Esperanza',
+    peso_actual: 485.0,
+    estado_alerta: 'CRITICA_FUERA_CERCA',
+    estado_cerca: 'FUERA'
+  }
+];
 
 function _updateMemAnimalWeight(id, arete, peso) {
   const numPeso = parseFloat(peso) || 400.0;
