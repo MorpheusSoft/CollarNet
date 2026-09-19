@@ -219,7 +219,7 @@ class MockDB {
     }
 
     // 2. GET /api/animales/monitoreo
-    if (/FROM animales a\s+INNER JOIN collares c/i.test(q) && /potreros p/i.test(q)) {
+    if (/FROM animales a\s+(?:INNER|LEFT)\s+JOIN collares c/i.test(q) && /potreros p/i.test(q)) {
       const rows = this.animales.map(a => {
         const c = this.collares.find(col => col.id === a.collar_id) || {};
         const p = this.potreros.find(pot => pot.id === a.potrero_id);

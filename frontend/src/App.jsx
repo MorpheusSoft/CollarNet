@@ -305,6 +305,8 @@ export default function App() {
               geocercas={geocercas}
               tenants={tenants}
               currentUser={user}
+              selectedTenantId={selectedTenantId}
+              selectedHatoId={selectedHatoId}
               onRefreshData={loadAllData}
               onOpenProjection={handleOpenProjection}
             />

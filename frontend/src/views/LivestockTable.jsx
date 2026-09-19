@@ -49,13 +49,35 @@ export default function LivestockTable({
   geocercas = { hatos: [], potreros: [] }, 
   tenants = [],
   currentUser,
+  selectedTenantId,
+  selectedHatoId,
   onRefreshData,
   onOpenProjection 
 }) {
   const [globalFilter, setGlobalFilter] = useState('');
-  const [selectedTenantFilter, setSelectedTenantFilter] = useState('ALL');
-  const [selectedHatoFilter, setSelectedHatoFilter] = useState('ALL');
+  const [selectedTenantFilter, setSelectedTenantFilter] = useState(() => {
+    if (selectedTenantId && selectedTenantId !== 'ALL') return String(selectedTenantId);
+    if (currentUser?.tenantId) return String(currentUser.tenantId);
+    return 'ALL';
+  });
+  const [selectedHatoFilter, setSelectedHatoFilter] = useState(() => {
+    if (selectedHatoId && selectedHatoId !== 'ALL') return String(selectedHatoId);
+    return 'ALL';
+  });
   const [selectedPropietarioFilter, setSelectedPropietarioFilter] = useState('ALL');
+
+  // Sincronizar filtros si cambian las propiedades globales del Header/App
+  useEffect(() => {
+    if (selectedTenantId !== undefined) {
+      setSelectedTenantFilter(selectedTenantId || 'ALL');
+    }
+  }, [selectedTenantId]);
+
+  useEffect(() => {
+    if (selectedHatoId !== undefined) {
+      setSelectedHatoFilter(selectedHatoId || 'ALL');
+    }
+  }, [selectedHatoId]);
 
   // Dialog Visibility
   const [showAnimalDialog, setShowAnimalDialog] = useState(false);
@@ -66,21 +88,35 @@ export default function LivestockTable({
   const [genealogyData, setGenealogyData] = useState(null);
   const [loadingGenealogy, setLoadingGenealogy] = useState(false);
 
+  // Helper para inicializar el formulario de animal con el contexto activo
+  const getInitialAnimalForm = () => {
+    const defaultTenant = (currentUser?.tenantId && String(currentUser.tenantId)) || 
+      (selectedTenantFilter !== 'ALL' ? String(selectedTenantFilter) : '') ||
+      (tenants.length > 0 ? String(tenants[0].id) : '1');
+
+    const defaultHato = (selectedHatoFilter !== 'ALL' ? String(selectedHatoFilter) : '') ||
+      (geocercas?.hatos?.length > 0 ? String(geocercas.hatos[0].id) : '');
+
+    return {
+      areteVisual: '',
+      raza: 'Brahman',
+      sexo: 'Macho',
+      categoria: 'Novillo',
+      fotoUrl: '',
+      numeroHierro: '',
+      fechaNacimiento: new Date().toISOString().split('T')[0],
+      madreId: '',
+      padreId: '',
+      collarId: '',
+      propietarioId: propietarios.length > 0 ? String(propietarios[0].id) : '',
+      hatoId: defaultHato,
+      potreroId: '',
+      tenantId: defaultTenant
+    };
+  };
+
   // Form States
-  const [animalForm, setAnimalForm] = useState({
-    areteVisual: '',
-    raza: 'Brahman',
-    sexo: 'Macho',
-    categoria: 'Novillo',
-    fotoUrl: '',
-    numeroHierro: '',
-    fechaNacimiento: '2023-01-01',
-    madreId: '',
-    padreId: '',
-    collarId: '',
-    propietarioId: '',
-    tenantId: '1'
-  });
+  const [animalForm, setAnimalForm] = useState(getInitialAnimalForm);
 
   const [animalForTraspaso, setAnimalForTraspaso] = useState(null);
   const [traspasoForm, setTraspasoForm] = useState({
@@ -111,6 +147,45 @@ export default function LivestockTable({
   const padresCandidatos = useMemo(() => {
     return monitoringData.filter(a => a.sexo === 'Macho' || ['Toro', 'Novillo'].includes(a.categoria));
   }, [monitoringData]);
+
+  // Hatos disponibles según el tenant activo en el formulario
+  const availableHatos = useMemo(() => {
+    const allHatos = geocercas?.hatos || [];
+    if (!animalForm.tenantId || animalForm.tenantId === 'ALL') return allHatos;
+    return allHatos.filter(h => !h.tenant_id || String(h.tenant_id) === String(animalForm.tenantId));
+  }, [geocercas?.hatos, animalForm.tenantId]);
+
+  // Potreros disponibles según el Hato seleccionado en el formulario
+  const availablePotreros = useMemo(() => {
+    const allPotreros = geocercas?.potreros || [];
+    if (!animalForm.hatoId) return allPotreros;
+    return allPotreros.filter(p => String(p.hato_id) === String(animalForm.hatoId));
+  }, [geocercas?.potreros, animalForm.hatoId]);
+
+  // Propietarios disponibles según el tenant del formulario
+  const availablePropietarios = useMemo(() => {
+    if (!animalForm.tenantId || animalForm.tenantId === 'ALL') return propietarios;
+    return propietarios.filter(p => !p.tenant_id || String(p.tenant_id) === String(animalForm.tenantId));
+  }, [propietarios, animalForm.tenantId]);
+
+  // Collares con estado de asignación
+  const availableCollares = useMemo(() => {
+    const assignedMap = new Map();
+    (monitoringData || []).forEach(a => {
+      if (a.collar_id) assignedMap.set(String(a.collar_id), a.arete_visual);
+    });
+
+    return collares.map(c => ({
+      ...c,
+      isAssigned: assignedMap.has(String(c.id)),
+      assignedArete: assignedMap.get(String(c.id))
+    }));
+  }, [collares, monitoringData]);
+
+  const handleOpenAnimalDialog = () => {
+    setAnimalForm(getInitialAnimalForm());
+    setShowAnimalDialog(true);
+  };
 
   const handleOpenDetail = async (animal) => {
     setSelectedAnimalDetail(animal);
@@ -195,20 +270,7 @@ export default function LivestockTable({
       await registrarAnimal(animalForm);
       fireCelebration();
       setShowAnimalDialog(false);
-      setAnimalForm({
-        areteVisual: '',
-        raza: 'Brahman',
-        sexo: 'Macho',
-        categoria: 'Novillo',
-        fotoUrl: '',
-        numeroHierro: '',
-        fechaNacimiento: '2023-01-01',
-        madreId: '',
-        padreId: '',
-        collarId: '',
-        propietarioId: '',
-        tenantId: '1'
-      });
+      setAnimalForm(getInitialAnimalForm());
       await onRefreshData();
     } catch (err) {
       alert('Error al registrar animal: ' + err.message);
@@ -295,28 +357,40 @@ export default function LivestockTable({
   );
 
   const estadoCercaBody = (row) => {
+    if (!row.collar_id) {
+      return <Tag value="⚪ SIN COLLAR" severity="secondary" className="text-[10px] font-bold" />;
+    }
     const estado = row.estado_cerca || 'DENTRO';
     if (estado === 'FUERA') return <Tag value="🚨 FUGA / FUERA" severity="danger" className="text-[10px] font-bold" />;
     if (estado === 'ADVERTENCIA') return <Tag value="⚠️ CERCA LÍMITE" severity="warning" className="text-[10px] font-bold" />;
     return <Tag value="✅ DENTRO" severity="success" className="text-[10px] font-bold" />;
   };
 
-  const collarBody = (row) => (
-    <div className="flex flex-col text-xs text-slate-300 gap-0.5">
-      <div className="flex items-center gap-1 font-mono text-cyan-300 font-semibold">
-        <Radio className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-        <span>{row.collar_id}</span>
-      </div>
-      <div className="text-[10px] text-slate-400 flex items-center gap-2">
-        <span className="flex items-center gap-0.5 text-emerald-400">
-          <Battery size={11} /> {row.nivel_bateria ?? 100}%
+  const collarBody = (row) => {
+    if (!row.collar_id) {
+      return (
+        <span className="text-[11px] text-slate-500 italic">
+          Sin collar
         </span>
-        <span className="flex items-center gap-0.5 text-cyan-400">
-          <Signal size={11} /> {row.senal_celular ?? 4}/5
-        </span>
+      );
+    }
+    return (
+      <div className="flex flex-col text-xs text-slate-300 gap-0.5">
+        <div className="flex items-center gap-1 font-mono text-cyan-300 font-semibold">
+          <Radio className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+          <span>{row.collar_id}</span>
+        </div>
+        <div className="text-[10px] text-slate-400 flex items-center gap-2">
+          <span className="flex items-center gap-0.5 text-emerald-400">
+            <Battery size={11} /> {row.nivel_bateria ?? 100}%
+          </span>
+          <span className="flex items-center gap-0.5 text-cyan-400">
+            <Signal size={11} /> {row.senal_celular ?? 4}/5
+          </span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const pesoBody = (row) => (
     <div className="text-right">
@@ -401,7 +475,7 @@ export default function LivestockTable({
           </button>
           <button
             type="button"
-            onClick={() => setShowAnimalDialog(true)}
+            onClick={handleOpenAnimalDialog}
             className="px-4 py-2.5 rounded-xl text-xs font-black text-slate-950 bg-emerald-500 hover:bg-emerald-400 shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-all hover:scale-105"
           >
             <Plus className="w-4 h-4" strokeWidth={2.5} /> Registrar Res
@@ -521,6 +595,35 @@ export default function LivestockTable({
         <form onSubmit={handleAnimalSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             
+            {/* Si es SuperAdmin, permitir elegir Organización / Tenant */}
+            {currentUser?.rol === 'SUPERADMIN' && tenants.length > 0 && (
+              <div className="col-span-2">
+                <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
+                  <Building2 size={12} className="text-purple-400" />
+                  <span>Organización / Adquirente (Tenant) *</span>
+                </label>
+                <select
+                  value={animalForm.tenantId}
+                  onChange={(e) => {
+                    const newTenantId = e.target.value;
+                    setAnimalForm(prev => ({
+                      ...prev,
+                      tenantId: newTenantId,
+                      propietarioId: '',
+                      hatoId: '',
+                      potreroId: ''
+                    }));
+                  }}
+                  required
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                >
+                  {tenants.map(t => (
+                    <option key={t.id} value={t.id}>🏢 {t.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1">Arete Visual *</label>
               <input
@@ -580,8 +683,51 @@ export default function LivestockTable({
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
               >
                 <option value="">Selecciona el dueño...</option>
-                {propietarios.map(p => (
+                {availablePropietarios.map(p => (
                   <option key={p.id} value={p.id}>{p.nombre} ({p.documento_identidad})</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ubicación: Hato / Finca */}
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
+                <MapPin size={12} className="text-emerald-400" />
+                <span>Hato / Finca</span>
+              </label>
+              <select
+                value={animalForm.hatoId}
+                onChange={(e) => {
+                  const newHatoId = e.target.value;
+                  setAnimalForm(prev => ({
+                    ...prev,
+                    hatoId: newHatoId,
+                    potreroId: ''
+                  }));
+                }}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+              >
+                <option value="">Sin hato asignado</option>
+                {availableHatos.map(h => (
+                  <option key={h.id} value={h.id}>📍 {h.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ubicación: Potrero */}
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
+                <Layers size={12} className="text-teal-400" />
+                <span>Potrero</span>
+              </label>
+              <select
+                value={animalForm.potreroId}
+                onChange={(e) => setAnimalForm(prev => ({ ...prev, potreroId: e.target.value }))}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-teal-500"
+              >
+                <option value="">Sin potrero (General / Sin asignar)</option>
+                {availablePotreros.map(p => (
+                  <option key={p.id} value={p.id}>🌱 {p.nombre}</option>
                 ))}
               </select>
             </div>
@@ -661,8 +807,10 @@ export default function LivestockTable({
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
               >
                 <option value="">Sin collar vinculado (Asignar más tarde)</option>
-                {collares.map(c => (
-                  <option key={c.id} value={c.id}>{c.id} (Estado: {c.estado || 'DISPONIBLE'} · Bat: {c.nivel_bateria}%)</option>
+                {availableCollares.map(c => (
+                  <option key={c.id} value={c.id} disabled={c.isAssigned}>
+                    {c.id} {c.isAssigned ? `(Asignado a: ${c.assignedArete})` : `(Disponible · Bat: ${c.nivel_bateria ?? 100}%)`}
+                  </option>
                 ))}
               </select>
             </div>

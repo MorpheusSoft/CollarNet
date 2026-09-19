@@ -360,8 +360,8 @@ async function handleMonitoreoQuery(req, res) {
         (CURRENT_DATE - a.fecha_nacimiento) AS edad_dias,
         c.id AS collar_id,
         c.numero_sim,
-        c.nivel_bateria,
-        c.senal_celular,
+        COALESCE(c.nivel_bateria, 100) AS nivel_bateria,
+        COALESCE(c.senal_celular, 5) AS senal_celular,
         c.ultima_conexion,
         c.version_firmware,
         c.activo AS collar_activo,
@@ -379,12 +379,13 @@ async function handleMonitoreoQuery(req, res) {
           'NORMAL'
         ) AS estado_alerta,
         CASE 
+          WHEN c.id IS NULL THEN 'SIN_MONITOREO'
           WHEN h.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND NOT ST_Contains(h.perimetro, c.ultima_ubicacion) THEN 'FUERA'
           WHEN p.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND NOT ST_Contains(p.perimetro, c.ultima_ubicacion) THEN 'ADVERTENCIA'
           ELSE 'DENTRO'
         END AS estado_cerca
       FROM animales a
-      INNER JOIN collares c ON a.collar_id = c.id
+      LEFT JOIN collares c ON a.collar_id = c.id
       LEFT JOIN tenants t ON a.tenant_id = t.id
       LEFT JOIN propietarios pr ON a.propietario_id = pr.id
       LEFT JOIN potreros p ON a.potrero_id = p.id
@@ -1240,13 +1241,31 @@ router.delete('/geocercas/hato/:id', async (req, res) => {
 /**
  * DELETE /api/geocercas/potrero/:id
  * Elimina un Potrero específico solo si NO contiene animales activos.
+ */
+router.delete('/geocercas/potrero/:id', async (req, res) => {
+  const { id } = req.params;
+  const numId = parseInt(id, 10);
+
+  const check = await checkPotreroOccupied(id);
+  if (check.isOccupied) {
+    const aretesStr = check.animalAretes.slice(0, 5).join(', ') + (check.animalAretes.length > 5 ? '...' : '');
+    return res.status(400).json({
+      error: `No se puede eliminar el potrero "${check.potreroNombre}" porque contiene ${check.totalCount} animal(es) activo(s) (${check.assignedCount} asignados, ${check.gpsCount} detectados por GPS: ${aretesStr}). Debe reubicar o desvincular el ganado antes de eliminar.`,
+      isOccupied: true,
+      totalCount: check.totalCount,
+      assignedCount: check.assignedCount,
+      gpsCount: check.gpsCount,
+      animalAretes: check.animalAretes
+    });
+  }
+
+  try {
     await pool.query('DELETE FROM potreros WHERE id = $1;', [id]);
     notifyGeocercasUpdated(req);
     res.json({ success: true, message: `Potrero con ID ${id} eliminado con éxito.` });
   } catch (err) {
     console.warn('[Delete Potrero Fallback Memory]');
     const idx = memPotreros.findIndex(p => p.id === numId || String(p.id) === String(id));
->>>>>>> b26d2f9 (feat: proteccion contra eliminacion de hatos y potreros con animales activos)
     if (idx !== -1) memPotreros.splice(idx, 1);
     notifyGeocercasUpdated(req);
     res.json({ success: true, message: `Potrero con ID ${id} eliminado con éxito.` });
@@ -2714,23 +2733,53 @@ router.post('/collares', async (req, res) => {
 });
 
 router.post('/animales', async (req, res) => {
-  const { collarId, propietarioId, potreroId, areteVisual, raza, categoria, sexo, fotoUrl, numeroHierro, madreId, padreId, fechaNacimiento, tenantId } = req.body;
+  const { collarId, propietarioId, potreroId, hatoId, areteVisual, raza, categoria, sexo, fotoUrl, numeroHierro, madreId, padreId, fechaNacimiento, tenantId } = req.body;
 
+  let cleanPotreroId = potreroId && potreroId !== '' ? parseInt(potreroId, 10) : null;
+  const cleanHatoId = hatoId && hatoId !== '' && hatoId !== 'ALL' ? parseInt(hatoId, 10) : null;
   const cleanCollarId = collarId && String(collarId).trim() !== '' ? String(collarId).trim() : null;
-  const cleanPotreroId = potreroId && potreroId !== '' ? parseInt(potreroId, 10) : null;
   const cleanPropietarioId = propietarioId && propietarioId !== '' ? parseInt(propietarioId, 10) : null;
   const cleanMadreId = madreId && madreId !== '' ? parseInt(madreId, 10) : null;
   const cleanPadreId = padreId && padreId !== '' ? parseInt(padreId, 10) : null;
   const cleanArete = String(areteVisual || `RES-${memAnimales.length + 1}`).trim().toUpperCase();
 
   try {
-    // Determinar tenantId a partir del potrero o del payload
-    let resolvedTenantId = tenantId ? parseInt(tenantId, 10) : 1;
-    if (cleanPotreroId) {
+    // Si no se proporcionó potreroId pero sí hatoId, buscar potrero por defecto del hato
+    if (!cleanPotreroId && cleanHatoId) {
+      const potCheck = await pool.query('SELECT id FROM potreros WHERE hato_id = $1 ORDER BY id ASC LIMIT 1', [cleanHatoId]);
+      if (potCheck.rows.length > 0) {
+        cleanPotreroId = potCheck.rows[0].id;
+      }
+    }
+
+    // Determinar tenantId a partir del potrero, hato, propietario, collar o payload
+    let resolvedTenantId = tenantId && tenantId !== 'ALL' ? parseInt(tenantId, 10) : null;
+    if (!resolvedTenantId && cleanPotreroId) {
       const tenantCheck = await pool.query('SELECT h.tenant_id FROM potreros p JOIN hatos h ON p.hato_id = h.id WHERE p.id = $1', [cleanPotreroId]);
       if (tenantCheck.rows.length > 0 && tenantCheck.rows[0].tenant_id) {
         resolvedTenantId = tenantCheck.rows[0].tenant_id;
       }
+    }
+    if (!resolvedTenantId && cleanHatoId) {
+      const hatoTenantCheck = await pool.query('SELECT tenant_id FROM hatos WHERE id = $1', [cleanHatoId]);
+      if (hatoTenantCheck.rows.length > 0 && hatoTenantCheck.rows[0].tenant_id) {
+        resolvedTenantId = hatoTenantCheck.rows[0].tenant_id;
+      }
+    }
+    if (!resolvedTenantId && cleanPropietarioId) {
+      const propTenantCheck = await pool.query('SELECT tenant_id FROM propietarios WHERE id = $1', [cleanPropietarioId]);
+      if (propTenantCheck.rows.length > 0 && propTenantCheck.rows[0].tenant_id) {
+        resolvedTenantId = propTenantCheck.rows[0].tenant_id;
+      }
+    }
+    if (!resolvedTenantId && cleanCollarId) {
+      const colTenantCheck = await pool.query('SELECT tenant_id FROM collares WHERE id = $1', [cleanCollarId]);
+      if (colTenantCheck.rows.length > 0 && colTenantCheck.rows[0].tenant_id) {
+        resolvedTenantId = colTenantCheck.rows[0].tenant_id;
+      }
+    }
+    if (!resolvedTenantId) {
+      resolvedTenantId = 1;
     }
 
     // Validar si el collar ya está asignado a otro animal
@@ -2776,7 +2825,7 @@ router.post('/animales', async (req, res) => {
 
     // Actualizar también almacén en memoria
     const pot = memPotreros.find(p => p.id === cleanPotreroId) || {};
-    const hato = memHatos.find(h => h.id === pot.hato_id) || {};
+    const hato = memHatos.find(h => h.id === (pot.hato_id || cleanHatoId)) || {};
     const prop = memPropietarios.find(pr => pr.id === cleanPropietarioId) || {};
 
     const memObj = {
@@ -2794,19 +2843,19 @@ router.post('/animales', async (req, res) => {
       propietario_nombre: prop.nombre || 'Don Fernando Álvarez',
       fecha_nacimiento: fechaNacimiento || '2024-01-01',
       collar_id: cleanCollarId,
-      nivel_bateria: 95,
-      senal_celular: 4,
+      nivel_bateria: cleanCollarId ? 95 : 100,
+      senal_celular: cleanCollarId ? 4 : 5,
       ultima_conexion: new Date().toISOString(),
-      latitud: 8.5385,
-      longitud: -70.3580,
-      potrero_id: cleanPotreroId || 1,
-      potrero_nombre: pot.nombre || 'Potrero Norte 1',
-      potrero_asignado_nombre: pot.nombre || 'Potrero Norte 1',
-      hato_id: pot.hato_id || 1,
-      hato_nombre: hato.nombre || 'Hato La Esperanza',
+      latitud: cleanCollarId ? 8.5385 : null,
+      longitud: cleanCollarId ? -70.3580 : null,
+      potrero_id: cleanPotreroId || null,
+      potrero_nombre: pot.nombre || 'Sin Potrero',
+      potrero_asignado_nombre: pot.nombre || 'Sin Potrero',
+      hato_id: hato.id || pot.hato_id || cleanHatoId || null,
+      hato_nombre: hato.nombre || 'Sin Hato',
       peso_actual: 380.0,
       estado_alerta: 'NORMAL',
-      estado_cerca: 'DENTRO',
+      estado_cerca: cleanCollarId ? 'DENTRO' : 'SIN_MONITOREO',
       activo: true
     };
     memAnimales.push(memObj);
@@ -2825,7 +2874,7 @@ router.post('/animales', async (req, res) => {
   } catch (err) {
     console.warn('[Post Animales Fallback Memory]', err.message);
     const pot = memPotreros.find(p => p.id === cleanPotreroId) || memPotreros[0] || {};
-    const hato = memHatos.find(h => h.id === pot.hato_id) || memHatos[0] || {};
+    const hato = memHatos.find(h => h.id === (pot.hato_id || cleanHatoId)) || memHatos[0] || {};
     const prop = memPropietarios.find(pr => pr.id === cleanPropietarioId) || memPropietarios[0] || {};
     const nextId = memAnimales.length > 0 ? Math.max(...memAnimales.map(a => a.id || a.animal_id || 0)) + 1 : 1;
 
@@ -2844,19 +2893,19 @@ router.post('/animales', async (req, res) => {
       propietario_nombre: prop.nombre || 'Don Fernando Álvarez',
       fecha_nacimiento: fechaNacimiento || '2024-01-01',
       collar_id: cleanCollarId,
-      nivel_bateria: 95,
-      senal_celular: 4,
+      nivel_bateria: cleanCollarId ? 95 : 100,
+      senal_celular: cleanCollarId ? 4 : 5,
       ultima_conexion: new Date().toISOString(),
-      latitud: 8.5385,
-      longitud: -70.3580,
-      potrero_id: cleanPotreroId || pot.id || 1,
-      potrero_nombre: pot.nombre || 'Potrero Norte 1',
-      potrero_asignado_nombre: pot.nombre || 'Potrero Norte 1',
-      hato_id: pot.hato_id || hato.id || 1,
-      hato_nombre: hato.nombre || 'Hato La Esperanza',
+      latitud: cleanCollarId ? 8.5385 : null,
+      longitud: cleanCollarId ? -70.3580 : null,
+      potrero_id: cleanPotreroId || pot.id || null,
+      potrero_nombre: pot.nombre || 'Sin Potrero',
+      potrero_asignado_nombre: pot.nombre || 'Sin Potrero',
+      hato_id: pot.hato_id || hato.id || cleanHatoId || null,
+      hato_nombre: hato.nombre || 'Sin Hato',
       peso_actual: 380.0,
       estado_alerta: 'NORMAL',
-      estado_cerca: 'DENTRO',
+      estado_cerca: cleanCollarId ? 'DENTRO' : 'SIN_MONITOREO',
       activo: true
     };
     memAnimales.push(newAnimal);
@@ -5508,11 +5557,11 @@ router.get('/app/version', (req, res) => {
   // Default: CowIA Técnico (movil_ops)
   return res.json({
     appName: 'CowIA Técnico',
-    version: '1.0.2',
-    versionCode: 3,
+    version: '1.0.3',
+    versionCode: 4,
     downloadUrl: 'https://www.cowai.net/apk/CowIA-Tecnico.apk',
     mandatory: false,
-    releaseNotes: 'Trazado libre de vértices, selección interactiva de snapping de geocercas y optimización de conectividad.'
+    releaseNotes: 'Protección contra eliminación de hatos y potreros con ganado activo, sincronización en tiempo real y optimización de conectividad.'
   });
 });
 
