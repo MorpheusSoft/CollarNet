@@ -413,7 +413,7 @@ export default function CollarsInventoryView({ user }) {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => exportInventarioCollaresExcel(filteredCollares)}
+            onClick={() => exportInventarioCollaresExcel(collares)}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-sm font-semibold transition-all shadow-sm"
             title="Descargar inventario de collares en Excel (.xlsx)"
           >

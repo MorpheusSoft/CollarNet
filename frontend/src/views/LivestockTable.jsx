@@ -54,6 +54,14 @@ export default function LivestockTable({
   onRefreshData,
   onOpenProjection 
 }) {
+  // Garantizar arreglos seguros ante cualquier estado asíncrono o nulo
+  const safeMonitoring = useMemo(() => Array.isArray(monitoringData) ? monitoringData : [], [monitoringData]);
+  const safeCollares = useMemo(() => Array.isArray(collares) ? collares : [], [collares]);
+  const safePropietarios = useMemo(() => Array.isArray(propietarios) ? propietarios : [], [propietarios]);
+  const safeTenants = useMemo(() => Array.isArray(tenants) ? tenants : [], [tenants]);
+  const safeHatos = useMemo(() => Array.isArray(geocercas?.hatos) ? geocercas.hatos : [], [geocercas?.hatos]);
+  const safePotreros = useMemo(() => Array.isArray(geocercas?.potreros) ? geocercas.potreros : [], [geocercas?.potreros]);
+
   const [globalFilter, setGlobalFilter] = useState('');
   const [selectedTenantFilter, setSelectedTenantFilter] = useState(() => {
     if (selectedTenantId && selectedTenantId !== 'ALL') return String(selectedTenantId);
@@ -92,10 +100,13 @@ export default function LivestockTable({
   const getInitialAnimalForm = () => {
     const defaultTenant = (currentUser?.tenantId && String(currentUser.tenantId)) || 
       (selectedTenantFilter !== 'ALL' ? String(selectedTenantFilter) : '') ||
-      (tenants.length > 0 ? String(tenants[0].id) : '1');
+      (safeTenants.length > 0 ? String(safeTenants[0].id) : '1');
 
     const defaultHato = (selectedHatoFilter !== 'ALL' ? String(selectedHatoFilter) : '') ||
-      (geocercas?.hatos?.length > 0 ? String(geocercas.hatos[0].id) : '');
+      (safeHatos.length > 0 ? String(safeHatos[0].id) : '');
+
+    const defaultProp = (currentUser?.propietarioId && String(currentUser.propietarioId)) ||
+      (safePropietarios.length > 0 ? String(safePropietarios[0].id) : '');
 
     return {
       areteVisual: '',
@@ -108,7 +119,7 @@ export default function LivestockTable({
       madreId: '',
       padreId: '',
       collarId: '',
-      propietarioId: propietarios.length > 0 ? String(propietarios[0].id) : '',
+      propietarioId: defaultProp,
       hatoId: defaultHato,
       potreroId: '',
       tenantId: defaultTenant
@@ -141,46 +152,44 @@ export default function LivestockTable({
 
   // Candidatos a Madres y Padres (Identidad Biológica)
   const madresCandidatas = useMemo(() => {
-    return monitoringData.filter(a => a.sexo === 'Hembra' || ['Vaca', 'Vaquillona'].includes(a.categoria));
-  }, [monitoringData]);
+    return safeMonitoring.filter(a => a.sexo === 'Hembra' || ['Vaca', 'Vaquillona'].includes(a.categoria));
+  }, [safeMonitoring]);
 
   const padresCandidatos = useMemo(() => {
-    return monitoringData.filter(a => a.sexo === 'Macho' || ['Toro', 'Novillo'].includes(a.categoria));
-  }, [monitoringData]);
+    return safeMonitoring.filter(a => a.sexo === 'Macho' || ['Toro', 'Novillo'].includes(a.categoria));
+  }, [safeMonitoring]);
 
   // Hatos disponibles según el tenant activo en el formulario
   const availableHatos = useMemo(() => {
-    const allHatos = geocercas?.hatos || [];
-    if (!animalForm.tenantId || animalForm.tenantId === 'ALL') return allHatos;
-    return allHatos.filter(h => !h.tenant_id || String(h.tenant_id) === String(animalForm.tenantId));
-  }, [geocercas?.hatos, animalForm.tenantId]);
+    if (!animalForm.tenantId || animalForm.tenantId === 'ALL') return safeHatos;
+    return safeHatos.filter(h => !h.tenant_id || String(h.tenant_id) === String(animalForm.tenantId));
+  }, [safeHatos, animalForm.tenantId]);
 
   // Potreros disponibles según el Hato seleccionado en el formulario
   const availablePotreros = useMemo(() => {
-    const allPotreros = geocercas?.potreros || [];
-    if (!animalForm.hatoId) return allPotreros;
-    return allPotreros.filter(p => String(p.hato_id) === String(animalForm.hatoId));
-  }, [geocercas?.potreros, animalForm.hatoId]);
+    if (!animalForm.hatoId) return safePotreros;
+    return safePotreros.filter(p => String(p.hato_id) === String(animalForm.hatoId));
+  }, [safePotreros, animalForm.hatoId]);
 
   // Propietarios disponibles según el tenant del formulario
   const availablePropietarios = useMemo(() => {
-    if (!animalForm.tenantId || animalForm.tenantId === 'ALL') return propietarios;
-    return propietarios.filter(p => !p.tenant_id || String(p.tenant_id) === String(animalForm.tenantId));
-  }, [propietarios, animalForm.tenantId]);
+    if (!animalForm.tenantId || animalForm.tenantId === 'ALL') return safePropietarios;
+    return safePropietarios.filter(p => !p.tenant_id || String(p.tenant_id) === String(animalForm.tenantId));
+  }, [safePropietarios, animalForm.tenantId]);
 
   // Collares con estado de asignación
   const availableCollares = useMemo(() => {
     const assignedMap = new Map();
-    (monitoringData || []).forEach(a => {
+    safeMonitoring.forEach(a => {
       if (a.collar_id) assignedMap.set(String(a.collar_id), a.arete_visual);
     });
 
-    return collares.map(c => ({
+    return safeCollares.map(c => ({
       ...c,
       isAssigned: assignedMap.has(String(c.id)),
       assignedArete: assignedMap.get(String(c.id))
     }));
-  }, [collares, monitoringData]);
+  }, [safeCollares, safeMonitoring]);
 
   const handleOpenAnimalDialog = () => {
     setAnimalForm(getInitialAnimalForm());
@@ -298,7 +307,7 @@ export default function LivestockTable({
 
   // Filtered dataset according to UI multi-tenant & owner controls
   const filteredData = useMemo(() => {
-    return monitoringData.filter(item => {
+    return safeMonitoring.filter(item => {
       // Tenant filter
       if (selectedTenantFilter !== 'ALL' && String(item.tenant_id) !== String(selectedTenantFilter)) {
         return false;
@@ -313,7 +322,7 @@ export default function LivestockTable({
       }
       return true;
     });
-  }, [monitoringData, selectedTenantFilter, selectedHatoFilter, selectedPropietarioFilter]);
+  }, [safeMonitoring, selectedTenantFilter, selectedHatoFilter, selectedPropietarioFilter]);
 
   // Column Templates
   const areteBody = (row) => (
@@ -358,7 +367,11 @@ export default function LivestockTable({
 
   const estadoCercaBody = (row) => {
     if (!row.collar_id) {
-      return <Tag value="⚪ SIN COLLAR" severity="secondary" className="text-[10px] font-bold" />;
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+          ⚪ SIN COLLAR
+        </span>
+      );
     }
     const estado = row.estado_cerca || 'DENTRO';
     if (estado === 'FUERA') return <Tag value="🚨 FUGA / FUERA" severity="danger" className="text-[10px] font-bold" />;
@@ -509,7 +522,7 @@ export default function LivestockTable({
         <div className="flex flex-wrap items-center gap-2 text-xs">
           
           {/* Tenant Selector (if SuperAdmin) */}
-          {currentUser?.rol === 'SUPERADMIN' && tenants.length > 0 && (
+          {currentUser?.rol === 'SUPERADMIN' && safeTenants.length > 0 && (
             <div className="flex items-center gap-1 bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-800">
               <Building2 size={13} className="text-purple-400" />
               <select
@@ -518,7 +531,7 @@ export default function LivestockTable({
                 className="bg-transparent text-slate-200 font-semibold focus:outline-none text-xs"
               >
                 <option value="ALL" className="bg-slate-900 text-white">🏢 Todos los Adquirentes</option>
-                {tenants.map(t => (
+                {safeTenants.map(t => (
                   <option key={t.id} value={t.id} className="bg-slate-900 text-white">{t.nombre}</option>
                 ))}
               </select>
@@ -534,7 +547,7 @@ export default function LivestockTable({
               className="bg-transparent text-slate-200 font-semibold focus:outline-none text-xs"
             >
               <option value="ALL" className="bg-slate-900 text-white">📍 Todos los Hatos</option>
-              {geocercas?.hatos?.map(h => (
+              {safeHatos.map(h => (
                 <option key={h.id} value={h.id} className="bg-slate-900 text-white">{h.nombre}</option>
               ))}
             </select>
@@ -549,7 +562,7 @@ export default function LivestockTable({
               className="bg-transparent text-slate-200 font-semibold focus:outline-none text-xs"
             >
               <option value="ALL" className="bg-slate-900 text-white">👤 Todos los Propietarios</option>
-              {propietarios.map(p => (
+              {safePropietarios.map(p => (
                 <option key={p.id} value={p.id} className="bg-slate-900 text-white">{p.nombre}</option>
               ))}
             </select>
@@ -596,7 +609,7 @@ export default function LivestockTable({
           <div className="grid grid-cols-2 gap-4">
             
             {/* Si es SuperAdmin, permitir elegir Organización / Tenant */}
-            {currentUser?.rol === 'SUPERADMIN' && tenants.length > 0 && (
+            {currentUser?.rol === 'SUPERADMIN' && safeTenants.length > 0 && (
               <div className="col-span-2">
                 <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
                   <Building2 size={12} className="text-purple-400" />
@@ -617,7 +630,7 @@ export default function LivestockTable({
                   required
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
                 >
-                  {tenants.map(t => (
+                  {safeTenants.map(t => (
                     <option key={t.id} value={t.id}>🏢 {t.nombre}</option>
                   ))}
                 </select>
@@ -853,7 +866,7 @@ export default function LivestockTable({
               className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
             >
               <option value="">Selecciona el animal...</option>
-              {monitoringData.map(a => (
+              {safeMonitoring.map(a => (
                 <option key={a.id} value={a.id}>Arete: {a.arete_visual} ({a.raza || 'Brahman'})</option>
               ))}
             </select>
@@ -935,8 +948,8 @@ export default function LivestockTable({
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
               >
                 <option value="">Selecciona el nuevo dueño...</option>
-                {propietarios
-                  .filter(p => p.id !== animalForTraspaso.propietario_id)
+                {safePropietarios
+                  .filter(p => String(p.id) !== String(animalForTraspaso.propietario_id))
                   .map(p => (
                     <option key={p.id} value={p.id}>
                       {p.nombre} ({p.documento_identidad})

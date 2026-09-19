@@ -17,6 +17,7 @@ import ReproductionView from './views/ReproductionView';
 import NotificationsConfigView from './views/NotificationsConfigView';
 import HealthRuminationView from './views/HealthRuminationView';
 import ApkDownloadModal from './components/ApkDownloadModal';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { 
   fetchMonitoreo, 
@@ -255,8 +256,8 @@ export default function App() {
         />
 
         <main className="flex-1 overflow-y-auto bg-[#070D14]">
-          
-          {/* SuperAdmin Tenants Module */}
+          <ErrorBoundary key={currentTab} onReset={loadAllData}>
+            {/* SuperAdmin Tenants Module */}
           {currentTab === 'tenants' && user?.rol === 'SUPERADMIN' && (
             <TenantsAdmin
               currentUser={user}
@@ -373,6 +374,7 @@ export default function App() {
           {currentTab === 'users' && (
             <UsersAdmin currentUser={user} tenants={tenants} />
           )}
+          </ErrorBoundary>
         </main>
 
       </div>
