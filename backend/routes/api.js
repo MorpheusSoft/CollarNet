@@ -3384,7 +3384,7 @@ router.get('/proyecciones/:animalId', async (req, res) => {
  * Autentica un usuario y retorna su perfil con rol y tenant
  */
 router.post('/auth/login', async (req, res) => {
-  const identifier = req.body.email || req.body.username || req.body.usuario;
+  const identifier = req.body.identifier || req.body.email || req.body.username || req.body.usuario;
   const password = req.body.password;
   if (!identifier || !password) {
     return res.status(400).json({ error: 'Debes proporcionar usuario/correo electrónico y contraseña' });
