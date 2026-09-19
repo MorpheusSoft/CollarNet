@@ -930,8 +930,8 @@ router.get('/geocercas/hatos', async (req, res) => {
         h.tenant_id, 
         t.nombre AS tenant_nombre,
         (SELECT COUNT(*)::INTEGER FROM potreros p WHERE p.hato_id = h.id) AS total_potreros,
-        (SELECT COUNT(*)::INTEGER FROM animales a WHERE (a.hato_id = h.id OR a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = h.id)) AND a.collar_id IS NOT NULL) AS collares_activos,
-        (SELECT COUNT(*)::INTEGER FROM animales a WHERE (a.hato_id = h.id OR a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = h.id))) AS total_animales,
+        (SELECT COUNT(*)::INTEGER FROM animales a WHERE a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = h.id) AND a.collar_id IS NOT NULL) AS collares_activos,
+        (SELECT COUNT(*)::INTEGER FROM animales a WHERE a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = h.id)) AS total_animales,
         ST_AsGeoJSON(h.perimetro) AS geojson 
       FROM hatos h
       LEFT JOIN tenants t ON h.tenant_id = t.id
@@ -949,7 +949,7 @@ router.get('/geocercas/hatos', async (req, res) => {
     let hatos = memHatos.map(h => {
       const potrerosDelHato = memPotreros.filter(p => p.hato_id === h.id);
       const potreroIds = potrerosDelHato.map(p => p.id);
-      const animalesHato = memAnimales.filter(a => a.hato_id === h.id || potreroIds.includes(a.potrero_id));
+      const animalesHato = memAnimales.filter(a => potreroIds.includes(a.potrero_id));
       return {
         ...h,
         total_potreros: potrerosDelHato.length,
@@ -1015,7 +1015,7 @@ router.delete('/geocercas/hato/:id', async (req, res) => {
     const checkQuery = `
       SELECT a.id, a.arete_visual, a.collar_id 
       FROM animales a 
-      WHERE (a.hato_id = $1 OR a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = $1)) 
+      WHERE a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = $1) 
         AND a.collar_id IS NOT NULL;
     `;
     const { rows } = await pool.query(checkQuery, [id]);
