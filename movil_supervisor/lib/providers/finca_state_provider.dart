@@ -32,6 +32,7 @@ class FincaStateProvider with ChangeNotifier {
   String _potreroOrigenArreo = 'Potrero 1';
   String _potreroDestinoArreo = 'Potrero 2';
   Timer? _arreoTimer;
+  Timer? _autoSyncTimer;
 
   // Listas Sincronizadas
   List<Map<String, dynamic>> _potrerosRotacion = [
@@ -172,10 +173,21 @@ class FincaStateProvider with ChangeNotifier {
       _authLoaded = true;
       notifyListeners();
       await syncData();
+      _startAutoSync();
     } catch (_) {
       _authLoaded = true;
       notifyListeners();
+      _startAutoSync();
     }
+  }
+
+  void _startAutoSync() {
+    _autoSyncTimer?.cancel();
+    _autoSyncTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (_authLoaded && !_isLoading) {
+        syncData(silent: true);
+      }
+    });
   }
 
   Future<Map<String, dynamic>> login(String identifier, String password) async {
@@ -248,9 +260,11 @@ class FincaStateProvider with ChangeNotifier {
   }
 
   // Sincronización Bidireccional Completa con Backend
-  Future<void> syncData() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> syncData({bool silent = false}) async {
+    if (!silent) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
       // 1. Obtener la lista de Hatos asignados al Tenant / Adquiriente (Hacienda Santa Inés = 1)
@@ -325,7 +339,9 @@ class FincaStateProvider with ChangeNotifier {
     } catch (_) {
       _isOnline = false;
     } finally {
-      _isLoading = false;
+      if (!silent) {
+        _isLoading = false;
+      }
       notifyListeners();
     }
   }
@@ -561,6 +577,7 @@ class FincaStateProvider with ChangeNotifier {
 
   @override
   void dispose() {
+    _autoSyncTimer?.cancel();
     _arreoTimer?.cancel();
     super.dispose();
   }

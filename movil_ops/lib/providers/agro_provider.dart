@@ -25,6 +25,7 @@ class AgroProvider extends ChangeNotifier {
   TopologyAlert? _activeAlert;
   TopologyAlert? get activeAlert => _activeAlert;
   Timer? _alertTimer;
+  Timer? _autoSyncTimer;
 
   bool _isLoading = true;
   bool get isLoading => _isLoading;
@@ -39,6 +40,47 @@ class AgroProvider extends ChangeNotifier {
     _hatos = await StorageService.loadHatos();
     _isLoading = false;
     notifyListeners();
+    _startAutoSync();
+  }
+
+  void _startAutoSync() {
+    _autoSyncTimer?.cancel();
+    _autoSyncTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      _silentAutoSync();
+    });
+  }
+
+  /// Sincronización periódica silenciosa en segundo plano (cada 4s)
+  Future<void> _silentAutoSync() async {
+    try {
+      final remoteHatos = await _apiService.fetchHatos();
+      if (remoteHatos.isNotEmpty) {
+        if (_hasHatosChanged(_hatos, remoteHatos)) {
+          _hatos = remoteHatos;
+          if (_selectedHato != null) {
+            final match = _hatos.where((h) => h.id == _selectedHato!.id).firstOrNull;
+            _selectedHato = match ?? _selectedHato;
+          }
+          await StorageService.cacheLocally(_hatos);
+          notifyListeners();
+        }
+      }
+    } catch (_) {}
+  }
+
+  bool _hasHatosChanged(List<Hato> current, List<Hato> incoming) {
+    if (current.length != incoming.length) return true;
+    for (int i = 0; i < current.length; i++) {
+      final c = current[i];
+      final inc = incoming[i];
+      if (c.id != inc.id ||
+          c.nombre != inc.nombre ||
+          c.potreros.length != inc.potreros.length ||
+          c.vertices.length != inc.vertices.length) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Recarga los datos desde la API central y actualiza el estado
@@ -302,6 +344,7 @@ class AgroProvider extends ChangeNotifier {
   @override
   void dispose() {
     _alertTimer?.cancel();
+    _autoSyncTimer?.cancel();
     super.dispose();
   }
 }

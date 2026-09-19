@@ -166,8 +166,15 @@ export default function App() {
       }
     );
 
+    // Polling continuo en segundo plano (cada 4s) como respaldo activo a Socket.io
+    const pollInterval = setInterval(() => {
+      if (loadAllDataRef.current) {
+        loadAllDataRef.current();
+      }
+    }, 4000);
+
     return () => {
-      // Clean up socket if needed
+      clearInterval(pollInterval);
     };
   }, []);
 
