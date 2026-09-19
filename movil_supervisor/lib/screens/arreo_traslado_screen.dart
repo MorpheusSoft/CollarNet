@@ -13,9 +13,6 @@ class ArreoTrasladoScreen extends StatefulWidget {
 class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
   String? _selectedOrigen;
   String? _selectedDestino;
-  int _selectedMinutos = 45;
-
-  final List<int> _opcionesMinutos = [15, 30, 45, 60, 90];
 
   @override
   void initState() {
@@ -51,8 +48,8 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: isActivo
-                  ? FincaTheme.warningAmber.withOpacity(0.2)
-                  : FincaTheme.primaryGreen.withOpacity(0.2),
+                  ? FincaTheme.warningAmber.withValues(alpha: 0.2)
+                  : FincaTheme.primaryGreen.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isActivo ? FincaTheme.warningAmber : FincaTheme.primaryGreen,
@@ -99,7 +96,7 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: FincaTheme.warningAmber.withOpacity(0.12),
+            color: FincaTheme.warningAmber.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: FincaTheme.warningAmber, width: 2),
           ),
@@ -132,16 +129,16 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
         ),
         const SizedBox(height: 20),
 
-        // Cronómetro Central Gigante
+        // Tarjeta de Estado Activo Permanente (Sin temporizador regresivo)
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
           decoration: BoxDecoration(
             color: FincaTheme.bgCardElevated,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: FincaTheme.borderCard),
+            border: Border.all(color: FincaTheme.warningAmber.withValues(alpha: 0.4)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -149,57 +146,40 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
           ),
           child: Column(
             children: [
-              const Text(
-                'TIEMPO RESTANTE DE TRASLADO',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: FincaTheme.textMuted,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                width: 64,
+                height: 64,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: FincaTheme.warningAmber.withOpacity(0.5)),
+                  shape: BoxShape.circle,
+                  color: FincaTheme.warningAmber.withValues(alpha: 0.15),
+                  border: Border.all(color: FincaTheme.warningAmber, width: 2),
                 ),
-                child: Text(
-                  state.arreoTiempoFormateado,
-                  style: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
+                child: const Center(
+                  child: Icon(
+                    Icons.sync_alt_rounded,
                     color: FincaTheme.warningAmber,
-                    letterSpacing: 3,
+                    size: 34,
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Botón para extender tiempo
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: FincaTheme.accentGreenLight,
-                  side: const BorderSide(color: FincaTheme.accentGreenLight),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              const Text(
+                'TRASLADO EN PROCESO',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: FincaTheme.textLight,
+                  letterSpacing: 0.5,
                 ),
-                onPressed: () {
-                  state.extenderArreo(15);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Se agregaron +15 minutos al tiempo de traslado'),
-                      backgroundColor: FincaTheme.primaryGreen,
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.add_alarm, size: 20),
-                label: const Text(
-                  '+15 Minutos Extra',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'El callejón permanecerá abierto de forma continua hasta que confirmes la llegada del lote.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: FincaTheme.textMuted,
+                  height: 1.4,
                 ),
               ),
             ],
@@ -237,7 +217,7 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
                       decoration: BoxDecoration(
                         color: FincaTheme.bgDark,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: FincaTheme.errorCrimson.withOpacity(0.4)),
+                        border: Border.all(color: FincaTheme.errorCrimson.withValues(alpha: 0.4)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,7 +246,7 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
                       decoration: BoxDecoration(
                         color: FincaTheme.bgDark,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: FincaTheme.primaryGreen.withOpacity(0.4)),
+                        border: Border.all(color: FincaTheme.primaryGreen.withValues(alpha: 0.4)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,7 +330,7 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: FincaTheme.primaryGreen.withOpacity(0.15),
+                  color: FincaTheme.primaryGreen.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.directions_walk, color: FincaTheme.accentGreenLight, size: 24),
@@ -393,7 +373,7 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                '1. SELECCIONAR POTREROS DE RUTA',
+                'SELECCIONAR POTREROS DE RUTA',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -490,55 +470,6 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Selección de Tiempo de Traslado
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: FincaTheme.bgCard,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: FincaTheme.borderCard),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '2. TIEMPO ESTIMADO DEL TRASLADO',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: FincaTheme.textMuted,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: _opcionesMinutos.map((min) {
-                  final isSelected = _selectedMinutos == min;
-                  return ChoiceChip(
-                    label: Text(
-                      '$min min',
-                      style: TextStyle(
-                        color: isSelected ? Colors.black : FincaTheme.textLight,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: FincaTheme.warningAmber,
-                    backgroundColor: FincaTheme.bgDark,
-                    onSelected: (selected) {
-                      if (selected) setState(() => _selectedMinutos = min);
-                    },
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 24),
 
         // Botón Grande Iniciar
@@ -567,14 +498,13 @@ class _ArreoTrasladoScreenState extends State<ArreoTrasladoScreen> {
             state.startModoArreo(
               origen: _selectedOrigen!,
               destino: _selectedDestino!,
-              duracionMinutos: _selectedMinutos,
             );
 
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('🚨 Modo Arreo activado por $_selectedMinutos minutos. Callejón abierto.'),
+              const SnackBar(
+                content: Text('🚨 Modo Arreo activado. Callejón virtual abierto.'),
                 backgroundColor: FincaTheme.warningAmber,
-                duration: const Duration(seconds: 3),
+                duration: Duration(seconds: 3),
               ),
             );
           },

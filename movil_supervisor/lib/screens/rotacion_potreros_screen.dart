@@ -114,12 +114,12 @@ class RotacionPotrerosScreen extends StatelessWidget {
                               color: FincaTheme.warningAmber,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(
-                              fincaState.arreoTiempoFormateado,
-                              style: const TextStyle(
+                            child: const Text(
+                              'ACTIVO',
+                              style: TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 12,
                               ),
                             ),
                           ),
@@ -354,7 +354,6 @@ class RotacionPotrerosScreen extends StatelessWidget {
   void _mostrarDialogoIniciarArreo(BuildContext context, FincaStateProvider state) {
     String origen = state.potrerosRotacion.first['nombre'];
     String destino = state.potrerosRotacion.last['nombre'];
-    int minutos = 45;
 
     showModalBottomSheet(
       context: context,
@@ -426,24 +425,6 @@ class RotacionPotrerosScreen extends StatelessWidget {
                       if (val != null) setStateDialog(() => destino = val);
                     },
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Ventana de Tiempo:', style: TextStyle(color: FincaTheme.textLight)),
-                      SegmentedButton<int>(
-                        segments: const [
-                          ButtonSegment(value: 30, label: Text('30m')),
-                          ButtonSegment(value: 45, label: Text('45m')),
-                          ButtonSegment(value: 60, label: Text('60m')),
-                        ],
-                        selected: {minutos},
-                        onSelectionChanged: (set) {
-                          setStateDialog(() => minutos = set.first);
-                        },
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
@@ -455,10 +436,10 @@ class RotacionPotrerosScreen extends StatelessWidget {
                       ),
                       onPressed: () {
                         Navigator.pop(ctx);
-                        state.startModoArreo(origen: origen, destino: destino, duracionMinutos: minutos);
+                        state.startModoArreo(origen: origen, destino: destino);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Modo Arreo iniciado: $minutos min de paso libre.'),
+                          const SnackBar(
+                            content: Text('Modo Arreo activado: Callejón abierto hasta finalizar.'),
                             backgroundColor: FincaTheme.warningAmber,
                           ),
                         );

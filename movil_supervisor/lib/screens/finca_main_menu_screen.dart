@@ -374,12 +374,12 @@ class FincaMainMenuScreen extends StatelessWidget {
                             color: FincaTheme.warningAmber,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
-                            state.arreoTiempoFormateado,
-                            style: const TextStyle(
+                          child: const Text(
+                            'ACTIVO',
+                            style: TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: 11,
                             ),
                           ),
                         ),

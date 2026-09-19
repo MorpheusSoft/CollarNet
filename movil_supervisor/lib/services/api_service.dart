@@ -395,7 +395,7 @@ class ApiService {
   Future<bool> notificarArreo({
     required String origen,
     required String destino,
-    required int duracionMinutos,
+    int duracionMinutos = 0,
     required bool activo,
   }) async {
     final baseUrl = await getBaseUrl();

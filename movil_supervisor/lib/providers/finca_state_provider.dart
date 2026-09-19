@@ -28,10 +28,8 @@ class FincaStateProvider with ChangeNotifier {
 
   // Estado del Modo Arreo / Traslado
   bool _modoArreoActivo = false;
-  int _arreoSegundosRestantes = 0;
   String _potreroOrigenArreo = 'Potrero 1';
   String _potreroDestinoArreo = 'Potrero 2';
-  Timer? _arreoTimer;
   Timer? _autoSyncTimer;
 
   // Listas Sincronizadas
@@ -135,19 +133,12 @@ class FincaStateProvider with ChangeNotifier {
   double get gdpPromedioKg => _gdpPromedioKg;
 
   bool get modoArreoActivo => _modoArreoActivo;
-  int get arreoSegundosRestantes => _arreoSegundosRestantes;
   String get potreroOrigenArreo => _potreroOrigenArreo;
   String get potreroDestinoArreo => _potreroDestinoArreo;
   List<Map<String, dynamic>> get potrerosRotacion => _potrerosRotacion;
   List<Map<String, dynamic>> get animales => _animales;
   List<String> get collaresDisponibles => _collaresDisponibles;
   List<Map<String, dynamic>> get alertas => _alertas;
-
-  String get arreoTiempoFormateado {
-    final minutos = (_arreoSegundosRestantes / 60).floor();
-    final segundos = _arreoSegundosRestantes % 60;
-    return '${minutos.toString().padLeft(2, '0')}:${segundos.toString().padLeft(2, '0')}';
-  }
 
   FincaStateProvider() {
     _loadConfig();
@@ -468,26 +459,14 @@ class FincaStateProvider with ChangeNotifier {
     return ok;
   }
 
-  // 4. Activar Modo Arreo
+  // 4. Activar Modo Arreo (Traslado Manual)
   void startModoArreo({
     required String origen,
     required String destino,
-    int duracionMinutos = 45,
   }) {
     _modoArreoActivo = true;
     _potreroOrigenArreo = origen;
     _potreroDestinoArreo = destino;
-    _arreoSegundosRestantes = duracionMinutos * 60;
-
-    _arreoTimer?.cancel();
-    _arreoTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_arreoSegundosRestantes > 0) {
-        _arreoSegundosRestantes--;
-        notifyListeners();
-      } else {
-        stopModoArreo();
-      }
-    });
 
     notifyListeners();
 
@@ -495,25 +474,14 @@ class FincaStateProvider with ChangeNotifier {
     _apiService.notificarArreo(
       origen: origen,
       destino: destino,
-      duracionMinutos: duracionMinutos,
+      duracionMinutos: 0,
       activo: true,
     );
-  }
-
-  // Extender tiempo de arreo
-  void extenderArreo(int minutosAdicionales) {
-    if (_modoArreoActivo) {
-      _arreoSegundosRestantes += minutosAdicionales * 60;
-      notifyListeners();
-    }
   }
 
   // Finalizar Modo Arreo y actualizar potreros automáticamente
   void stopModoArreo({bool actualizarEstadosPotreros = true}) {
     _modoArreoActivo = false;
-    _arreoTimer?.cancel();
-    _arreoTimer = null;
-    _arreoSegundosRestantes = 0;
 
     if (actualizarEstadosPotreros && _potreroOrigenArreo.isNotEmpty && _potreroDestinoArreo.isNotEmpty) {
       // 1. Cerrar potrero de origen
@@ -578,7 +546,6 @@ class FincaStateProvider with ChangeNotifier {
   @override
   void dispose() {
     _autoSyncTimer?.cancel();
-    _arreoTimer?.cancel();
     super.dispose();
   }
 }
