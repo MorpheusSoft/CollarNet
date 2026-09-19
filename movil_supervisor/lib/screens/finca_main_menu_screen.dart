@@ -574,7 +574,7 @@ class FincaMainMenuScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Ingresa la IP y puerto del servidor local o nube (ej: 192.168.86.30:3500):',
+                'Ingresa la IP y puerto del servidor local o nube (ej: 192.168.86.21:3500):',
                 style: TextStyle(fontSize: 13, color: FincaTheme.textMuted),
               ),
               const SizedBox(height: 14),
@@ -583,7 +583,7 @@ class FincaMainMenuScreen extends StatelessWidget {
                 style: const TextStyle(color: FincaTheme.textLight),
                 decoration: const InputDecoration(
                   labelText: 'Dirección IP y Puerto',
-                  hintText: '192.168.86.30:3500',
+                  hintText: '192.168.86.21:3500',
                   border: OutlineInputBorder(),
                 ),
               ),

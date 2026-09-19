@@ -531,7 +531,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _serverIpCtrl,
                           style: const TextStyle(color: FincaTheme.textLight, fontSize: 13),
                           decoration: InputDecoration(
-                            hintText: '192.168.86.30:3500',
+                            hintText: '192.168.86.21:3500',
                             hintStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 12),
                             prefixIcon: const Icon(Icons.dns_rounded, color: FincaTheme.accentGreenLight, size: 18),
                             filled: true,

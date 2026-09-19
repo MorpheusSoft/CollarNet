@@ -319,12 +319,25 @@ async function start() {
 
     // 3. Encender servidor HTTP y escuchar conexiones
     server.listen(PORT, '0.0.0.0', () => {
+      let localIp = '192.168.86.21';
+      try {
+        const nets = os.networkInterfaces();
+        for (const name of Object.keys(nets)) {
+          for (const net of nets[name]) {
+            if (net.family === 'IPv4' && !net.internal && net.address.startsWith('192.168.')) {
+              localIp = net.address;
+              break;
+            }
+          }
+        }
+      } catch (_) {}
+
       console.log(`=========================================`);
       console.log(` Servidor CollarNet / CowIA Iniciado`);
       console.log(` Escuchando en: http://0.0.0.0:${PORT}`);
       console.log(` Acceso Local: http://localhost:${PORT}`);
-      console.log(` Acceso Red Wi-Fi: http://192.168.86.30:${PORT}`);
-      console.log(` Portal Descargas Móvil: http://192.168.86.30:${PORT}/descargas`);
+      console.log(` Acceso Red Wi-Fi: http://${localIp}:${PORT}`);
+      console.log(` Portal Descargas Móvil: http://${localIp}:${PORT}/descargas`);
       console.log(` Prefijo MQTT: ${process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano'}`);
       console.log(`=========================================`);
     });
