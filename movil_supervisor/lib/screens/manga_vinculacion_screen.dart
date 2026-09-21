@@ -17,23 +17,15 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
   String? _collarQR;
   String? _potreroDestino;
 
-  // Lista simulada de reses sin collar en manga
-  final List<Map<String, dynamic>> _animalesManga = [
-    {'id': 101, 'arete': 'V-042', 'categoria': 'Vaca Lechera', 'raza': 'Gyr Lechero', 'peso': 420},
-    {'id': 102, 'arete': 'V-043', 'categoria': 'Novilla Preñada', 'raza': 'Brahman', 'peso': 380},
-    {'id': 103, 'arete': 'T-015', 'categoria': 'Toro Reproductor', 'raza': 'Senepol', 'peso': 710},
-    {'id': 104, 'arete': 'V-044', 'categoria': 'Vaca Seca', 'raza': 'Girolando', 'peso': 460},
-    {'id': 105, 'arete': 'M-088', 'categoria': 'Mautes de Ceba', 'raza': 'Brahman Gris', 'peso': 295},
-  ];
+  final TextEditingController _areteManualController = TextEditingController();
+  final TextEditingController _collarManualController = TextEditingController();
 
-  final List<String> _collaresDisponibles = [
-    'COL-0014',
-    'COL-0015',
-    'COL-0016',
-    'COL-0017',
-    'COL-0018',
-    'COL-0019',
-  ];
+  @override
+  void dispose() {
+    _areteManualController.dispose();
+    _collarManualController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +47,7 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
               children: [
                 _buildStepIndicator(1, '1. Arete Res', _pasoActual >= 1, _areteSeleccionado != null),
                 const Icon(Icons.chevron_right, color: FincaTheme.textMuted),
-                _buildStepIndicator(2, '2. Escanear QR', _pasoActual >= 2, _collarQR != null),
+                _buildStepIndicator(2, '2. Collar / QR', _pasoActual >= 2, _collarQR != null),
                 const Icon(Icons.chevron_right, color: FincaTheme.textMuted),
                 _buildStepIndicator(3, '3. Potrero', _pasoActual >= 3, _potreroDestino != null),
               ],
@@ -68,8 +60,8 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_pasoActual == 1) _buildPaso1SeleccionarArete(),
-                  if (_pasoActual == 2) _buildPaso2EscanearCollar(),
+                  if (_pasoActual == 1) _buildPaso1SeleccionarArete(fincaState),
+                  if (_pasoActual == 2) _buildPaso2EscanearCollar(fincaState),
                   if (_pasoActual == 3) _buildPaso3AsignarPotrero(fincaState),
                 ],
               ),
@@ -114,12 +106,18 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
     );
   }
 
-  Widget _buildPaso1SeleccionarArete() {
+  Widget _buildPaso1SeleccionarArete(FincaStateProvider fincaState) {
+    // Filtrar animales registrados sin collar asignado
+    final animalesSinCollar = fincaState.animales.where((a) {
+      final col = a['collarId'] ?? a['collar_id'];
+      return col == null || col == 'SIN_COLLAR' || col.toString().isEmpty;
+    }).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'TOQUE 1: SELECCIONE EL ARETE VISUAL EN MANGA',
+          'TOQUE 1: IDENTIFICACIÓN DEL ANIMAL EN MANGA',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.bold,
@@ -127,72 +125,154 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
             letterSpacing: 0.5,
           ),
         ),
-        const SizedBox(height: 12),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _animalesManga.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (context, index) {
-            final a = _animalesManga[index];
-            final isSelected = _areteSeleccionado == a['arete'];
+        const SizedBox(height: 14),
 
-            return InkWell(
-              onTap: () {
-                setState(() {
-                  _areteSeleccionado = a['arete'];
-                  _pasoActual = 2; // Avanzar automáticamente al paso 2
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isSelected ? FincaTheme.primaryGreen.withOpacity(0.2) : FincaTheme.bgCard,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isSelected ? FincaTheme.primaryGreen : FincaTheme.borderCard,
-                    width: isSelected ? 2 : 1,
+        // Campo de ingreso manual directo
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: FincaTheme.bgCard,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: FincaTheme.primaryGreen.withOpacity(0.4)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Escribir Arete Visual / Código:',
+                style: TextStyle(color: FincaTheme.textLight, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _areteManualController,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        hintText: 'Ej. V-001, TORO-05, A-102...',
+                        hintStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 13),
+                        filled: true,
+                        fillColor: FincaTheme.bgDark,
+                        prefixIcon: const Icon(Icons.tag, color: FincaTheme.accentGreenLight),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                      onSubmitted: (val) {
+                        if (val.trim().isNotEmpty) {
+                          setState(() {
+                            _areteSeleccionado = val.trim().toUpperCase();
+                            _pasoActual = 2;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FincaTheme.primaryGreen,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () {
+                      if (_areteManualController.text.trim().isNotEmpty) {
+                        setState(() {
+                          _areteSeleccionado = _areteManualController.text.trim().toUpperCase();
+                          _pasoActual = 2;
+                        });
+                      }
+                    },
+                    child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        if (animalesSinCollar.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          const Text(
+            'O SELECCIONE DE ANIMALES REGISTRADOS SIN COLLAR:',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: FincaTheme.textMuted,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: animalesSinCollar.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final a = animalesSinCollar[index];
+              final arete = a['areteVisual'] ?? a['arete_visual'] ?? a['arete'] ?? 'A-${a['id']}';
+              final isSelected = _areteSeleccionado == arete;
+
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    _areteSeleccionado = arete;
+                    _areteManualController.text = arete;
+                    _pasoActual = 2;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isSelected ? FincaTheme.primaryGreen.withOpacity(0.2) : FincaTheme.bgCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? FincaTheme.primaryGreen : FincaTheme.borderCard,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: FincaTheme.primaryGreen.withOpacity(0.15),
+                        child: const Icon(Icons.pets, color: FincaTheme.primaryGreen, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Arete: $arete',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: FincaTheme.textLight,
+                              ),
+                            ),
+                            Text(
+                              '${a['categoria'] ?? 'Bovino'} • ${a['raza'] ?? 'Mestizo'}',
+                              style: const TextStyle(fontSize: 12, color: FincaTheme.textMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.touch_app, color: FincaTheme.accentGreenLight, size: 20),
+                    ],
                   ),
                 ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: FincaTheme.primaryGreen.withOpacity(0.15),
-                      child: const Icon(Icons.pets, color: FincaTheme.primaryGreen),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Arete: ${a['arete']}',
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: FincaTheme.textLight,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${a['categoria']} • ${a['raza']} • ${a['peso']} kg',
-                            style: const TextStyle(fontSize: 13, color: FincaTheme.textMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.touch_app, color: FincaTheme.accentGreenLight),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ),
+        ],
       ],
     );
   }
 
-  Widget _buildPaso2EscanearCollar() {
+  Widget _buildPaso2EscanearCollar(FincaStateProvider fincaState) {
+    final collaresStock = fincaState.collaresDisponibles;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -200,7 +280,7 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'TOQUE 2: ESCANEAR QR DEL COLLAR',
+              'TOQUE 2: ESCANEAR O DIGITAR COLLAR',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
@@ -216,52 +296,126 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
         ),
         const SizedBox(height: 12),
 
+        // Campo para escribir ID del collar manualmente
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: FincaTheme.bgCard,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: FincaTheme.infoBlue.withOpacity(0.4)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Código o ID del Collar:',
+                style: TextStyle(color: FincaTheme.textLight, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _collarManualController,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        hintText: 'Ej. COL-0001, COW-0042...',
+                        hintStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 13),
+                        filled: true,
+                        fillColor: FincaTheme.bgDark,
+                        prefixIcon: const Icon(Icons.sensors, color: FincaTheme.infoBlue),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                      onSubmitted: (val) {
+                        if (val.trim().isNotEmpty) {
+                          setState(() {
+                            _collarQR = val.trim().toUpperCase();
+                            _pasoActual = 3;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FincaTheme.infoBlue,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () {
+                      if (_collarManualController.text.trim().isNotEmpty) {
+                        setState(() {
+                          _collarQR = _collarManualController.text.trim().toUpperCase();
+                          _pasoActual = 3;
+                        });
+                      }
+                    },
+                    child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
         // Botón Cámara de Escaneo
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: FincaTheme.bgCardElevated,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: FincaTheme.infoBlue.withOpacity(0.5)),
+            border: Border.all(color: FincaTheme.infoBlue.withOpacity(0.3)),
           ),
           child: Column(
             children: [
-              const Icon(Icons.qr_code_scanner, size: 60, color: FincaTheme.infoBlue),
-              const SizedBox(height: 12),
+              const Icon(Icons.qr_code_scanner, size: 48, color: FincaTheme.infoBlue),
+              const SizedBox(height: 10),
               const Text(
-                'Apunte al código QR del collar físico',
-                style: TextStyle(color: FincaTheme.textLight, fontSize: 15, fontWeight: FontWeight.bold),
+                'Escanear Código QR con la Cámara',
+                style: TextStyle(color: FincaTheme.textLight, fontSize: 14, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               const Text(
-                'o seleccione un collar disponible en stock',
-                style: TextStyle(color: FincaTheme.textMuted, fontSize: 13),
+                'Apunte al código QR grabado en la carcasa solar',
+                style: TextStyle(color: FincaTheme.textMuted, fontSize: 12),
               ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _collaresDisponibles.map((col) {
-                  final isColSelected = _collarQR == col;
-                  return ChoiceChip(
-                    label: Text(col),
-                    selected: isColSelected,
-                    selectedColor: FincaTheme.infoBlue,
-                    backgroundColor: FincaTheme.bgCard,
-                    labelStyle: TextStyle(
-                      color: isColSelected ? Colors.black : FincaTheme.textLight,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onSelected: (val) {
-                      setState(() {
-                        _collarQR = val ? col : null;
-                        if (val) _pasoActual = 3;
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
+              if (collaresStock.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                const Text(
+                  'Collares disponibles en stock:',
+                  style: TextStyle(color: FincaTheme.textLight, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: collaresStock.map((col) {
+                    final isColSelected = _collarQR == col;
+                    return ChoiceChip(
+                      label: Text(col),
+                      selected: isColSelected,
+                      selectedColor: FincaTheme.infoBlue,
+                      backgroundColor: FincaTheme.bgCard,
+                      labelStyle: TextStyle(
+                        color: isColSelected ? Colors.black : FincaTheme.textLight,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      onSelected: (val) {
+                        setState(() {
+                          _collarQR = val ? col : null;
+                          _collarManualController.text = val ? col : '';
+                          if (val) _pasoActual = 3;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
           ),
         ),
