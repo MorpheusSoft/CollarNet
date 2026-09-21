@@ -763,6 +763,16 @@ export default function CollarsInventoryView({ user }) {
                             </span>
                             <span className="font-mono">{sigBars}/5</span>
                           </div>
+
+                          {/* Enlace y GPS */}
+                          <div className="pt-1 flex flex-col gap-0.5 text-[10px] font-mono border-t border-slate-800">
+                            <span className={c.medio_red === 'WIFI' ? 'text-sky-400 font-semibold' : 'text-emerald-400 font-semibold'}>
+                              {c.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G Digitel'}
+                            </span>
+                            <span className={c.gps_encendido ? (c.gps_fijado ? 'text-emerald-400' : 'text-amber-400') : 'text-slate-500'}>
+                              {c.gps_encendido ? (c.gps_fijado ? `🛰️ Fix (${c.satelites_visibles || 0})` : `🛰️ Buscando (${c.satelites_visibles || 0})`) : '💤 GPS Off'}
+                            </span>
+                          </div>
                         </div>
                       </td>
 

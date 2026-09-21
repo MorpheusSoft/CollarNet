@@ -433,6 +433,15 @@ export default function LivestockTable({
             <Signal size={11} /> {row.senal_celular ?? 4}/5
           </span>
         </div>
+        <div className="text-[9px] text-slate-400 flex items-center gap-1.5 pt-0.5 font-mono">
+          <span className={row.medio_red === 'WIFI' ? 'text-sky-300' : 'text-emerald-300'}>
+            {row.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G'}
+          </span>
+          <span>•</span>
+          <span className={row.gps_encendido ? (row.gps_fijado ? 'text-emerald-400' : 'text-amber-400') : 'text-slate-500'}>
+            {row.gps_encendido ? (row.gps_fijado ? `🛰️ Fix (${row.satelites_visibles || 0})` : `🛰️ Buscando (${row.satelites_visibles || 0})`) : '💤 GPS Off'}
+          </span>
+        </div>
       </div>
     );
   };

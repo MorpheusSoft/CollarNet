@@ -2,9 +2,14 @@
 #define STORAGE_MANAGER_H
 
 #include <Arduino.h>
+#include "config.h"
 
 // Inicializa el sistema de archivos LittleFS
 bool initStorage();
+
+// Guarda y carga la preferencia de red en LittleFS
+bool saveNetPreference(NetPreference pref);
+NetPreference loadNetPreference();
 
 // Guarda la configuración JSON recibida vía MQTT en LittleFS
 bool saveGeofenceConfig(const String& jsonConfig);

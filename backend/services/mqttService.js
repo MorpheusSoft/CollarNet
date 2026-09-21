@@ -47,6 +47,10 @@ export function initMQTT(io) {
       const imei = payload.imei ? String(payload.imei).trim() : null;
       const vbat = payload.vbat !== undefined ? parseInt(payload.vbat, 10) : null;
       const estaCargando = payload.charging === true || (vbat !== null && vbat >= 4220);
+      const medioRed = payload.net ? String(payload.net).toUpperCase() : 'CELULAR';
+      const gpsEncendido = payload.gps_pwr !== undefined ? Boolean(payload.gps_pwr) : true;
+      const gpsFijado = payload.gps_fix !== undefined ? Boolean(payload.gps_fix) : false;
+      const satelites = payload.sats !== undefined ? parseInt(payload.sats, 10) : 0;
 
       if (isNaN(lat) || isNaN(lon)) {
         console.warn(`[MQTT] Telemetría inválida del collar ${collarId}: coordenadas no numéricas.`);
@@ -106,7 +110,7 @@ export function initMQTT(io) {
         }
       }
 
-      // 5. Actualizar el estado actual del dispositivo físico (Collar) con batería y carga
+      // 5. Actualizar el estado actual del dispositivo físico (Collar) con batería, carga, medio de red y GPS
       const updateCollarQuery = `
         UPDATE collares 
         SET nivel_bateria = $1, 
@@ -114,19 +118,24 @@ export function initMQTT(io) {
             ultima_conexion = NOW(),
             ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
             esta_cargando = $5,
-            voltaje_mv = $6
-        WHERE id = $7;
+            voltaje_mv = $6,
+            medio_red = $7,
+            gps_encendido = $8,
+            gps_fijado = $9,
+            satelites_visibles = $10
+        WHERE id = $11;
       `;
       try {
-        await pool.query(updateCollarQuery, [bateria, senal, lat, lon, estaCargando, vbat, matchedCollarId]);
+        await pool.query(updateCollarQuery, [bateria, senal, lat, lon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
       } catch (_) {
         // Fallback si columnas opcionales no existen en esquema antiguo
         await pool.query(`
           UPDATE collares 
           SET nivel_bateria = $1, senal_celular = $2, ultima_conexion = NOW(),
-              ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326)
-          WHERE id = $5;
-        `, [bateria, senal, lat, lon, matchedCollarId]);
+              ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
+              esta_cargando = $5, voltaje_mv = $6
+          WHERE id = $7;
+        `, [bateria, senal, lat, lon, estaCargando, vbat, matchedCollarId]);
       }
 
       // 6. Broadcast en tiempo real al panel Web usando Socket.io
@@ -159,12 +168,18 @@ export function initMQTT(io) {
         dentroPotrero: checkResult ? checkResult.dentroPotrero : true,
         dentro_potrero: checkResult ? checkResult.dentroPotrero : true,
         collarActivo: activo,
-        activo: activo
+        activo: activo,
+        medio_red: medioRed,
+        net: medioRed,
+        gps_encendido: gpsEncendido,
+        gps_fijado: gpsFijado,
+        satelites_visibles: satelites,
+        sats: satelites
       };
 
       io.emit('telemetria_realtime', broadcastData);
       io.emit('telemetria_actualizada', broadcastData);
-      console.log(`[Live IoT] Collar: ${matchedCollarId} | IMEI: ${broadcastData.imei || 'N/A'} | Bat: ${bateria}% (⚡ ${estaCargando ? 'USB/Cargando' : 'Batería'}) | Res: ${broadcastData.areteVisual} | Alerta: ${broadcastData.alertType}`);
+      console.log(`[Live IoT] Collar: ${matchedCollarId} | IMEI: ${broadcastData.imei || 'N/A'} | Red: ${medioRed} | GPS: ${gpsEncendido ? (gpsFijado ? `FIX (${satelites} sats)` : `Buscando (${satelites} sats)`) : 'APAGADO'} | Bat: ${bateria}% (⚡ ${estaCargando ? 'USB' : 'Batería'}) | Res: ${broadcastData.areteVisual} | Alerta: ${broadcastData.alertType}`);
 
     } catch (err) {
       console.error('[MQTT] Error procesando mensaje de telemetría:', err);

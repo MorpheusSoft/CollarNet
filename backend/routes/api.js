@@ -486,6 +486,11 @@ async function handleMonitoreoQuery(req, res) {
         COALESCE(c.senal_celular, 5) AS senal_celular,
         COALESCE(c.esta_cargando, false) AS esta_cargando,
         c.voltaje_mv,
+        COALESCE(c.medio_red, 'CELULAR') AS medio_red,
+        COALESCE(c.gps_encendido, true) AS gps_encendido,
+        COALESCE(c.gps_fijado, false) AS gps_fijado,
+        COALESCE(c.satelites_visibles, 0) AS satelites_visibles,
+        COALESCE(c.preferencia_red, 'CELULAR') AS preferencia_red,
         c.ultima_conexion,
         c.version_firmware,
         c.activo AS collar_activo,
@@ -1829,6 +1834,11 @@ router.get('/collares/inventario', async (req, res) => {
         c.senal_celular,
         COALESCE(c.esta_cargando, false) AS esta_cargando,
         c.voltaje_mv,
+        COALESCE(c.medio_red, 'CELULAR') AS medio_red,
+        COALESCE(c.gps_encendido, true) AS gps_encendido,
+        COALESCE(c.gps_fijado, false) AS gps_fijado,
+        COALESCE(c.satelites_visibles, 0) AS satelites_visibles,
+        COALESCE(c.preferencia_red, 'CELULAR') AS preferencia_red,
         c.ultima_conexion,
         c.fecha_instalacion,
         c.version_firmware,
@@ -2637,7 +2647,7 @@ router.get('/collares/:id/historial', async (req, res) => {
 router.get('/collares', async (req, res) => {
   const { tenantId, estado } = req.query;
   try {
-    let query = 'SELECT id, tenant_id, COALESCE(estado, \'EN_ALMACEN\') AS estado, numero_sim, imei, nivel_bateria, senal_celular, ultima_conexion, version_firmware, activo, COALESCE(esta_cargando, false) AS esta_cargando, voltaje_mv FROM collares';
+    let query = 'SELECT id, tenant_id, COALESCE(estado, \'EN_ALMACEN\') AS estado, numero_sim, imei, nivel_bateria, senal_celular, ultima_conexion, version_firmware, activo, COALESCE(esta_cargando, false) AS esta_cargando, voltaje_mv, COALESCE(medio_red, \'CELULAR\') AS medio_red, COALESCE(gps_encendido, true) AS gps_encendido, COALESCE(gps_fijado, false) AS gps_fijado, COALESCE(satelites_visibles, 0) AS satelites_visibles, COALESCE(preferencia_red, \'CELULAR\') AS preferencia_red FROM collares';
     let params = [];
     let where = [];
     if (tenantId) {
@@ -2660,6 +2670,38 @@ router.get('/collares', async (req, res) => {
     if (tenantId) list = list.filter(c => String(c.tenant_id) === String(tenantId));
     if (estado) list = list.filter(c => c.estado === estado);
     res.json(list);
+  }
+});
+
+/**
+ * POST /api/collares/:id/config-red
+ * Configura la preferencia de red (CELULAR, WIFI, AUTO) o el encendido de GPS vía MQTT.
+ */
+router.post('/collares/:id/config-red', async (req, res) => {
+  const { id } = req.params;
+  const { net_pref, gps_pwr } = req.body;
+  try {
+    const payload = {};
+    if (net_pref) payload.net_pref = net_pref;
+    if (gps_pwr !== undefined) payload.gps_pwr = Boolean(gps_pwr);
+
+    const sent = publishToCollar(id, payload);
+    if (net_pref) {
+      await pool.query('UPDATE collares SET preferencia_red = $1 WHERE id = $2', [net_pref, id]);
+    }
+    if (gps_pwr !== undefined) {
+      await pool.query('UPDATE collares SET gps_encendido = $1 WHERE id = $2', [Boolean(gps_pwr), id]);
+    }
+
+    res.json({
+      success: true,
+      collarId: id,
+      commandSent: sent,
+      config: payload
+    });
+  } catch (err) {
+    console.error('[API Config Red Collar Error]:', err);
+    res.status(500).json({ error: 'Error al enviar configuración de red al collar', detalle: err.message });
   }
 });
 

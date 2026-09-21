@@ -486,6 +486,8 @@ export default function MapMonitoring({
             <div><strong>Collar ID:</strong> ${animal.collar_id}</div>
             <div><strong>Estado Cerca:</strong> <span style="font-weight:bold; color:${isEscape ? '#e11d48' : (isWarn ? '#d97706' : '#059669')}">${estado}</span></div>
             <div><strong>Batería:</strong> <span style="font-weight:bold; color:${batColor};">🔋 ${bat}%</span> ${isCharging ? '<span style="background:#fef08a; color:#854d0e; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚡ En Carga / USB</span>' : ''}</div>
+            <div><strong>Enlace:</strong> <span style="font-weight:bold; color:${animal.medio_red === 'WIFI' ? '#0284c7' : '#10b981'};">${animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G LTE Digitel'}</span></div>
+            <div><strong>GPS Satelital:</strong> <span style="font-weight:bold; color:${animal.gps_encendido ? (animal.gps_fijado ? '#059669' : '#d97706') : '#64748b'};">${animal.gps_encendido ? (animal.gps_fijado ? `🛰️ Fijado (${animal.satelites_visibles || 0} sats)` : `🛰️ Buscando (${animal.satelites_visibles || 0} sats)`) : '💤 Apagado'}</span></div>
             <div><strong>Potrero Actual:</strong> 🌱 ${animal.potrero_nombre || 'No asignado'}</div>
             <div><strong>Última Señal:</strong> ${animal.fecha_hora ? new Date(animal.fecha_hora).toLocaleTimeString() : 'En vivo'}</div>
           </div>
@@ -883,6 +885,15 @@ export default function MapMonitoring({
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-400" />
                         {animal.fecha_hora ? new Date(animal.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Ahora'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-1.5 mt-2 text-[10px]">
+                      <span className={`px-2 py-0.5 rounded font-mono font-medium flex items-center gap-1 ${animal.medio_red === 'WIFI' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`}>
+                        {animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G Digitel'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded font-mono font-medium flex items-center gap-1 ${animal.gps_encendido ? (animal.gps_fijado ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30') : 'bg-slate-700 text-slate-400'}`}>
+                        {animal.gps_encendido ? (animal.gps_fijado ? `🛰️ Fix (${animal.satelites_visibles || 0})` : `🛰️ Buscando (${animal.satelites_visibles || 0})`) : '💤 GPS Off'}
                       </span>
                     </div>
 

@@ -1,6 +1,7 @@
 #include <WiFi.h>
-#define TINY_GSM_MODEM_SIM7600
+#define TINY_GSM_MODEM_SIM7670G
 #define TINY_GSM_RX_BUFFER 1024
+#define TINY_GSM_DEBUG Serial
 #include <TinyGsmClient.h>
 #include "config.h"
 #include "secrets.h"
@@ -21,11 +22,21 @@ WiFiClient wifiClient;
 
 bool gsmActive = false;
 bool wifiActive = false;
+NetPreference currentNetPref = DEFAULT_NET_PREF;
+bool gpsPowered = true;
+
 // Temporizador para procesar la telemetría y geocercas cada 1 segundo
 unsigned long lastGPSCheckTime = 0;
 const unsigned long GPS_CHECK_INTERVAL = 1000;
 
 String hardwareIMEI = "";
+
+String getActiveNetType() {
+    if (wifiActive && WiFi.status() == WL_CONNECTED) {
+        return "WIFI";
+    }
+    return "CELULAR";
+}
 
 // Función para leer el IMEI unívoco del módem SIM7670G
 String readHardwareIMEI() {
@@ -107,6 +118,83 @@ bool readBatteryStatus(int &percent, int &voltageMv, bool &isCharging) {
     return false;
 }
 
+void applyNetworkPreference() {
+    Serial.printf("\n[Red] Configurando modo de red: %s\n", 
+                  currentNetPref == NET_PREF_CELLULAR ? "FORZAR CELULAR (SIM 4G LTE DIGITEL)" : 
+                  (currentNetPref == NET_PREF_WIFI ? "FORZAR WIFI" : "AUTO (WIFI -> SIM 4G)"));
+
+    if (currentNetPref == NET_PREF_CELLULAR) {
+        if (wifiActive || WiFi.status() == WL_CONNECTED) {
+            Serial.println("[Red] Desactivando radio Wi-Fi por preferencia de CELULAR...");
+            WiFi.disconnect(true);
+            WiFi.mode(WIFI_OFF);
+            wifiActive = false;
+        }
+        Serial.println("[Celular] Esperando registro en la red celular de Digitel...");
+        modem.waitForNetwork(15000L);
+        Serial.printf("[Celular] Conectando a red de datos APN: %s...\n", MODEM_APN);
+        if (!modem.isGprsConnected()) {
+            modem.gprsConnect(MODEM_APN, "", "");
+        }
+        if (modem.isGprsConnected()) {
+            Serial.println("[Celular] ¡Conexión de datos 4G LTE DIGITEL establecida con éxito!");
+            modem.sendAT("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\"");
+            modem.waitResponse();
+            gsmActive = true;
+            initMQTT(COLLAR_ID, &gsmClient);
+        } else {
+            Serial.println("[Celular] ⚠️ No se pudo establecer conexión de datos móviles GPRS/LTE.");
+        }
+    } else if (currentNetPref == NET_PREF_WIFI) {
+        if (gsmActive && modem.isGprsConnected()) {
+            Serial.println("[Red] Desconectando datos móviles por preferencia de Wi-Fi...");
+            modem.gprsDisconnect();
+            gsmActive = false;
+        }
+        Serial.println("[Red] Inicializando Wi-Fi...");
+        initWiFi();
+        if (WiFi.status() == WL_CONNECTED) {
+            wifiActive = true;
+            Serial.println("[Red] ¡Conectado a Wi-Fi!");
+            initMQTT(COLLAR_ID, &wifiClient);
+        } else {
+            Serial.println("[Red] ⚠️ Wi-Fi no disponible.");
+        }
+    } else { // NET_PREF_AUTO
+        Serial.println("[Red] Modo AUTO: Comprobando disponibilidad de Wi-Fi...");
+        initWiFi();
+        if (WiFi.status() == WL_CONNECTED) {
+            wifiActive = true;
+            Serial.println("[Red] ¡Conectado a Wi-Fi de alta velocidad!");
+            initMQTT(COLLAR_ID, &wifiClient);
+        } else {
+            Serial.printf("[Celular] Wi-Fi no disponible. Conectando a red de datos APN: %s...\n", MODEM_APN);
+            modem.waitForNetwork(15000L);
+            if (modem.gprsConnect(MODEM_APN, "", "")) {
+                Serial.println("[Celular] ¡Conexión de datos 4G LTE DIGITEL establecida con éxito!");
+                gsmActive = true;
+                initMQTT(COLLAR_ID, &gsmClient);
+            } else {
+                Serial.println("[Red] Sin conexión celular ni Wi-Fi inicial. Reintentando de fondo...");
+                initMQTT(COLLAR_ID, &wifiClient);
+            }
+        }
+    }
+}
+
+void onNetworkPreferenceChanged(NetPreference newPref) {
+    if (newPref == currentNetPref) return;
+    currentNetPref = newPref;
+    applyNetworkPreference();
+}
+
+void onGpsPowerChanged(bool powerOn) {
+    gpsPowered = powerOn;
+    Serial.printf("\n[GNSS] Cambiando estado de alimentación satelital a: %s\n", powerOn ? "ENCENDIDO" : "APAGADO");
+    modem.sendAT(powerOn ? "+CGNSSPWR=1" : "+CGNSSPWR=0");
+    modem.waitResponse();
+}
+
 void setup() {
     // Inicializar puerto Serial de depuración (USB)
     Serial.begin(SERIAL_BAUD);
@@ -149,27 +237,16 @@ void setup() {
     Serial.println("[GNSS] Encendiendo receptor GNSS satelital del SIM7670G...");
     modem.sendAT("+CGNSSPWR=1");
     delay(500);
-    modem.sendAT("+CGNSSTST=1");
-    delay(300);
+    gpsPowered = true;
 
-    // Conectar Wi-Fi primero para asegurar conectividad de desarrollo y broker
-    Serial.println("[Red] Inicializando conectividad...");
-    initWiFi();
-    if (WiFi.status() == WL_CONNECTED) {
-        wifiActive = true;
-        Serial.println("[Red] ¡Conectado a Wi-Fi de alta velocidad!");
-        initMQTT(COLLAR_ID, &wifiClient);
-    } else {
-        Serial.printf("[Celular] Conectando a red de datos APN: %s...\n", MODEM_APN);
-        if (modem.gprsConnect(MODEM_APN, "", "")) {
-            Serial.println("[Celular] ¡Conexión de datos 4G LTE DIGITEL establecida con éxito!");
-            gsmActive = true;
-            initMQTT(COLLAR_ID, &gsmClient);
-        } else {
-            Serial.println("[Red] Sin conexión celular ni Wi-Fi inicial. Reintentando de fondo...");
-            initMQTT(COLLAR_ID, &wifiClient);
-        }
-    }
+    // Cargar preferencia de red (por defecto CELULAR para pruebas)
+    currentNetPref = loadNetPreference();
+    Serial.printf("[Config] Preferencia de red activa: %s\n", 
+                  currentNetPref == NET_PREF_CELLULAR ? "CELULAR (SIM 4G DIGITEL)" : 
+                  (currentNetPref == NET_PREF_WIFI ? "WIFI" : "AUTO"));
+
+    // Inicializar conectividad según preferencia
+    applyNetworkPreference();
     
     // Inicializar receptor GPS físico o Emulador según configuración
     if (USE_EMULATOR) {
@@ -209,8 +286,24 @@ void loop() {
         }
     }
     
-    // 3. Mantener la conexión Wi-Fi de fondo (solo si no está en ahorro)
-    handleWiFi();
+    // 3. Mantener conectividad según preferencia
+    if (!powerSaveModeActive) {
+        if (currentNetPref == NET_PREF_WIFI || (currentNetPref == NET_PREF_AUTO && wifiActive)) {
+            handleWiFi();
+        } else if (currentNetPref == NET_PREF_CELLULAR || (currentNetPref == NET_PREF_AUTO && !wifiActive)) {
+            if (!modem.isGprsConnected()) {
+                static unsigned long lastGprsCheck = 0;
+                if (millis() - lastGprsCheck > 15000) {
+                    lastGprsCheck = millis();
+                    Serial.println("[Celular] Reconectando datos móviles 4G LTE...");
+                    if (modem.gprsConnect(MODEM_APN, "", "")) {
+                        gsmActive = true;
+                        setMQTTNetworkClient(&gsmClient);
+                    }
+                }
+            }
+        }
+    }
     
     // 4. Procesar tareas MQTT en segundo plano (escucha de tópicos)
     if (!powerSaveModeActive) {
@@ -252,7 +345,8 @@ void loop() {
             bool rawHasPosition = false;
             Coordinate rawPos = {0.0, 0.0};
 
-            if (modem.getGPS(&gLat, &gLon, &gSpeed, &gAlt, &gVsat, &gUsat)) {
+            uint8_t gpsStatus = 0;
+            if (modem.getGPS(&gpsStatus, &gLat, &gLon, &gSpeed, &gAlt, &gVsat, &gUsat)) {
                 if (abs(gLat) > 0.001) {
                     rawPos.lat = gLat;
                     rawPos.lon = gLon;
@@ -304,7 +398,7 @@ void loop() {
                 // Coordenadas de prueba en Potrero A (Hato Oficina)
                 double refLat = 10.671340;
                 double refLon = -71.604030;
-                publishTelemetry(refLat, refLon, currentBat, 4, "INDOOR_USB", hardwareIMEI, currentVbat, isCharging);
+                publishTelemetry(refLat, refLon, currentBat, 4, "INDOOR_USB", hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, false, sats);
             }
             
             // Colocar alerta en NONE y silenciar de inmediato
@@ -374,7 +468,7 @@ void loop() {
         bool isCharging = false;
         readBatteryStatus(currentBat, currentVbat, isCharging);
         int mockSignal = (sats > 4) ? 5 : 3;
-        publishTelemetry(currentPos.lat, currentPos.lon, currentBat, mockSignal, alertStr, hardwareIMEI, currentVbat, isCharging);
+        publishTelemetry(currentPos.lat, currentPos.lon, currentBat, mockSignal, alertStr, hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, true, sats);
         
         // E. Registrar muestra en la Caja Negra de memoria Flash (LittleFS)
         String timeStr = String(millis() / 1000) + "s";

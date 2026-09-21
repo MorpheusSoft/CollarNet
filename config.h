@@ -9,6 +9,16 @@
 // Identificador de Collar
 #define COLLAR_ID "COLLAR_01"
 
+// Modos de Preferencia de Red
+enum NetPreference {
+    NET_PREF_AUTO = 0,     // Prioriza Wi-Fi en corrales/taller, conmuta a SIM 4G en potreros
+    NET_PREF_CELLULAR = 1, // Fuerza exclusivamente SIM 4G LTE Digitel
+    NET_PREF_WIFI = 2      // Fuerza exclusivamente Wi-Fi
+};
+
+// Por solicitud para pruebas: se activa uso de CELULAR (SIM 4G) por defecto
+#define DEFAULT_NET_PREF NET_PREF_CELLULAR
+
 // Configuración de Pines de Hardware
 #define STATUS_LED_PIN 2     // LED de estado
 #define BUZZER_PIN 5         // Zumbador piezoeléctrico en IO5 (4000 Hz)
@@ -32,7 +42,8 @@
 #define WIFI_RECONNECT_INTERVAL 10000 // Intervalo de intento de reconexión (10s)
 
 // Configuración del Broker MQTT
-#define MQTT_SERVER "broker.hivemq.com"
+// Usamos la IP pública de HiveMQ (18.185.214.85) para evitar fallos de resolución DNS en redes móviles 4G LTE
+#define MQTT_SERVER "18.185.214.85"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC_PREFIX "collarnet/lzambrano"
 

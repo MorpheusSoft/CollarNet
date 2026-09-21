@@ -14,6 +14,10 @@ String cmdTopic = "";
 String telemetryTopic = "";
 unsigned long lastMqttReconnect = 0;
 
+// Declaraciones externas para actuar ante comandos remotos
+extern void onNetworkPreferenceChanged(NetPreference newPref);
+extern void onGpsPowerChanged(bool powerOn);
+
 // Callback de recepción de mensajes MQTT
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     Serial.printf("\n[MQTT] Mensaje recibido en: %s\n", topic);
@@ -31,6 +35,22 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
             potreroAbierto = (doc["p_open"].as<int>() == 1);
             Serial.printf("[MQTT] ¡Estado de Potrero actualizado vía MQTT!: %s\n", 
                           potreroAbierto ? "ABIERTO (Modo Traslado)" : "CERRADO (Cerca Activa)");
+        }
+        if (doc.containsKey("net_pref")) {
+            String np = doc["net_pref"].as<String>();
+            np.toUpperCase();
+            NetPreference pref = NET_PREF_AUTO;
+            if (np == "CELULAR" || np == "1") pref = NET_PREF_CELLULAR;
+            else if (np == "WIFI" || np == "2") pref = NET_PREF_WIFI;
+            else pref = NET_PREF_AUTO;
+            Serial.printf("[MQTT] Recibido cambio de preferencia de red: %s\n", np.c_str());
+            saveNetPreference(pref);
+            onNetworkPreferenceChanged(pref);
+        }
+        if (doc.containsKey("gps_pwr")) {
+            bool pwr = doc["gps_pwr"].as<bool>();
+            Serial.printf("[MQTT] Recibido control de encendido de GPS: %s\n", pwr ? "ENCENDER" : "APAGAR");
+            onGpsPowerChanged(pwr);
         }
     }
     
@@ -94,13 +114,13 @@ void handleMQTT() {
     }
 }
 
-bool publishTelemetry(double lat, double lon, int bateria, int senal, const String& alertType, const String& imei, int vbat, bool isCharging) {
+bool publishTelemetry(double lat, double lon, int bateria, int senal, const String& alertType, const String& imei, int vbat, bool isCharging, const String& netType, bool gpsPwr, bool gpsFix, int sats) {
     if (!client.connected()) {
         Serial.println("[MQTT] Envío omitido: Cliente MQTT desconectado.");
         return false;
     }
 
-    StaticJsonDocument<384> doc;
+    StaticJsonDocument<512> doc;
     doc["lat"] = lat;
     doc["lon"] = lon;
     doc["bat"] = bateria;
@@ -113,6 +133,10 @@ bool publishTelemetry(double lat, double lon, int bateria, int senal, const Stri
         doc["vbat"] = vbat;
     }
     doc["charging"] = isCharging;
+    doc["net"] = netType;
+    doc["gps_pwr"] = gpsPwr;
+    doc["gps_fix"] = gpsFix;
+    doc["sats"] = sats;
 
     String jsonString;
     serializeJson(doc, jsonString);

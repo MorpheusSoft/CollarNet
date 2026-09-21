@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 
 const char* CONFIG_FILE = "/geofence.json";
+const char* NET_PREF_FILE = "/net_pref.txt";
 
 bool initStorage() {
     if (!LittleFS.begin(true)) {
@@ -12,6 +13,34 @@ bool initStorage() {
     }
     Serial.println("[Storage] LittleFS montado exitosamente.");
     return true;
+}
+
+bool saveNetPreference(NetPreference pref) {
+    File file = LittleFS.open(NET_PREF_FILE, "w");
+    if (!file) {
+        Serial.println("[Storage] Error al abrir archivo de preferencia de red para escribir.");
+        return false;
+    }
+    file.print((int)pref);
+    file.close();
+    Serial.printf("[Storage] Preferencia de red guardada en LittleFS: %d\n", (int)pref);
+    return true;
+}
+
+NetPreference loadNetPreference() {
+    if (!LittleFS.exists(NET_PREF_FILE)) {
+        return DEFAULT_NET_PREF;
+    }
+    File file = LittleFS.open(NET_PREF_FILE, "r");
+    if (!file) return DEFAULT_NET_PREF;
+    String val = file.readString();
+    file.close();
+    val.trim();
+    int p = val.toInt();
+    if (p >= 0 && p <= 2) {
+        return (NetPreference)p;
+    }
+    return DEFAULT_NET_PREF;
 }
 
 bool saveGeofenceConfig(const String& jsonConfig) {
