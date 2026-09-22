@@ -133,6 +133,27 @@ export default function App() {
     const socket = initSocket(
       () => setIsSocketConnected(true),
       (telemetry) => {
+        // 1. Actualizar telemetría en vivo del collar
+        setCollares(prev => {
+          const idx = prev.findIndex(c => c.id === telemetry.collar_id);
+          if (idx >= 0) {
+            const updated = [...prev];
+            updated[idx] = {
+              ...updated[idx],
+              nivel_bateria: telemetry.nivel_bateria ?? telemetry.bateria,
+              senal_celular: telemetry.senal_celular ?? telemetry.senal,
+              esta_cargando: telemetry.esta_cargando,
+              voltaje_mv: telemetry.voltaje_mv,
+              latitud: telemetry.lat,
+              longitud: telemetry.lon,
+              ultima_conexion: telemetry.timestamp
+            };
+            return updated;
+          }
+          return prev;
+        });
+
+        // 2. Si el collar está asignado a un animal en monitoreo, actualizar su telemetría
         setMonitoringData(prev => {
           const index = prev.findIndex(a => a.collar_id === telemetry.collar_id);
           if (index >= 0) {
@@ -140,7 +161,8 @@ export default function App() {
             updated[index] = { ...updated[index], ...telemetry };
             return updated;
           }
-          return [...prev, telemetry];
+          // Si el collar no está vinculado a una res, NO inyectar una fila fantasma en el inventario ganadero
+          return prev;
         });
       },
       (alertData) => {

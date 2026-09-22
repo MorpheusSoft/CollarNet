@@ -168,89 +168,110 @@
     <section class="tab-content active" id="tab-manga">
       
       <!-- TARJETA DESTACADA: DESCARGA DE APK & CÓDIGO QR -->
-      <div class="card-section" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.12)); border: 1.5px solid #10b981; border-radius: 16px; padding: 18px; margin-bottom: 22px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
-          <span style="font-size: 1.5rem;">📱</span>
-          <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Descargar CowIA Campo (App Android)</h2>
+      <div class="card-section" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(6, 182, 212, 0.12)); border: 1.5px solid #10b981; border-radius: 18px; padding: 24px 20px; margin-bottom: 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 1.8rem;">📱</span>
+          <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff; margin: 0;">Descargar CowIA Campo (App Android)</h2>
         </div>
-        <p style="font-size: 0.82rem; color: #cbd5e1; margin-bottom: 14px; line-height: 1.4;">
-          Instala la aplicación nativa para vincular en manga en 2 toques, operar offline en potreros y recibir actualizaciones automáticas.
+        <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 18px; line-height: 1.4; max-width: 440px; margin-left: auto; margin-right: auto;">
+          Aplicación nativa para celulares de operarios en manga: sincronización en 2 toques, operación offline en potreros y actualizaciones automáticas.
         </p>
 
-        <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-          <a href="/apk/CowIA-Campo.apk" download="CowIA-Campo.apk" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 320px; padding: 13px 20px; background: linear-gradient(135deg, #059669, #10b981); color: #fff; font-weight: 800; font-size: 0.95rem; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
+        <div style="display: flex; flex-direction: column; gap: 14px; align-items: center;">
+          <a href="/apk/CowIA-Campo.apk" download="CowIA-Campo.apk" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 340px; padding: 14px 22px; background: linear-gradient(135deg, #059669, #10b981); color: #fff; font-weight: 800; font-size: 1rem; text-decoration: none; border-radius: 14px; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.45); transition: transform 0.2s;">
             ⬇️ Descargar CowIA-Campo.apk (60 MB)
           </a>
 
-          <div style="background: #fff; padding: 10px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); margin-top: 4px;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fwww.cowai.net%2Fapk%2FCowIA-Campo.apk" alt="Código QR Descarga CowIA Campo" style="width: 150px; height: 150px; display: block;">
+          <div style="background: #fff; padding: 12px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); margin-top: 6px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fwww.cowai.net%2Fapk%2FCowIA-Campo.apk" alt="Código QR Descarga CowIA Campo" style="width: 160px; height: 160px; display: block;">
           </div>
-          <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">Apunta la cámara de tu celular al código QR para descargar</span>
+          <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">Apunta la cámara de tu teléfono al código QR para iniciar la descarga</span>
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: center; gap: 16px; font-size: 0.75rem; color: #94a3b8;">
+          <span>📦 Versión 1.0.2</span>
+          <span>⚡ Actualización OTA</span>
+          <span>📶 Modo Offline</span>
         </div>
       </div>
 
-      <h2 class="view-title">📌 Vinculación en Manga</h2>
-      <p class="view-subtitle">Asocia el arete de la res con el collar en 3 toques.</p>
+      <!-- BOTÓN OPCIONAL PARA ABRIR LA VERSIÓN WEB LIGERA (SIN INSTALAR) -->
+      <div style="text-align: center; margin: 20px 0 16px;">
+        <button type="button" id="btn-toggle-web-pwa" onclick="
+          const sec = document.getElementById('section-web-pwa');
+          const isHidden = sec.style.display === 'none';
+          sec.style.display = isHidden ? 'block' : 'none';
+          this.textContent = isHidden ? '▲ Ocultar formulario de manga web' : '🌐 ¿Prefieres usar la versión web sin instalar la app? Toca aquí';
+        " style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; padding: 10px 18px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+          🌐 ¿Prefieres usar la versión web sin instalar la app? Toca aquí
+        </button>
+      </div>
 
-      <form id="form-manga-sync">
-        <!-- Paso 1: Res -->
-        <div class="card-section">
-          <div class="step-header">
-            <span class="step-num">1</span>
-            <span class="step-title">Seleccionar o Registrar Arete</span>
-          </div>
-          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-            <select class="touch-select" id="manga-select-animal" required style="flex: 1;">
-              <option value="">Selecciona Res existente...</option>
-            </select>
-            <button type="button" class="btn-secondary" id="btn-quick-new-animal" title="Alta rápida de res">➕ Nueva</button>
-          </div>
-          
-          <!-- Subformulario para nueva res si no existe -->
-          <div id="quick-new-animal-box" style="display: none; background: var(--bg-surface); padding: 12px; border-radius: var(--radius-md); margin-top: 8px; border: 1px dashed var(--border-active);">
-            <input type="text" class="touch-input" id="quick-arete" placeholder="Arete Visual (Ej: V-104)" style="margin-bottom: 8px;">
-            <div style="display: flex; gap: 8px;">
-              <input type="text" class="touch-input" id="quick-raza" placeholder="Raza (Ej: Nelore, Brahman)" style="flex: 1;">
-              <select class="touch-select" id="quick-categoria" style="flex: 1;">
-                <option value="Novillo">Novillo</option>
-                <option value="Toro">Toro</option>
-                <option value="Vaca">Vaca</option>
-                <option value="Ternero">Ternero</option>
-                <option value="Vaquillona">Vaquillona</option>
+      <!-- FORMULARIO DE MANGA WEB (OCULTO POR DEFECTO PARA NO CONFUNDIR CON LA DESCARGA) -->
+      <div id="section-web-pwa" style="display: none; margin-top: 16px;">
+        <h2 class="view-title">📌 Vinculación en Manga (Consola Web)</h2>
+        <p class="view-subtitle">Asocia el arete de la res con el collar en 2 toques desde el navegador.</p>
+
+        <form id="form-manga-sync">
+          <!-- Paso 1: Res -->
+          <div class="card-section">
+            <div class="step-header">
+              <span class="step-num">1</span>
+              <span class="step-title">Seleccionar o Registrar Arete</span>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <select class="touch-select" id="manga-select-animal" required style="flex: 1;">
+                <option value="">Selecciona Res existente...</option>
               </select>
+              <button type="button" class="btn-secondary" id="btn-quick-new-animal" title="Alta rápida de res">➕ Nueva</button>
+            </div>
+            
+            <!-- Subformulario para nueva res si no existe -->
+            <div id="quick-new-animal-box" style="display: none; background: var(--bg-surface); padding: 12px; border-radius: var(--radius-md); margin-top: 8px; border: 1px dashed var(--border-active);">
+              <input type="text" class="touch-input" id="quick-arete" placeholder="Arete Visual (Ej: V-104)" style="margin-bottom: 8px;">
+              <div style="display: flex; gap: 8px;">
+                <input type="text" class="touch-input" id="quick-raza" placeholder="Raza (Ej: Nelore, Brahman)" style="flex: 1;">
+                <select class="touch-select" id="quick-categoria" style="flex: 1;">
+                  <option value="Novillo">Novillo</option>
+                  <option value="Toro">Toro</option>
+                  <option value="Vaca">Vaca</option>
+                  <option value="Ternero">Ternero</option>
+                  <option value="Vaquillona">Vaquillona</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Paso 2: Collar Físico -->
-        <div class="card-section">
-          <div class="step-header">
-            <span class="step-num">2</span>
-            <span class="step-title">Collar Físico Disponible</span>
+          <!-- Paso 2: Collar Físico -->
+          <div class="card-section">
+            <div class="step-header">
+              <span class="step-num">2</span>
+              <span class="step-title">Collar Físico Disponible</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <select class="touch-select" id="manga-select-collar" required style="flex: 1;">
+                <option value="">Selecciona Collar...</option>
+              </select>
+              <button type="button" class="btn-secondary" id="btn-manga-scan-qr" title="Escanear QR de Collar">📷 QR</button>
+            </div>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <select class="touch-select" id="manga-select-collar" required style="flex: 1;">
-              <option value="">Selecciona Collar...</option>
+
+          <!-- Paso 3: Potrero Inicial (Opcional) -->
+          <div class="card-section">
+            <div class="step-header">
+              <span class="step-num">3</span>
+              <span class="step-title">Destino Inicial (Opcional)</span>
+            </div>
+            <select class="touch-select" id="manga-select-potrero">
+              <option value="">Patio / Corral de Espera (Sin potrero aún)</option>
             </select>
-            <button type="button" class="btn-secondary" id="btn-manga-scan-qr" title="Escanear QR de Collar">📷 QR</button>
           </div>
-        </div>
 
-        <!-- Paso 3: Potrero Inicial -->
-        <div class="card-section">
-          <div class="step-header">
-            <span class="step-num">3</span>
-            <span class="step-title">Asignar a Potrero</span>
-          </div>
-          <select class="touch-select" id="manga-select-potrero" required>
-            <option value="">Selecciona Potrero...</option>
-          </select>
-        </div>
-
-        <button type="submit" class="btn-giant" id="btn-submit-manga">
-          <span>⚡</span> VINCULAR EN MANGA
-        </button>
-      </form>
+          <button type="submit" class="btn-giant" id="btn-submit-manga">
+            <span>⚡</span> VINCULAR EN MANGA
+          </button>
+        </form>
+      </div>
     </section>
 
     <!-- ----------------------------------------------------

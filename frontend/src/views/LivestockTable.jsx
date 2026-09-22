@@ -400,6 +400,13 @@ export default function LivestockTable({
         </span>
       );
     }
+    if (!row.potrero_id || row.potrero_nombre === 'EN ALMACÉN / DESACTIVADO' || row.potrero_nombre === 'Desconocido' || !row.hato_id) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800/80 text-slate-400 border border-slate-700" title="Sin potrero asignado o en corral de espera">
+          📦 SIN POTRERO
+        </span>
+      );
+    }
     const estado = row.estado_cerca || 'DENTRO';
     if (estado === 'FUERA') return <Tag value="🚨 FUGA / FUERA" severity="danger" className="text-[10px] font-bold" />;
     if (estado === 'ADVERTENCIA') return <Tag value="⚠️ CERCA LÍMITE" severity="warning" className="text-[10px] font-bold" />;
