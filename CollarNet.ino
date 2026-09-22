@@ -239,11 +239,12 @@ void setup() {
     delay(500);
     gpsPowered = true;
 
-    // Cargar preferencia de red (por defecto CELULAR para pruebas)
-    currentNetPref = loadNetPreference();
+    // Inicializar preferencia de red por defecto (AUTO: Wi-Fi con conmutación a SIM 4G LTE Digitel)
+    currentNetPref = DEFAULT_NET_PREF;
+    saveNetPreference(currentNetPref);
     Serial.printf("[Config] Preferencia de red activa: %s\n", 
                   currentNetPref == NET_PREF_CELLULAR ? "CELULAR (SIM 4G DIGITEL)" : 
-                  (currentNetPref == NET_PREF_WIFI ? "WIFI" : "AUTO"));
+                  (currentNetPref == NET_PREF_WIFI ? "WIFI" : "AUTO (WIFI + 4G LTE)"));
 
     // Inicializar conectividad según preferencia
     applyNetworkPreference();

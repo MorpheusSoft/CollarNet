@@ -7,7 +7,7 @@
 #define SERIAL_BAUD 115200
 
 // Identificador de Collar
-#define COLLAR_ID "COLLAR_01"
+#define COLLAR_ID "COW-001"
 
 // Modos de Preferencia de Red
 enum NetPreference {
@@ -16,8 +16,8 @@ enum NetPreference {
     NET_PREF_WIFI = 2      // Fuerza exclusivamente Wi-Fi
 };
 
-// Por solicitud para pruebas: se activa uso de CELULAR (SIM 4G) por defecto
-#define DEFAULT_NET_PREF NET_PREF_CELLULAR
+// Modo automático (Wi-Fi en alcance con conmutación a SIM 4G en campo)
+#define DEFAULT_NET_PREF NET_PREF_AUTO
 
 // Configuración de Pines de Hardware
 #define STATUS_LED_PIN 2     // LED de estado
