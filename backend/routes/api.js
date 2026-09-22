@@ -5832,11 +5832,11 @@ router.get('/app/version', (req, res) => {
   if (appParam === 'cowia-finca' || appParam === 'finca' || appParam === 'supervisor' || appParam === 'campo' || appParam === 'cowia-campo') {
     return res.json({
       appName: 'CowIA Campo',
-      version: '1.0.2',
-      versionCode: 3,
+      version: '1.0.3',
+      versionCode: 4,
       downloadUrl: 'https://www.cowai.net/apk/CowIA-Campo.apk',
       mandatory: false,
-      releaseNotes: 'Actualizaciones automáticas OTA integradas, descarga directa con QR desde cowai.net y flujo ágil de manga en 2 toques.'
+      releaseNotes: 'Sincronización directa de potreros y hatos con cowai.net (Oficina, Potrero A, Potrero B), optimización de conexión y soporte offline.'
     });
   }
 

@@ -5,13 +5,13 @@ import '../models/hato.dart';
 import '../models/potrero.dart';
 
 class ApiService {
-  static String defaultHost = '192.168.86.21:3500';
+  static String defaultHost = 'www.cowai.net';
 
   static Future<String> getBaseUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       var savedIp = prefs.getString('finca_server_ip');
-      if (savedIp == null || savedIp.contains('cowai.net') || savedIp.contains('192.168.86.23') || savedIp.contains('192.168.86.30') || savedIp.isEmpty) {
+      if (savedIp == null || savedIp.contains('192.168.') || savedIp.isEmpty) {
         savedIp = defaultHost;
         await prefs.setString('finca_server_ip', defaultHost);
       }
@@ -24,7 +24,7 @@ class ApiService {
       }
       return 'http://$clean/api';
     } catch (_) {
-      return 'http://$defaultHost/api';
+      return 'https://$defaultHost/api';
     }
   }
 

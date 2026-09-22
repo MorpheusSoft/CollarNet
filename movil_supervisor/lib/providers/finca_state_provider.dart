@@ -10,59 +10,49 @@ class FincaStateProvider with ChangeNotifier {
   bool _isOnline = true;
   bool _isLoading = false;
   bool _authLoaded = false;
-  String _serverIp = '192.168.86.21:3500';
+  String _serverIp = 'www.cowai.net';
 
   // Información del Usuario Autenticado (Web / Central)
   Map<String, dynamic>? _currentUser;
 
   // Información del Hato Activo
-  int _hatoId = 1;
-  String _hatoNombre = 'Hacienda La Esperanza';
+  int _hatoId = 3;
+  String _hatoNombre = 'Oficina';
   List<Map<String, dynamic>> _hatosDisponibles = [];
 
   // Métricas del Dashboard
-  int _totalAnimales = 45;
+  int _totalAnimales = 1;
   int _potrerosActivos = 2;
-  int _potrerosDescanso = 3;
+  int _potrerosDescanso = 0;
   double _gdpPromedioKg = 0.650;
 
   // Estado del Modo Arreo / Traslado
   bool _modoArreoActivo = false;
-  String _potreroOrigenArreo = 'Potrero 1';
-  String _potreroDestinoArreo = 'Potrero 2';
+  String _potreroOrigenArreo = 'Potrero A';
+  String _potreroDestinoArreo = 'Potrero B';
   Timer? _autoSyncTimer;
 
   // Listas Sincronizadas
   List<Map<String, dynamic>> _potrerosRotacion = [
     {
       'id': '1',
-      'nombre': 'Potrero Norte 1',
+      'nombre': 'Potrero A',
       'estado': 'ABIERTO',
-      'animales': 0,
+      'animales': 1,
       'diasOcupacion': 0,
       'diasDescanso': 0,
-      'capacidad': 50,
+      'capacidad': 10,
       'calidadPasto': 'Excelente (2.8k kg/ha)',
     },
     {
       'id': '2',
-      'nombre': 'Potrero Sur 2',
-      'estado': 'DESCANSO',
-      'animales': 0,
-      'diasOcupacion': 0,
-      'diasDescanso': 0,
-      'capacidad': 40,
-      'calidadPasto': 'En Recuperación (1.9k kg/ha)',
-    },
-    {
-      'id': '3',
-      'nombre': 'Potrero Este 3',
+      'nombre': 'Potrero B',
       'estado': 'ABIERTO',
       'animales': 0,
       'diasOcupacion': 0,
       'diasDescanso': 0,
-      'capacidad': 45,
-      'calidadPasto': 'Óptima (3.1k kg/ha)',
+      'capacidad': 10,
+      'calidadPasto': 'Buena (2.2k kg/ha)',
     }
   ];
 
@@ -110,13 +100,13 @@ class FincaStateProvider with ChangeNotifier {
   Future<void> _loadConfig() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _serverIp = prefs.getString('finca_server_ip') ?? '192.168.86.21:3500';
-      if (_serverIp.contains('cowai.net') || _serverIp.contains('192.168.86.23') || _serverIp.contains('192.168.86.30') || _serverIp.isEmpty) {
-        _serverIp = '192.168.86.21:3500';
-        await prefs.setString('finca_server_ip', '192.168.86.21:3500');
+      _serverIp = prefs.getString('finca_server_ip') ?? 'www.cowai.net';
+      if (_serverIp.contains('192.168.') || _serverIp.isEmpty) {
+        _serverIp = 'www.cowai.net';
+        await prefs.setString('finca_server_ip', 'www.cowai.net');
       }
-      _hatoId = prefs.getInt('finca_selected_hato_id') ?? 1;
-      _hatoNombre = prefs.getString('finca_selected_hato_nombre') ?? 'Hacienda La Esperanza';
+      _hatoId = prefs.getInt('finca_selected_hato_id') ?? 3;
+      _hatoNombre = prefs.getString('finca_selected_hato_nombre') ?? 'Oficina';
       
       final userJson = prefs.getString('finca_user_session');
       if (userJson != null && userJson.isNotEmpty) {

@@ -595,7 +595,7 @@ class _FincaMainMenuScreenState extends State<FincaMainMenuScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Ingresa la IP y puerto del servidor local o nube (ej: 192.168.86.21:3500):',
+                'Ingresa la dirección o IP del servidor (ej: www.cowai.net):',
                 style: TextStyle(fontSize: 13, color: FincaTheme.textMuted),
               ),
               const SizedBox(height: 14),
@@ -603,8 +603,8 @@ class _FincaMainMenuScreenState extends State<FincaMainMenuScreen> {
                 controller: controller,
                 style: const TextStyle(color: FincaTheme.textLight),
                 decoration: const InputDecoration(
-                  labelText: 'Dirección IP y Puerto',
-                  hintText: '192.168.86.21:3500',
+                  labelText: 'Servidor CowIA',
+                  hintText: 'www.cowai.net',
                   border: OutlineInputBorder(),
                 ),
               ),
