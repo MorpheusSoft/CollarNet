@@ -39,6 +39,12 @@
         <button class="btn-logout" id="btn-header-logout" title="Cerrar sesión">🚪</button>
       </div>
 
+      <!-- Botón para Descargar App Nativa Android (APK / QR) -->
+      <button type="button" class="btn-apk-header" id="btn-apk-campo-header" title="Descargar App Android Nativa (APK / QR)" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; color: #34d399; font-size: 11px; font-weight: 700; cursor: pointer;">
+        <span>📲</span>
+        <span class="apk-btn-text">Descargar APK</span>
+      </button>
+
       <!-- Botón Exclusivo para Superadministrador: Descargar App Técnica -->
       <button type="button" class="btn-tecnico-header" id="btn-tecnico-header" style="display: none;" title="Descargar App Técnica">
         <span>🛠️</span>
@@ -396,6 +402,49 @@
   </div>
 
   <!-- ==========================================================================
+       MODAL DE DESCARGA APK CAMPO CON QR
+       ========================================================================== -->
+  <div class="modal-overlay-mobile" id="modal-apk-campo" style="display: none;">
+    <div class="modal-card-mobile">
+      <div class="modal-header-mobile">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">📱</span>
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; line-height: 1.2;">CowIA Campo (App Nativa)</h3>
+            <span style="font-size: 0.68rem; color: #34d399; font-weight: 700; text-transform: uppercase;">Android APK v1.0.2</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="btn-close-apk-campo-modal">✕</button>
+      </div>
+      
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 12px 0 14px; line-height: 1.4;">
+        Instala la app nativa en tu teléfono Android para trabajar offline, vincular en manga en 2 toques, registrar pesajes y recibir actualizaciones automáticas.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+        <a id="link-download-campo-apk" href="/apk/CowIA-Campo.apk" download="CowIA-Campo.apk" class="btn-giant" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; padding: 12px; background: linear-gradient(135deg, #059669, #10b981); color: #fff; font-weight: 800; border-radius: 12px;">
+          ⬇️ <span>Descargar CowIA-Campo.apk</span>
+        </a>
+      </div>
+
+      <!-- Escaneo QR Dinámico -->
+      <div style="background: var(--bg-surface); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); text-align: center;">
+        <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 8px;">
+          📷 Escanea con la cámara de tu celular:
+        </span>
+        <div style="background: #fff; padding: 8px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+          <img id="qr-campo-img" src="" alt="QR Descarga CowIA Campo" style="width: 130px; height: 130px; display: block;">
+        </div>
+        <div style="margin-top: 10px;">
+          <button type="button" class="btn-secondary" id="btn-copy-campo-link" style="width: 100%; font-size: 0.78rem; padding: 8px;">
+            📋 Copiar Enlace Directo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
        MODAL DE DESCARGA / ACCESO A APP TÉCNICA (SOLO SUPERADMIN)
        ========================================================================== -->
   <div class="modal-overlay-mobile" id="modal-tecnico-mobile" style="display: none;">
@@ -464,6 +513,22 @@
       }
     }
 
+    function openCampoApkModal() {
+      const modal = document.getElementById('modal-apk-campo');
+      if (!modal) return;
+      const apkUrl = window.location.origin + '/apk/CowIA-Campo.apk';
+      const qrImg = document.getElementById('qr-campo-img');
+      if (qrImg) {
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(apkUrl);
+      }
+      modal.style.display = 'flex';
+    }
+
+    function closeCampoApkModal() {
+      const modal = document.getElementById('modal-apk-campo');
+      if (modal) modal.style.display = 'none';
+    }
+
     function openTecnicoModal() {
       const modal = document.getElementById('modal-tecnico-mobile');
       if (!modal) return;
@@ -481,6 +546,34 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Configurar botones del modal APK Campo
+      const btnApkCampo = document.getElementById('btn-apk-campo-header');
+      if (btnApkCampo) btnApkCampo.addEventListener('click', openCampoApkModal);
+
+      const btnCloseApk = document.getElementById('btn-close-apk-campo-modal');
+      if (btnCloseApk) btnCloseApk.addEventListener('click', closeCampoApkModal);
+
+      const modalApkOverlay = document.getElementById('modal-apk-campo');
+      if (modalApkOverlay) {
+        modalApkOverlay.addEventListener('click', (e) => {
+          if (e.target === modalApkOverlay) closeCampoApkModal();
+        });
+      }
+
+      const btnCopyCampo = document.getElementById('btn-copy-campo-link');
+      if (btnCopyCampo) {
+        btnCopyCampo.addEventListener('click', async () => {
+          const apkUrl = window.location.origin + '/apk/CowIA-Campo.apk';
+          try {
+            await navigator.clipboard.writeText(apkUrl);
+            btnCopyCampo.textContent = '✅ ¡Enlace Copiado!';
+            setTimeout(() => { btnCopyCampo.textContent = '📋 Copiar Enlace Directo'; }, 2000);
+          } catch (e) {
+            prompt('Copia este enlace de descarga:', apkUrl);
+          }
+        });
+      }
+
       // Configurar botones del modal técnico
       const btnTecnico = document.getElementById('btn-tecnico-header');
       if (btnTecnico) btnTecnico.addEventListener('click', openTecnicoModal);

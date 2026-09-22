@@ -10,9 +10,23 @@ import 'pesaje_screen.dart';
 import 'buscar_res_screen.dart';
 import 'sanidad_celo_screen.dart';
 import 'login_screen.dart';
+import '../services/update_service.dart';
 
-class FincaMainMenuScreen extends StatelessWidget {
+class FincaMainMenuScreen extends StatefulWidget {
   const FincaMainMenuScreen({Key? key}) : super(key: key);
+
+  @override
+  State<FincaMainMenuScreen> createState() => _FincaMainMenuScreenState();
+}
+
+class _FincaMainMenuScreenState extends State<FincaMainMenuScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService().checkForUpdates(context, manual: false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +240,13 @@ class FincaMainMenuScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
+
+          // Botón Buscar Actualizaciones OTA
+          IconButton(
+            icon: const Icon(Icons.system_update_rounded, color: FincaTheme.accentGreenLight, size: 22),
+            onPressed: () => UpdateService().checkForUpdates(context, manual: true),
+            tooltip: 'Buscar Actualizaciones',
+          ),
 
           // Botón Configuración de Servidor
           IconButton(
@@ -886,6 +907,26 @@ class FincaMainMenuScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // Botón Buscar Actualizaciones
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      UpdateService().checkForUpdates(context, manual: true);
+                    },
+                    icon: const Icon(Icons.system_update_rounded, size: 18, color: FincaTheme.accentGreenLight),
+                    label: const Text('Buscar Actualizaciones de la App'),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: FincaTheme.borderCard),
+                      foregroundColor: FincaTheme.accentGreenLight,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
 
                 // Botón Cerrar Sesión
                 SizedBox(

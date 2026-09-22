@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Radio, Smartphone, LogIn, LayoutDashboard, Menu, X, ShieldCheck } from 'lucide-react';
 
-export default function Navbar({ user, onOpenLogin, onGoToDashboard }) {
+export default function Navbar({ user, onOpenLogin, onGoToDashboard, onOpenApkDownload }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -45,13 +45,15 @@ export default function Navbar({ user, onOpenLogin, onGoToDashboard }) {
 
           {/* Action Buttons */}
           <div className="hidden sm:flex items-center gap-3">
-            <a
-              href="app-campo.html"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-900/50 hover:border-emerald-400 transition-all duration-200"
+            <button
+              type="button"
+              onClick={() => onOpenApkDownload?.('campo')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-900/50 hover:border-emerald-400 transition-all duration-200 cursor-pointer shadow-sm shadow-emerald-500/10"
+              title="Descargar APK de Campo o escanear código QR"
             >
               <Smartphone className="w-3.5 h-3.5" />
               <span>App de Campo</span>
-            </a>
+            </button>
 
             {user ? (
               <button
@@ -127,11 +129,22 @@ export default function Navbar({ user, onOpenLogin, onGoToDashboard }) {
           </a>
 
           <div className="pt-4 border-t border-slate-800 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenApkDownload?.('campo');
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-500/30 hover:bg-emerald-900/40 cursor-pointer"
+            >
+              <Smartphone className="w-4 h-4" />
+              <span>Descargar App de Campo (APK / QR)</span>
+            </button>
             <a
               href="app-campo.html"
-              className="w-full text-center py-2.5 rounded-lg text-sm font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-500/30"
+              className="w-full text-center py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-emerald-300"
             >
-              📱 Abrir App de Campo PWA
+              O abrir versión web PWA en navegador
             </a>
             {user ? (
               <button

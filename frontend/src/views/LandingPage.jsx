@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
+import ApkDownloadModal from '../components/ApkDownloadModal';
 import { 
   Radio, 
   MapPin, 
@@ -28,6 +29,8 @@ import {
 
 export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
   const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [apkModalVisible, setApkModalVisible] = useState(false);
+  const [selectedApkApp, setSelectedApkApp] = useState('campo');
 
   return (
     <div className="min-h-screen bg-[#060B12] text-slate-100 selection:bg-emerald-500 selection:text-white">
@@ -37,6 +40,10 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
         user={user}
         onOpenLogin={() => setAuthModalVisible(true)}
         onGoToDashboard={onGoToDashboard}
+        onOpenApkDownload={(app) => {
+          setSelectedApkApp(app || 'campo');
+          setApkModalVisible(true);
+        }}
       />
 
       {/* 2. Hero Section */}
@@ -501,12 +508,17 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
               >
                 <span>🔐 Iniciar Sesión en la Plataforma</span>
               </button>
-              <a
-                href="app-campo.html"
-                className="px-8 py-4 rounded-full text-base font-semibold text-emerald-400 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-500/40 transition-all duration-300"
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedApkApp('campo');
+                  setApkModalVisible(true);
+                }}
+                className="px-8 py-4 rounded-full text-base font-semibold text-emerald-400 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-500/40 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-950/40"
               >
-                <span>📱 Abrir App de Campo PWA</span>
-              </a>
+                <Smartphone className="w-5 h-5" />
+                <span>📱 Descargar App de Campo (APK / QR)</span>
+              </button>
             </div>
           </div>
         </div>
@@ -577,6 +589,14 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
           setAuthModalVisible(false);
           onLoginSuccess(userData);
         }}
+      />
+
+      {/* 11. Modal Descarga APK con QR */}
+      <ApkDownloadModal
+        visible={apkModalVisible}
+        onHide={() => setApkModalVisible(false)}
+        user={user}
+        initialApp={selectedApkApp}
       />
 
     </div>

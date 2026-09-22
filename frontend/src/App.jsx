@@ -384,6 +384,7 @@ export default function App() {
         visible={showApkModal}
         onHide={() => setShowApkModal(false)}
         user={user}
+        initialApp={user?.rol === 'SUPERADMIN' ? 'tecnico' : 'campo'}
       />
 
     </div>
