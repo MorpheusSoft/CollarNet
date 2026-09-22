@@ -39,16 +39,8 @@ const rawFrontendPath = path.join(__dirname, '../frontend');
 
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-} else {
-  app.use(express.static(rawFrontendPath));
 }
-
-// Redirigir /app-campo.html al dashboard principal SPA de CowIA
-app.get('/app-campo.html', (req, res) => {
-  const indexHtml = path.join(distPath, 'index.html');
-  if (fs.existsSync(indexHtml)) return res.sendFile(indexHtml);
-  return res.sendFile(path.join(rawFrontendPath, 'index.html'));
-});
+app.use(express.static(rawFrontendPath));
 
 // Servir descargas directas de APKs de aplicaciones móviles
 const apkPublicPath = path.join(__dirname, '../frontend/public/apk');
@@ -267,7 +259,7 @@ app.use('/api', apiRouter);
 
 // Fallback para SPA en cualquier ruta no-API y no-móvil
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/iphone') || req.path.startsWith('/apps') || req.path.startsWith('/apk') || req.path.startsWith('/descargas')) {
+  if (req.path.startsWith('/api') || req.path.startsWith('/iphone') || req.path.startsWith('/apps') || req.path.startsWith('/apk') || req.path.startsWith('/descargas') || req.path.startsWith('/css') || req.path.startsWith('/js') || req.path.endsWith('.css') || req.path.endsWith('.js') || req.path.endsWith('.map') || req.path.endsWith('.apk')) {
     return next();
   }
   const indexHtml = path.join(distPath, 'index.html');
