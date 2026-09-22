@@ -11,6 +11,10 @@ bool initStorage();
 bool saveNetPreference(NetPreference pref);
 NetPreference loadNetPreference();
 
+// Guarda y carga el estado operativo del collar (activo vs almacén/silencio)
+bool saveCollarActiveState(bool active);
+bool loadCollarActiveState();
+
 // Guarda la configuración JSON recibida vía MQTT en LittleFS
 bool saveGeofenceConfig(const String& jsonConfig);
 

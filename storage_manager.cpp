@@ -5,6 +5,31 @@
 
 const char* CONFIG_FILE = "/geofence.json";
 const char* NET_PREF_FILE = "/net_pref.txt";
+const char* ACTIVE_STATE_FILE = "/collar_active.txt";
+
+bool saveCollarActiveState(bool active) {
+    File file = LittleFS.open(ACTIVE_STATE_FILE, "w");
+    if (!file) {
+        Serial.println("[Storage] Error al abrir archivo de estado operativo para escribir.");
+        return false;
+    }
+    file.print(active ? "1" : "0");
+    file.close();
+    Serial.printf("[Storage] Estado operativo guardado en LittleFS: %s\n", active ? "ACTIVO" : "DESACTIVADO (SILENCIO TOTAL)");
+    return true;
+}
+
+bool loadCollarActiveState() {
+    if (!LittleFS.exists(ACTIVE_STATE_FILE)) {
+        return false; // Por defecto desactivado (silencio) si no se ha configurado
+    }
+    File file = LittleFS.open(ACTIVE_STATE_FILE, "r");
+    if (!file) return false;
+    String val = file.readString();
+    file.close();
+    val.trim();
+    return (val == "1");
+}
 
 bool initStorage() {
     if (!LittleFS.begin(true)) {
@@ -85,6 +110,21 @@ bool loadGeofenceConfig() {
         return false;
     }
 
+    // 0. Cargar Estado Operativo / Silencio
+    if (doc.containsKey("collar_activo")) {
+        collarActivo = doc["collar_activo"].as<bool>();
+        saveCollarActiveState(collarActivo);
+    } else if (doc.containsKey("activo")) {
+        collarActivo = doc["activo"].as<bool>();
+        saveCollarActiveState(collarActivo);
+    } else if (doc.containsKey("silence")) {
+        collarActivo = !doc["silence"].as<bool>();
+        saveCollarActiveState(collarActivo);
+    } else {
+        collarActivo = loadCollarActiveState();
+    }
+    Serial.printf("[Storage] Estado operativo del collar: %s\n", collarActivo ? "ACTIVO" : "DESACTIVADO (SILENCIO TOTAL)");
+
     // 1. Cargar Hato Maestro
     if (doc.containsKey("h_id") && doc.containsKey("h_v")) {
         hatoMaster.id = doc["h_id"];
@@ -137,6 +177,8 @@ bool loadGeofenceConfig() {
 }
 
 void loadDefaultGeofence() {
+    collarActivo = loadCollarActiveState();
+    Serial.printf("[Storage] Estado operativo (default): %s\n", collarActivo ? "ACTIVO" : "DESACTIVADO (SILENCIO TOTAL)");
     Serial.println("[Storage] Cargando geocerca de Oficina actualizada recién por el usuario...");
     
     // Perímetro Hato Oficina (Guardado recién por el usuario)

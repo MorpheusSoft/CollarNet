@@ -674,6 +674,8 @@ router.post('/geocercas/sincronizar', async (req, res) => {
     // 3. Formatear payload comprimido para 2G / ESP32
     const isPotreroOpen = (potreroRows[0].estado === 'ABIERTO' || potreroRows[0].modo_arreo_activo === true);
     const payload = {
+      collar_activo: true,
+      silence: false,
       h_id: parseInt(hatoId, 10),
       h_v: flattenCoordinates(hatoVertices),
       p_id: parseInt(potreroId, 10),
@@ -2528,7 +2530,7 @@ router.patch('/collares/:id/estado', async (req, res) => {
     }
 
     let animalIdAnterior = null;
-    if (['EN_REVISION', 'DE_BAJA', 'EN_ALMACEN'].includes(nuevoEstado)) {
+    if (['EN_REVISION', 'DE_BAJA', 'EN_ALMACEN', 'DESACTIVADO'].includes(nuevoEstado)) {
       const checkAnimal = await client.query('SELECT id FROM animales WHERE collar_id = $1', [id]);
       if (checkAnimal.rows.length > 0) {
         animalIdAnterior = checkAnimal.rows[0].id;
@@ -2536,16 +2538,19 @@ router.patch('/collares/:id/estado', async (req, res) => {
       }
     }
 
+    const isActivo = (nuevoEstado === 'ACTIVO');
     const updateSQL = `
       UPDATE collares 
       SET 
         estado = $1,
-        motivo_estado = $2
-      WHERE id = $3
+        activo = $2,
+        motivo_estado = $3
+      WHERE id = $4
       RETURNING *;
     `;
     const { rows: updated } = await client.query(updateSQL, [
       nuevoEstado,
+      isActivo,
       motivo || 'Actualización de estado operativo',
       id
     ]);
@@ -2565,6 +2570,18 @@ router.patch('/collares/:id/estado', async (req, res) => {
     ]);
 
     await client.query('COMMIT');
+
+    // Sincronizar silencio o activación con el dispositivo físico vía MQTT
+    try {
+      publishToCollar(id, {
+        collar_activo: isActivo,
+        silence: !isActivo,
+        p_open: isActivo ? 0 : 1
+      });
+    } catch (e) {
+      console.warn('[MQTT Silence Publish Error]:', e.message);
+    }
+
     res.json({ success: true, collar: updated[0] });
 
   } catch (err) {
@@ -2713,9 +2730,28 @@ router.put('/collares/:id/status', async (req, res) => {
   const { id } = req.params;
   const { activo } = req.body;
   try {
-    const query = 'UPDATE collares SET activo = $1 WHERE id = $2 RETURNING *;';
-    const { rows } = await pool.query(query, [activo, id]);
+    const isActivo = Boolean(activo);
+    const query = `
+      UPDATE collares 
+      SET activo = $1,
+          estado = CASE WHEN $1 THEN 'ACTIVO' ELSE 'DESACTIVADO' END
+      WHERE id = $2 
+      RETURNING *;
+    `;
+    const { rows } = await pool.query(query, [isActivo, id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Collar no encontrado' });
+
+    // Sincronizar silencio o activación con el dispositivo físico vía MQTT
+    try {
+      publishToCollar(id, {
+        collar_activo: isActivo,
+        silence: !isActivo,
+        p_open: isActivo ? 0 : 1
+      });
+    } catch (e) {
+      console.warn('[MQTT Silence Publish Error]:', e.message);
+    }
+
     res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3137,7 +3173,18 @@ router.post('/animales/:id/desvincular-collar', async (req, res) => {
     await pool.query('UPDATE animales SET collar_id = NULL WHERE id = $1', [numId]);
 
     // 2. Liberar collar a estado DESACTIVADO en collares
-    await pool.query("UPDATE collares SET estado = 'DESACTIVADO' WHERE id = $1", [oldCollarId]);
+    await pool.query("UPDATE collares SET estado = 'DESACTIVADO', activo = FALSE WHERE id = $1", [oldCollarId]);
+
+    // Sincronizar comando de silencio físico con el collar vía MQTT
+    try {
+      publishToCollar(oldCollarId, {
+        collar_activo: false,
+        silence: true,
+        p_open: 1
+      });
+    } catch (e) {
+      console.warn('[MQTT Silence Publish Error]:', e.message);
+    }
 
     // 3. Registrar en historial de auditoría
     await pool.query(`

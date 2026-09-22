@@ -60,7 +60,7 @@ export function initMQTT(io) {
       // 1. Buscar si hay un animal vinculado a este collar y el estado activo del collar
       // Permite búsqueda por ID de collar o por IMEI del hardware
       const collarQuery = `
-        SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.imei AS db_imei 
+        SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.estado, c.imei AS db_imei 
         FROM collares c 
         LEFT JOIN animales a ON a.collar_id = c.id 
         WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar);
@@ -74,7 +74,7 @@ export function initMQTT(io) {
 
       const activeCollar = collarRows[0];
       const matchedCollarId = activeCollar.collar_id;
-      const { animal_id: animalId, arete_visual: areteVisual, activo, db_imei: dbImei } = activeCollar;
+      const { animal_id: animalId, arete_visual: areteVisual, activo, estado: estadoCollar, db_imei: dbImei } = activeCollar;
       let checkResult = null;
 
       // Validación de Seguridad de Hardware por IMEI
@@ -82,8 +82,10 @@ export function initMQTT(io) {
         console.warn(`[MQTT Seguridad] Advertencia: Dispositivo con IMEI ${imei} transmitiendo para el collar ${matchedCollarId} (registrado con IMEI: ${dbImei}).`);
       }
 
+      const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
+
       if (animalId) {
-        if (activo) {
+        if (isOperativo) {
           // 2. Evaluar geocerca mediante PostGIS en geofenceService (si el collar está habilitado)
           checkResult = await evaluateAnimalPosition(animalId, lat, lon);
 
@@ -98,7 +100,7 @@ export function initMQTT(io) {
           await handleAlertLifecycle(animalId, checkResult.alertType, lat, lon);
         } else {
           // El collar está DESHABILITADO: Guardar telemetría pero silenciar alarmas
-          console.log(`[Live IoT] Collar ${matchedCollarId} está deshabilitado. Omitiendo geocercas y alertas.`);
+          console.log(`[Live IoT] Collar ${matchedCollarId} está en reserva/deshabilitado. Omitiendo geocercas y alertas.`);
           
           // Cerramos cualquier alerta activa que haya quedado huérfana de este animal
           const resolveAlertsQuery = `
@@ -107,6 +109,18 @@ export function initMQTT(io) {
             WHERE animal_id = $1 AND estado = 'ACTIVO' AND tipo IN ('ESCAPE_HATO', 'INFRACCION_ROTACION');
           `;
           await pool.query(resolveAlertsQuery, [animalId]);
+
+          // Forzar comando de silencio si el hardware aún cree que está activo
+          if (payload.alert && payload.alert !== 'DESACTIVADO' && payload.alert !== 'NORMAL') {
+            console.log(`[Live IoT] Collar deshabilitado ${matchedCollarId} reportó '${payload.alert}'. Forzando comando de silencio.`);
+            publishToCollar(matchedCollarId, { collar_activo: false, silence: true, p_open: 1 });
+          }
+        }
+      } else {
+        // Collar sin animal asignado (En Almacén o Reserva)
+        if (payload.alert && payload.alert !== 'DESACTIVADO' && payload.alert !== 'NORMAL') {
+          console.log(`[Live IoT] Collar ${matchedCollarId} sin res asignada reportó alerta '${payload.alert}'. Forzando comando de silencio.`);
+          publishToCollar(matchedCollarId, { collar_activo: false, silence: true, p_open: 1 });
         }
       }
 
@@ -157,10 +171,10 @@ export function initMQTT(io) {
         voltaje_mv: vbat,
         imei: imei || dbImei || null,
         timestamp: new Date().toISOString(),
-        alertType: (activo && checkResult) ? checkResult.alertType : (activo ? 'NORMAL' : 'INACTIVO'),
-        alerta: (activo && checkResult) ? checkResult.alertType : (activo ? 'NORMAL' : 'INACTIVO'),
-        potreroActual: checkResult ? checkResult.potreroActualNombre : (activo ? 'Desconocido' : 'TRÁNSITO / DESACTIVADO'),
-        potrero_nombre: checkResult ? checkResult.potreroActualNombre : (activo ? 'Desconocido' : 'TRÁNSITO / DESACTIVADO'),
+        alertType: (isOperativo && checkResult) ? checkResult.alertType : (isOperativo ? 'NORMAL' : 'INACTIVO'),
+        alerta: (isOperativo && checkResult) ? checkResult.alertType : (isOperativo ? 'NORMAL' : 'INACTIVO'),
+        potreroActual: checkResult ? checkResult.potreroActualNombre : (isOperativo ? 'Desconocido' : 'EN ALMACÉN / DESACTIVADO'),
+        potrero_nombre: checkResult ? checkResult.potreroActualNombre : (isOperativo ? 'Desconocido' : 'EN ALMACÉN / DESACTIVADO'),
         distanciaHato: checkResult ? checkResult.distanciaHato : 0.0,
         distancia_hato: checkResult ? checkResult.distanciaHato : 0.0,
         dentroHato: checkResult ? checkResult.dentroHato : true,

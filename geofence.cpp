@@ -12,6 +12,7 @@ Polygon potrerosList[1] = {
 int numPotreros = 0;
 double hatoWarningThreshold = 10.0;
 bool potreroAbierto = false;
+bool collarActivo = false;
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

@@ -3,6 +3,7 @@
 #include "mqtt_manager.h"
 #include "storage_manager.h"
 #include "geofence.h"
+#include "alerts.h"
 #include "config.h"
 
 PubSubClient client;
@@ -28,9 +29,32 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     }
     Serial.println("[MQTT] Contenido: " + payloadStr);
 
-    StaticJsonDocument<512> doc;
+    StaticJsonDocument<1536> doc;
     DeserializationError err = deserializeJson(doc, payloadStr);
     if (!err) {
+        if (doc.containsKey("collar_activo")) {
+            collarActivo = doc["collar_activo"].as<bool>();
+            saveCollarActiveState(collarActivo);
+            Serial.printf("[MQTT] Estado operativo actualizado: %s\n", collarActivo ? "ACTIVO" : "DESACTIVADO (SILENCIO TOTAL)");
+            if (!collarActivo) {
+                updateAlerts(ALERT_NONE);
+            }
+        } else if (doc.containsKey("activo")) {
+            collarActivo = doc["activo"].as<bool>();
+            saveCollarActiveState(collarActivo);
+            Serial.printf("[MQTT] Estado operativo actualizado: %s\n", collarActivo ? "ACTIVO" : "DESACTIVADO (SILENCIO TOTAL)");
+            if (!collarActivo) {
+                updateAlerts(ALERT_NONE);
+            }
+        } else if (doc.containsKey("silence")) {
+            collarActivo = !doc["silence"].as<bool>();
+            saveCollarActiveState(collarActivo);
+            Serial.printf("[MQTT] Estado de silencio: %s\n", collarActivo ? "ACTIVO" : "SILENCIO FORZADO (ALMACÉN)");
+            if (!collarActivo) {
+                updateAlerts(ALERT_NONE);
+            }
+        }
+
         if (doc.containsKey("p_open")) {
             potreroAbierto = (doc["p_open"].as<int>() == 1);
             Serial.printf("[MQTT] ¡Estado de Potrero actualizado vía MQTT!: %s\n", 

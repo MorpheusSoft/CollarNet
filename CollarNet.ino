@@ -215,6 +215,10 @@ void setup() {
     dumpWalkLog();
     // Carga la geocerca previamente guardada, o los valores por defecto si es el primer arranque
     loadGeofenceConfig();
+    if (!collarActivo) {
+        Serial.println("[Sistema] Modo Almacén / Desactivado: Silencio absoluto configurado.");
+        updateAlerts(ALERT_NONE);
+    }
     
     // Alimentar e iniciar UART1 con módem SIM7670G
     #if defined(MODEM_POWER_PIN) && (MODEM_POWER_PIN >= 0)
@@ -313,6 +317,9 @@ void loop() {
     
     // 5. Mantener el parpadeo del LED integrado y zumbador físico de fondo
     extern AlertLevel currentAlert;
+    if (!collarActivo) {
+        currentAlert = ALERT_NONE;
+    }
     updateAlerts(currentAlert);
     
     // 6. Si usamos el GPS físico y no estamos en ahorro, leer el puerto serial
@@ -399,7 +406,8 @@ void loop() {
                 // Coordenadas de prueba en Potrero A (Hato Oficina)
                 double refLat = 10.671340;
                 double refLon = -71.604030;
-                publishTelemetry(refLat, refLon, currentBat, 4, "INDOOR_USB", hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, false, sats);
+                String indoorAlert = collarActivo ? "INDOOR_USB" : "DESACTIVADO";
+                publishTelemetry(refLat, refLon, currentBat, 4, indoorAlert, hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, false, sats);
             }
             
             // Colocar alerta en NONE y silenciar de inmediato
@@ -408,60 +416,71 @@ void loop() {
         }
         
         // --- PROCESAMIENTO DE GEOCERCAS JERÁRQUICAS (HATO Y POTRERO) ---
-        
-        // A. Evaluar si está dentro del Hato Principal
-        bool insideHato = (hatoMaster.numVertices > 0) ? isPointInPolygon(currentPos, hatoMaster.vertices, hatoMaster.numVertices) : true;
-        
-        // B. Evaluar si está dentro del Potrero Asignado
-        bool insidePotrero = (numPotreros > 0 && potrerosList[0].numVertices > 0) ? isPointInPolygon(currentPos, potrerosList[0].vertices, potrerosList[0].numVertices) : true;
-        
+        bool insideHato = true;
+        bool insidePotrero = true;
         AlertLevel nextAlertLevel = ALERT_NONE;
         String alertStr = "NORMAL";
-        double distToHatoBorder = (hatoMaster.numVertices > 0) ? getDistanceToPolygon(currentPos, hatoMaster.vertices, hatoMaster.numVertices) : 0.0;
-        double distToPotreroBorder = (numPotreros > 0 && potrerosList[0].numVertices > 0) ? getDistanceToPolygon(currentPos, potrerosList[0].vertices, potrerosList[0].numVertices) : 0.0;
+        double distToHatoBorder = 0.0;
+        double distToPotreroBorder = 0.0;
         const char* currentUbicacion = "Zona Segura";
-        
         double warningThreshold = (hatoWarningThreshold > 0) ? hatoWarningThreshold : 3.0;
 
-        if (!insideHato) {
-            // FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA Y MÁS FUERTE
-            nextAlertLevel = ALERT_CRITICAL_HATO;
-            alertStr = "ESCAPE_HATO";
-            currentUbicacion = "¡¡FUERA DEL HATO (ESCAPE MAYOR)!!";
-        } else if (distToHatoBorder <= warningThreshold) {
-            // APROXIMÁNDOSE AL LÍMITE EXTERIOR DEL HATO (<3m): ADVERTENCIA
-            nextAlertLevel = ALERT_WARNING;
-            alertStr = "PROXIMIDAD_HATO";
-            currentUbicacion = "Aproximándose a lindero de Hato (Advertencia 3m)";
-        } else if (!potreroAbierto) {
-            // MODO POTRERO CERRADO (Pastoreo regular con contención en potrero)
-            if (!insidePotrero) {
-                // Fuera del Potrero asignado (Infracción de rotación)
-                nextAlertLevel = ALERT_DANGER;
-                alertStr = "INFRACCION_ROTACION";
-                currentUbicacion = "Fuera de Potrero Asignado (Infracción Rotación)";
-            } else if (distToPotreroBorder <= warningThreshold) {
-                // Dentro del Potrero pero a menos del umbral de advertencia (<3m)
-                nextAlertLevel = ALERT_WARNING;
-                alertStr = "PROXIMIDAD_CERCA";
-                currentUbicacion = "Aproximándose a cerca de potrero (Advertencia 3m)";
-            } else {
-                // Dentro del Potrero seguro
-                nextAlertLevel = ALERT_NONE;
-                alertStr = "NORMAL";
-                currentUbicacion = (numPotreros > 0) ? potrerosList[0].name : "Potrero Asignado";
-            }
-        } else {
-            // MODO TRASLADO / TALANQUERA ABIERTA:
-            // Permite salir del potrero sin emitir alarma de potrero.
-            // Solo sonará si se acerca o cruza los límites exteriores del Hato (evaluado arriba).
+        if (!collarActivo) {
+            // MODO ALMACÉN / DESACTIVADO / RESERVA: SILENCIO ABSOLUTO Y CERO ALERTAS
             nextAlertLevel = ALERT_NONE;
-            alertStr = "MODO_TRASLADO";
-            currentUbicacion = "Modo Traslado (Talanquera Abierta - Tránsito Libre)";
+            alertStr = "DESACTIVADO";
+            currentUbicacion = "En Almacén / Desactivado (Silencio Total)";
+            updateAlerts(ALERT_NONE);
+        } else {
+            // A. Evaluar si está dentro del Hato Principal
+            insideHato = (hatoMaster.numVertices > 0) ? isPointInPolygon(currentPos, hatoMaster.vertices, hatoMaster.numVertices) : true;
+            
+            // B. Evaluar si está dentro del Potrero Asignado
+            insidePotrero = (numPotreros > 0 && potrerosList[0].numVertices > 0) ? isPointInPolygon(currentPos, potrerosList[0].vertices, potrerosList[0].numVertices) : true;
+            
+            distToHatoBorder = (hatoMaster.numVertices > 0) ? getDistanceToPolygon(currentPos, hatoMaster.vertices, hatoMaster.numVertices) : 0.0;
+            distToPotreroBorder = (numPotreros > 0 && potrerosList[0].numVertices > 0) ? getDistanceToPolygon(currentPos, potrerosList[0].vertices, potrerosList[0].numVertices) : 0.0;
+
+            if (!insideHato) {
+                // FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA Y MÁS FUERTE
+                nextAlertLevel = ALERT_CRITICAL_HATO;
+                alertStr = "ESCAPE_HATO";
+                currentUbicacion = "¡¡FUERA DEL HATO (ESCAPE MAYOR)!!";
+            } else if (distToHatoBorder <= warningThreshold) {
+                // APROXIMÁNDOSE AL LÍMITE EXTERIOR DEL HATO (<3m): ADVERTENCIA
+                nextAlertLevel = ALERT_WARNING;
+                alertStr = "PROXIMIDAD_HATO";
+                currentUbicacion = "Aproximándose a lindero de Hato (Advertencia 3m)";
+            } else if (!potreroAbierto) {
+                // MODO POTRERO CERRADO (Pastoreo regular con contención en potrero)
+                if (!insidePotrero) {
+                    // Fuera del Potrero asignado (Infracción de rotación)
+                    nextAlertLevel = ALERT_DANGER;
+                    alertStr = "INFRACCION_ROTACION";
+                    currentUbicacion = "Fuera de Potrero Asignado (Infracción Rotación)";
+                } else if (distToPotreroBorder <= warningThreshold) {
+                    // Dentro del Potrero pero a menos del umbral de advertencia (<3m)
+                    nextAlertLevel = ALERT_WARNING;
+                    alertStr = "PROXIMIDAD_CERCA";
+                    currentUbicacion = "Aproximándose a cerca de potrero (Advertencia 3m)";
+                } else {
+                    // Dentro del Potrero seguro
+                    nextAlertLevel = ALERT_NONE;
+                    alertStr = "NORMAL";
+                    currentUbicacion = (numPotreros > 0) ? potrerosList[0].name : "Potrero Asignado";
+                }
+            } else {
+                // MODO TRASLADO / TALANQUERA ABIERTA:
+                // Permite salir del potrero sin emitir alarma de potrero.
+                // Solo sonará si se acerca o cruza los límites exteriores del Hato (evaluado arriba).
+                nextAlertLevel = ALERT_NONE;
+                alertStr = "MODO_TRASLADO";
+                currentUbicacion = "Modo Traslado (Talanquera Abierta - Tránsito Libre)";
+            }
+            
+            // C. Actualizar nivel de alertas local (led y buzzer en IO5 a 4000 Hz)
+            updateAlerts(nextAlertLevel);
         }
-        
-        // C. Actualizar nivel de alertas local (led y buzzer en IO5 a 4000 Hz)
-        updateAlerts(nextAlertLevel);
         
         // D. Publicar telemetría por MQTT con batería real e IMEI
         int currentBat = 100;
@@ -477,7 +496,9 @@ void loop() {
         
         // F. Imprimir reporte de depuración por consola serial (USB)
         Serial.println("\n------------------------------------------------");
-        if (USE_EMULATOR) {
+        if (!collarActivo) {
+            Serial.printf("[Telemetría (GNSS 4G)] Satélites: %d | Estado: EN ALMACÉN / DESACTIVADO (Silencio Total)\n", sats);
+        } else if (USE_EMULATOR) {
             int stepIdx = getMockGPSIndex();
             int totalSteps = getMockGPSTotalPoints();
             Serial.printf("[Telemetría (SIMULADO)] Paso: %d/%d\n", stepIdx + 1, totalSteps);
@@ -487,11 +508,15 @@ void loop() {
         }
         Serial.printf("Coordenadas: Lat: %.6f, Lon: %.6f\n", currentPos.lat, currentPos.lon);
         Serial.printf("Ubicación Actual: %s\n", currentUbicacion);
-        Serial.printf("¿En Hato?: %s | ¿En Potrero?: %s\n", insideHato ? "SÍ" : "NO", insidePotrero ? "SÍ" : "NO");
-        Serial.printf("Distancia lindero Hato: %.2f m | Distancia lindero Potrero: %.2f m\n", distToHatoBorder, distToPotreroBorder);
+        if (collarActivo) {
+            Serial.printf("¿En Hato?: %s | ¿En Potrero?: %s\n", insideHato ? "SÍ" : "NO", insidePotrero ? "SÍ" : "NO");
+            Serial.printf("Distancia lindero Hato: %.2f m | Distancia lindero Potrero: %.2f m\n", distToHatoBorder, distToPotreroBorder);
+        }
         
         Serial.print("Nivel de Alerta: ");
-        if (currentAlert == ALERT_NONE) {
+        if (!collarActivo) {
+            Serial.println("MODO RESERVA / ALMACÉN (Silencio Total - Cero Alertas)");
+        } else if (currentAlert == ALERT_NONE) {
             Serial.println("NORMAL (Silencio / Seguro)");
         } else if (currentAlert == ALERT_WARNING) {
             Serial.println("ADVERTENCIA (Lindero a < 3m - Bips lentos 4000Hz)");
