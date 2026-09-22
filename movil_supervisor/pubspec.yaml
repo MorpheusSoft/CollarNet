@@ -1,7 +1,7 @@
 name: agrogis_flutter
 description: "AgroGIS - AplicaciÃ³n PWA y MÃ³vil para mediciÃ³n y registro topolÃ³gico de terrenos agrÃ­colas"
 publish_to: "none"
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

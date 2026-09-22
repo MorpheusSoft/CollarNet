@@ -15,7 +15,7 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
 
   String? _areteSeleccionado;
   String? _collarQR;
-  String? _potreroDestino;
+  String? _potreroDestino = 'Manga / Patio de Manejo';
 
   final TextEditingController _areteManualController = TextEditingController();
   final TextEditingController _collarManualController = TextEditingController();
@@ -465,52 +465,65 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
         ),
         const SizedBox(height: 12),
 
-        if (fincaState.potrerosRotacion.isEmpty)
-          InkWell(
-            onTap: () {
-              setState(() => _potreroDestino = 'Potrero Principal (${fincaState.hatoNombre})');
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _potreroDestino != null ? FincaTheme.primaryGreen.withOpacity(0.2) : FincaTheme.bgCard,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _potreroDestino != null ? FincaTheme.primaryGreen : FincaTheme.borderCard,
-                  width: _potreroDestino != null ? 2 : 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.fence, color: FincaTheme.accentGreenLight, size: 28),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Potrero Principal (${fincaState.hatoNombre})',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: FincaTheme.textLight,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Potrero inicial del hato para inicio de pastoreo',
-                          style: TextStyle(fontSize: 11, color: FincaTheme.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_potreroDestino != null)
-                    const Icon(Icons.check, color: FincaTheme.primaryGreen),
-                ],
+        // Opción Predeterminada: Manga / Patio de Manejo
+        InkWell(
+          onTap: () {
+            setState(() => _potreroDestino = 'Manga / Patio de Manejo');
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _potreroDestino == 'Manga / Patio de Manejo' ? FincaTheme.primaryGreen.withOpacity(0.2) : FincaTheme.bgCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _potreroDestino == 'Manga / Patio de Manejo' ? FincaTheme.primaryGreen : FincaTheme.borderCard,
+                width: _potreroDestino == 'Manga / Patio de Manejo' ? 2 : 1,
               ),
             ),
-          )
-        else
+            child: Row(
+              children: [
+                const Icon(Icons.fence, color: FincaTheme.accentGreenLight, size: 28),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Manga / Patio de Manejo',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: FincaTheme.textLight),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: FincaTheme.primaryGreen.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+                            child: const Text('PREDETERMINADO', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: FincaTheme.primaryGreen)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Confinamiento de trabajo en manga/cepo. Silencio de potrero activo en patio.',
+                        style: TextStyle(fontSize: 11, color: FincaTheme.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_potreroDestino == 'Manga / Patio de Manejo')
+                  const Icon(Icons.check, color: FincaTheme.primaryGreen),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        if (fincaState.potrerosRotacion.isNotEmpty) ...[
+          const Text(
+            'O ASIGNAR DIRECTAMENTE A UN POTRERO DE CAMPO:',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: FincaTheme.textMuted, letterSpacing: 0.5),
+          ),
+          const SizedBox(height: 8),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -551,30 +564,31 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                              color: FincaTheme.textLight,
+                                color: FincaTheme.textLight,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${p['estado']} • ${p['animales']} reses actuales',
-                            style: const TextStyle(fontSize: 12, color: FincaTheme.textMuted),
-                          ),
-                        ],
+                            Text(
+                              '${p['estado']} • ${p['animales']} reses actuales',
+                              style: const TextStyle(fontSize: 12, color: FincaTheme.textMuted),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    if (isSelected)
-                      const Icon(Icons.check, color: FincaTheme.primaryGreen)
-                  ],
+                      if (isSelected)
+                        const Icon(Icons.check, color: FincaTheme.primaryGreen)
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildBottomActionButtons(FincaStateProvider fincaState) {
-    final bool canConfirm = _areteSeleccionado != null && _collarQR != null && (_potreroDestino != null || fincaState.potrerosRotacion.isEmpty);
+    final bool canConfirm = _areteSeleccionado != null && _collarQR != null;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -593,11 +607,10 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
             ),
             onPressed: canConfirm
                 ? () async {
-                    final defaultPotName = 'Potrero Principal (${fincaState.hatoNombre})';
-                    final String effectivePotNombre = _potreroDestino ?? (fincaState.potrerosRotacion.isNotEmpty ? fincaState.potrerosRotacion.first['nombre'] : defaultPotName);
+                    final String effectivePotNombre = _potreroDestino ?? 'Manga / Patio de Manejo';
                     final potreroObj = fincaState.potrerosRotacion.firstWhere(
                       (p) => p['nombre'] == effectivePotNombre,
-                      orElse: () => {'id': 'pot-${fincaState.hatoId}-1', 'nombre': effectivePotNombre},
+                      orElse: () => {'id': 'pot-${fincaState.hatoId}-manga', 'nombre': effectivePotNombre},
                     );
                     
                     final ok = await fincaState.vincularCollarAnimal(
@@ -614,7 +627,7 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
                         SnackBar(
                           content: Text(
                             ok
-                                ? '✅ Vinculación Exitosa: $_areteSeleccionado vinculado a $_collarQR y sincronizado en Web'
+                                ? '✅ Vinculación Exitosa: $_areteSeleccionado vinculado a $_collarQR en $effectivePotNombre'
                                 : '⚠️ Vinculado localmente. Se sincronizará al detectar conexión.',
                           ),
                           backgroundColor: ok ? FincaTheme.primaryGreen : FincaTheme.warningAmber,
@@ -626,7 +639,11 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
                 : null,
             icon: const Icon(Icons.link),
             label: Text(
-              canConfirm ? 'CONFIRMAR VINCULACIÓN (3 TOQUES)' : 'COMPLETE LOS 3 PASOS',
+              canConfirm
+                  ? (_potreroDestino != null && _potreroDestino != 'Manga / Patio de Manejo'
+                      ? 'CONFIRMAR A $_potreroDestino'
+                      : 'CONFIRMAR VINCULACIÓN EN MANGA (2 TOQUES)')
+                  : (_areteSeleccionado == null ? '1. SELECCIONE ARETE' : '2. ESCANEE COLLAR'),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
           ),

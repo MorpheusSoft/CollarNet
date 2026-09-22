@@ -5829,14 +5829,14 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
 router.get('/app/version', (req, res) => {
   const appParam = (req.query.app || 'cowia-tecnico').toLowerCase().trim();
 
-  if (appParam === 'cowia-finca' || appParam === 'finca' || appParam === 'supervisor') {
+  if (appParam === 'cowia-finca' || appParam === 'finca' || appParam === 'supervisor' || appParam === 'campo' || appParam === 'cowia-campo') {
     return res.json({
-      appName: 'CowIA Finca',
-      version: '1.0.0',
-      versionCode: 1,
-      downloadUrl: 'https://www.cowai.net/apk/CowIA-Finca-Release.apk',
+      appName: 'CowIA Campo',
+      version: '1.0.1',
+      versionCode: 2,
+      downloadUrl: 'https://www.cowai.net/apk/CowIA-Campo.apk',
       mandatory: false,
-      releaseNotes: 'Versión inicial de supervisión de hato, potreros y manga.'
+      releaseNotes: 'Vinculación rápida en manga en 2 toques con Manga / Patio de Manejo predeterminado y rotación fluida a potreros.'
     });
   }
 
