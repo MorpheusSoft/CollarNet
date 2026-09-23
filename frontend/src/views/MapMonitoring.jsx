@@ -39,6 +39,8 @@ export default function MapMonitoring({
   const polygonsGroupRef = useRef(null);
   const potreroLayersRef = useRef({});
   const hatoLayersRef = useRef({});
+  const hasCenteredRef = useRef(false);
+  const prevSelectedHatoRef = useRef(selectedHatoId);
 
   const [currentLayer, setCurrentLayer] = useState('satellite');
   const [sidebarTab, setSidebarTab] = useState('animals'); // 'animals' | 'potreros'
@@ -210,17 +212,19 @@ export default function MapMonitoring({
             </div>
           `);
 
-          // Nombre del Hato flotando en el borde superior del polígono
+          // Nombre del Hato flotando en hover
           poly.bindTooltip(`
-            <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase;">
-              <span>🏰</span>
-              <span style="color: #fca5a5;">HATO: ${hato.nombre}</span>
+            <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #ef4444; border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+              <span>🏰 Hato:</span>
+              <span style="color: #fca5a5;">${hato.nombre}</span>
+              <span style="color: #94a3b8; font-size: 10px;">(${areaHa} Ha)</span>
             </div>
           `, {
-            permanent: true,
+            permanent: false,
+            sticky: true,
             direction: 'top',
             offset: [0, -10],
-            className: 'map-tooltip-hato-compact'
+            className: 'map-tooltip-hover'
           });
 
           polygonsGroupRef.current.addLayer(poly);
@@ -231,11 +235,16 @@ export default function MapMonitoring({
       });
     }
 
-    // Auto-centrar en el hato seleccionado al renderizar las geocercas
-    if (selectedHatoId && selectedHatoId !== 'ALL') {
-      setTimeout(() => centerOnHato(selectedHatoId), 300);
-    } else if (geocercas.hatos && geocercas.hatos.length > 0) {
-      setTimeout(() => centerOnHato(geocercas.hatos[0].id), 300);
+    // Auto-centrar solo en carga inicial o cambio deliberado de hato
+    const shouldCenter = !hasCenteredRef.current || prevSelectedHatoRef.current !== selectedHatoId;
+    prevSelectedHatoRef.current = selectedHatoId;
+    if (shouldCenter) {
+      hasCenteredRef.current = true;
+      if (selectedHatoId && selectedHatoId !== 'ALL') {
+        setTimeout(() => centerOnHato(selectedHatoId), 300);
+      } else if (geocercas.hatos && geocercas.hatos.length > 0) {
+        setTimeout(() => centerOnHato(geocercas.hatos[0].id), 300);
+      }
     }
 
     // B. Render Potreros (Subdivisiones con Estados Operativos y Rol de Traslado)
@@ -342,7 +351,8 @@ export default function MapMonitoring({
           }
 
           poly.bindTooltip(tooltipHtml, {
-            permanent: true,
+            permanent: false,
+            sticky: true,
             direction: 'center',
             className: tooltipClass
           });
@@ -455,28 +465,41 @@ export default function MapMonitoring({
       const customIcon = L.divIcon({
         className: 'custom-animal-marker',
         html: `
-          <div class="relative flex items-center justify-center cursor-pointer group">
-            <span class="absolute -top-6 bg-slate-900/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow whitespace-nowrap border border-white/10">
-              #${animal.arete_visual || animal.collar_id}
-            </span>
-            <div class="w-8 h-8 rounded-full ${colorClass} text-white flex items-center justify-center text-sm font-bold shadow-lg ring-4 ring-opacity-40 animate-pulse">
-              ${emoji}
-            </div>
+          <div class="w-8 h-8 rounded-full ${colorClass} text-white flex items-center justify-center text-sm font-bold shadow-lg ring-4 ring-opacity-40 animate-pulse cursor-pointer">
+            ${emoji}
           </div>
         `,
         iconSize: [32, 32],
         iconAnchor: [16, 16]
       });
 
+      const bat = animal.nivel_bateria ?? animal.bateria_nivel ?? 100;
+      const isCharging = animal.esta_cargando === true;
+      const batColor = bat > 50 ? '#059669' : bat > 20 ? '#d97706' : '#e11d48';
+
+      const tooltipContent = `
+        <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+          <span>🐮 #${animal.arete_visual || animal.collar_id}</span>
+          <span style="color: #94a3b8; font-size: 10px;">(${animal.collar_id})</span>
+          <span style="color: #38bdf8; font-size: 10px; margin-left: 2px;">🔋 ${bat}%</span>
+        </div>
+      `;
+
       if (markersRef.current[animal.collar_id]) {
         markersRef.current[animal.collar_id].setLatLng([lat, lon]);
         markersRef.current[animal.collar_id].setIcon(customIcon);
+        if (markersRef.current[animal.collar_id].getTooltip()) {
+          markersRef.current[animal.collar_id].setTooltipContent(tooltipContent);
+        }
       } else {
         const marker = L.marker([lat, lon], { icon: customIcon }).addTo(mapInstanceRef.current);
         
-        const bat = animal.nivel_bateria ?? animal.bateria_nivel ?? 100;
-        const isCharging = animal.esta_cargando === true;
-        const batColor = bat > 50 ? '#059669' : bat > 20 ? '#d97706' : '#e11d48';
+        marker.bindTooltip(tooltipContent, {
+          permanent: false,
+          sticky: true,
+          direction: 'top',
+          className: 'map-tooltip-hover'
+        });
 
         marker.bindPopup(`
           <div style="font-family: sans-serif; font-size: 12px; color: #1e293b; padding: 4px; min-width:190px;">

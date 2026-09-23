@@ -229,3 +229,16 @@
   }
 }
 
+/* Tooltips flotantes al pasar el cursor (Hover) */
+.leaflet-tooltip.map-tooltip-hover {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+.leaflet-tooltip.map-tooltip-hover::before,
+.leaflet-tooltip.map-tooltip-hover::after {
+  display: none !important;
+}

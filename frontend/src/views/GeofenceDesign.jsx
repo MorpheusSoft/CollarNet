@@ -104,10 +104,11 @@ export default function GeofenceDesign({
   collares, 
   tenants = [], 
   selectedTenantId, 
-  selectedHatoId,
-  monitoringData = [],
+  selectedHatoId, 
+  monitoringData = [], 
   currentUser, 
-  onRefreshData 
+  onRefreshData,
+  onEditModeChange
 }) {
   const isSuperAdmin = currentUser?.rol === 'SUPERADMIN';
   const canManagePotreros = isSuperAdmin || currentUser?.permiteCrearPotreros !== false;
@@ -121,7 +122,11 @@ export default function GeofenceDesign({
   const potreroLayersRef = useRef({});
   const drawingLayerGroupRef = useRef(null);
   const editMarkersGroupRef = useRef(null);
+  const editPolyRef = useRef(null);
+  const editVerticesRef = useRef([]);
   const collarsGroupRef = useRef(null);
+  const hasInitiallyCenteredRef = useRef(false);
+  const prevSelectedHatoIdRef = useRef(selectedHatoId);
 
   const [currentLayer, setCurrentLayer] = useState('satellite');
   const [showCollarsOnMap, setShowCollarsOnMap] = useState(true);
@@ -131,6 +136,13 @@ export default function GeofenceDesign({
 
   // Modo de Creación vs Exploración: 'explore' | 'create' | 'edit'
   const [workspaceMode, setWorkspaceMode] = useState('explore');
+
+  // Notificar al componente padre cuando cambia el modo de edición para suspender polling
+  useEffect(() => {
+    if (onEditModeChange) {
+      onEditModeChange(workspaceMode !== 'explore');
+    }
+  }, [workspaceMode, onEditModeChange]);
 
   // Submodo de entrada de datos en creación: 'click' (en satélite) | 'text' (manual)
   const [inputMode, setInputMode] = useState('click');
@@ -349,6 +361,11 @@ export default function GeofenceDesign({
     if (geocercas.hatos) {
       geocercas.hatos.forEach(hato => {
         if (!hato.geojson) return;
+        // Si estamos editando este hato específicamente, no dibujar la capa estática duplicada
+        if (workspaceMode === 'edit' && editingItem?.tipo === 'hato' && editingItem?.data?.id === hato.id) {
+          return;
+        }
+
         try {
           const geo = typeof hato.geojson === 'string' ? JSON.parse(hato.geojson) : hato.geojson;
           const latlngs = geo.coordinates[0].map(c => [c[1], c[0]]);
@@ -377,16 +394,19 @@ export default function GeofenceDesign({
             </div>
           `);
 
+          // Tooltip en Hover: aparece solo al pasar el ratón por encima
           poly.bindTooltip(`
-            <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase;">
-              <span>🏰</span>
-              <span style="color: #fca5a5;">HATO: ${hato.nombre}</span>
+            <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #ef4444; border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+              <span>🏰 Hato:</span>
+              <span style="color: #fca5a5;">${hato.nombre}</span>
+              <span style="color: #94a3b8; font-size: 10px;">(${areaHa} Ha)</span>
             </div>
           `, {
-            permanent: true,
+            permanent: false,
+            sticky: true,
             direction: 'top',
             offset: [0, -10],
-            className: 'map-tooltip-hato-compact'
+            className: 'map-tooltip-hover'
           });
 
           polygonsGroupRef.current.addLayer(poly);
@@ -401,6 +421,11 @@ export default function GeofenceDesign({
     if (geocercas.potreros) {
       geocercas.potreros.forEach((pot, pIdx) => {
         if (!pot.geojson) return;
+        // Si estamos editando este potrero específicamente, no dibujar la capa estática duplicada
+        if (workspaceMode === 'edit' && editingItem?.tipo === 'potrero' && editingItem?.data?.id === pot.id) {
+          return;
+        }
+
         try {
           const geo = typeof pot.geojson === 'string' ? JSON.parse(pot.geojson) : pot.geojson;
           const latlngs = geo.coordinates[0].map(c => [c[1], c[0]]);
@@ -430,16 +455,18 @@ export default function GeofenceDesign({
             </div>
           `);
 
+          // Tooltip en Hover: aparece solo al pasar el ratón por encima
           poly.bindTooltip(`
-            <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 10px; padding: 2px 6px; background: rgba(15, 23, 42, 0.90); border: 1.5px solid ${colorStyle.border}; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
-              <span style="background: ${colorStyle.border}; color: #000; border-radius: 3px; padding: 0.5px 4px; font-weight: 900; font-size: 9px;">${pIdx + 1}</span>
-              <span style="color: #fff;">${pot.nombre}</span>
-              <span style="color: ${colorStyle.text}; font-size: 9px; opacity: 0.85;">(${areaHa} Ha)</span>
+            <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.95); border: 1.5px solid ${colorStyle.border}; border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+              <span style="background: ${colorStyle.border}; color: #000; border-radius: 3px; padding: 1px 5px; font-weight: 900; font-size: 10px;">${pIdx + 1}</span>
+              <span>${pot.nombre}</span>
+              <span style="color: ${colorStyle.text}; font-size: 10px;">(${areaHa} Ha)</span>
             </div>
           `, {
-            permanent: true,
+            permanent: false,
+            sticky: true,
             direction: 'center',
-            className: 'map-tooltip-potrero-clean'
+            className: 'map-tooltip-hover'
           });
 
           polygonsGroupRef.current.addLayer(poly);
@@ -450,13 +477,20 @@ export default function GeofenceDesign({
       });
     }
 
-    // Auto-centrar en el hato seleccionado al renderizar
-    if (selectedHatoId && selectedHatoId !== 'ALL') {
-      setTimeout(() => centerOnHato(selectedHatoId), 300);
-    } else if (geocercas.hatos && geocercas.hatos.length > 0) {
-      setTimeout(() => centerOnHato(geocercas.hatos[0].id), 300);
+    // Auto-centrar solo al inicio o si cambia deliberadamente el selectedHatoId desde el menú
+    const shouldCenterOnMount = !hasInitiallyCenteredRef.current;
+    const hatoSelectionChanged = prevSelectedHatoIdRef.current !== selectedHatoId;
+    prevSelectedHatoIdRef.current = selectedHatoId;
+
+    if (workspaceMode === 'explore' && (shouldCenterOnMount || hatoSelectionChanged)) {
+      hasInitiallyCenteredRef.current = true;
+      if (selectedHatoId && selectedHatoId !== 'ALL') {
+        setTimeout(() => centerOnHato(selectedHatoId), 300);
+      } else if (geocercas.hatos && geocercas.hatos.length > 0) {
+        setTimeout(() => centerOnHato(geocercas.hatos[0].id), 300);
+      }
     }
-  }, [geocercas, selectedHatoId]);
+  }, [geocercas, selectedHatoId, workspaceMode, editingItem]);
 
   // 5.5 RENDERIZAR COLLARES / ANIMALES EN VIVO EN EL MAPA DE DISEÑO
   useEffect(() => {
@@ -526,14 +560,8 @@ export default function GeofenceDesign({
       const emoji = isEscape ? '🚨' : (isWarn ? '⚠️' : '🐮');
 
       const collarHtml = `
-        <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          <div style="position: absolute; top: -26px; background: rgba(15, 23, 42, 0.95); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 9999px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; display: flex; align-items: center; gap: 3px;">
-            <span>🐮 ${c.areteVisual}</span>
-            <span style="color: #94a3b8; font-size: 9px;">(${c.collarId})</span>
-          </div>
-          <div style="width: 32px; height: 32px; border-radius: 9999px; ${colorBg} ${ringBorder} display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff;">
-            ${emoji}
-          </div>
+        <div style="width: 32px; height: 32px; border-radius: 9999px; ${colorBg} ${ringBorder} display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+          ${emoji}
         </div>
       `;
 
@@ -544,6 +572,20 @@ export default function GeofenceDesign({
           iconSize: [32, 32],
           iconAnchor: [16, 16]
         })
+      });
+
+      // Tooltip flotante en hover: aparece solo al pasar el cursor sobre el collar
+      marker.bindTooltip(`
+        <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+          <span>🐮 ${c.areteVisual}</span>
+          <span style="color: #94a3b8; font-size: 10px;">(${c.collarId})</span>
+          <span style="color: #38bdf8; font-size: 10px; margin-left: 2px;">🔋 ${c.bateria}%</span>
+        </div>
+      `, {
+        permanent: false,
+        sticky: true,
+        direction: 'top',
+        className: 'map-tooltip-hover'
       });
 
       marker.bindPopup(`
@@ -608,51 +650,98 @@ export default function GeofenceDesign({
   useEffect(() => {
     if (!editMarkersGroupRef.current) return;
     editMarkersGroupRef.current.clearLayers();
+    editPolyRef.current = null;
 
-    if (workspaceMode !== 'edit' || editVertices.length === 0) return;
+    if (workspaceMode !== 'edit' || !editingItem || !editingItem.data) return;
 
-    const polyColor = editingItem?.tipo === 'hato' ? '#ef4444' : '#10b981';
-    const poly = L.polygon(editVertices, {
+    const rawCoords = geojsonToCoords(editingItem.data.geojson);
+    const initialPoints = coordsTextToVertices(rawCoords);
+    if (initialPoints.length === 0) return;
+
+    editVerticesRef.current = [...initialPoints];
+
+    const polyColor = editingItem.tipo === 'hato' ? '#ef4444' : '#10b981';
+
+    // Polígono activo editable
+    const poly = L.polygon(initialPoints, {
       color: polyColor,
       weight: 3,
       fillColor: polyColor,
-      fillOpacity: 0.25
+      fillOpacity: 0.25,
+      dashArray: '6, 6'
     });
     editMarkersGroupRef.current.addLayer(poly);
+    editPolyRef.current = poly;
 
-    editVertices.forEach((pt, idx) => {
-      const marker = L.circleMarker(pt, {
-        radius: 8,
-        fillColor: '#ffffff',
-        color: polyColor,
-        weight: 3,
-        fillOpacity: 1
+    // Marcadores arrastrables nativos para cada vértice
+    initialPoints.forEach((pt, idx) => {
+      const icon = L.divIcon({
+        className: 'edit-vertex-marker',
+        html: `
+          <div style="
+            width: 22px; 
+            height: 22px; 
+            border-radius: 9999px; 
+            background: #ffffff; 
+            border: 3px solid ${polyColor}; 
+            color: #0f172a; 
+            font-weight: 800; 
+            font-size: 11px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5); 
+            cursor: grab;
+            user-select: none;
+          ">
+            ${idx + 1}
+          </div>
+        `,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
       });
 
-      marker.on('mousedown', () => {
-        const onMouseMove = (moveEvent) => {
-          const updatedLatLng = [
-            parseFloat(moveEvent.latlng.lat.toFixed(6)),
-            parseFloat(moveEvent.latlng.lng.toFixed(6))
-          ];
-          setEditVertices(prev => {
-            const next = [...prev];
-            next[idx] = updatedLatLng;
-            setEditCoordsText(next.map(p => `${p[0]}, ${p[1]}`).join('\n'));
-            return next;
-          });
-        };
-        const onMouseUp = () => {
-          mapInstanceRef.current.off('mousemove', onMouseMove);
-          mapInstanceRef.current.off('mouseup', onMouseUp);
-        };
-        mapInstanceRef.current.on('mousemove', onMouseMove);
-        mapInstanceRef.current.on('mouseup', onMouseUp);
+      const marker = L.marker(pt, {
+        draggable: true,
+        icon,
+        zIndexOffset: 1000 + idx
+      });
+
+      marker.on('dragstart', () => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.dragging.disable();
+        }
+      });
+
+      marker.on('drag', (event) => {
+        const newLatLng = event.target.getLatLng();
+        const lat = parseFloat(newLatLng.lat.toFixed(6));
+        const lng = parseFloat(newLatLng.lng.toFixed(6));
+        editVerticesRef.current[idx] = [lat, lng];
+
+        // Actualizar visualmente el polígono en tiempo real sin re-renderizar React
+        if (editPolyRef.current) {
+          editPolyRef.current.setLatLngs(editVerticesRef.current);
+        }
+
+        // Actualizar el texto de coordenadas en vivo
+        const coordsStr = editVerticesRef.current.map(p => `${p[0]}, ${p[1]}`).join('\n');
+        setEditCoordsText(coordsStr);
+      });
+
+      marker.on('dragend', () => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.dragging.enable();
+        }
+        // Sincronizar el array de vértices de React únicamente al soltar el ratón
+        setEditVertices([...editVerticesRef.current]);
+        const coordsStr = editVerticesRef.current.map(p => `${p[0]}, ${p[1]}`).join('\n');
+        setEditCoordsText(coordsStr);
       });
 
       editMarkersGroupRef.current.addLayer(marker);
     });
-  }, [editVertices, workspaceMode, editingItem]);
+  }, [workspaceMode, editingItem]);
 
   // Sincronizar texto de coordenadas con puntos de trazado
   const handleCoordsTextChange = (text) => {
@@ -671,7 +760,11 @@ export default function GeofenceDesign({
   const handleEditCoordsTextChange = (text) => {
     setEditCoordsText(text);
     const parsed = coordsTextToVertices(text);
+    editVerticesRef.current = [...parsed];
     setEditVertices(parsed);
+    if (editPolyRef.current && parsed.length >= 3) {
+      editPolyRef.current.setLatLngs(parsed);
+    }
     if (parsed.length >= 3 && mapInstanceRef.current) {
       try {
         const bounds = L.latLngBounds(parsed);
@@ -714,6 +807,7 @@ export default function GeofenceDesign({
     const rawCoords = geojsonToCoords(item.geojson);
     setEditCoordsText(rawCoords);
     const parsed = coordsTextToVertices(rawCoords);
+    editVerticesRef.current = [...parsed];
     setEditVertices(parsed);
 
     if (tipo === 'hato') {
@@ -737,6 +831,11 @@ export default function GeofenceDesign({
     setEditingItem(null);
     setEditVertices([]);
     setEditCoordsText('');
+    editVerticesRef.current = [];
+    if (editMarkersGroupRef.current) {
+      editMarkersGroupRef.current.clearLayers();
+    }
+    editPolyRef.current = null;
   };
 
   // Enviar Formulario de Creación (Guardar Hato o Potrero)
@@ -785,9 +884,9 @@ export default function GeofenceDesign({
     setSavingEdit(true);
 
     try {
-      const vertices = editVertices.length >= 3 
-        ? editVertices 
-        : coordsTextToVertices(editCoordsText);
+      const vertices = (editVerticesRef.current && editVerticesRef.current.length >= 3)
+        ? editVerticesRef.current
+        : (editVertices.length >= 3 ? editVertices : coordsTextToVertices(editCoordsText));
 
       if (vertices.length < 3) {
         throw new Error('Debes conservar al menos 3 vértices válidos para el polígono.');

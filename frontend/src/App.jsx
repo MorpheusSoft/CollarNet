@@ -50,6 +50,12 @@ export default function App() {
 
   // Dashboard Tab State
   const [currentTab, setCurrentTab] = useState('home');
+  const currentTabRef = useRef(currentTab);
+  const isEditingGeofenceRef = useRef(false);
+
+  useEffect(() => {
+    currentTabRef.current = currentTab;
+  }, [currentTab]);
 
   // Business Data States
   const [tenants, setTenants] = useState([]);
@@ -171,6 +177,10 @@ export default function App() {
       () => setIsSocketConnected(false),
       () => {
         console.log('[Socket.io] Recibida notificación de geocercas_actualizadas, recargando datos...');
+        if (currentTabRef.current === 'geofences' && isEditingGeofenceRef.current) {
+          console.log('[Socket.io] Recarga omitida: usuario editando geocercas.');
+          return;
+        }
         if (loadAllDataRef.current) loadAllDataRef.current();
       },
       (data) => {
@@ -185,16 +195,24 @@ export default function App() {
             return a;
           }));
         }
+        if (currentTabRef.current === 'geofences' && isEditingGeofenceRef.current) {
+          console.log('[Socket.io] Recarga global omitida: usuario editando geocercas.');
+          return;
+        }
         if (loadAllDataRef.current) loadAllDataRef.current();
       }
     );
 
-    // Polling continuo en segundo plano (cada 4s) como respaldo activo a Socket.io
+    // Polling en segundo plano con protección contra recargas mientras se editan geocercas
     const pollInterval = setInterval(() => {
+      if (currentTabRef.current === 'geofences' && isEditingGeofenceRef.current) {
+        console.log('[Polling] Pausado temporalmente: usuario editando geocercas.');
+        return;
+      }
       if (loadAllDataRef.current) {
         loadAllDataRef.current();
       }
-    }, 4000);
+    }, 15000);
 
     return () => {
       clearInterval(pollInterval);
@@ -317,6 +335,9 @@ export default function App() {
               monitoringData={monitoringData}
               currentUser={user}
               onRefreshData={loadAllData}
+              onEditModeChange={(isEditing) => {
+                isEditingGeofenceRef.current = isEditing;
+              }}
             />
           )}
 
