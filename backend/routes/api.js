@@ -5116,16 +5116,26 @@ router.post('/collares/vincular-rapido', async (req, res) => {
 
   try {
     // 1. Verificar o crear el collar en collares con ubicación y hato
-    const collarQuery = `
-      INSERT INTO collares (id, numero_sim, estado, activo, ultima_ubicacion, creado_en)
-      VALUES ($1, $2, 'ACTIVO', TRUE, ST_SetSRID(ST_MakePoint($3, $4), 4326), CURRENT_TIMESTAMP)
-      ON CONFLICT (id) DO UPDATE 
-      SET estado = 'ACTIVO', activo = TRUE, motivo_estado = 'Vinculado en manga móvil', ultima_ubicacion = ST_SetSRID(ST_MakePoint($3, $4), 4326);
-    `;
-    await pool.query(collarQuery, [cleanCollar, `+58${Math.floor(1000000000 + Math.random() * 9000000000)}`, animalLon, animalLat]);
+    const checkCollar = await pool.query('SELECT id, numero_sim FROM collares WHERE id = $1;', [cleanCollar]);
+    if (checkCollar.rows.length > 0) {
+      await pool.query(`
+        UPDATE collares 
+        SET estado = 'ACTIVO', activo = TRUE, motivo_estado = 'Vinculado en manga móvil',
+            ultima_ubicacion = ST_SetSRID(ST_MakePoint($2, $3), 4326)
+        WHERE id = $1;
+      `, [cleanCollar, animalLon, animalLat]);
+    } else {
+      await pool.query(`
+        INSERT INTO collares (id, numero_sim, fecha_instalacion, estado, activo, ultima_ubicacion, creado_en)
+        VALUES ($1, $2, CURRENT_DATE, 'ACTIVO', TRUE, ST_SetSRID(ST_MakePoint($3, $4), 4326), CURRENT_TIMESTAMP);
+      `, [cleanCollar, `+58${Math.floor(1000000000 + Math.random() * 9000000000)}`, animalLon, animalLat]);
+    }
 
-    // 2. Verificar si el animal ya existe
-    const checkAnimal = await pool.query('SELECT id, collar_id FROM animales WHERE arete_visual = $1;', [cleanArete]);
+    // 2. Desvincular cualquier otro animal que tuviese este collar
+    await pool.query('UPDATE animales SET collar_id = NULL WHERE collar_id = $1 AND arete_visual != $2;', [cleanCollar, cleanArete]);
+
+    // 3. Verificar si el animal ya existe
+    const checkAnimal = await pool.query('SELECT id, collar_id, potrero_id, hato_id FROM animales WHERE arete_visual = $1;', [cleanArete]);
 
     let animalId;
     if (checkAnimal.rows.length > 0) {
@@ -5134,18 +5144,20 @@ router.post('/collares/vincular-rapido', async (req, res) => {
         `UPDATE animales 
          SET collar_id = $1, 
              potrero_id = COALESCE($2, potrero_id),
-             raza = COALESCE($3, raza),
-             categoria = COALESCE($4, categoria),
-             tenant_id = COALESCE($5, tenant_id)
-         WHERE id = $6;`,
-        [cleanCollar, cleanPotreroId, raza || null, categoria || null, targetTenantId, animalId]
+             hato_id = COALESCE($3, hato_id),
+             raza = COALESCE($4, raza),
+             categoria = COALESCE($5, categoria),
+             tenant_id = COALESCE($6, tenant_id),
+             activo = TRUE
+         WHERE id = $7;`,
+        [cleanCollar, cleanPotreroId, cleanHatoId, raza || null, categoria || null, targetTenantId, animalId]
       );
     } else {
       const insertAnimal = await pool.query(
-        `INSERT INTO animales (arete_visual, collar_id, potrero_id, raza, categoria, sexo, fecha_nacimiento, tenant_id)
-         VALUES ($1, $2, $3, COALESCE($4, 'Brahman'), COALESCE($5, 'Novillo'), COALESCE($6, 'Macho'), CURRENT_DATE - INTERVAL '18 month', $7)
+        `INSERT INTO animales (arete_visual, collar_id, potrero_id, hato_id, raza, categoria, sexo, fecha_nacimiento, tenant_id, activo)
+         VALUES ($1, $2, $3, $4, COALESCE($5, 'Brahman'), COALESCE($6, 'Novillo'), COALESCE($7, 'Macho'), CURRENT_DATE - INTERVAL '18 month', $8, TRUE)
          RETURNING id;`,
-        [cleanArete, cleanCollar, cleanPotreroId, raza || 'Brahman', categoria || 'Novillo', sexo || 'Macho', targetTenantId]
+        [cleanArete, cleanCollar, cleanPotreroId, cleanHatoId, raza || 'Brahman', categoria || 'Novillo', sexo || 'Macho', targetTenantId]
       );
       animalId = insertAnimal.rows[0].id;
     }
@@ -5182,29 +5194,8 @@ router.post('/collares/vincular-rapido', async (req, res) => {
       potreroNombre: resolvedPotreroNombre
     });
   } catch (err) {
-    console.warn('[Fallback vinculacion-rapida]', err.message);
-    const updated = _updateMemAnimalCollar(cleanArete, cleanCollar, cleanPotreroId, resolvedPotreroNombre, cleanHatoId, targetHatoNombre, targetTenantId, animalLat, animalLon, raza, categoria);
-    notifyDataUpdated(req, 'vinculacion_rapida', {
-      animalId: updated?.id || 1,
-      areteVisual: cleanArete,
-      collarId: cleanCollar,
-      potreroId: cleanPotreroId,
-      potreroNombre: resolvedPotreroNombre,
-      hatoId: cleanHatoId,
-      hatoNombre: targetHatoNombre
-    });
-    notifyDataUpdated(req, 'monitoreo');
-    notifyDataUpdated(req, 'collares');
-    notifyGeocercasUpdated(req);
-
-    res.status(200).json({
-      success: true,
-      message: `Collar ${cleanCollar} vinculado exitosamente a la res ${cleanArete} en ${targetHatoNombre}`,
-      animalId: updated?.id || 1,
-      hatoId: cleanHatoId,
-      hatoNombre: targetHatoNombre,
-      potreroNombre: resolvedPotreroNombre
-    });
+    console.error('[Error vinculacion-rapida]', err);
+    res.status(500).json({ error: `Fallo al vincular en base de datos: ${err.message}` });
   }
 });
 
@@ -5666,7 +5657,7 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
        FROM animales a
        LEFT JOIN collares c ON a.collar_id = c.id
        LEFT JOIN potreros p ON a.potrero_id = p.id
-       WHERE p.hato_id = $1 AND COALESCE(a.activo, TRUE) = TRUE
+       WHERE (p.hato_id = $1 OR a.hato_id = $1) AND COALESCE(a.activo, TRUE) = TRUE
        ORDER BY a.id ASC;`,
       [cleanHatoId]
     );
