@@ -5006,88 +5006,63 @@ router.post('/collares/vincular-rapido', async (req, res) => {
   let cleanHatoId = hatoId ? parseInt(hatoId, 10) : null;
   if (isNaN(cleanHatoId)) cleanHatoId = null;
 
-  // 1. Resolver Hato y Potrero
-  let pot = null;
-  if (cleanPotreroId) {
-    pot = memPotreros.find(p => p.id === cleanPotreroId);
-  }
-  if (!pot && potreroNombre) {
-    pot = memPotreros.find(p => p.nombre.toLowerCase() === potreroNombre.toLowerCase() && (!cleanHatoId || p.hato_id === cleanHatoId));
-  }
+  // 1. Resolver Hato, Potrero y Tenant directamente desde PostgreSQL
+  let targetTenantId = null;
+  let targetHatoNombre = hatoNombre || 'Oficina';
+  let resolvedPotreroNombre = potreroNombre || 'Potrero A';
+  let geoSource = null;
 
-  if (pot && pot.hato_id && !cleanHatoId) {
-    cleanHatoId = pot.hato_id;
-  }
-
-  let hatoObj = null;
-  if (cleanHatoId) {
-    hatoObj = memHatos.find(h => h.id === cleanHatoId);
-  }
-  if (!hatoObj && hatoNombre) {
-    hatoObj = memHatos.find(h => h.nombre.toLowerCase() === hatoNombre.toLowerCase());
-    if (hatoObj) cleanHatoId = hatoObj.id;
-  }
-
-  if (!hatoObj) {
-    if (cleanHatoId || hatoNombre) {
-      cleanHatoId = cleanHatoId || (memHatos.length + 1);
-      const hName = hatoNombre || `Hato ${cleanHatoId}`;
-      hatoObj = {
-        id: cleanHatoId,
-        nombre: hName,
-        tenant_id: 1,
-        geojson: JSON.stringify({
-          type: 'Polygon',
-          coordinates: [[[-67.1, 9.1], [-67.09, 9.1], [-67.09, 9.09], [-67.1, 9.09], [-67.1, 9.1]]]
-        }),
-        creado_en: new Date().toISOString()
-      };
-      memHatos.push(hatoObj);
-    } else {
-      hatoObj = memHatos[0] || { id: 1, nombre: 'Hato La Esperanza', tenant_id: 1 };
-      cleanHatoId = hatoObj.id;
+  try {
+    if (cleanPotreroId) {
+      const potRes = await pool.query(
+        'SELECT p.id, p.nombre, p.hato_id, p.geojson, h.tenant_id, h.nombre AS hato_nombre FROM potreros p LEFT JOIN hatos h ON p.hato_id = h.id WHERE p.id = $1;',
+        [cleanPotreroId]
+      );
+      if (potRes.rows.length > 0) {
+        resolvedPotreroNombre = potRes.rows[0].nombre;
+        cleanHatoId = potRes.rows[0].hato_id;
+        targetHatoNombre = potRes.rows[0].hato_nombre || targetHatoNombre;
+        targetTenantId = potRes.rows[0].tenant_id;
+        geoSource = potRes.rows[0].geojson;
+      }
     }
+
+    if (!cleanPotreroId && potreroNombre) {
+      const potRes = await pool.query(
+        'SELECT p.id, p.nombre, p.hato_id, p.geojson, h.tenant_id, h.nombre AS hato_nombre FROM potreros p LEFT JOIN hatos h ON p.hato_id = h.id WHERE LOWER(p.nombre) = LOWER($1) LIMIT 1;',
+        [potreroNombre]
+      );
+      if (potRes.rows.length > 0) {
+        cleanPotreroId = potRes.rows[0].id;
+        resolvedPotreroNombre = potRes.rows[0].nombre;
+        cleanHatoId = potRes.rows[0].hato_id;
+        targetHatoNombre = potRes.rows[0].hato_nombre || targetHatoNombre;
+        targetTenantId = potRes.rows[0].tenant_id;
+        geoSource = potRes.rows[0].geojson;
+      }
+    }
+
+    if (cleanHatoId && !targetTenantId) {
+      const hatoRes = await pool.query('SELECT id, nombre, tenant_id, geojson FROM hatos WHERE id = $1;', [cleanHatoId]);
+      if (hatoRes.rows.length > 0) {
+        targetHatoNombre = hatoRes.rows[0].nombre;
+        targetTenantId = hatoRes.rows[0].tenant_id;
+        if (!geoSource) geoSource = hatoRes.rows[0].geojson;
+      }
+    }
+
+    if (!targetTenantId) {
+      const tRes = await pool.query('SELECT id FROM tenants ORDER BY id ASC LIMIT 1;');
+      if (tRes.rows.length > 0) {
+        targetTenantId = tRes.rows[0].id;
+      }
+    }
+  } catch (err) {
+    console.warn('[vincular-rapido resolver DB]', err.message);
   }
 
-  const targetHatoNombre = hatoObj.nombre;
-  const targetTenantId = hatoObj.tenant_id || 1;
-
-  let resolvedPotreroNombre = potreroNombre || pot?.nombre;
-  if (!pot && resolvedPotreroNombre) {
-    const newPotId = memPotreros.length + 1;
-    pot = {
-      id: newPotId,
-      hato_id: cleanHatoId,
-      nombre: resolvedPotreroNombre,
-      estado: 'ABIERTO',
-      capacidad_max_cabezas: 50,
-      margen_advertencia_metros: 10,
-      geojson: hatoObj.geojson,
-      creado_en: new Date().toISOString()
-    };
-    memPotreros.push(pot);
-    cleanPotreroId = newPotId;
-  } else if (!pot) {
-    pot = memPotreros.find(p => p.hato_id === cleanHatoId);
-    if (pot) {
-      cleanPotreroId = pot.id;
-      resolvedPotreroNombre = pot.nombre;
-    } else {
-      resolvedPotreroNombre = `Potrero 1 (${targetHatoNombre})`;
-      const newPotId = memPotreros.length + 1;
-      pot = {
-        id: newPotId,
-        hato_id: cleanHatoId,
-        nombre: resolvedPotreroNombre,
-        estado: 'ABIERTO',
-        capacidad_max_cabezas: 50,
-        margen_advertencia_metros: 10,
-        geojson: hatoObj.geojson,
-        creado_en: new Date().toISOString()
-      };
-      memPotreros.push(pot);
-      cleanPotreroId = newPotId;
-    }
+  if (!targetTenantId) {
+    targetTenantId = 6; // Default production tenant
   }
 
   // 2. Calcular coordenadas lat/lon dentro de la geocerca del Hato / Potrero
@@ -5096,7 +5071,6 @@ router.post('/collares/vincular-rapido', async (req, res) => {
   if (cleanHatoId === 2) { animalLat = 9.095; animalLon = -67.095; }
   if (cleanHatoId === 3) { animalLat = 8.895; animalLon = -66.795; }
 
-  const geoSource = pot?.geojson || hatoObj?.geojson;
   if (geoSource) {
     try {
       const parsed = typeof geoSource === 'string' ? JSON.parse(geoSource) : geoSource;
