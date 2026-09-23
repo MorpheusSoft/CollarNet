@@ -5872,11 +5872,11 @@ router.get('/app/version', (req, res) => {
   // Default: CowIA Técnico (movil_ops)
   return res.json({
     appName: 'CowIA Técnico',
-    version: '1.0.3',
-    versionCode: 4,
+    version: '1.0.4',
+    versionCode: 5,
     downloadUrl: 'https://www.cowai.net/apk/CowIA-Tecnico.apk',
     mandatory: false,
-    releaseNotes: 'Protección contra eliminación de hatos y potreros con ganado activo, sincronización en tiempo real y optimización de conectividad.'
+    releaseNotes: 'Conexión automática y por defecto al VPS https://cowai.net, detección de origen web y corrección de error de conexión.'
   });
 });
 

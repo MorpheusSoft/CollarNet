@@ -7,14 +7,28 @@ import '../models/hato.dart';
 import '../models/potrero.dart';
 
 class ApiService {
-  // Servidor backend local CollarNet
-  static const String defaultBaseUrl = 'http://192.168.86.21:3500/api';
+  // Servidor backend CollarNet (VPS de producción por defecto)
+  static const String defaultBaseUrl = 'https://cowai.net/api';
 
   static Future<String> getBaseUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       var savedUrl = prefs.getString('custom_server_url');
-      if (savedUrl == null || savedUrl.contains('cowai.net') || savedUrl.contains('192.168.86.23') || savedUrl.contains('192.168.86.30') || savedUrl.isEmpty) {
+
+      // Si se ejecuta en navegador Web o PWA, sincronizar con el host si no hay configuración válida
+      if (kIsWeb) {
+        final origin = Uri.base.origin;
+        if (origin.startsWith('http://') || origin.startsWith('https://')) {
+          if (savedUrl == null || savedUrl.contains('192.168.') || savedUrl.isEmpty) {
+            final webApiUrl = '$origin/api';
+            await prefs.setString('custom_server_url', webApiUrl);
+            return webApiUrl;
+          }
+        }
+      }
+
+      // En app nativa o PWA, si apunta a IP local de desarrollo obsoleta (192.168.*), resetear a defaultBaseUrl
+      if (savedUrl == null || savedUrl.contains('192.168.') || savedUrl.isEmpty) {
         savedUrl = defaultBaseUrl;
         await prefs.setString('custom_server_url', defaultBaseUrl);
       }
@@ -33,7 +47,18 @@ class ApiService {
 
   static Future<void> setCustomBaseUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('custom_server_url', url.trim());
+    var clean = url.trim();
+    if (clean.isNotEmpty) {
+      if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+        clean = (clean.contains('cowai.net') || (!clean.contains(':') && !RegExp(r'^\d+\.\d+\.\d+\.\d+').hasMatch(clean)))
+            ? 'https://$clean'
+            : 'http://$clean';
+      }
+      if (!clean.endsWith('/api')) {
+        clean = clean.endsWith('/') ? '${clean}api' : '$clean/api';
+      }
+      await prefs.setString('custom_server_url', clean);
+    }
   }
 
   /// Autentica al usuario en el VPS

@@ -271,13 +271,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _serverCtrl,
                           style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textPrimary),
+                          onSubmitted: (val) async {
+                            if (val.trim().isNotEmpty) {
+                              await ApiService.setCustomBaseUrl(val.trim());
+                            }
+                            _testServerConnection();
+                          },
                           decoration: InputDecoration(
+                            hintText: 'https://cowai.net/api',
+                            hintStyle: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
                             filled: true,
                             fillColor: AppTheme.surfaceLight,
                             prefixIcon: const Icon(Icons.cloud_outlined, color: AppTheme.primaryCyan, size: 18),
                             suffixIcon: IconButton(
                               icon: const Icon(Icons.refresh, size: 18, color: AppTheme.textSecondary),
-                              onPressed: _testServerConnection,
+                              onPressed: () async {
+                                if (_serverCtrl.text.trim().isNotEmpty) {
+                                  await ApiService.setCustomBaseUrl(_serverCtrl.text.trim());
+                                }
+                                _testServerConnection();
+                              },
                             ),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

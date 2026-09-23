@@ -73,6 +73,8 @@ if (fs.existsSync(iphoneAppsPath)) {
   app.use('/iphone', express.static(iphoneAppsPath));
   app.use('/apps/tecnico', express.static(path.join(iphoneAppsPath, 'CowIA_Tecnico_PWA_iPhone')));
   app.use('/apps/finca', express.static(path.join(iphoneAppsPath, 'CowIA_Finca_PWA_iPhone')));
+  app.use('/iphone-tecnico', express.static(path.join(iphoneAppsPath, 'CowIA_Tecnico_PWA_iPhone')));
+  app.use('/iphone-finca', express.static(path.join(iphoneAppsPath, 'CowIA_Finca_PWA_iPhone')));
 }
 
 // Ruta amigable y moderna para ver y descargar APKs y PWAs desde el móvil
@@ -259,7 +261,7 @@ app.use('/api', apiRouter);
 
 // Fallback para SPA en cualquier ruta no-API y no-móvil
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/iphone') || req.path.startsWith('/apps') || req.path.startsWith('/apk') || req.path.startsWith('/descargas') || req.path.startsWith('/css') || req.path.startsWith('/js') || req.path.endsWith('.css') || req.path.endsWith('.js') || req.path.endsWith('.map') || req.path.endsWith('.apk')) {
+  if (req.path.startsWith('/api') || req.path.startsWith('/iphone') || req.path.startsWith('/iphone-tecnico') || req.path.startsWith('/iphone-finca') || req.path.startsWith('/apps') || req.path.startsWith('/apk') || req.path.startsWith('/descargas') || req.path.startsWith('/css') || req.path.startsWith('/js') || req.path.endsWith('.css') || req.path.endsWith('.js') || req.path.endsWith('.map') || req.path.endsWith('.apk')) {
     return next();
   }
   const indexHtml = path.join(distPath, 'index.html');

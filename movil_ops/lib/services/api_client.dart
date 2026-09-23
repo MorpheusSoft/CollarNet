@@ -1,19 +1,34 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/hato_maestro.dart';
 
 class ApiClient {
-  // Servidor backend local CollarNet
-  static const String defaultBaseUrl = 'http://192.168.86.21:3500/api';
+  // Servidor backend CollarNet (VPS de producción por defecto)
+  static const String defaultBaseUrl = 'https://cowai.net/api';
 
   static Future<String> getBaseUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       var savedUrl = prefs.getString('custom_server_url');
-      if (savedUrl == null || savedUrl.contains('cowai.net') || savedUrl.contains('192.168.86.23') || savedUrl.contains('192.168.86.30') || savedUrl.isEmpty) {
+
+      // Si se ejecuta en navegador Web o PWA, sincronizar con el host si no hay configuración válida
+      if (kIsWeb) {
+        final origin = Uri.base.origin;
+        if (origin.startsWith('http://') || origin.startsWith('https://')) {
+          if (savedUrl == null || savedUrl.contains('192.168.') || savedUrl.isEmpty) {
+            final webApiUrl = '$origin/api';
+            await prefs.setString('custom_server_url', webApiUrl);
+            return webApiUrl;
+          }
+        }
+      }
+
+      // En app nativa o PWA, si apunta a IP local de desarrollo obsoleta (192.168.*), resetear a defaultBaseUrl
+      if (savedUrl == null || savedUrl.contains('192.168.') || savedUrl.isEmpty) {
         savedUrl = defaultBaseUrl;
         await prefs.setString('custom_server_url', defaultBaseUrl);
       }
