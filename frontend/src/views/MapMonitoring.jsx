@@ -81,8 +81,7 @@ export default function MapMonitoring({
     if (targetHato) {
       const layer = hatoLayersRef.current[targetHato.id];
       if (layer) {
-        mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 17, animate: true });
-        layer.openPopup();
+        mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 18, animate: true });
         return;
       }
       if (targetHato.geojson) {
@@ -211,16 +210,17 @@ export default function MapMonitoring({
             </div>
           `);
 
-          // Nombre del Hato flotando permanentemente sobre el polígono
+          // Nombre del Hato flotando en el borde superior del polígono
           poly.bindTooltip(`
-            <div style="display: flex; items-center: center; gap: 6px; font-weight: 800; letter-spacing: 0.05em; font-size: 11px; text-transform: uppercase;">
+            <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase;">
               <span>🏰</span>
               <span style="color: #fca5a5;">HATO: ${hato.nombre}</span>
             </div>
           `, {
             permanent: true,
-            direction: 'center',
-            className: 'map-tooltip-hato'
+            direction: 'top',
+            offset: [0, -10],
+            className: 'map-tooltip-hato-compact'
           });
 
           polygonsGroupRef.current.addLayer(poly);

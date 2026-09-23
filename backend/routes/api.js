@@ -4037,6 +4037,39 @@ router.put('/geocercas/potrero/:id', async (req, res) => {
       margenAdvertencia ? parseFloat(margenAdvertencia) : 10.00
     );
     notifyGeocercasUpdated(req);
+
+    // Sincronizar automáticamente con collares asignados a este potrero
+    try {
+      const { rows: collaresInPotrero } = await pool.query(
+        'SELECT DISTINCT a.collar_id, p.hato_id FROM animales a JOIN potreros p ON a.potrero_id = p.id WHERE a.potrero_id = $1 AND a.collar_id IS NOT NULL;',
+        [parseInt(id, 10)]
+      );
+      for (const row of collaresInPotrero) {
+        const hatoRes = await pool.query('SELECT nombre, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;', [row.hato_id]);
+        const potRes = await pool.query('SELECT nombre, margen_advertencia_metros, estado, modo_arreo_activo, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;', [parseInt(id, 10)]);
+        if (hatoRes.rows.length > 0 && potRes.rows.length > 0) {
+          const hatoVertices = extractVerticesFromGeoJSON(hatoRes.rows[0].geojson);
+          const potreroVertices = extractVerticesFromGeoJSON(potRes.rows[0].geojson);
+          const mAdvertencia = parseFloat(potRes.rows[0].margen_advertencia_metros) || 10;
+          const isPotreroOpen = (potRes.rows[0].estado === 'ABIERTO' || potRes.rows[0].modo_arreo_activo === true);
+
+          publishToCollar(row.collar_id, {
+            collar_activo: true,
+            silence: false,
+            h_id: parseInt(row.hato_id, 10),
+            h_v: flattenCoordinates(hatoVertices),
+            p_id: parseInt(id, 10),
+            p_v: flattenCoordinates(potreroVertices),
+            t_w: mAdvertencia,
+            p_open: isPotreroOpen ? 1 : 0
+          });
+          console.log(`[Update Potrero] ✅ Sincronizados nuevos vértices al collar ${row.collar_id} vía MQTT.`);
+        }
+      }
+    } catch (syncErr) {
+      console.warn('[Update Potrero Sync Error]:', syncErr.message);
+    }
+
     res.json({ success: true, potrero });
   } catch (err) {
     console.warn('[Update Potrero Fallback Memory]');
@@ -5158,6 +5191,37 @@ router.post('/collares/vincular-rapido', async (req, res) => {
     notifyDataUpdated(req, 'monitoreo');
     notifyDataUpdated(req, 'collares');
     notifyGeocercasUpdated(req);
+
+    // Sincronizar geocercas y activar collar automáticamente vía MQTT
+    try {
+      if (cleanPotreroId && cleanHatoId) {
+        const hatoRes = await pool.query('SELECT nombre, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;', [cleanHatoId]);
+        const potRes = await pool.query('SELECT nombre, margen_advertencia_metros, estado, modo_arreo_activo, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;', [cleanPotreroId]);
+        if (hatoRes.rows.length > 0 && potRes.rows.length > 0) {
+          const hatoVertices = extractVerticesFromGeoJSON(hatoRes.rows[0].geojson);
+          const potreroVertices = extractVerticesFromGeoJSON(potRes.rows[0].geojson);
+          const margenAdvertencia = parseFloat(potRes.rows[0].margen_advertencia_metros) || 10;
+          const isPotreroOpen = (potRes.rows[0].estado === 'ABIERTO' || potRes.rows[0].modo_arreo_activo === true);
+
+          const payload = {
+            collar_activo: true,
+            silence: false,
+            h_id: parseInt(cleanHatoId, 10),
+            h_v: flattenCoordinates(hatoVertices),
+            p_id: parseInt(cleanPotreroId, 10),
+            p_v: flattenCoordinates(potreroVertices),
+            t_w: margenAdvertencia,
+            p_open: isPotreroOpen ? 1 : 0
+          };
+          publishToCollar(cleanCollar, payload);
+          console.log(`[vincular-rapido] ✅ Geocercas sincronizadas y collar ${cleanCollar} activado vía MQTT.`);
+        }
+      } else {
+        publishToCollar(cleanCollar, { collar_activo: true, silence: false });
+      }
+    } catch (mqttErr) {
+      console.warn('[vincular-rapido MQTT sync warning]:', mqttErr.message);
+    }
 
     res.status(200).json({
       success: true,

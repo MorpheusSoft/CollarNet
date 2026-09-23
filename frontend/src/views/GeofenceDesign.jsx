@@ -43,6 +43,16 @@ import { fireQuickSuccess } from '../services/confettiHelper';
 const ESRI_SATELLITE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const OSM_STREETS = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
+// Paleta de colores para diferenciar claramente los potreros en el mapa
+export const POTRERO_PALETTE = [
+  { border: '#10b981', fill: '#10b981', text: '#34d399', name: 'Potrero 1 (Esmeralda)' },
+  { border: '#06b6d4', fill: '#06b6d4', text: '#22d3ee', name: 'Potrero 2 (Cian)' },
+  { border: '#f59e0b', fill: '#f59e0b', text: '#fbbf24', name: 'Potrero 3 (Ámbar)' },
+  { border: '#a855f7', fill: '#a855f7', text: '#c084fc', name: 'Potrero 4 (Púrpura)' },
+  { border: '#ec4899', fill: '#ec4899', text: '#f472b6', name: 'Potrero 5 (Rosa)' },
+  { border: '#3b82f6', fill: '#3b82f6', text: '#60a5fa', name: 'Potrero 6 (Azul)' },
+];
+
 // Función para calcular área geodésica en Hectáreas usando fórmula esférica
 function calculateGeodesicAreaHa(latlngs) {
   if (!latlngs || latlngs.length < 3) return 0;
@@ -111,8 +121,10 @@ export default function GeofenceDesign({
   const potreroLayersRef = useRef({});
   const drawingLayerGroupRef = useRef(null);
   const editMarkersGroupRef = useRef(null);
+  const collarsGroupRef = useRef(null);
 
   const [currentLayer, setCurrentLayer] = useState('satellite');
+  const [showCollarsOnMap, setShowCollarsOnMap] = useState(true);
 
   // Herramientas Principales: 'designer' (Mapa + Form), 'ai', 'scale', 'sync'
   const [activeMainTab, setActiveMainTab] = useState('designer');
@@ -222,6 +234,9 @@ export default function GeofenceDesign({
     const editMarkersGroup = L.featureGroup().addTo(map);
     editMarkersGroupRef.current = editMarkersGroup;
 
+    const collarsGroup = L.featureGroup().addTo(map);
+    collarsGroupRef.current = collarsGroup;
+
     // Click en el mapa para trazar vértices
     map.on('click', (e) => {
       if (workspaceModeRef.current === 'create') {
@@ -269,8 +284,7 @@ export default function GeofenceDesign({
     if (targetHato) {
       const layer = hatoLayersRef.current[targetHato.id];
       if (layer) {
-        mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 17, animate: true });
-        layer.openPopup();
+        mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 18, animate: true });
         return;
       }
       if (targetHato.geojson) {
@@ -279,7 +293,7 @@ export default function GeofenceDesign({
           if (geo.coordinates && geo.coordinates[0]) {
             const latlngs = geo.coordinates[0].map(c => [c[1], c[0]]);
             const bounds = L.latLngBounds(latlngs);
-            mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 17, animate: true });
+            mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, animate: true });
             return;
           }
         } catch (e) {
@@ -289,7 +303,7 @@ export default function GeofenceDesign({
     }
 
     if (polygonsGroupRef.current && polygonsGroupRef.current.getLayers().length > 0) {
-      mapInstanceRef.current.fitBounds(polygonsGroupRef.current.getBounds(), { padding: [40, 40], maxZoom: 16, animate: true });
+      mapInstanceRef.current.fitBounds(polygonsGroupRef.current.getBounds(), { padding: [40, 40], maxZoom: 17, animate: true });
     }
   };
 
@@ -298,8 +312,7 @@ export default function GeofenceDesign({
     if (!mapInstanceRef.current) return;
     const layer = potreroLayersRef.current[potrero.id];
     if (layer) {
-      mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 17, animate: true });
-      layer.openPopup();
+      mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 18, animate: true });
       return;
     }
     if (potrero.geojson) {
@@ -308,9 +321,19 @@ export default function GeofenceDesign({
         if (geo.coordinates && geo.coordinates[0]) {
           const latlngs = geo.coordinates[0].map(c => [c[1], c[0]]);
           const bounds = L.latLngBounds(latlngs);
-          mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 17, animate: true });
+          mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, animate: true });
         }
       } catch (_) {}
+    }
+  };
+
+  // 4.1 CENTRAR EN COLLAR GPS ESPECÍFICO
+  const centerOnCollar = (c) => {
+    if (!mapInstanceRef.current || !c) return;
+    const lat = parseFloat(c.lat);
+    const lon = parseFloat(c.lon);
+    if (!isNaN(lat) && !isNaN(lon)) {
+      mapInstanceRef.current.setView([lat, lon], 18, { animate: true });
     }
   };
 
@@ -355,14 +378,15 @@ export default function GeofenceDesign({
           `);
 
           poly.bindTooltip(`
-            <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 11px; text-transform: uppercase;">
+            <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase;">
               <span>🏰</span>
               <span style="color: #fca5a5;">HATO: ${hato.nombre}</span>
             </div>
           `, {
             permanent: true,
-            direction: 'center',
-            className: 'map-tooltip-hato'
+            direction: 'top',
+            offset: [0, -10],
+            className: 'map-tooltip-hato-compact'
           });
 
           polygonsGroupRef.current.addLayer(poly);
@@ -375,23 +399,24 @@ export default function GeofenceDesign({
 
     // B. Potreros
     if (geocercas.potreros) {
-      geocercas.potreros.forEach(pot => {
+      geocercas.potreros.forEach((pot, pIdx) => {
         if (!pot.geojson) return;
         try {
           const geo = typeof pot.geojson === 'string' ? JSON.parse(pot.geojson) : pot.geojson;
           const latlngs = geo.coordinates[0].map(c => [c[1], c[0]]);
           const areaHa = calculateGeodesicAreaHa(latlngs);
           const collaresActivosCount = pot.collares_activos || 0;
+          const colorStyle = POTRERO_PALETTE[pIdx % POTRERO_PALETTE.length];
 
           const poly = L.polygon(latlngs, {
-            color: '#10b981',
-            weight: 2.5,
-            fillColor: '#10b981',
-            fillOpacity: 0.20
+            color: colorStyle.border,
+            weight: 3,
+            fillColor: colorStyle.fill,
+            fillOpacity: 0.22
           }).bindPopup(`
             <div style="font-family: sans-serif; font-size: 12px; color: #0f172a; padding: 4px;">
-              <div style="font-weight: bold; font-size: 14px; color: #047857; margin-bottom: 2px;">
-                🌱 Potrero: ${pot.nombre}
+              <div style="font-weight: bold; font-size: 14px; color: ${colorStyle.border}; margin-bottom: 2px;">
+                🌱 [${pIdx + 1}] ${pot.nombre}
               </div>
               <div><strong>Hato:</strong> ${pot.hato_nombre || '#' + pot.hato_id}</div>
               <div><strong>Superficie:</strong> ${areaHa} Ha</div>
@@ -406,12 +431,15 @@ export default function GeofenceDesign({
           `);
 
           poly.bindTooltip(`
-            <div style="font-weight: 700; font-size: 10px; color: #a7f3d0;">
-              🌱 ${pot.nombre} (${areaHa} Ha)
+            <div style="display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 10px; padding: 2px 6px; background: rgba(15, 23, 42, 0.90); border: 1.5px solid ${colorStyle.border}; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
+              <span style="background: ${colorStyle.border}; color: #000; border-radius: 3px; padding: 0.5px 4px; font-weight: 900; font-size: 9px;">${pIdx + 1}</span>
+              <span style="color: #fff;">${pot.nombre}</span>
+              <span style="color: ${colorStyle.text}; font-size: 9px; opacity: 0.85;">(${areaHa} Ha)</span>
             </div>
           `, {
-            permanent: false,
-            direction: 'center'
+            permanent: true,
+            direction: 'center',
+            className: 'map-tooltip-potrero-clean'
           });
 
           polygonsGroupRef.current.addLayer(poly);
@@ -429,6 +457,113 @@ export default function GeofenceDesign({
       setTimeout(() => centerOnHato(geocercas.hatos[0].id), 300);
     }
   }, [geocercas, selectedHatoId]);
+
+  // 5.5 RENDERIZAR COLLARES / ANIMALES EN VIVO EN EL MAPA DE DISEÑO
+  useEffect(() => {
+    if (!mapInstanceRef.current || !collarsGroupRef.current) return;
+    collarsGroupRef.current.clearLayers();
+
+    if (!showCollarsOnMap) return;
+
+    // Recopilar posiciones activas de collares desde monitoreo o inventario
+    const collarPositions = [];
+    (monitoringData || []).forEach(item => {
+      const lat = parseFloat(item.latitud);
+      const lon = parseFloat(item.longitud);
+      if (item.collar_id && !isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
+        collarPositions.push({
+          collarId: item.collar_id,
+          areteVisual: item.arete_visual || item.collar_id,
+          raza: item.raza || 'Brahman',
+          lat,
+          lon,
+          bateria: item.nivel_bateria ?? 100,
+          estaCargando: item.esta_cargando === true,
+          medioRed: item.medio_red || 'CELULAR',
+          satelites: item.satelites_visibles || 0,
+          gpsFijado: item.gps_fijado,
+          gpsEncendido: item.gps_encendido,
+          estadoCerca: item.estado_cerca || 'DENTRO',
+          alerta: item.estado_alerta || 'NORMAL',
+          potreroNombre: item.potrero_nombre || item.potrero_asignado_nombre || 'No asignado',
+          hatoNombre: item.hato_nombre || 'Oficina'
+        });
+      }
+    });
+
+    (collares || []).forEach(c => {
+      if (c.id && !collarPositions.some(p => p.collarId === c.id)) {
+        const lat = parseFloat(c.latitud);
+        const lon = parseFloat(c.longitud);
+        if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
+          collarPositions.push({
+            collarId: c.id,
+            areteVisual: c.res_asociada || c.arete_visual || c.id,
+            raza: 'Brahman',
+            lat,
+            lon,
+            bateria: c.nivel_bateria ?? 100,
+            estaCargando: c.esta_cargando === true,
+            medioRed: c.medio_red || 'CELULAR',
+            satelites: c.satelites_visibles || 0,
+            gpsFijado: c.gps_fijado,
+            gpsEncendido: c.gps_encendido,
+            estadoCerca: 'DENTRO',
+            alerta: 'NORMAL',
+            potreroNombre: 'No asignado',
+            hatoNombre: 'Oficina'
+          });
+        }
+      }
+    });
+
+    collarPositions.forEach(c => {
+      const isEscape = c.estadoCerca === 'FUERA' || c.alerta === 'ESCAPE_HATO';
+      const isWarn = c.estadoCerca === 'ADVERTENCIA' || c.alerta === 'INFRACCION_ROTACION';
+
+      const colorBg = isEscape ? 'background: #dc2626;' : (isWarn ? 'background: #d97706;' : 'background: #059669;');
+      const ringBorder = isEscape ? 'box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.4);' : (isWarn ? 'box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.4);' : 'box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.4);');
+      const emoji = isEscape ? '🚨' : (isWarn ? '⚠️' : '🐮');
+
+      const collarHtml = `
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <div style="position: absolute; top: -26px; background: rgba(15, 23, 42, 0.95); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 9999px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; display: flex; align-items: center; gap: 3px;">
+            <span>🐮 ${c.areteVisual}</span>
+            <span style="color: #94a3b8; font-size: 9px;">(${c.collarId})</span>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 9999px; ${colorBg} ${ringBorder} display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff;">
+            ${emoji}
+          </div>
+        </div>
+      `;
+
+      const marker = L.marker([c.lat, c.lon], {
+        icon: L.divIcon({
+          className: 'collar-gps-marker',
+          html: collarHtml,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        })
+      });
+
+      marker.bindPopup(`
+        <div style="font-family: sans-serif; font-size: 12px; color: #0f172a; padding: 4px; min-width: 190px;">
+          <div style="font-weight: 800; font-size: 14px; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+            <span>🐮 ${c.areteVisual}</span>
+            <span style="font-size: 11px; font-weight: bold; color: #0284c7;">${c.collarId}</span>
+          </div>
+          <div style="margin-bottom: 3px;"><strong>Estado Geocerca:</strong> <span style="font-weight: bold; color: ${isEscape ? '#dc2626' : (isWarn ? '#d97706' : '#16a34a')};">${isEscape ? '🚨 FUGA / FUERA' : (isWarn ? '⚠️ ADVERTENCIA' : '✅ DENTRO')}</span></div>
+          <div style="margin-bottom: 3px;"><strong>Batería:</strong> 🔋 ${c.bateria}% ${c.estaCargando ? '⚡ (USB)' : ''}</div>
+          <div style="margin-bottom: 3px;"><strong>Satélites GNSS:</strong> 🛰️ ${c.satelites} sats ${c.gpsFijado ? '(Fix)' : '(Buscando)'}</div>
+          <div style="margin-bottom: 3px;"><strong>Red:</strong> ${c.medioRed === 'WIFI' ? '📶 Wi-Fi' : '📱 4G LTE Digitel'}</div>
+          <div style="margin-bottom: 3px;"><strong>Potrero:</strong> 🌱 ${c.potreroNombre}</div>
+          <div style="font-size: 10px; color: #64748b; margin-top: 4px; font-family: monospace;">Lat: ${c.lat.toFixed(6)}, Lon: ${c.lon.toFixed(6)}</div>
+        </div>
+      `);
+
+      collarsGroupRef.current.addLayer(marker);
+    });
+  }, [monitoringData, collares, showCollarsOnMap]);
 
   // 6. RENDERIZAR LÍNEAS / POLÍGONO EN MODO TRAZADO (CREACIÓN)
   useEffect(() => {
@@ -812,6 +947,9 @@ export default function GeofenceDesign({
     ? calculateGeodesicAreaHa(drawingPoints)
     : (workspaceMode === 'edit' ? calculateGeodesicAreaHa(editVertices) : 0);
 
+  const primaryCollar = (monitoringData || []).find(m => m.collar_id && m.latitud && m.longitud && (parseFloat(m.latitud) !== 0 || parseFloat(m.longitud) !== 0))
+    || (collares || []).find(c => c.id && c.latitud && c.longitud && (parseFloat(c.latitud) !== 0 || parseFloat(c.longitud) !== 0));
+
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-[1600px] mx-auto animate-fadeIn flex flex-col h-[calc(100vh-4rem)]">
       
@@ -913,7 +1051,7 @@ export default function GeofenceDesign({
             {/* Contenedor del Mapa Leaflet */}
             <div ref={mapContainerRef} className="w-full h-full z-10" />
 
-            {/* BARRA FLOTANTE SUPERIOR DEL MAPA: Capas y Auto-Centrado */}
+            {/* BARRA FLOTANTE SUPERIOR DEL MAPA: Capas, Auto-Centrado y Collares */}
             <div className="absolute top-3 right-3 z-20 flex items-center gap-2 bg-[#0E1624]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/10 shadow-xl">
               <button
                 type="button"
@@ -921,8 +1059,37 @@ export default function GeofenceDesign({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-md transition-all active:scale-95"
                 title="Centrar y enfocar en el Hato actual"
               >
-                <MapPin className="w-3.5 h-3.5 text-emerald-200 animate-bounce" />
+                <MapPin className="w-3.5 h-3.5 text-emerald-200" />
                 <span>🎯 Ubicar Hato</span>
+              </button>
+
+              {primaryCollar && (
+                <button
+                  type="button"
+                  onClick={() => centerOnCollar({
+                    lat: primaryCollar.latitud || primaryCollar.lat,
+                    lon: primaryCollar.longitud || primaryCollar.lon
+                  })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-900 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/60 shadow-md transition-all active:scale-95"
+                  title="Centrar mapa en la ubicación del collar físico"
+                >
+                  <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                  <span>🐮 Collar {primaryCollar.collar_id || primaryCollar.id}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowCollarsOnMap(prev => !prev)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                  showCollarsOnMap
+                    ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+                    : 'bg-slate-900/60 border-white/10 text-slate-400 hover:text-white'
+                }`}
+                title={showCollarsOnMap ? 'Ocultar collares en el mapa' : 'Mostrar collares en el mapa'}
+              >
+                <span>{showCollarsOnMap ? '👁️' : '🕶️'}</span>
+                <span className="hidden sm:inline">Collares</span>
               </button>
 
               <div className="w-px h-5 bg-white/10 mx-0.5"></div>
@@ -993,14 +1160,22 @@ export default function GeofenceDesign({
             )}
 
             {/* CONVENCIONES Y LEYENDA DEL MAPA (INFERIOR IZQUIERDA) */}
-            <div className="absolute bottom-4 left-4 z-20 bg-[#0B121C]/90 backdrop-blur-md p-2.5 rounded-xl border border-white/10 shadow-xl hidden md:flex items-center gap-4 text-[11px]">
+            <div className="absolute bottom-4 left-4 z-20 bg-[#0B121C]/90 backdrop-blur-md p-2.5 rounded-xl border border-white/10 shadow-xl hidden md:flex items-center gap-3.5 text-[11px]">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full border-2 border-rose-500 bg-rose-500/20"></span>
-                <span className="text-slate-300 font-semibold">Hatos Maestros</span>
+                <span className="text-slate-300 font-semibold">Hato</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full border-2 border-emerald-500 bg-emerald-500/20"></span>
-                <span className="text-slate-300 font-semibold">Potreros Activos</span>
+                <span className="w-3 h-3 rounded-full border-2 border-emerald-500 bg-emerald-500/30"></span>
+                <span className="text-emerald-300 font-semibold">Potrero 1</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full border-2 border-cyan-500 bg-cyan-500/30"></span>
+                <span className="text-cyan-300 font-semibold">Potrero 2</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs">🐮</span>
+                <span className="text-emerald-300 font-semibold">Collar GPS</span>
               </div>
             </div>
 
@@ -1175,20 +1350,29 @@ export default function GeofenceDesign({
                         No hay potreros registrados.
                       </div>
                     ) : (
-                      filteredPotreros.map(p => {
+                      filteredPotreros.map((p, idx) => {
                         const collaresActivos = p.collares_activos || 0;
+                        const colorStyle = POTRERO_PALETTE[idx % POTRERO_PALETTE.length];
 
                         return (
                           <div
                             key={p.id}
-                            className="p-3 rounded-xl bg-slate-900/80 border border-emerald-500/20 hover:border-emerald-500/40 transition-all space-y-2 mb-2 group"
+                            className="p-3 rounded-xl bg-slate-900/80 transition-all space-y-2 mb-2 group shadow-sm hover:shadow-md"
+                            style={{ border: `1.5px solid ${colorStyle.border}50` }}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div>
-                                <div className="font-bold text-xs text-white group-hover:text-emerald-300 transition-colors flex items-center gap-1.5">
-                                  <span>🌱 {p.nombre}</span>
+                                <div className="font-bold text-xs text-white transition-colors flex items-center gap-2">
+                                  <span 
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-black shadow-sm"
+                                    style={{ backgroundColor: colorStyle.border, color: '#000' }}
+                                    title={`Potrero número ${idx + 1}`}
+                                  >
+                                    #{idx + 1}
+                                  </span>
+                                  <span style={{ color: colorStyle.text }}>🌱 {p.nombre}</span>
                                 </div>
-                                <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                                <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
                                   <span>Hato: <strong className="text-slate-300">{p.hato_nombre || '#' + p.hato_id}</strong></span>
                                   <span>• Margen: {p.margen_advertencia_metros || 10}m</span>
                                 </div>

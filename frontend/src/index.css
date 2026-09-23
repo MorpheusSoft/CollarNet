@@ -140,6 +140,35 @@
   display: none !important;
 }
 
+.leaflet-tooltip.map-tooltip-hato-compact {
+  background: rgba(15, 23, 42, 0.92) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(239, 68, 68, 0.8) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+  color: #fff !important;
+  padding: 2px 8px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  pointer-events: none !important;
+}
+
+.leaflet-tooltip.map-tooltip-hato-compact::before {
+  display: none !important;
+}
+
+.leaflet-tooltip.map-tooltip-potrero-clean {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+.leaflet-tooltip.map-tooltip-potrero-clean::before {
+  display: none !important;
+}
+
 .leaflet-tooltip.map-tooltip-potrero {
   background: rgba(11, 18, 28, 0.88);
   backdrop-filter: blur(10px);
