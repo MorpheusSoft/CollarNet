@@ -13,6 +13,7 @@ Este archivo registra el avance y el detalle técnico de cada una de las fases d
 | **2** | [FASE 2: Geolocalización Física](#3-fase-2-geolocalizacion-fisica-completada) | **COMPLETADA** | 17 de Julio, 2026 |
 | **4** | [FASE 4: Registro, Vincular Reses a Collares y Alertas](#4-fase-4-alertas-fisicas-y-sensores-completada-en-software) | **COMPLETADA** | 1 de Agosto, 2026 |
 | **5** | [FASE 5: Flasheo Físico e Integración IoT](#5-fase-5-transmision-de-datos-e-interfaz-pendiente) | **COMPLETADA** | 1 de Agosto, 2026 |
+| **6** | [FASE 6: Transmisión Celular 4G LTE y Conexión Nube](#6-fase-6-transmision-celular-4g-lte-y-conexion-nube-completada) | **COMPLETADA** | 24 de Septiembre, 2026 |
 
 ---
 
@@ -78,3 +79,18 @@ Este archivo registra el avance y el detalle técnico de cada una de las fases d
     *   Integración telemétrica en tiempo real con el servidor Express/PostGIS y actualización de marcadores y tooltips en el mapa satelital Leaflet via WebSockets.
 *   **Método de Verificación**:
     *   Monitoreo serial confirmando inicio exitoso: `[WiFi] ¡Conectado con éxito!`, `[MQTT] ¡Conectado con éxito al broker!`.
+
+---
+
+### 6. FASE 6: Transmisión Celular 4G LTE y Conexión Nube (COMPLETADA)
+*   **Fecha de Ejecución**: 24 de Septiembre, 2026.
+*   **Objetivos**:
+    *   Configuración en firmware de red celular SIM 4G LTE Digitel (`SIM7670G`, APN `gprsweb.digitel.ve`) como conexión exclusiva y por defecto (`DEFAULT_NET_PREF = NET_PREF_CELLULAR`).
+    *   Desactivación permanente de la radio Wi-Fi en el collar (`WiFi.mode(WIFI_OFF)`) para optimizar el consumo de batería y garantizar la cobertura total en potreros.
+    *   Flasheo directo del firmware actualizado vía puerto serial USB `/dev/ttyACM4` al chip ESP32-S3 a 921600 baudios.
+    *   Actualización de aplicaciones cliente móviles (`CowIA Ops` técnico y `CowIA Campo` supervisor) para conectar por defecto al VPS de producción en la nube (`https://cowai.net`).
+    *   Soporte completo de PWAs para Safari en iOS y empaquetado de APKs de Android v1.0.4.
+*   **Método de Verificación**:
+    *   Monitoreo serial confirmando conexión directa: `[Celular] ¡Conexión de datos 4G LTE DIGITEL establecida con éxito!`, `[MQTT] ¡Conectado con éxito al broker!`.
+    *   Verificación en tiempo real en los registros del contenedor de producción en el VPS (`collarnet-app-qa`): recepción continua de paquetes MQTT con `Red: CELULAR`.
+
