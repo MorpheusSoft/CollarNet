@@ -32,6 +32,9 @@ const unsigned long GPS_CHECK_INTERVAL = 1000;
 String hardwareIMEI = "";
 
 String getActiveNetType() {
+    if (currentNetPref == NET_PREF_CELLULAR) {
+        return "CELULAR";
+    }
     if (wifiActive && WiFi.status() == WL_CONNECTED) {
         return "WIFI";
     }
@@ -141,10 +144,11 @@ void applyNetworkPreference() {
             modem.sendAT("+CDNSCFG=\"8.8.8.8\",\"8.8.4.4\"");
             modem.waitResponse();
             gsmActive = true;
-            initMQTT(COLLAR_ID, &gsmClient);
         } else {
-            Serial.println("[Celular] ⚠️ No se pudo establecer conexión de datos móviles GPRS/LTE.");
+            Serial.println("[Celular] ⚠️ No se pudo establecer conexión de datos móviles GPRS/LTE en arranque. Se continuará reintentando en bucle...");
         }
+        // Inicializar siempre cliente MQTT enlazado al módem celular GSM
+        initMQTT(COLLAR_ID, &gsmClient);
     } else if (currentNetPref == NET_PREF_WIFI) {
         if (gsmActive && modem.isGprsConnected()) {
             Serial.println("[Red] Desconectando datos móviles por preferencia de Wi-Fi...");
@@ -283,7 +287,7 @@ void loop() {
     } else if (moving && powerSaveModeActive) {
         powerSaveModeActive = false;
         Serial.println("\n[Energía] MOVIMIENTO DETECTADO! Saliendo del Modo Ahorro...");
-        if (gsmActive) {
+        if (currentNetPref == NET_PREF_CELLULAR || gsmActive) {
             initMQTT(COLLAR_ID, &gsmClient);
         } else {
             initWiFi();

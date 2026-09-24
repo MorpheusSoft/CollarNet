@@ -16,8 +16,8 @@ enum NetPreference {
     NET_PREF_WIFI = 2      // Fuerza exclusivamente Wi-Fi
 };
 
-// Modo automático (Wi-Fi en alcance con conmutación a SIM 4G en campo)
-#define DEFAULT_NET_PREF NET_PREF_AUTO
+// Modo por defecto: Fuerza siempre el uso de la red celular SIM 4G LTE Digitel
+#define DEFAULT_NET_PREF NET_PREF_CELLULAR
 
 // Configuración de Pines de Hardware
 #define STATUS_LED_PIN 2     // LED de estado
