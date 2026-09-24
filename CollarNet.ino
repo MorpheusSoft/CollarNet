@@ -427,7 +427,8 @@ void loop() {
         double distToHatoBorder = 0.0;
         double distToPotreroBorder = 0.0;
         const char* currentUbicacion = "Zona Segura";
-        double warningThreshold = (hatoWarningThreshold > 0) ? hatoWarningThreshold : 3.0;
+        double warningThreshold = (hatoWarningThreshold > 0) ? hatoWarningThreshold : 10.0;
+        double activeAlertDist = 0.0;
 
         if (!collarActivo) {
             // MODO ALMACÉN / DESACTIVADO / RESERVA: SILENCIO ABSOLUTO Y CERO ALERTAS
@@ -446,32 +447,37 @@ void loop() {
             distToPotreroBorder = (numPotreros > 0 && potrerosList[0].numVertices > 0) ? getDistanceToPolygon(currentPos, potrerosList[0].vertices, potrerosList[0].numVertices) : 0.0;
 
             if (!insideHato) {
-                // FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA Y MÁS FUERTE
+                // FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA CON TIMEOUT 60s
                 nextAlertLevel = ALERT_CRITICAL_HATO;
                 alertStr = "ESCAPE_HATO";
                 currentUbicacion = "¡¡FUERA DEL HATO (ESCAPE MAYOR)!!";
+                activeAlertDist = distToHatoBorder;
             } else if (distToHatoBorder <= warningThreshold) {
-                // APROXIMÁNDOSE AL LÍMITE EXTERIOR DEL HATO (<3m): ADVERTENCIA
+                // APROXIMÁNDOSE AL LÍMITE EXTERIOR DEL HATO: ADVERTENCIA PROGRESIVA
                 nextAlertLevel = ALERT_WARNING;
                 alertStr = "PROXIMIDAD_HATO";
-                currentUbicacion = "Aproximándose a lindero de Hato (Advertencia 3m)";
+                currentUbicacion = "Aproximándose a lindero de Hato (Advertencia Progresiva)";
+                activeAlertDist = distToHatoBorder;
             } else if (!potreroAbierto) {
                 // MODO POTRERO CERRADO (Pastoreo regular con contención en potrero)
                 if (!insidePotrero) {
-                    // Fuera del Potrero asignado (Infracción de rotación)
+                    // Fuera del Potrero asignado (Escape de potrero / Infracción de rotación)
                     nextAlertLevel = ALERT_DANGER;
-                    alertStr = "INFRACCION_ROTACION";
-                    currentUbicacion = "Fuera de Potrero Asignado (Infracción Rotación)";
+                    alertStr = "ESCAPE_POTRERO";
+                    currentUbicacion = "Fuera de Potrero Asignado (Escape de Potrero)";
+                    activeAlertDist = distToPotreroBorder;
                 } else if (distToPotreroBorder <= warningThreshold) {
-                    // Dentro del Potrero pero a menos del umbral de advertencia (<3m)
+                    // Dentro del Potrero pero dentro del margen de advertencia (progresivo por distancia)
                     nextAlertLevel = ALERT_WARNING;
-                    alertStr = "PROXIMIDAD_CERCA";
-                    currentUbicacion = "Aproximándose a cerca de potrero (Advertencia 3m)";
+                    alertStr = "PROXIMIDAD_POTRERO";
+                    currentUbicacion = "Aproximándose a lindero de potrero (Advertencia Progresiva)";
+                    activeAlertDist = distToPotreroBorder;
                 } else {
                     // Dentro del Potrero seguro
                     nextAlertLevel = ALERT_NONE;
                     alertStr = "NORMAL";
                     currentUbicacion = (numPotreros > 0) ? potrerosList[0].name : "Potrero Asignado";
+                    activeAlertDist = 0.0;
                 }
             } else {
                 // MODO TRASLADO / TALANQUERA ABIERTA:
@@ -480,12 +486,12 @@ void loop() {
                 nextAlertLevel = ALERT_NONE;
                 alertStr = "MODO_TRASLADO";
                 currentUbicacion = "Modo Traslado (Talanquera Abierta - Tránsito Libre)";
+                activeAlertDist = 0.0;
             }
             
-            // C. Actualizar nivel de alertas local (led y buzzer en IO5 a 4000 Hz)
-            updateAlerts(nextAlertLevel);
+            // C. Actualizar nivel de alertas local con modulación progresiva por distancia y timeout
+            updateAlerts(nextAlertLevel, activeAlertDist, warningThreshold);
         }
-        
         // D. Publicar telemetría por MQTT con batería real e IMEI
         int currentBat = 100;
         int currentVbat = 4227;

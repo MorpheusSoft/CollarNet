@@ -55,7 +55,7 @@ void initAlerts() {
     Serial.println("[Alerts] ¡Buzzer en IO5 listo y probado con éxito!");
 }
 
-void updateAlerts(AlertLevel level) {
+void updateAlerts(AlertLevel level, double distToBorder, double warningMargin) {
     if (level != currentAlert) {
         currentAlert = level;
         alertStateStartTime = millis();
@@ -78,12 +78,12 @@ void updateAlerts(AlertLevel level) {
     unsigned long currentMillis = millis();
     bool buzzerTimedOut = (currentMillis - alertStateStartTime >= BUZZER_TIMEOUT_MS);
 
-    // MODO CRÍTICO HATO: SONIDO CONTINUO MÁS FUERTE (Sin pausas intermitentes)
+    // MODO CRÍTICO HATO: ESCAPE MAYOR DE LA FINCA (Sonido continuo a máxima potencia con timeout de 60s)
     if (currentAlert == ALERT_CRITICAL_HATO) {
         if (STATUS_LED_PIN >= 0) digitalWrite(STATUS_LED_PIN, HIGH);
-        if (IMPULSE_LED_PIN >= 0) digitalWrite(IMPULSE_LED_PIN, HIGH);
+        if (IMPULSE_LED_PIN >= 0) digitalWrite(IMPULSE_LED_PIN, LOW);
         if (!buzzerTimedOut) {
-            playBuzzerTone(4000); // 4000 Hz a máxima potencia acústica constante
+            playBuzzerTone(4000); // 4000 Hz continuo
             buzzerActive = true;
         } else {
             playBuzzerTone(0);
@@ -92,17 +92,25 @@ void updateAlerts(AlertLevel level) {
         return;
     }
 
-    // MODOS INTERMITENTES: WARNING (Preventivo) o DANGER (Infracción Potrero)
-    unsigned long toggleInterval = 0;
+    // MODOS INTERMITENTES: WARNING (Progresivo por cercanía) o DANGER (Escape de Potrero a alta frecuencia)
+    unsigned long toggleInterval = 400;
     unsigned int toneFrequency = 4000;
 
     switch (currentAlert) {
-        case ALERT_WARNING:
-            toggleInterval = 400; // Intermitente medio (400ms ON / 400ms OFF)
+        case ALERT_WARNING: {
+            // Pitido PROGRESIVO: más rápido a menor distancia del límite
+            double margin = (warningMargin > 0.0) ? warningMargin : 10.0;
+            double clampedDist = (distToBorder < 0.0) ? 0.0 : ((distToBorder > margin) ? margin : distToBorder);
+            double ratio = clampedDist / margin; // 1.0 (en el borde de advertencia) a 0.0 (justo en la cerca)
+            
+            // Intervalo de alternancia: de 800ms (lento a 10m) a 100ms (rápido en la cerca)
+            toggleInterval = 100 + (unsigned long)(ratio * 700.0);
             toneFrequency = 4000;
             break;
+        }
         case ALERT_DANGER:
-            toggleInterval = 120; // Rápido e insistente (120ms ON / 120ms OFF)
+            // ESCAPE DE POTRERO: Alta frecuencia máxima (80ms ON / 80ms OFF)
+            toggleInterval = 80;
             toneFrequency = 4000;
             break;
         default:
@@ -113,19 +121,15 @@ void updateAlerts(AlertLevel level) {
             return;
     }
 
+    // Asegurar que el pin de impulso eléctrico permanezca apagado (modo 100% acústico)
+    if (IMPULSE_LED_PIN >= 0) {
+        digitalWrite(IMPULSE_LED_PIN, LOW);
+    }
+
     if (currentMillis - lastToggleTime >= toggleInterval) {
         lastToggleTime = currentMillis;
         ledState = !ledState;
         if (STATUS_LED_PIN >= 0) digitalWrite(STATUS_LED_PIN, ledState ? HIGH : LOW);
-        
-        // Activar ráfagas de impulso eléctrico ÚNICAMENTE en ALERT_DANGER
-        if (IMPULSE_LED_PIN >= 0) {
-            if (currentAlert == ALERT_DANGER && !buzzerTimedOut) {
-                digitalWrite(IMPULSE_LED_PIN, ledState ? HIGH : LOW);
-            } else {
-                digitalWrite(IMPULSE_LED_PIN, LOW);
-            }
-        }
         
         if (ledState && !buzzerTimedOut) {
             playBuzzerTone(toneFrequency);

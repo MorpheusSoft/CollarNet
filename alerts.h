@@ -9,6 +9,6 @@ enum AlertLevel {
 };
 
 void initAlerts();
-void updateAlerts(AlertLevel level);
+void updateAlerts(AlertLevel level, double distToBorder = 0.0, double warningMargin = 10.0);
 
 #endif // ALERTS_H
