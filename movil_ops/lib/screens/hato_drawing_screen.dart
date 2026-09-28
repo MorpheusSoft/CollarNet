@@ -721,8 +721,9 @@ class _HatoDrawingScreenState extends State<HatoDrawingScreen> {
                                           notas: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
                                           warningWidthM: parsedWarning,
                                           permiteCrearPotreros: permiteCrearPotreros,
+                                          tenantId: widget.tenantId ?? 1,
                                         );
-                                        await agro.addHato(newHato, tenantId: widget.tenantId);
+                                        await agro.addHato(newHato, tenantId: widget.tenantId ?? 1);
                                       } else if (widget.parentHato != null) {
                                         final newPotrero = Potrero(
                                           id: 'pot_${DateTime.now().millisecondsSinceEpoch}',

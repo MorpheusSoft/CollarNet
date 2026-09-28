@@ -18,6 +18,7 @@ import NotificationsConfigView from './views/NotificationsConfigView';
 import HealthRuminationView from './views/HealthRuminationView';
 import ApkDownloadModal from './components/ApkDownloadModal';
 import ErrorBoundary from './components/ErrorBoundary';
+import CollarCameraViewer from './components/CollarCameraViewer';
 
 import { 
   fetchMonitoreo, 
@@ -68,6 +69,8 @@ export default function App() {
   const [geocercas, setGeocercas] = useState({ hatos: [], potreros: [] });
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [selectedAnimalForProjection, setSelectedAnimalForProjection] = useState(null);
+  const [activeCameraAnimal, setActiveCameraAnimal] = useState(null);
+  const [cameraMode, setCameraMode] = useState('split'); // 'split' | 'floating' | 'fullscreen'
   const [showApkModal, setShowApkModal] = useState(false);
 
   // Load Core Data based on User Role, Selected Tenant & Selected Hato
@@ -243,6 +246,15 @@ export default function App() {
     setCurrentTab('analytics');
   };
 
+  // Handle Opening Live Collar Camera
+  const handleOpenCamera = (animal) => {
+    setActiveCameraAnimal(animal);
+  };
+
+  const handleCloseCamera = () => {
+    setActiveCameraAnimal(null);
+  };
+
   // Switch context to specific tenant (from TenantsAdmin)
   const handleEnterTenantContext = (tenant) => {
     setSelectedTenantId(String(tenant.id));
@@ -295,132 +307,158 @@ export default function App() {
           onOpenApkDownload={() => setShowApkModal(true)}
         />
 
-        <main className="flex-1 overflow-y-auto bg-[#070D14]">
-          <ErrorBoundary key={currentTab} onReset={loadAllData}>
-            {/* SuperAdmin Tenants Module */}
-          {currentTab === 'tenants' && user?.rol === 'SUPERADMIN' && (
-            <TenantsAdmin
-              currentUser={user}
-              onSelectTenantContext={handleEnterTenantContext}
-              onRefreshData={loadAllData}
-            />
-          )}
+        <div className="flex-1 flex overflow-hidden">
+          <main className="flex-1 overflow-y-auto bg-[#070D14] min-w-0">
+            <ErrorBoundary key={currentTab} onReset={loadAllData}>
+              {/* SuperAdmin Tenants Module */}
+            {currentTab === 'tenants' && user?.rol === 'SUPERADMIN' && (
+              <TenantsAdmin
+                currentUser={user}
+                onSelectTenantContext={handleEnterTenantContext}
+                onRefreshData={loadAllData}
+              />
+            )}
 
-          {currentTab === 'home' && (
-            <DashboardHome
-              user={user}
-              monitoringData={monitoringData}
-              collares={collares}
-              geocercas={geocercas}
-              onNavigate={setCurrentTab}
-            />
-          )}
+            {currentTab === 'home' && (
+              <DashboardHome
+                user={user}
+                monitoringData={monitoringData}
+                collares={collares}
+                geocercas={geocercas}
+                onNavigate={setCurrentTab}
+              />
+            )}
 
-          {currentTab === 'map' && (
-            <MapMonitoring
-              monitoringData={monitoringData}
-              geocercas={geocercas}
-              selectedHatoId={selectedHatoId}
-              onSelectAnimalForProjection={handleOpenProjection}
-            />
-          )}
+            {currentTab === 'map' && (
+              <MapMonitoring
+                monitoringData={monitoringData}
+                geocercas={geocercas}
+                selectedHatoId={selectedHatoId}
+                onSelectAnimalForProjection={handleOpenProjection}
+                onSelectAnimalForCamera={handleOpenCamera}
+              />
+            )}
 
-          {currentTab === 'geofences' && (
-            <GeofenceDesign
-              geocercas={geocercas}
-              collares={collares}
-              tenants={tenants}
-              selectedTenantId={selectedTenantId}
-              selectedHatoId={selectedHatoId}
-              monitoringData={monitoringData}
-              currentUser={user}
-              onRefreshData={loadAllData}
-              onEditModeChange={(isEditing) => {
-                isEditingGeofenceRef.current = isEditing;
-              }}
-            />
-          )}
+            {currentTab === 'geofences' && (
+              <GeofenceDesign
+                geocercas={geocercas}
+                collares={collares}
+                tenants={tenants}
+                selectedTenantId={selectedTenantId}
+                selectedHatoId={selectedHatoId}
+                monitoringData={monitoringData}
+                currentUser={user}
+                onRefreshData={loadAllData}
+                onEditModeChange={(isEditing) => {
+                  isEditingGeofenceRef.current = isEditing;
+                }}
+              />
+            )}
 
-          {currentTab === 'livestock' && (
-            <LivestockTable
-              monitoringData={monitoringData}
-              collares={collares}
-              propietarios={propietarios}
-              geocercas={geocercas}
-              tenants={tenants}
-              currentUser={user}
-              selectedTenantId={selectedTenantId}
-              selectedHatoId={selectedHatoId}
-              onRefreshData={loadAllData}
-              onOpenProjection={handleOpenProjection}
-            />
-          )}
+            {currentTab === 'livestock' && (
+              <LivestockTable
+                monitoringData={monitoringData}
+                collares={collares}
+                propietarios={propietarios}
+                geocercas={geocercas}
+                tenants={tenants}
+                currentUser={user}
+                selectedTenantId={selectedTenantId}
+                selectedHatoId={selectedHatoId}
+                onRefreshData={loadAllData}
+                onOpenProjection={handleOpenProjection}
+                onSelectAnimalForCamera={handleOpenCamera}
+              />
+            )}
 
-          {currentTab === 'sanidad' && (
-            <VeterinaryHealthView
-              monitoringData={monitoringData}
-              currentUser={user}
-              selectedTenantId={selectedTenantId === 'ALL' ? null : selectedTenantId}
-            />
-          )}
+            {currentTab === 'sanidad' && (
+              <VeterinaryHealthView
+                monitoringData={monitoringData}
+                currentUser={user}
+                selectedTenantId={selectedTenantId === 'ALL' ? null : selectedTenantId}
+              />
+            )}
 
-          {currentTab === 'salud-rumia' && (
-            <HealthRuminationView
-              selectedTenantId={selectedTenantId === 'ALL' ? null : selectedTenantId}
-            />
-          )}
+            {currentTab === 'salud-rumia' && (
+              <HealthRuminationView
+                selectedTenantId={selectedTenantId === 'ALL' ? null : selectedTenantId}
+              />
+            )}
 
-          {currentTab === 'notificaciones' && (user?.rol === 'SUPERADMIN' || user?.rol === 'ADMIN_FINCA') && (
-            <NotificationsConfigView
-              currentUser={user}
-              selectedTenantId={selectedTenantId === 'ALL' ? 1 : selectedTenantId}
-            />
-          )}
+            {currentTab === 'notificaciones' && (user?.rol === 'SUPERADMIN' || user?.rol === 'ADMIN_FINCA') && (
+              <NotificationsConfigView
+                currentUser={user}
+                selectedTenantId={selectedTenantId === 'ALL' ? 1 : selectedTenantId}
+              />
+            )}
 
-          {currentTab === 'reproduccion' && (
-            <ReproductionView
-              monitoringData={monitoringData}
-              currentUser={user}
-              selectedTenantId={selectedTenantId === 'ALL' ? null : selectedTenantId}
-              onRefreshData={loadAllData}
-            />
-          )}
+            {currentTab === 'reproduccion' && (
+              <ReproductionView
+                monitoringData={monitoringData}
+                currentUser={user}
+                selectedTenantId={selectedTenantId === 'ALL' ? null : selectedTenantId}
+                onRefreshData={loadAllData}
+              />
+            )}
 
-          {currentTab === 'propietarios' && (
-            <PropietariosView
-              onOpenProjection={handleOpenProjection}
-              onRefreshData={loadAllData}
-            />
-          )}
+            {currentTab === 'propietarios' && (
+              <PropietariosView
+                onOpenProjection={handleOpenProjection}
+                onRefreshData={loadAllData}
+              />
+            )}
 
-          {currentTab === 'weighing' && (
-            <WeighingView
-              monitoringData={monitoringData}
-              onRefreshData={loadAllData}
-              onOpenProjection={handleOpenProjection}
-            />
-          )}
+            {currentTab === 'weighing' && (
+              <WeighingView
+                monitoringData={monitoringData}
+                onRefreshData={loadAllData}
+                onOpenProjection={handleOpenProjection}
+              />
+            )}
 
-          {currentTab === 'analytics' && (
-            <AnalyticsView
-              monitoringData={monitoringData}
-              initialSelectedAnimal={selectedAnimalForProjection}
-            />
-          )}
+            {currentTab === 'analytics' && (
+              <AnalyticsView
+                monitoringData={monitoringData}
+                initialSelectedAnimal={selectedAnimalForProjection}
+              />
+            )}
 
-          {currentTab === 'inventory' && (user?.rol === 'SUPERADMIN' || user?.rol === 'ADMIN_FINCA') && (
-            <div className="p-6">
-              <CollarsInventoryView user={user} />
-            </div>
-          )}
+            {currentTab === 'inventory' && (user?.rol === 'SUPERADMIN' || user?.rol === 'ADMIN_FINCA') && (
+              <div className="p-6">
+                <CollarsInventoryView user={user} />
+              </div>
+            )}
 
-          {currentTab === 'users' && (
-            <UsersAdmin currentUser={user} tenants={tenants} />
+            {currentTab === 'users' && (
+              <UsersAdmin currentUser={user} tenants={tenants} />
+            )}
+            </ErrorBoundary>
+          </main>
+
+          {/* Split-Screen Collar Camera Panel */}
+          {activeCameraAnimal && cameraMode === 'split' && (
+            <aside className="w-[450px] lg:w-[500px] xl:w-[560px] border-l border-emerald-500/20 bg-slate-950/95 flex flex-col h-full shadow-2xl relative z-20 flex-shrink-0">
+              <CollarCameraViewer
+                animal={activeCameraAnimal}
+                mode="split"
+                onModeChange={setCameraMode}
+                onClose={handleCloseCamera}
+              />
+            </aside>
           )}
-          </ErrorBoundary>
-        </main>
+        </div>
 
       </div>
+
+      {/* Floating PiP or Fullscreen Collar Camera Viewer */}
+      {activeCameraAnimal && (cameraMode === 'floating' || cameraMode === 'fullscreen') && (
+        <CollarCameraViewer
+          animal={activeCameraAnimal}
+          mode={cameraMode}
+          onModeChange={setCameraMode}
+          onClose={handleCloseCamera}
+        />
+      )}
 
       {/* Modal de Descarga de APKs (según rol del usuario) */}
       <ApkDownloadModal

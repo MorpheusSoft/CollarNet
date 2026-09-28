@@ -23,7 +23,7 @@ class StorageService {
       debugPrint('Aviso: No se pudo conectar a la API, usando caché local: $e');
     }
 
-    // Fallback a SharedPreferences
+    // Fallback a SharedPreferences si no hay red
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? jsonString = prefs.getString(_storageKey);
@@ -35,7 +35,7 @@ class StorageService {
       debugPrint('Error en fallback local: $e2');
     }
 
-    return getSampleData();
+    return [];
   }
 
   /// Guarda la lista de Hatos en la memoria local (SharedPreferences) como caché offline

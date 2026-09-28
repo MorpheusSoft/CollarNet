@@ -107,11 +107,7 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
   }
 
   Widget _buildPaso1SeleccionarArete(FincaStateProvider fincaState) {
-    // Filtrar animales registrados sin collar asignado
-    final animalesSinCollar = fincaState.animales.where((a) {
-      final col = a['collarId'] ?? a['collar_id'];
-      return col == null || col == 'SIN_COLLAR' || col.toString().isEmpty;
-    }).toList();
+    final todosLosAnimales = fincaState.animales;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +147,7 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       textCapitalization: TextCapitalization.characters,
                       decoration: InputDecoration(
-                        hintText: 'Ej. V-001, TORO-05, A-102...',
+                        hintText: 'Ej. VACA-001, TORO-05, A-102...',
                         hintStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 13),
                         filled: true,
                         fillColor: FincaTheme.bgDark,
@@ -192,26 +188,59 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
           ),
         ),
 
-        if (animalesSinCollar.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          const Text(
-            'O SELECCIONE DE ANIMALES REGISTRADOS SIN COLLAR:',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: FincaTheme.textMuted,
-              letterSpacing: 0.5,
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'ANIMALES REGISTRADOS EN HATO:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: FincaTheme.textMuted,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
+            Text(
+              '${todosLosAnimales.length} reses',
+              style: const TextStyle(fontSize: 12, color: FincaTheme.accentGreenLight, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        if (todosLosAnimales.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: FincaTheme.bgCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FincaTheme.borderCard),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: FincaTheme.textMuted, size: 22),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'No hay animales registrados aún en este hato. Escribe el arete arriba para registrarlo en manga.',
+                    style: TextStyle(color: FincaTheme.textMuted, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: animalesSinCollar.length,
+            itemCount: todosLosAnimales.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
-              final a = animalesSinCollar[index];
+              final a = todosLosAnimales[index];
               final arete = a['areteVisual'] ?? a['arete_visual'] ?? a['arete'] ?? 'A-${a['id']}';
+              final col = a['collarId'] ?? a['collar_id'];
+              final bool tieneCollar = col != null && col != 'SIN_COLLAR' && col.toString().isNotEmpty;
               final isSelected = _areteSeleccionado == arete;
 
               return InkWell(
@@ -219,13 +248,19 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
                   setState(() {
                     _areteSeleccionado = arete;
                     _areteManualController.text = arete;
+                    if (tieneCollar && (_collarQR == null || _collarQR!.isEmpty)) {
+                      _collarQR = col.toString();
+                      _collarManualController.text = col.toString();
+                    }
                     _pasoActual = 2;
                   });
                 },
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isSelected ? FincaTheme.primaryGreen.withOpacity(0.2) : FincaTheme.bgCard,
+                    color: isSelected
+                        ? FincaTheme.primaryGreen.withOpacity(0.2)
+                        : FincaTheme.bgCard,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected ? FincaTheme.primaryGreen : FincaTheme.borderCard,
@@ -235,24 +270,58 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: FincaTheme.primaryGreen.withOpacity(0.15),
-                        child: const Icon(Icons.pets, color: FincaTheme.primaryGreen, size: 20),
+                        backgroundColor: tieneCollar
+                            ? FincaTheme.infoBlue.withOpacity(0.2)
+                            : FincaTheme.primaryGreen.withOpacity(0.15),
+                        child: Icon(
+                          Icons.pets,
+                          color: tieneCollar ? FincaTheme.infoBlue : FincaTheme.primaryGreen,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Arete: $arete',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: FincaTheme.textLight,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  'Arete: $arete',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: FincaTheme.textLight,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: tieneCollar
+                                        ? FincaTheme.infoBlue.withOpacity(0.15)
+                                        : FincaTheme.primaryGreen.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: tieneCollar
+                                          ? FincaTheme.infoBlue.withOpacity(0.4)
+                                          : FincaTheme.primaryGreen.withOpacity(0.4),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    tieneCollar ? '📱 $col' : '🟢 Sin collar',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: tieneCollar ? FincaTheme.infoBlue : FincaTheme.primaryGreen,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: 3),
                             Text(
-                              '${a['categoria'] ?? 'Bovino'} • ${a['raza'] ?? 'Mestizo'}',
+                              '${a['categoria'] ?? 'Bovino'} • ${a['raza'] ?? 'Brahman'} • ${a['potreroNombre'] ?? 'En manga'}',
                               style: const TextStyle(fontSize: 12, color: FincaTheme.textMuted),
                             ),
                           ],
@@ -265,13 +334,16 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
               );
             },
           ),
-        ],
       ],
     );
   }
 
   Widget _buildPaso2EscanearCollar(FincaStateProvider fincaState) {
-    final collaresStock = fincaState.collaresDisponibles;
+    final collaresStock = <String>{
+      ...fincaState.collaresDisponibles,
+      'COW-001',
+      if (_collarQR != null && _collarQR!.isNotEmpty) _collarQR!,
+    }.toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,7 +392,7 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       textCapitalization: TextCapitalization.characters,
                       decoration: InputDecoration(
-                        hintText: 'Ej. COL-0001, COW-0042...',
+                        hintText: 'Ej. COW-001, COL-0001...',
                         hintStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 13),
                         filled: true,
                         fillColor: FincaTheme.bgDark,
@@ -387,7 +459,7 @@ class _MangaVinculacionScreenState extends State<MangaVinculacionScreen> {
               if (collaresStock.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 const Text(
-                  'Collares disponibles en stock:',
+                  'Collares disponibles / sugeridos:',
                   style: TextStyle(color: FincaTheme.textLight, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),

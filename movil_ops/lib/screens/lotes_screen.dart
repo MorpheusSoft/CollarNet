@@ -5,6 +5,7 @@ import '../models/collar_inventario.dart';
 import '../providers/inventory_provider.dart';
 import '../theme/app_theme.dart';
 import 'hardware_test_screen.dart';
+import '../widgets/collar_camera_viewer_widget.dart';
 
 class LotesScreen extends StatefulWidget {
   const LotesScreen({super.key});
@@ -966,11 +967,64 @@ class _LotesScreenState extends State<LotesScreen> with SingleTickerProviderStat
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF06B6D4)),
+                          foregroundColor: const Color(0xFF06B6D4),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.videocam, size: 18),
+                        label: Text('Ver Cámara del Collar en Vivo', style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 12)),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _showCollarCameraModal(context, c);
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showCollarCameraModal(BuildContext context, CollarInventario c) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF06B6D4), width: 1.5),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: CollarCameraViewerWidget(
+                animal: {
+                  'collar_id': c.id,
+                  'arete_visual': c.animalArete ?? 'Sin Arete',
+                  'potrero_nombre': c.potreroNombre ?? c.hatoNombre ?? 'Inventario Técnico',
+                  'nivel_bateria': c.nivelBateria,
+                  'latitud': c.latitud ?? 10.671340,
+                  'longitud': c.longitud ?? -71.604030,
+                  'estado_cerca': c.estado,
+                },
+                initialMode: CameraViewMode.split,
+                onClose: () => Navigator.pop(dialogCtx),
+              ),
+            ),
+          ),
         );
       },
     );

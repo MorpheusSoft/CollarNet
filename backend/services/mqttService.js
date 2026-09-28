@@ -1,29 +1,37 @@
 import mqtt from 'mqtt';
 import pool from '../config/db.js';
 import { evaluateAnimalPosition } from './geofenceService.js';
+import { processTelemetryInMemory } from '../routes/api.js';
+import { pushCollarFrame } from './cameraService.js';
 
 let mqttClient = null;
 
 /**
- * Inicializa el cliente MQTT, se conecta al broker y se suscribe al canal de telemetría.
+ * Inicializa el cliente MQTT, se conecta al broker y se suscribe a los canales de telemetría y cámara.
  * @param {Object} io - Instancia del servidor de WebSockets (Socket.io)
  */
 export function initMQTT(io) {
   const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://broker.hivemq.com:1883';
   const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
-  const subscribeTopic = `${prefix}/+/telemetria`; // collarnet/lzambrano/[collar_id]/telemetria
+  const subscribeTopics = [
+    `${prefix}/+/telemetria`,
+    `${prefix}/+/camera`,
+    `${prefix}/+/snapshot`
+  ];
 
   console.log(`[MQTT] Conectando al broker: ${brokerUrl}...`);
   mqttClient = mqtt.connect(brokerUrl);
 
   mqttClient.on('connect', () => {
-    console.log(`[MQTT] Conectado exitosamente. Suscribiéndose al tópico: ${subscribeTopic}`);
-    mqttClient.subscribe(subscribeTopic, (err) => {
-      if (err) {
-        console.error(`[MQTT] Error al suscribirse al tópico ${subscribeTopic}:`, err);
-      } else {
-        console.log(`[MQTT] Suscripción exitosa a ${subscribeTopic}`);
-      }
+    console.log(`[MQTT] Conectado exitosamente. Suscribiéndose a tópicos globales de telemetría y cámara...`);
+    subscribeTopics.forEach(topic => {
+      mqttClient.subscribe(topic, (err) => {
+        if (err) {
+          console.error(`[MQTT] Error al suscribirse al tópico ${topic}:`, err);
+        } else {
+          console.log(`[MQTT] Suscripción exitosa a ${topic}`);
+        }
+      });
     });
   });
 
@@ -33,9 +41,21 @@ export function initMQTT(io) {
 
   mqttClient.on('message', async (topic, message) => {
     try {
-      // Extraer collarId del tópico (ej: collarnet/lzambrano/collar_001/telemetria -> collar_001)
+      // Extraer collarId del tópico (ej: collarnet/lzambrano/COW-001/telemetria -> COW-001)
       const topicParts = topic.split('/');
-      const collarId = topicParts[topicParts.length - 2];
+      const collarId = topicParts[topicParts.length - 2] || 'COW-001';
+      const actionType = topicParts[topicParts.length - 1];
+
+      // Ingestión de fotogramas de cámara vía MQTT 4G LTE
+      if (actionType === 'camera' || actionType === 'snapshot') {
+        if (message && message.length > 0) {
+          pushCollarFrame(collarId, message, 'image/jpeg');
+          if (io) {
+            io.emit('camera_frame_update', { collarId, timestamp: Date.now() });
+          }
+        }
+        return;
+      }
       
       const payload = JSON.parse(message.toString());
       
@@ -52,148 +72,126 @@ export function initMQTT(io) {
       const gpsFijado = payload.gps_fix !== undefined ? Boolean(payload.gps_fix) : false;
       const satelites = payload.sats !== undefined ? parseInt(payload.sats, 10) : 0;
 
-      if (isNaN(lat) || isNaN(lon)) {
-        console.warn(`[MQTT] Telemetría inválida del collar ${collarId}: coordenadas no numéricas.`);
-        return;
-      }
+      let broadcastData = null;
+      let handledByDb = false;
 
-      // 1. Buscar si hay un animal vinculado a este collar y el estado activo del collar
-      // Permite búsqueda por ID de collar o por IMEI del hardware
-      const collarQuery = `
-        SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.estado, c.imei AS db_imei 
-        FROM collares c 
-        LEFT JOIN animales a ON a.collar_id = c.id 
-        WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar);
-      `;
-      const { rows: collarRows } = await pool.query(collarQuery, [collarId, imei]);
-      
-      if (collarRows.length === 0) {
-        console.warn(`[MQTT] Collar ${collarId} (IMEI: ${imei || 'N/A'}) no está registrado en el inventario.`);
-        return;
-      }
-
-      const activeCollar = collarRows[0];
-      const matchedCollarId = activeCollar.collar_id;
-      const { animal_id: animalId, arete_visual: areteVisual, activo, estado: estadoCollar, db_imei: dbImei } = activeCollar;
-      let checkResult = null;
-
-      // Validación de Seguridad de Hardware por IMEI
-      if (dbImei && imei && dbImei !== imei) {
-        console.warn(`[MQTT Seguridad] Advertencia: Dispositivo con IMEI ${imei} transmitiendo para el collar ${matchedCollarId} (registrado con IMEI: ${dbImei}).`);
-      }
-
-      const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
-
-      if (animalId) {
-        if (isOperativo) {
-          // 2. Evaluar geocerca mediante PostGIS en geofenceService (si el collar está habilitado)
-          checkResult = await evaluateAnimalPosition(animalId, lat, lon);
-
-          // 3. Registrar en tabla histórica de telemetría
-          const insertTelemetryQuery = `
-            INSERT INTO telemetria (animal_id, ubicacion, bateria, senal)
-            VALUES ($1, ST_SetSRID(ST_Point($3, $2), 4326), $4, $5);
-          `;
-          await pool.query(insertTelemetryQuery, [animalId, lat, lon, bateria, senal]);
-
-          // 4. Administrar ciclo de vida de las alertas en la base de datos
-          await handleAlertLifecycle(animalId, checkResult.alertType, lat, lon);
-        } else {
-          // El collar está DESHABILITADO: Guardar telemetría pero silenciar alarmas
-          console.log(`[Live IoT] Collar ${matchedCollarId} está en reserva/deshabilitado. Omitiendo geocercas y alertas.`);
-          
-          // Cerramos cualquier alerta activa que haya quedado huérfana de este animal
-          const resolveAlertsQuery = `
-            UPDATE alertas 
-            SET estado = 'RESUELTO', fecha_fin = NOW() 
-            WHERE animal_id = $1 AND estado = 'ACTIVO' AND tipo IN ('ESCAPE_HATO', 'INFRACCION_ROTACION');
-          `;
-          await pool.query(resolveAlertsQuery, [animalId]);
-
-          // Forzar comando de silencio si el hardware aún cree que está activo
-          if (payload.alert && payload.alert !== 'DESACTIVADO' && payload.alert !== 'NORMAL') {
-            console.log(`[Live IoT] Collar deshabilitado ${matchedCollarId} reportó '${payload.alert}'. Forzando comando de silencio.`);
-            publishToCollar(matchedCollarId, { collar_activo: false, silence: true, p_open: 1 });
-          }
-        }
-      } else {
-        // Collar sin animal asignado (En Almacén o Reserva)
-        if (payload.alert && payload.alert !== 'DESACTIVADO' && payload.alert !== 'NORMAL') {
-          console.log(`[Live IoT] Collar ${matchedCollarId} sin res asignada reportó alerta '${payload.alert}'. Forzando comando de silencio.`);
-          publishToCollar(matchedCollarId, { collar_activo: false, silence: true, p_open: 1 });
-        }
-      }
-
-      // 5. Actualizar el estado actual del dispositivo físico (Collar) con batería, carga, medio de red y GPS
-      const updateCollarQuery = `
-        UPDATE collares 
-        SET nivel_bateria = $1, 
-            senal_celular = $2, 
-            ultima_conexion = NOW(),
-            ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
-            esta_cargando = $5,
-            voltaje_mv = $6,
-            medio_red = $7,
-            gps_encendido = $8,
-            gps_fijado = $9,
-            satelites_visibles = $10
-        WHERE id = $11;
-      `;
+      // 1. Intentar persistencia y validación en PostgreSQL si la base de datos está disponible
       try {
-        await pool.query(updateCollarQuery, [bateria, senal, lat, lon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
-      } catch (_) {
-        // Fallback si columnas opcionales no existen en esquema antiguo
-        await pool.query(`
-          UPDATE collares 
-          SET nivel_bateria = $1, senal_celular = $2, ultima_conexion = NOW(),
-              ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
-              esta_cargando = $5, voltaje_mv = $6
-          WHERE id = $7;
-        `, [bateria, senal, lat, lon, estaCargando, vbat, matchedCollarId]);
+        const collarQuery = `
+          SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.estado, c.imei AS db_imei 
+          FROM collares c 
+          LEFT JOIN animales a ON a.collar_id = c.id 
+          WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar);
+        `;
+        const { rows: collarRows } = await pool.query(collarQuery, [collarId, imei]);
+        
+        if (collarRows.length > 0) {
+          const activeCollar = collarRows[0];
+          const matchedCollarId = activeCollar.collar_id;
+          const { animal_id: animalId, arete_visual: areteVisual, activo, estado: estadoCollar, db_imei: dbImei } = activeCollar;
+          let checkResult = null;
+
+          if (dbImei && imei && dbImei !== imei) {
+            console.warn(`[MQTT Seguridad] Advertencia: Dispositivo con IMEI ${imei} transmitiendo para el collar ${matchedCollarId} (registrado con IMEI: ${dbImei}).`);
+          }
+
+          const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
+
+          if (animalId && isOperativo && !isNaN(lat) && !isNaN(lon)) {
+            checkResult = await evaluateAnimalPosition(animalId, lat, lon);
+
+            const insertTelemetryQuery = `
+              INSERT INTO telemetria (animal_id, ubicacion, bateria, senal)
+              VALUES ($1, ST_SetSRID(ST_Point($3, $2), 4326), $4, $5);
+            `;
+            await pool.query(insertTelemetryQuery, [animalId, lat, lon, bateria, senal]);
+            await handleAlertLifecycle(animalId, checkResult.alertType, lat, lon);
+          }
+
+          const updateCollarQuery = `
+            UPDATE collares 
+            SET nivel_bateria = $1, 
+                senal_celular = $2, 
+                ultima_conexion = NOW(),
+                ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
+                esta_cargando = $5,
+                voltaje_mv = $6,
+                medio_red = $7,
+                gps_encendido = $8,
+                gps_fijado = $9,
+                satelites_visibles = $10
+            WHERE id = $11;
+          `;
+          await pool.query(updateCollarQuery, [bateria, senal, lat, lon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+
+          broadcastData = {
+            collarId: matchedCollarId,
+            collar_id: matchedCollarId,
+            animalId: animalId || null,
+            animal_id: animalId || null,
+            areteVisual: areteVisual || 'SIN VÍNCULO',
+            arete_visual: areteVisual || 'SIN VÍNCULO',
+            lat: parseFloat(lat),
+            lon: parseFloat(lon),
+            bateria: parseInt(bateria, 10),
+            nivel_bateria: parseInt(bateria, 10),
+            senal: parseInt(senal, 10),
+            senal_celular: parseInt(senal, 10),
+            esta_cargando: Boolean(estaCargando),
+            charging: Boolean(estaCargando),
+            voltaje_mv: vbat,
+            imei: imei || dbImei || null,
+            timestamp: new Date().toISOString(),
+            alertType: (isOperativo && checkResult) ? checkResult.alertType : (isOperativo ? 'NORMAL' : 'INACTIVO'),
+            alerta: (isOperativo && checkResult) ? checkResult.alertType : (isOperativo ? 'NORMAL' : 'INACTIVO'),
+            potreroActual: checkResult ? checkResult.potreroActualNombre : (isOperativo ? 'Desconocido' : 'EN ALMACÉN / DESACTIVADO'),
+            potrero_nombre: checkResult ? checkResult.potreroActualNombre : (isOperativo ? 'Desconocido' : 'EN ALMACÉN / DESACTIVADO'),
+            distanciaHato: checkResult ? checkResult.distanciaHato : 0.0,
+            distancia_hato: checkResult ? checkResult.distanciaHato : 0.0,
+            dentroHato: checkResult ? checkResult.dentroHato : true,
+            dentro_hato: checkResult ? checkResult.dentroHato : true,
+            dentroPotrero: checkResult ? checkResult.dentroPotrero : true,
+            dentro_potrero: checkResult ? checkResult.dentroPotrero : true,
+            collarActivo: activo,
+            activo: activo,
+            medio_red: medioRed,
+            net: medioRed,
+            gps_encendido: gpsEncendido,
+            gps_fijado: gpsFijado,
+            satelites_visibles: satelites,
+            sats: satelites
+          };
+          handledByDb = true;
+        }
+      } catch (dbErr) {
+        // Fallback a memoria si DB está desconectada
       }
 
-      // 6. Broadcast en tiempo real al panel Web usando Socket.io
-      const broadcastData = {
-        collarId: matchedCollarId,
-        collar_id: matchedCollarId,
-        animalId: animalId || null,
-        animal_id: animalId || null,
-        areteVisual: areteVisual || 'SIN VÍNCULO',
-        arete_visual: areteVisual || 'SIN VÍNCULO',
-        lat: parseFloat(lat),
-        lon: parseFloat(lon),
-        bateria: parseInt(bateria, 10),
-        nivel_bateria: parseInt(bateria, 10),
-        senal: parseInt(senal, 10),
-        senal_celular: parseInt(senal, 10),
-        esta_cargando: Boolean(estaCargando),
-        charging: Boolean(estaCargando),
-        voltaje_mv: vbat,
-        imei: imei || dbImei || null,
-        timestamp: new Date().toISOString(),
-        alertType: (isOperativo && checkResult) ? checkResult.alertType : (isOperativo ? 'NORMAL' : 'INACTIVO'),
-        alerta: (isOperativo && checkResult) ? checkResult.alertType : (isOperativo ? 'NORMAL' : 'INACTIVO'),
-        potreroActual: checkResult ? checkResult.potreroActualNombre : (isOperativo ? 'Desconocido' : 'EN ALMACÉN / DESACTIVADO'),
-        potrero_nombre: checkResult ? checkResult.potreroActualNombre : (isOperativo ? 'Desconocido' : 'EN ALMACÉN / DESACTIVADO'),
-        distanciaHato: checkResult ? checkResult.distanciaHato : 0.0,
-        distancia_hato: checkResult ? checkResult.distanciaHato : 0.0,
-        dentroHato: checkResult ? checkResult.dentroHato : true,
-        dentro_hato: checkResult ? checkResult.dentroHato : true,
-        dentroPotrero: checkResult ? checkResult.dentroPotrero : true,
-        dentro_potrero: checkResult ? checkResult.dentroPotrero : true,
-        collarActivo: activo,
-        activo: activo,
-        medio_red: medioRed,
-        net: medioRed,
-        gps_encendido: gpsEncendido,
-        gps_fijado: gpsFijado,
-        satelites_visibles: satelites,
-        sats: satelites
-      };
+      // 2. Si no fue procesado por PostgreSQL, usar el almacén unificado en memoria
+      if (!handledByDb) {
+        broadcastData = processTelemetryInMemory({
+          collarId,
+          imei,
+          lat,
+          lon,
+          bateria,
+          senal,
+          estaCargando,
+          vbat,
+          medioRed,
+          gpsEncendido,
+          gpsFijado,
+          satelites,
+          alert: payload.alert
+        });
+      }
 
-      io.emit('telemetria_realtime', broadcastData);
-      io.emit('telemetria_actualizada', broadcastData);
-      console.log(`[Live IoT] Collar: ${matchedCollarId} | IMEI: ${broadcastData.imei || 'N/A'} | Red: ${medioRed} | GPS: ${gpsEncendido ? (gpsFijado ? `FIX (${satelites} sats)` : `Buscando (${satelites} sats)`) : 'APAGADO'} | Bat: ${bateria}% (⚡ ${estaCargando ? 'USB' : 'Batería'}) | Res: ${broadcastData.areteVisual} | Alerta: ${broadcastData.alertType}`);
+      // 3. Emitir datos en tiempo real a todos los clientes (Web, iOS, Android, apps técnicas)
+      if (broadcastData && io) {
+        io.emit('telemetria_realtime', broadcastData);
+        io.emit('telemetria_actualizada', broadcastData);
+        console.log(`[Live IoT] Collar: ${broadcastData.collarId} | IMEI: ${broadcastData.imei || 'N/A'} | Red: ${broadcastData.medio_red || 'CELULAR'} | GPS: ${broadcastData.gps_encendido ? (broadcastData.gps_fijado ? `FIX (${broadcastData.satelites_visibles} sats)` : `Buscando (${broadcastData.satelites_visibles} sats)`) : 'APAGADO'} | Bat: ${broadcastData.bateria}% (${broadcastData.esta_cargando ? '⚡ USB/Carga' : '🔋 Batería'}) | Res: ${broadcastData.areteVisual} | Pos: [${broadcastData.lat.toFixed(5)}, ${broadcastData.lon.toFixed(5)}] | Alerta: ${broadcastData.alertType}`);
+      }
 
     } catch (err) {
       console.error('[MQTT] Error procesando mensaje de telemetría:', err);
@@ -217,10 +215,24 @@ export function publishToCollar(collarId, payload) {
 }
 
 /**
+ * Publica un comando de control de cámara (encendido/apagado bajo demanda, fps, calidad)
+ */
+export function publishCameraCmd(collarId, payload) {
+  if (!mqttClient || !mqttClient.connected) {
+    console.warn('[MQTT] Cliente desconectado. No se pudo enviar comando de cámara.');
+    return false;
+  }
+  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+  const topic = `${prefix}/${collarId}/cmd`;
+  mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
+  console.log(`[MQTT Cámara] Comando enviado a ${topic}:`, payload);
+  return true;
+}
+
+/**
  * Lógica para abrir o resolver alertas (infracciones) en la base de datos de forma inteligente.
  */
 async function handleAlertLifecycle(animalId, alertType, lat, lon) {
-  // A. Si está fuera del Hato o de Potrero, buscamos si ya existe una alerta activa para ese animal
   if (alertType !== 'NORMAL') {
     const activeAlertQuery = `
       SELECT id FROM alertas 
@@ -229,7 +241,6 @@ async function handleAlertLifecycle(animalId, alertType, lat, lon) {
     const { rows } = await pool.query(activeAlertQuery, [animalId, alertType]);
 
     if (rows.length === 0) {
-      // Si no existe, creamos la alerta
       const insertAlertQuery = `
         INSERT INTO alertas (animal_id, tipo, estado, coordenada_evento)
         VALUES ($1, $2, 'ACTIVO', ST_SetSRID(ST_Point($4, $3), 4326));
@@ -239,7 +250,6 @@ async function handleAlertLifecycle(animalId, alertType, lat, lon) {
     }
   } 
   
-  // B. Si volvió a la normalidad, cerramos todas las alertas activas de geocercas
   if (alertType === 'NORMAL') {
     const resolveAlertsQuery = `
       UPDATE alertas 

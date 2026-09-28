@@ -16,13 +16,14 @@ enum NetPreference {
     NET_PREF_WIFI = 2      // Fuerza exclusivamente Wi-Fi
 };
 
-// Modo por defecto: Fuerza siempre el uso de la red celular SIM 4G LTE Digitel
-#define DEFAULT_NET_PREF NET_PREF_CELLULAR
+// Modo por defecto: Prioriza Wi-Fi en taller/oficina (para video y pruebas), conmuta a SIM 4G LTE en potreros
+#define DEFAULT_NET_PREF NET_PREF_AUTO
 
 // Configuración de Pines de Hardware
 #define STATUS_LED_PIN 2     // LED de estado
 #define BUZZER_PIN 5         // Zumbador piezoeléctrico en IO5 (4000 Hz)
-#define IMPULSE_LED_PIN -1   // Desactivado en ESP32-S3
+#define IMPULSE_PIN 23       // Pin de disparo para pulso de descarga electrostática (MOSFET / Transistor)
+#define IMPULSE_LED_PIN IMPULSE_PIN // Alias de compatibilidad
 #define MODEM_POWER_PIN 21   // Pin de alimentación del módulo SIM7670G en Waveshare
 
 // Configuración del Módem Celular SIM7670G 4G LTE
@@ -42,8 +43,7 @@ enum NetPreference {
 #define WIFI_RECONNECT_INTERVAL 10000 // Intervalo de intento de reconexión (10s)
 
 // Configuración del Broker MQTT
-// Usamos la IP pública de HiveMQ (18.185.214.85) para evitar fallos de resolución DNS en redes móviles 4G LTE
-#define MQTT_SERVER "18.185.214.85"
+#define MQTT_SERVER "broker.hivemq.com"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC_PREFIX "collarnet/lzambrano"
 

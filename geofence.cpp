@@ -11,6 +11,7 @@ Polygon potrerosList[1] = {
 };
 int numPotreros = 0;
 double hatoWarningThreshold = 10.0;
+double potreroWarningThreshold = 10.0;
 bool potreroAbierto = false;
 bool collarActivo = false;
 

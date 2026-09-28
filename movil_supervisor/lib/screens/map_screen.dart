@@ -15,6 +15,7 @@ import '../widgets/eraser_hud.dart';
 import '../widgets/gps_floating_controls.dart';
 import '../widgets/hato_drawer.dart';
 import '../widgets/topology_alert_banner.dart';
+import '../widgets/collar_camera_viewer_widget.dart';
 import '../theme/finca_theme.dart';
 import 'buscar_res_screen.dart';
 
@@ -34,6 +35,10 @@ class _MapScreenState extends State<MapScreen> {
   MapTileType _currentTileType = MapTileType.satellite;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _telemetryTimer;
+
+  // Estado de Cámara en Vivo del Collar
+  Map<String, dynamic>? _activeCameraAnimal;
+  CameraViewMode _cameraMode = CameraViewMode.split;
 
   @override
   void initState() {
@@ -123,21 +128,36 @@ class _MapScreenState extends State<MapScreen> {
     final agroProvider = context.watch<AgroProvider>();
     final drawingProvider = context.watch<DrawingProvider>();
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: HatoDrawer(
-        onZoomToHato: _zoomToHato,
-        onZoomToPotrero: _zoomToPotrero,
-      ),
-      body: Stack(
-        children: [
-          // ==========================================
-          // 1. MAPA LEAFLET / FLUTTER_MAP
-          // ==========================================
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: GPSService.defaultFarmLocation,
+    final isSplitActive = _activeCameraAnimal != null && _cameraMode == CameraViewMode.split;
+    final isFullscreenActive = _activeCameraAnimal != null && _cameraMode == CameraViewMode.fullscreen;
+    final isFloatingActive = _activeCameraAnimal != null && _cameraMode == CameraViewMode.floating;
+
+    if (isFullscreenActive) {
+      return CollarCameraViewerWidget(
+        animal: _activeCameraAnimal!,
+        initialMode: CameraViewMode.fullscreen,
+        onModeChanged: (mode) {
+          setState(() {
+            _cameraMode = mode;
+          });
+        },
+        onClose: () {
+          setState(() {
+            _activeCameraAnimal = null;
+          });
+        },
+      );
+    }
+
+    Widget mapContent = Stack(
+      children: [
+        // ==========================================
+        // 1. MAPA LEAFLET / FLUTTER_MAP
+        // ==========================================
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: GPSService.defaultFarmLocation,
               initialZoom: 15.5,
               onTap: (tapPosition, point) {
                 if (drawingProvider.isDrawing && !drawingProvider.isEraserMode) {
@@ -639,8 +659,55 @@ class _MapScreenState extends State<MapScreen> {
           // 13. HUD DE MODO BORRADOR SELECTIVO
           // ==========================================
           const EraserHUD(),
+
+          // ==========================================
+          // 14. VENTANA FLOTANTE (PiP) DE CÁMARA
+          // ==========================================
+          if (isFloatingActive)
+            CollarCameraViewerWidget(
+              animal: _activeCameraAnimal!,
+              initialMode: CameraViewMode.floating,
+              onModeChanged: (mode) {
+                setState(() {
+                  _cameraMode = mode;
+                });
+              },
+              onClose: () {
+                setState(() {
+                  _activeCameraAnimal = null;
+                });
+              },
+            ),
         ],
+      );
+
+    return Scaffold(
+      key: _scaffoldKey,
+      drawer: HatoDrawer(
+        onZoomToHato: _zoomToHato,
+        onZoomToPotrero: _zoomToPotrero,
       ),
+      body: isSplitActive
+          ? Column(
+              children: [
+                CollarCameraViewerWidget(
+                  animal: _activeCameraAnimal!,
+                  initialMode: CameraViewMode.split,
+                  onModeChanged: (mode) {
+                    setState(() {
+                      _cameraMode = mode;
+                    });
+                  },
+                  onClose: () {
+                    setState(() {
+                      _activeCameraAnimal = null;
+                    });
+                  },
+                ),
+                Expanded(child: mapContent),
+              ],
+            )
+          : mapContent,
     );
   }
 
@@ -767,7 +834,30 @@ class _MapScreenState extends State<MapScreen> {
                 estadoTexto,
                 style: TextStyle(color: estadoColor, fontSize: 13, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // Botón Ver Cámara en Vivo del Collar
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF06B6D4),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      _activeCameraAnimal = animal;
+                      _cameraMode = CameraViewMode.split;
+                    });
+                  },
+                  icon: const Icon(Icons.videocam, color: Colors.black),
+                  label: const Text('VER CÁMARA EN VIVO DEL COLLAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ),
+              const SizedBox(height: 10),
 
               // Botón Localizar con Brújula Táctica
               SizedBox(
@@ -776,7 +866,8 @@ class _MapScreenState extends State<MapScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -786,7 +877,7 @@ class _MapScreenState extends State<MapScreen> {
                     );
                   },
                   icon: const Icon(Icons.explore, color: Colors.black),
-                  label: const Text('GUIARME CON BRÚJULA HACIA ESTA RES', style: TextStyle(fontWeight: FontWeight.bold)),
+                  label: const Text('GUIARME CON BRÚJULA HACIA ESTA RES', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ),
             ],

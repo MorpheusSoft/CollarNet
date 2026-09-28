@@ -25,6 +25,7 @@ extern Polygon hatoMaster;
 extern Polygon potrerosList[];
 extern int numPotreros;
 extern double hatoWarningThreshold;
+extern double potreroWarningThreshold;
 extern bool potreroAbierto;
 extern bool collarActivo;
 

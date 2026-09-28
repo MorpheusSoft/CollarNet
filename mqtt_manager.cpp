@@ -18,6 +18,8 @@ unsigned long lastMqttReconnect = 0;
 // Declaraciones externas para actuar ante comandos remotos
 extern void onNetworkPreferenceChanged(NetPreference newPref);
 extern void onGpsPowerChanged(bool powerOn);
+extern void onCameraStreamingControl(bool enabled, int fps, const String& quality);
+extern void onCameraSnapshotRequested();
 
 // Callback de recepción de mensajes MQTT
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
@@ -76,6 +78,17 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
             Serial.printf("[MQTT] Recibido control de encendido de GPS: %s\n", pwr ? "ENCENDER" : "APAGAR");
             onGpsPowerChanged(pwr);
         }
+        if (doc.containsKey("camera_power") || doc.containsKey("camera_stream")) {
+            bool camPwr = doc.containsKey("camera_power") ? doc["camera_power"].as<bool>() : doc["camera_stream"].as<bool>();
+            int fps = doc.containsKey("fps") ? doc["fps"].as<int>() : 2;
+            String quality = doc.containsKey("quality") ? doc["quality"].as<String>() : "qvga";
+            Serial.printf("[MQTT] Recibido control de cámara en vivo: %s (FPS: %d)\n", camPwr ? "ACTIVAR" : "DESACTIVAR", fps);
+            onCameraStreamingControl(camPwr, fps, quality);
+        }
+        if (doc.containsKey("snapshot") && doc["snapshot"].as<bool>()) {
+            Serial.println("[MQTT] Recibida solicitud de captura snapshot en alta resolución.");
+            onCameraSnapshotRequested();
+        }
     }
     
     // Guardar los nuevos perímetros en LittleFS y recargar memoria si tiene datos de geocerca
@@ -119,7 +132,8 @@ void initMQTT(const char* collarId, Client* netClient) {
     setMQTTNetworkClient(netClient);
     client.setServer(MQTT_SERVER, MQTT_PORT);
     client.setCallback(mqttCallback);
-    client.setBufferSize(2048);
+    // 64 KB de búfer MQTT para soportar tramas JPEG binarias de cámara
+    client.setBufferSize(65536);
     
     reconnectMQTT();
 }
@@ -169,6 +183,14 @@ bool publishTelemetry(double lat, double lon, int bateria, int senal, const Stri
     Serial.println("[MQTT] Payload: " + jsonString);
 
     return client.publish(telemetryTopic.c_str(), jsonString.c_str());
+}
+
+bool publishCameraFrame(const uint8_t* buf, size_t len) {
+    if (!client.connected() || buf == nullptr || len == 0) {
+        return false;
+    }
+    String camTopic = String(MQTT_TOPIC_PREFIX) + "/" + staticCollarId + "/camera";
+    return client.publish(camTopic.c_str(), buf, len);
 }
 
 bool isMQTTConnected() {

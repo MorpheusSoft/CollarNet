@@ -30,7 +30,7 @@ class AppVersionMetadata {
       appName: json['appName'] ?? 'CowIA Campo',
       version: json['version'] ?? '1.0.0',
       versionCode: int.tryParse(json['versionCode']?.toString() ?? '1') ?? 1,
-      downloadUrl: json['downloadUrl'] ?? 'https://www.cowai.net/apk/CowIA-Campo.apk',
+      downloadUrl: json['downloadUrl'] ?? 'https://cowai.net/apk/CowIA-Campo.apk',
       mandatory: json['mandatory'] == true,
       releaseNotes: json['releaseNotes'] ?? 'Mejoras en conectividad y estabilidad.',
     );
@@ -46,9 +46,8 @@ class UpdateService {
   bool _isDialogShowing = false;
   DateTime? _lastPromptTime;
 
-  /// Obtiene los metadatos de versión del backend con fallback a cowai.net
+  /// Obtiene los metadatos de versión del backend local
   Future<AppVersionMetadata?> fetchLatestVersion() async {
-    // 1. Intentar con el servidor configurado (local o nube)
     try {
       final baseUrl = await ApiService.getBaseUrl();
       final uri = Uri.parse('$baseUrl/app/version?app=cowia-campo');
@@ -60,21 +59,8 @@ class UpdateService {
           return AppVersionMetadata.fromJson(data);
         }
       }
-    } catch (_) {}
-
-    // 2. Fallback garantizado a producción VPS (cowai.net)
-    try {
-      final uri = Uri.parse('https://www.cowai.net/api/app/version?app=cowia-campo');
-      final response = await http.get(uri).timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data is Map<String, dynamic>) {
-          return AppVersionMetadata.fromJson(data);
-        }
-      }
     } catch (e) {
-      debugPrint('⚠️ [UpdateService-Campo] Error al consultar versión remota: $e');
+      debugPrint('⚠️ [UpdateService-Campo] Error al consultar versión local: $e');
     }
     return null;
   }

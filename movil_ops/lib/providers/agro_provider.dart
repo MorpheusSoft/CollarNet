@@ -69,22 +69,69 @@ class AgroProvider extends ChangeNotifier {
     });
   }
 
-  /// Sincronización periódica silenciosa en segundo plano (cada 4s)
   Future<void> _silentAutoSync() async {
     try {
       final remoteHatos = await _apiService.fetchHatos();
-      if (remoteHatos.isNotEmpty) {
-        if (_hasHatosChanged(_hatos, remoteHatos)) {
-          _hatos = remoteHatos;
-          if (_selectedHato != null) {
-            final match = _hatos.where((h) => h.id == _selectedHato!.id).firstOrNull;
-            _selectedHato = match ?? _selectedHato;
-          }
-          await StorageService.cacheLocally(_hatos);
-          notifyListeners();
+      
+      // Si la API remota devolvió lista vacía pero ya tenemos hatos locales, NO los eliminamos
+      if (remoteHatos.isEmpty && _hatos.isNotEmpty) {
+        return;
+      }
+
+      // Conservar hatos locales pendientes de sincronizar con el servidor (id 'hato_...' o no numérico)
+      final pendingHatos = _hatos.where((h) => h.id.startsWith('hato_') || int.tryParse(h.id) == null).toList();
+
+      final List<Hato> merged = List.from(remoteHatos);
+
+      // Reincorporar hatos locales pendientes que aún no están en la lista remota
+      for (final local in pendingHatos) {
+        final alreadyExists = merged.any((r) => r.id == local.id || (r.nombre == local.nombre && (r.areaHa - local.areaHa).abs() < 0.001));
+        if (!alreadyExists) {
+          merged.add(local);
         }
       }
-    } catch (_) {}
+
+      // Preservar atributos enriquecidos locales (color, notas, potreros locales pendientes, etc.)
+      for (int i = 0; i < merged.length; i++) {
+        final m = merged[i];
+        final localMatch = _hatos.where((h) => h.id == m.id).firstOrNull;
+        if (localMatch != null) {
+          // Combinar potreros: remotos + potreros locales pendientes ('pot_...')
+          final pendingPotreros = localMatch.potreros.where((p) => p.id.startsWith('pot_') || int.tryParse(p.id) == null).toList();
+          final List<Potrero> combinedPotreros = List.from(m.potreros);
+          for (final lp in pendingPotreros) {
+            final exists = combinedPotreros.any((rp) => rp.id == lp.id || rp.nombre == lp.nombre);
+            if (!exists) {
+              combinedPotreros.add(lp);
+            }
+          }
+
+          merged[i] = m.copyWith(
+            areaHa: m.areaHa > 0 ? m.areaHa : localMatch.areaHa,
+            perimeterM: m.perimeterM > 0 ? m.perimeterM : localMatch.perimeterM,
+            color: localMatch.color,
+            notas: m.notas ?? localMatch.notas,
+            permiteCrearPotreros: localMatch.permiteCrearPotreros,
+            tenantId: m.tenantId ?? localMatch.tenantId,
+            potreros: combinedPotreros,
+          );
+        }
+      }
+
+      if (_hasHatosChanged(_hatos, merged)) {
+        _hatos = merged;
+        if (_selectedHato != null) {
+          final match = _hatos.where((h) => h.id == _selectedHato!.id).firstOrNull;
+          _selectedHato = match ?? (_hatos.isNotEmpty ? _hatos.first : null);
+        } else if (_hatos.isNotEmpty) {
+          _selectedHato = _hatos.first;
+        }
+        await StorageService.cacheLocally(_hatos);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Aviso: _silentAutoSync sin conexión: $e');
+    }
   }
 
   bool _hasHatosChanged(List<Hato> current, List<Hato> incoming) {
@@ -94,6 +141,7 @@ class AgroProvider extends ChangeNotifier {
       final inc = incoming[i];
       if (c.id != inc.id ||
           c.nombre != inc.nombre ||
+          c.tenantId != inc.tenantId ||
           c.potreros.length != inc.potreros.length ||
           c.vertices.length != inc.vertices.length) {
         return true;
@@ -227,6 +275,7 @@ class AgroProvider extends ChangeNotifier {
   // ==========================================
 
   Future<Hato> addHato(Hato hato, {int? tenantId}) async {
+    final effectiveTenantId = tenantId ?? hato.tenantId ?? 1;
     // Evitar duplicados por id o por nombre y superficie idéntica
     final isDuplicate = _hatos.any(
       (h) => h.id == hato.id || (h.nombre == hato.nombre && (h.areaHa - hato.areaHa).abs() < 0.001),
@@ -236,9 +285,9 @@ class AgroProvider extends ChangeNotifier {
       return hato;
     }
 
-    Hato toSave = hato;
+    Hato toSave = hato.copyWith(tenantId: effectiveTenantId);
     try {
-      toSave = await _apiService.saveHato(hato, tenantId: tenantId);
+      toSave = await _apiService.saveHato(toSave, tenantId: effectiveTenantId);
     } catch (e) {
       debugPrint('Aviso: No se pudo guardar hato en API (guardando localmente): $e');
     }
@@ -379,14 +428,9 @@ class AgroProvider extends ChangeNotifier {
     return DeletionCheckResult(canDelete: true);
   }
 
-  Future<DeletionCheckResult> deleteHato(String hatoId) async {
-    final check = await canDeleteHato(hatoId);
-    if (!check.canDelete) {
-      return check;
-    }
-
+  Future<DeletionCheckResult> deleteHato(String hatoId, {bool force = true}) async {
     try {
-      await _apiService.deleteHato(hatoId);
+      await _apiService.deleteHato(hatoId, force: force);
       _hatos.removeWhere((h) => h.id == hatoId);
       if (_selectedHato?.id == hatoId) {
         _selectedHato = null;
@@ -396,8 +440,16 @@ class AgroProvider extends ChangeNotifier {
       notifyListeners();
       return DeletionCheckResult(canDelete: true);
     } catch (e) {
-      final msg = e.toString().replaceAll('Exception: ', '');
-      return DeletionCheckResult(canDelete: false, reason: msg);
+      debugPrint('Aviso eliminando hato: $e');
+      // Si falló el remoto por red, eliminar localmente de todos modos
+      _hatos.removeWhere((h) => h.id == hatoId);
+      if (_selectedHato?.id == hatoId) {
+        _selectedHato = null;
+        _selectedPotrero = null;
+      }
+      await StorageService.cacheLocally(_hatos);
+      notifyListeners();
+      return DeletionCheckResult(canDelete: true);
     }
   }
 
@@ -432,14 +484,9 @@ class AgroProvider extends ChangeNotifier {
     return toSave;
   }
 
-  Future<DeletionCheckResult> deletePotrero(String hatoId, String potreroId) async {
-    final check = await canDeletePotrero(hatoId, potreroId);
-    if (!check.canDelete) {
-      return check;
-    }
-
+  Future<DeletionCheckResult> deletePotrero(String hatoId, String potreroId, {bool force = true}) async {
     try {
-      await _apiService.deletePotrero(potreroId);
+      await _apiService.deletePotrero(potreroId, force: force);
       final index = _hatos.indexWhere((h) => h.id == hatoId);
       if (index != -1) {
         final hato = _hatos[index];
@@ -454,8 +501,20 @@ class AgroProvider extends ChangeNotifier {
       }
       return DeletionCheckResult(canDelete: true);
     } catch (e) {
-      final msg = e.toString().replaceAll('Exception: ', '');
-      return DeletionCheckResult(canDelete: false, reason: msg);
+      debugPrint('Aviso eliminando potrero: $e');
+      final index = _hatos.indexWhere((h) => h.id == hatoId);
+      if (index != -1) {
+        final hato = _hatos[index];
+        final updatedPotreros = List<Potrero>.from(hato.potreros)
+          ..removeWhere((p) => p.id == potreroId);
+        _hatos[index] = hato.copyWith(potreros: updatedPotreros);
+        if (_selectedPotrero?.id == potreroId) {
+          _selectedPotrero = null;
+        }
+        await StorageService.cacheLocally(_hatos);
+        notifyListeners();
+      }
+      return DeletionCheckResult(canDelete: true);
     }
   }
 

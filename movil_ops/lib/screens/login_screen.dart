@@ -48,8 +48,8 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _isServerOk = health['online'] == true;
         _serverStatus = _isServerOk
-            ? 'Cloud VPS Activo (${health['latencyMs']}ms)'
-            : 'Sin conexión al VPS';
+            ? 'Servidor Conectado (${health['latencyMs']}ms)'
+            : 'Modo Autónomo / Offline';
       });
       if (_isServerOk) {
         UpdateService().checkForUpdates(context, manual: false);
@@ -97,9 +97,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (res['success'] == true) {
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainMenuScreen()),
+        (route) => false,
       );
     } else {
       setState(() {
@@ -256,48 +256,138 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Configuración opcional de servidor
-                      if (_showServerConfig) ...[
-                        Text(
-                          'DIRECCIÓN SERVIDOR (VPS)',
-                          style: GoogleFonts.outfit(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.primaryCyan,
-                            letterSpacing: 0.8,
+                      // Barra de Estado y Configuración de Servidor
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _isServerOk ? AppTheme.emeraldGreen.withValues(alpha: 0.4) : AppTheme.warningAmber.withValues(alpha: 0.4),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: _serverCtrl,
-                          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textPrimary),
-                          onSubmitted: (val) async {
-                            if (val.trim().isNotEmpty) {
-                              await ApiService.setCustomBaseUrl(val.trim());
-                            }
-                            _testServerConnection();
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'https://cowai.net/api',
-                            hintStyle: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
-                            filled: true,
-                            fillColor: AppTheme.surfaceLight,
-                            prefixIcon: const Icon(Icons.cloud_outlined, color: AppTheme.primaryCyan, size: 18),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.refresh, size: 18, color: AppTheme.textSecondary),
-                              onPressed: () async {
-                                if (_serverCtrl.text.trim().isNotEmpty) {
-                                  await ApiService.setCustomBaseUrl(_serverCtrl.text.trim());
-                                }
-                                _testServerConnection();
-                              },
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _isServerOk ? Icons.check_circle_outline : Icons.error_outline,
+                                      size: 16,
+                                      color: _isServerOk ? AppTheme.emeraldGreen : AppTheme.warningAmber,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _serverStatus,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: _isServerOk ? AppTheme.emeraldGreen : AppTheme.warningAmber,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                InkWell(
+                                  onTap: () => setState(() => _showServerConfig = !_showServerConfig),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          _showServerConfig ? 'Ocultar' : 'IP Servidor',
+                                          style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                                        ),
+                                        Icon(
+                                          _showServerConfig ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                          size: 16,
+                                          color: AppTheme.textMuted,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          ),
+                            if (_showServerConfig) ...[
+                              const SizedBox(height: 10),
+                              const Divider(color: AppTheme.cardBorder, height: 1),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: _serverCtrl,
+                                style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textPrimary),
+                                onSubmitted: (val) async {
+                                  if (val.trim().isNotEmpty) {
+                                    await ApiService.setCustomBaseUrl(val.trim());
+                                  }
+                                  _testServerConnection();
+                                },
+                                decoration: InputDecoration(
+                                  labelText: 'URL Servidor API',
+                                  labelStyle: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
+                                  hintText: 'http://192.168.86.31:3500/api',
+                                  hintStyle: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
+                                  filled: true,
+                                  fillColor: AppTheme.surface,
+                                  prefixIcon: const Icon(Icons.cloud_outlined, color: AppTheme.primaryCyan, size: 18),
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(Icons.refresh, size: 18, color: AppTheme.primaryCyan),
+                                    onPressed: () async {
+                                      if (_serverCtrl.text.trim().isNotEmpty) {
+                                        await ApiService.setCustomBaseUrl(_serverCtrl.text.trim());
+                                      }
+                                      _testServerConnection();
+                                    },
+                                  ),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.cardBorder)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text('Presets: ', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted)),
+                                  ActionChip(
+                                    label: Text('Wi-Fi (86.243)', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.primaryCyan, fontWeight: FontWeight.w700)),
+                                    backgroundColor: AppTheme.surface,
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () async {
+                                      _serverCtrl.text = 'http://192.168.86.243:3500/api';
+                                      await ApiService.setCustomBaseUrl(_serverCtrl.text);
+                                      _testServerConnection();
+                                    },
+                                  ),
+                                  ActionChip(
+                                    label: Text('Nube CowIA', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.emeraldGreen)),
+                                    backgroundColor: AppTheme.surface,
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () async {
+                                      _serverCtrl.text = 'https://cowai.net/api';
+                                      await ApiService.setCustomBaseUrl(_serverCtrl.text);
+                                      _testServerConnection();
+                                    },
+                                  ),
+                                  ActionChip(
+                                    label: Text('Red (0.100)', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textPrimary)),
+                                    backgroundColor: AppTheme.surface,
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () async {
+                                      _serverCtrl.text = 'http://192.168.0.100:3500/api';
+                                      await ApiService.setCustomBaseUrl(_serverCtrl.text);
+                                      _testServerConnection();
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                      ],
+                      ),
 
                       // Campo Usuario / Email
                       Text(
@@ -434,7 +524,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Icon(Icons.shield_outlined, size: 14, color: AppTheme.textMuted),
                     const SizedBox(width: 6),
                     Text(
-                      'Cierre automático tras 20 min de inactividad',
+                      'Sesión persistente de campo (30 días)',
                       style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
                     ),
                   ],

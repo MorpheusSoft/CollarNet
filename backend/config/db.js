@@ -18,6 +18,8 @@ const pool = new Pool({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || '5432', 10),
   database: process.env.DB_NAME,
+  connectionTimeoutMillis: 500,
+  query_timeout: 500,
 });
 
 // Registrar eventos de conexión para depuración

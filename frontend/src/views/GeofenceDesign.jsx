@@ -385,6 +385,7 @@ export default function GeofenceDesign({
               </div>
               <div><strong>ID:</strong> #${hato.id}</div>
               <div><strong>Superficie:</strong> ${areaHa} Ha</div>
+              <div><strong>Margen sonoro:</strong> ${hato.margen_advertencia_metros || 10}m</div>
               <div><strong>Adquirente:</strong> ${hato.tenant_nombre || 'Principal'}</div>
               <div style="margin-top: 4px; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; ${
                 collaresActivosCount > 0 ? 'background: #fef2f2; color: #b91c1c;' : 'background: #f0fdf4; color: #15803d;'
@@ -813,6 +814,7 @@ export default function GeofenceDesign({
     if (tipo === 'hato') {
       setEditNombre(item.nombre || '');
       setEditTenantId(item.tenant_id ? String(item.tenant_id) : '1');
+      setEditMargen(item.margen_advertencia_metros || 10);
       centerOnHato(item.id);
     } else {
       setEditNombre(item.nombre || '');
@@ -896,6 +898,7 @@ export default function GeofenceDesign({
         await apiUpdateHato(editingItem.data.id, {
           nombre: editNombre,
           tenantId: editTenantId,
+          margenAdvertencia: editMargen,
           vertices
         });
         setStatusMsg({ type: 'success', text: `Hato '${editNombre}' actualizado con éxito.` });
@@ -1369,6 +1372,7 @@ export default function GeofenceDesign({
                                   {h.tenant_nombre && (
                                     <span>• Empresa: <strong className="text-slate-300">{h.tenant_nombre}</strong></span>
                                   )}
+                                  <span>• Margen: <strong className="text-slate-300">{h.margen_advertencia_metros || 10}m</strong></span>
                                 </div>
                               </div>
 
@@ -1643,8 +1647,8 @@ export default function GeofenceDesign({
                   />
                 </div>
 
-                {/* Margen sonoro (Potrero) */}
-                {tipoPerimetro === 'potrero' && (
+                {/* Margen sonoro (Hato o Potrero) */}
+                {tipoPerimetro === 'potrero' ? (
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[11px] font-semibold text-slate-300 block mb-1">Margen Sonoro (m)</label>
@@ -1667,6 +1671,18 @@ export default function GeofenceDesign({
                         className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-500"
                       />
                     </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">Margen Sonoro Exterior (m)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={formMargen}
+                      onChange={(e) => setFormMargen(parseFloat(e.target.value))}
+                      required
+                      className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-500"
+                    />
                   </div>
                 )}
 
@@ -1791,6 +1807,20 @@ export default function GeofenceDesign({
                         <option key={t.id} value={t.id}>🏢 {t.nombre}</option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {editingItem?.tipo === 'hato' && (
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">Margen Sonoro Exterior (m)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={editMargen}
+                      onChange={(e) => setEditMargen(parseFloat(e.target.value))}
+                      required
+                      className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-500"
+                    />
                   </div>
                 )}
 

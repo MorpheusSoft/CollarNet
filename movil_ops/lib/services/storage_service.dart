@@ -35,7 +35,7 @@ class StorageService {
       debugPrint('Error en fallback local: $e2');
     }
 
-    return getSampleData();
+    return [];
   }
 
   /// Guarda la lista de Hatos en la memoria local (SharedPreferences) como caché offline

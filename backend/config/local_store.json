@@ -1,0 +1,220 @@
+{
+  "hatos": [
+    {
+      "id": 1,
+      "nombre": "Hato 28/9 #1",
+      "tenant_id": 1,
+      "margen_advertencia_metros": 10,
+      "geojson": "{\"type\":\"Polygon\",\"coordinates\":[[[-71.60360031598951,10.672073589558533],[-71.60457183427941,10.671854942960039],[-71.60433148642407,10.670786458825395],[-71.60335081336778,10.671002526683193],[-71.60360031598951,10.672073589558533]]]}",
+      "vertices": [
+        [
+          10.672073589558533,
+          -71.60360031598951
+        ],
+        [
+          10.671854942960039,
+          -71.60457183427941
+        ],
+        [
+          10.670786458825395,
+          -71.60433148642407
+        ],
+        [
+          10.671002526683193,
+          -71.60335081336778
+        ]
+      ],
+      "creado_en": "2026-09-28T15:10:40.688Z"
+    }
+  ],
+  "potreros": [
+    {
+      "id": 3,
+      "hato_id": 0,
+      "nombre": "Potrero Principal (Hato 0)",
+      "estado": "ABIERTO",
+      "total_animales": 0,
+      "dias_descanso": 0,
+      "dias_ocupacion": 0,
+      "capacidad_max_cabezas": 50,
+      "margen_advertencia_metros": 10,
+      "geojson": null,
+      "creado_en": "2026-09-25T14:35:39.701Z"
+    },
+    {
+      "id": 4,
+      "hato_id": 1,
+      "nombre": "Potrero A",
+      "capacidad_max_cabezas": 10,
+      "margen_advertencia_metros": 10,
+      "geojson": "{\"type\":\"Polygon\",\"coordinates\":[[[-71.60335081336778,10.671002526683193],[-71.60407240116257,10.671744370590355],[-71.60433148642407,10.670786458825395],[-71.60335081336778,10.671002526683193]]]}",
+      "vertices": [
+        [
+          10.671002526683193,
+          -71.60335081336778
+        ],
+        [
+          10.671744370590355,
+          -71.60407240116257
+        ],
+        [
+          10.670786458825395,
+          -71.60433148642407
+        ]
+      ],
+      "creado_en": "2026-09-28T15:10:58.252Z"
+    },
+    {
+      "id": 5,
+      "hato_id": 1,
+      "nombre": "Potrero B",
+      "capacidad_max_cabezas": 10,
+      "margen_advertencia_metros": 10,
+      "geojson": "{\"type\":\"Polygon\",\"coordinates\":[[[-71.60457183427941,10.671854942960039],[-71.60407240116257,10.671744370590355],[-71.60433148642407,10.670786458825395],[-71.60457183427941,10.671854942960039]]]}",
+      "vertices": [
+        [
+          10.671854942960039,
+          -71.60457183427941
+        ],
+        [
+          10.671744370590355,
+          -71.60407240116257
+        ],
+        [
+          10.670786458825395,
+          -71.60433148642407
+        ]
+      ],
+      "creado_en": "2026-09-28T15:11:05.282Z"
+    },
+    {
+      "id": 6,
+      "hato_id": 1,
+      "nombre": "Potrero C",
+      "capacidad_max_cabezas": 10,
+      "margen_advertencia_metros": 10,
+      "geojson": "{\"type\":\"Polygon\",\"coordinates\":[[[-71.60360031598951,10.672073589558533],[-71.60335081336778,10.671002526683193],[-71.60407240116257,10.671744370590355],[-71.60360031598951,10.672073589558533]]]}",
+      "vertices": [
+        [
+          10.672073589558533,
+          -71.60360031598951
+        ],
+        [
+          10.671002526683193,
+          -71.60335081336778
+        ],
+        [
+          10.671744370590355,
+          -71.60407240116257
+        ]
+      ],
+      "creado_en": "2026-09-28T15:11:11.676Z"
+    },
+    {
+      "id": 7,
+      "hato_id": 1,
+      "nombre": "Potrero D",
+      "capacidad_max_cabezas": 10,
+      "margen_advertencia_metros": 10,
+      "geojson": "{\"type\":\"Polygon\",\"coordinates\":[[[-71.60457183427941,10.671854942960039],[-71.60360031598951,10.672073589558533],[-71.60407240116257,10.671744370590355],[-71.60457183427941,10.671854942960039]]]}",
+      "vertices": [
+        [
+          10.671854942960039,
+          -71.60457183427941
+        ],
+        [
+          10.672073589558533,
+          -71.60360031598951
+        ],
+        [
+          10.671744370590355,
+          -71.60407240116257
+        ]
+      ],
+      "creado_en": "2026-09-28T15:11:17.312Z"
+    }
+  ],
+  "animales": [
+    {
+      "id": 1,
+      "animal_id": 1,
+      "arete": "VACA-001",
+      "arete_visual": "VACA-001",
+      "raza": "Brahman",
+      "categoria": "Novillo",
+      "sexo": "Macho",
+      "foto_url": null,
+      "numero_hierro": "H-001",
+      "tenant_id": 1,
+      "tenant_nombre": "Hacienda Santa Inés",
+      "propietario_id": 1,
+      "propietario_nombre": "Don Fernando Álvarez",
+      "fecha_nacimiento": "2022-04-15",
+      "collar_id": "COW-001",
+      "collar_activo": true,
+      "numero_sim": null,
+      "nivel_bateria": 90,
+      "senal_celular": 5,
+      "esta_cargando": false,
+      "voltaje_mv": 4076,
+      "medio_red": "CELULAR",
+      "gps_encendido": true,
+      "gps_fijado": true,
+      "satelites_visibles": 11,
+      "preferencia_red": "CELULAR",
+      "ultima_conexion": "2026-09-25T15:42:22.281Z",
+      "version_firmware": null,
+      "latitud": 10.67133825,
+      "longitud": -71.60398331,
+      "potrero_id": 4,
+      "potrero_nombre": "Potrero A",
+      "potrero_asignado_nombre": "Potrero A",
+      "hato_id": 1,
+      "hato_nombre": "Hato 28/9 #1",
+      "peso_actual": 485,
+      "estado_alerta": "NORMAL",
+      "estado_cerca": "DENTRO",
+      "activo": true,
+      "motivo_baja": null,
+      "notas_baja": null,
+      "fecha_baja": null
+    }
+  ],
+  "collares": [
+    {
+      "id": "COW-001",
+      "numero_sim": "+584122684691",
+      "imei": "864643061445526",
+      "mac_address": "ESP32-S3-SIM7670G",
+      "numero_serie": "PROTO-S3-001",
+      "estado": "ACTIVO",
+      "lote_id": null,
+      "tenant_id": 1,
+      "tenant_nombre": "Hacienda Santa Inés",
+      "hato_nombre": "Hato 28/9 #1",
+      "animal_raza": "Brahman",
+      "animal_categoria": "Novillo",
+      "ubicacion_almacen": "En Campo (Asignado)",
+      "motivo_estado": "Vinculado en manga",
+      "version_firmware": "2.4.0-PROTOTIPO",
+      "nivel_bateria": 90,
+      "senal_celular": 5,
+      "esta_cargando": false,
+      "voltaje_mv": 4086,
+      "medio_red": "CELULAR",
+      "gps_encendido": true,
+      "gps_fijado": true,
+      "satelites_visibles": 11,
+      "latitud": 10.67133808,
+      "longitud": -71.60398102,
+      "activo": true,
+      "creado_en": "2026-09-25T14:00:00.000Z",
+      "ultima_conexion": "2026-09-28T15:11:36.034Z",
+      "animal_id": 1,
+      "animal_arete": "VACA-001",
+      "potrero_nombre": "Potrero A",
+      "arete_visual": null
+    }
+  ],
+  "savedAt": "2026-09-28T15:11:36.035Z"
+}

@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../providers/finca_state_provider.dart';
 import '../theme/finca_theme.dart';
+import '../widgets/collar_camera_viewer_widget.dart';
 
 class BuscarResScreen extends StatefulWidget {
   const BuscarResScreen({Key? key}) : super(key: key);
@@ -19,6 +20,10 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
   late AnimationController _pulseController;
   StreamSubscription<Position>? _positionStreamSubscription;
   StreamSubscription<CompassEvent>? _compassSubscription;
+
+  // Estado de Cámara del Collar
+  bool _showCamera = false;
+  CameraViewMode _cameraMode = CameraViewMode.split;
 
   // Ubicación del Usuario
   Position? _userPosition;
@@ -303,6 +308,18 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
         title: const Text('Módulo 5: Brújula "Buscar Res"'),
         actions: [
           IconButton(
+            tooltip: _showCamera ? 'Ocultar cámara del collar' : 'Ver cámara del collar en vivo',
+            icon: Icon(
+              _showCamera ? Icons.videocam : Icons.videocam_outlined,
+              color: _showCamera ? const Color(0xFF06B6D4) : Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _showCamera = !_showCamera;
+              });
+            },
+          ),
+          IconButton(
             tooltip: 'Reanclar vaca a 100m de aquí',
             icon: const Icon(Icons.my_location, color: FincaTheme.accentGreenLight),
             onPressed: () {
@@ -317,11 +334,37 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      body: Column(
+        children: [
+          if (_showCamera)
+            CollarCameraViewerWidget(
+              animal: {
+                'collar_id': _collarId,
+                'arete_visual': 'V-999',
+                'potrero_nombre': _estadoPotrero,
+                'nivel_bateria': _nivelBateriaCollar.toInt(),
+                'latitud': _targetLat,
+                'longitud': _targetLng,
+                'estado_cerca': 'FUERA',
+              },
+              initialMode: _cameraMode,
+              onModeChanged: (mode) {
+                setState(() {
+                  _cameraMode = mode;
+                });
+              },
+              onClose: () {
+                setState(() {
+                  _showCamera = false;
+                });
+              },
+            ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
             // Barra de Estado de Sensores (GPS + Brújula Giroscópica)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -971,9 +1014,12 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
               ),
             ),
             const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
-      ),
     );
   }
 

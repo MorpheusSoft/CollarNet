@@ -16,8 +16,8 @@ class FincaStateProvider with ChangeNotifier {
   Map<String, dynamic>? _currentUser;
 
   // Información del Hato Activo
-  int _hatoId = 3;
-  String _hatoNombre = 'Oficina';
+  int _hatoId = 1;
+  String _hatoNombre = 'Hato La Esperanza';
   List<Map<String, dynamic>> _hatosDisponibles = [];
 
   // Métricas del Dashboard
@@ -56,9 +56,26 @@ class FincaStateProvider with ChangeNotifier {
     }
   ];
 
-  List<Map<String, dynamic>> _animales = [];
+  List<Map<String, dynamic>> _animales = [
+    {
+      'id': 1,
+      'areteVisual': 'VACA-001',
+      'collarId': 'COW-001',
+      'raza': 'Brahman',
+      'categoria': 'Novillo',
+      'potreroNombre': 'Potrero Norte 1',
+      'hatoId': 1,
+      'hatoNombre': 'Hato La Esperanza',
+      'latitud': 10.67134,
+      'longitud': -71.60403,
+      'bateria': 95,
+      'ultimoPeso': 485.0,
+      'estadoAlerta': 'NORMAL',
+      'estadoCerca': 'DENTRO',
+    }
+  ];
 
-  List<String> _collaresDisponibles = [];
+  List<String> _collaresDisponibles = ['COW-001'];
 
   List<Map<String, dynamic>> _alertas = [];
 
@@ -101,12 +118,16 @@ class FincaStateProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _serverIp = prefs.getString('finca_server_ip') ?? 'www.cowai.net';
-      if (_serverIp.contains('192.168.') || _serverIp.isEmpty) {
+      if (_serverIp.isEmpty ||
+          _serverIp.contains('192.168.') ||
+          _serverIp.contains('10.0.2.2') ||
+          _serverIp.contains('localhost') ||
+          _serverIp.contains('127.0.0.1')) {
         _serverIp = 'www.cowai.net';
         await prefs.setString('finca_server_ip', 'www.cowai.net');
       }
-      _hatoId = prefs.getInt('finca_selected_hato_id') ?? 3;
-      _hatoNombre = prefs.getString('finca_selected_hato_nombre') ?? 'Oficina';
+      _hatoId = prefs.getInt('finca_selected_hato_id') ?? 1;
+      _hatoNombre = prefs.getString('finca_selected_hato_nombre') ?? 'Hato La Esperanza';
       
       final userJson = prefs.getString('finca_user_session');
       if (userJson != null && userJson.isNotEmpty) {
@@ -184,6 +205,13 @@ class FincaStateProvider with ChangeNotifier {
     await syncData();
   }
 
+  Future<Map<String, dynamic>> checkServerHealth() async {
+    final res = await _apiService.checkServerHealth();
+    _isOnline = res['online'] == true;
+    notifyListeners();
+    return res;
+  }
+
   void _recalcularMetricasPotreros() {
     int activos = 0;
     int descanso = 0;
@@ -215,31 +243,33 @@ class FincaStateProvider with ChangeNotifier {
       final tenantId = _currentUser?['tenantId'] as int? ?? 1;
       try {
         final hatos = await _apiService.fetchHatos(tenantId: tenantId);
-        if (hatos.isNotEmpty) {
-          _hatosDisponibles = hatos.asMap().entries.map((entry) {
-            final idx = entry.key + 1;
-            final h = entry.value;
-            int parsedId = int.tryParse(h.id) ?? 0;
-            if (parsedId == 0) {
-              final match = RegExp(r'\d+').firstMatch(h.id);
-              parsedId = match != null ? (int.tryParse(match.group(0)!) ?? idx) : idx;
-            }
-            return {
-              'id': parsedId,
-              'nombre': h.nombre,
-              'potrerosCount': h.potreros.length,
-              'areaHa': h.areaHa,
-            };
-          }).toList();
+        _hatosDisponibles = hatos.asMap().entries.map((entry) {
+          final idx = entry.key + 1;
+          final h = entry.value;
+          int parsedId = int.tryParse(h.id) ?? 0;
+          if (parsedId == 0) {
+            final match = RegExp(r'\d+').firstMatch(h.id);
+            parsedId = match != null ? (int.tryParse(match.group(0)!) ?? idx) : idx;
+          }
+          return {
+            'id': parsedId,
+            'nombre': h.nombre,
+            'potrerosCount': h.potreros.length,
+            'areaHa': h.areaHa,
+          };
+        }).toList();
 
-          // Buscar el hato actual en la lista disponible o seleccionar el primero de la hacienda
+        if (_hatosDisponibles.isNotEmpty) {
           final matchingIndex = _hatosDisponibles.indexWhere((h) => h['id'] == _hatoId || h['id'].toString() == _hatoId.toString());
           if (matchingIndex >= 0) {
             _hatoNombre = _hatosDisponibles[matchingIndex]['nombre'] as String;
-          } else if (_hatosDisponibles.isNotEmpty) {
+          } else {
             _hatoId = _hatosDisponibles.first['id'] as int;
             _hatoNombre = _hatosDisponibles.first['nombre'] as String;
           }
+        } else {
+          _hatoId = 0;
+          _hatoNombre = 'Sin Hatos Registrados';
         }
       } catch (e) {
         debugPrint('Aviso: No se pudo actualizar lista de hatos: $e');
@@ -266,8 +296,28 @@ class FincaStateProvider with ChangeNotifier {
           _recalcularMetricasPotreros();
         }
 
-        if (resumen['animales'] != null) {
+        if (resumen['animales'] != null && (resumen['animales'] as List).isNotEmpty) {
           _animales = List<Map<String, dynamic>>.from(resumen['animales']);
+        } else {
+          try {
+            final fallbackMonitoreo = await _apiService.fetchMonitoreo();
+            if (fallbackMonitoreo.isNotEmpty) {
+              _animales = fallbackMonitoreo.map((a) => {
+                'id': a['id'] ?? a['animal_id'] ?? 1,
+                'areteVisual': a['arete_visual'] ?? a['arete'] ?? 'VACA-001',
+                'collarId': a['collar_id'] ?? 'SIN_COLLAR',
+                'raza': a['raza'] ?? 'Brahman',
+                'categoria': a['categoria'] ?? 'Novillo',
+                'potreroNombre': a['potrero_nombre'] ?? 'Potrero Norte 1',
+                'latitud': a['latitud'] != null ? (a['latitud'] as num).toDouble() : 10.67134,
+                'longitud': a['longitud'] != null ? (a['longitud'] as num).toDouble() : -71.60403,
+                'bateria': a['nivel_bateria'] ?? 90,
+                'ultimoPeso': a['peso_actual'] != null ? (a['peso_actual'] as num).toDouble() : 485.0,
+                'estadoAlerta': a['estado_alerta'] ?? 'NORMAL',
+                'estadoCerca': a['estado_cerca'] ?? 'DENTRO',
+              }).toList();
+            }
+          } catch (_) {}
         }
 
         if (resumen['collaresDisponibles'] != null && (resumen['collaresDisponibles'] as List).isNotEmpty) {

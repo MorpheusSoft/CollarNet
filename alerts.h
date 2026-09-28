@@ -3,12 +3,12 @@
 
 enum AlertLevel {
     ALERT_NONE = 0,         // Zona segura (silencio total)
-    ALERT_WARNING = 1,      // Advertencia preventiva (<3m del lindero activo)
-    ALERT_DANGER = 2,       // Fuera de potrero asignado (infracción rotación)
-    ALERT_CRITICAL_HATO = 3 // Límite o fuera de HATO (escape mayor: ¡tono continuo más fuerte!)
+    ALERT_WARNING = 1,      // Advertencia preventiva (Margen de Hato o Potrero)
+    ALERT_DANGER = 2,       // Fuera de potrero asignado (infracción rotación - 100% acústico)
+    ALERT_CRITICAL_HATO = 3 // Fuera de HATO (Escape mayor finca: tono continuo + descarga de 1s)
 };
 
 void initAlerts();
-void updateAlerts(AlertLevel level, double distToBorder = 0.0, double warningMargin = 10.0);
+void updateAlerts(AlertLevel level, double distToBorder = 0.0, double warningMargin = 10.0, bool isHatoAlert = false);
 
 #endif // ALERTS_H

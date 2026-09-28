@@ -373,8 +373,9 @@ class _CreatePolygonDialogState extends State<CreatePolygonDialog> {
                                 : null,
                             warningWidthM: parsedWarning,
                             permiteCrearPotreros: _permiteCrearPotreros,
+                            tenantId: agro.selectedHato?.tenantId ?? 1,
                           );
-                          await agro.addHato(newHato);
+                          await agro.addHato(newHato, tenantId: agro.selectedHato?.tenantId ?? 1);
                         } else {
                           final parentId = drawing.parentHatoId;
                           if (parentId != null) {

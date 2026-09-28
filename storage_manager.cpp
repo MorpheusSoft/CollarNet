@@ -165,13 +165,27 @@ bool loadGeofenceConfig() {
         Serial.printf("[Storage] Estado de potrero: %s\n", potreroAbierto ? "ABIERTO (Modo Traslado)" : "CERRADO (Cerca Activa)");
     }
 
-    // 4. Cargar Umbral de Alerta
-    if (doc.containsKey("t_w")) {
-        hatoWarningThreshold = doc["t_w"];
+    // 4. Cargar Umbrales de Alerta Independientes (Hato y Potrero)
+    if (doc.containsKey("h_tw")) {
+        hatoWarningThreshold = doc["h_tw"].as<double>();
+    } else if (doc.containsKey("t_w_hato")) {
+        hatoWarningThreshold = doc["t_w_hato"].as<double>();
+    } else if (doc.containsKey("t_w")) {
+        hatoWarningThreshold = doc["t_w"].as<double>();
     } else {
-        hatoWarningThreshold = 3.0;
+        hatoWarningThreshold = 10.0;
     }
-    Serial.printf("[Storage] Umbral de distancia configurado a: %.1f metros.\n", hatoWarningThreshold);
+
+    if (doc.containsKey("p_tw")) {
+        potreroWarningThreshold = doc["p_tw"].as<double>();
+    } else if (doc.containsKey("t_w_potrero")) {
+        potreroWarningThreshold = doc["t_w_potrero"].as<double>();
+    } else if (doc.containsKey("t_w")) {
+        potreroWarningThreshold = doc["t_w"].as<double>();
+    } else {
+        potreroWarningThreshold = 10.0;
+    }
+    Serial.printf("[Storage] Umbral Hato: %.1f m | Umbral Potrero: %.1f m\n", hatoWarningThreshold, potreroWarningThreshold);
 
     return true;
 }
@@ -199,7 +213,8 @@ void loadDefaultGeofence() {
     potreroVertices[3] = {10.671219961, -71.604251862};
 
     numPotreros = 1;
-    hatoWarningThreshold = 3.0;
+    hatoWarningThreshold = 10.0;
+    potreroWarningThreshold = 10.0;
     
     Serial.println("[Storage] Geocerca de Oficina inicializada en memoria RAM.");
 }

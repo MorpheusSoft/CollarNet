@@ -4,7 +4,7 @@
  * Full Multi-Tenant & Multi-Owner architecture support.
  */
 
-const API_BASE = '/api';
+export const API_BASE = '/api';
 
 /**
  * Obtiene el listado de monitoreo con filtros opcionales de multi-tenant
@@ -83,11 +83,11 @@ export async function syncGeocercas(collarId, hatoId, potreroId) {
   return data;
 }
 
-export async function apiGuardarHato(nombre, vertices, tenantId = 1, id = null) {
+export async function apiGuardarHato(nombre, vertices, tenantId = 1, margenAdvertencia = 10, id = null) {
   const res = await fetch(`${API_BASE}/geocercas/hato`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, nombre, vertices, tenantId })
+    body: JSON.stringify({ id, nombre, vertices, tenantId, margenAdvertencia })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Error al guardar hato');

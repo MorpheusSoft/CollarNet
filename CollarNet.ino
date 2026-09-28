@@ -13,6 +13,8 @@
 #include "imu_manager.h"
 #include "storage_manager.h"
 #include "mqtt_manager.h"
+#include "camera_manager.h"
+#include "camera_stream_server.h"
 
 // Hardware Serial para módem SIM7670G (ESP32-S3 UART1: RX=17, TX=18)
 HardwareSerial SerialAT(1);
@@ -159,7 +161,11 @@ void applyNetworkPreference() {
         initWiFi();
         if (WiFi.status() == WL_CONNECTED) {
             wifiActive = true;
-            Serial.println("[Red] ¡Conectado a Wi-Fi!");
+            Serial.printf("[Red] ¡Conectado a Wi-Fi! IP: %s\n", WiFi.localIP().toString().c_str());
+            if (!camStreamServer.isRunning()) {
+                camStreamServer.begin(81);
+                Serial.printf("[Cámara] 🚀 Servidor de video en vivo listo en: http://%s:81/stream\n", WiFi.localIP().toString().c_str());
+            }
             initMQTT(COLLAR_ID, &wifiClient);
         } else {
             Serial.println("[Red] ⚠️ Wi-Fi no disponible.");
@@ -169,7 +175,11 @@ void applyNetworkPreference() {
         initWiFi();
         if (WiFi.status() == WL_CONNECTED) {
             wifiActive = true;
-            Serial.println("[Red] ¡Conectado a Wi-Fi de alta velocidad!");
+            Serial.printf("[Red] ¡Conectado a Wi-Fi de alta velocidad! IP: %s\n", WiFi.localIP().toString().c_str());
+            if (!camStreamServer.isRunning()) {
+                camStreamServer.begin(81);
+                Serial.printf("[Cámara] 🚀 Servidor de video en vivo listo en: http://%s:81/stream\n", WiFi.localIP().toString().c_str());
+            }
             initMQTT(COLLAR_ID, &wifiClient);
         } else {
             Serial.printf("[Celular] Wi-Fi no disponible. Conectando a red de datos APN: %s...\n", MODEM_APN);
@@ -199,6 +209,32 @@ void onGpsPowerChanged(bool powerOn) {
     modem.waitResponse();
 }
 
+bool cameraStreamingActive = false;
+unsigned long lastCameraFrameTime = 0;
+unsigned long cameraFrameIntervalMs = 500; // Por defecto 2 FPS
+
+void onCameraStreamingControl(bool enabled, int fps, const String& quality) {
+    cameraStreamingActive = enabled;
+    if (fps > 0) {
+        cameraFrameIntervalMs = 1000 / constrain(fps, 1, 10);
+    }
+    if (quality.length() > 0) {
+        cameraMgr.setResolution(cameraMgr.parseResolution(quality));
+    }
+    Serial.printf("\n[Cámara 4G] Streaming remoto %s | Intervalo: %lu ms\n", 
+                  enabled ? "INICIADO (Transmitiendo a la Nube)" : "DETENIDO (Modo Reposo)", cameraFrameIntervalMs);
+}
+
+void onCameraSnapshotRequested() {
+    Serial.println("\n[Cámara 4G] Capturando y transmitiendo instantánea...");
+    camera_fb_t* fb = cameraMgr.getFrame();
+    if (fb != nullptr) {
+        publishCameraFrame(fb->buf, fb->len);
+        cameraMgr.returnFrame(fb);
+        Serial.println("[Cámara 4G] Instantánea enviada con éxito.");
+    }
+}
+
 void setup() {
     // Inicializar puerto Serial de depuración (USB)
     Serial.begin(SERIAL_BAUD);
@@ -212,6 +248,7 @@ void setup() {
     // Inicializar subsistemas
     initAlerts();
     initIMU(); // Inicializar acelerómetro MPU-6050 vía I2C
+    cameraMgr.begin(); // Inicializar sensor de cámara OV2640/OV5640 con búfer multi-cliente PSRAM
     
     // Inicializar almacenamiento persistente LittleFS
     initStorage();
@@ -317,6 +354,19 @@ void loop() {
     // 4. Procesar tareas MQTT en segundo plano (escucha de tópicos)
     if (!powerSaveModeActive) {
         handleMQTT();
+    }
+
+    // 4.1 Transmitir fotogramas de video en vivo por 4G LTE / Wi-Fi si el usuario activó la cámara
+    if (cameraStreamingActive && !powerSaveModeActive) {
+        unsigned long camNow = millis();
+        if (camNow - lastCameraFrameTime >= cameraFrameIntervalMs) {
+            lastCameraFrameTime = camNow;
+            camera_fb_t* fb = cameraMgr.getFrame();
+            if (fb != nullptr) {
+                publishCameraFrame(fb->buf, fb->len);
+                cameraMgr.returnFrame(fb);
+            }
+        }
     }
     
     // 5. Mantener el parpadeo del LED integrado y zumbador físico de fondo
@@ -427,8 +477,11 @@ void loop() {
         double distToHatoBorder = 0.0;
         double distToPotreroBorder = 0.0;
         const char* currentUbicacion = "Zona Segura";
-        double warningThreshold = (hatoWarningThreshold > 0) ? hatoWarningThreshold : 10.0;
+        double hatoThreshold = (hatoWarningThreshold > 0.0) ? hatoWarningThreshold : 10.0;
+        double potreroThreshold = (potreroWarningThreshold > 0.0) ? potreroWarningThreshold : 10.0;
         double activeAlertDist = 0.0;
+        double activeMargin = 10.0;
+        bool isHatoAlert = false;
 
         if (!collarActivo) {
             // MODO ALMACÉN / DESACTIVADO / RESERVA: SILENCIO ABSOLUTO Y CERO ALERTAS
@@ -447,37 +500,47 @@ void loop() {
             distToPotreroBorder = (numPotreros > 0 && potrerosList[0].numVertices > 0) ? getDistanceToPolygon(currentPos, potrerosList[0].vertices, potrerosList[0].numVertices) : 0.0;
 
             if (!insideHato) {
-                // FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA CON TIMEOUT 60s
+                // FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA + DESCARGA ÚNICA DE 1s
                 nextAlertLevel = ALERT_CRITICAL_HATO;
                 alertStr = "ESCAPE_HATO";
                 currentUbicacion = "¡¡FUERA DEL HATO (ESCAPE MAYOR)!!";
                 activeAlertDist = distToHatoBorder;
-            } else if (distToHatoBorder <= warningThreshold) {
-                // APROXIMÁNDOSE AL LÍMITE EXTERIOR DEL HATO: ADVERTENCIA PROGRESIVA
+                activeMargin = hatoThreshold;
+                isHatoAlert = true;
+            } else if (distToHatoBorder <= hatoThreshold) {
+                // APROXIMÁNDOSE AL LÍMITE EXTERIOR DEL HATO: PITIDO FIJO CON MODULACIÓN DE VOLUMEN
                 nextAlertLevel = ALERT_WARNING;
                 alertStr = "PROXIMIDAD_HATO";
-                currentUbicacion = "Aproximándose a lindero de Hato (Advertencia Progresiva)";
+                currentUbicacion = "Aproximándose a lindero de Hato (Advertencia Fija - Volumen Progresivo)";
                 activeAlertDist = distToHatoBorder;
+                activeMargin = hatoThreshold;
+                isHatoAlert = true;
             } else if (!potreroAbierto) {
                 // MODO POTRERO CERRADO (Pastoreo regular con contención en potrero)
                 if (!insidePotrero) {
-                    // Fuera del Potrero asignado (Escape de potrero / Infracción de rotación)
+                    // Fuera del Potrero asignado (Escape de potrero / Infracción de rotación - 100% Acústico)
                     nextAlertLevel = ALERT_DANGER;
                     alertStr = "ESCAPE_POTRERO";
                     currentUbicacion = "Fuera de Potrero Asignado (Escape de Potrero)";
                     activeAlertDist = distToPotreroBorder;
-                } else if (distToPotreroBorder <= warningThreshold) {
-                    // Dentro del Potrero pero dentro del margen de advertencia (progresivo por distancia)
+                    activeMargin = potreroThreshold;
+                    isHatoAlert = false;
+                } else if (distToPotreroBorder <= potreroThreshold) {
+                    // Dentro del Potrero pero dentro del margen de advertencia (progresivo por cadencia)
                     nextAlertLevel = ALERT_WARNING;
                     alertStr = "PROXIMIDAD_POTRERO";
-                    currentUbicacion = "Aproximándose a lindero de potrero (Advertencia Progresiva)";
+                    currentUbicacion = "Aproximándose a lindero de potrero (Advertencia Cadencia Progresiva)";
                     activeAlertDist = distToPotreroBorder;
+                    activeMargin = potreroThreshold;
+                    isHatoAlert = false;
                 } else {
                     // Dentro del Potrero seguro
                     nextAlertLevel = ALERT_NONE;
                     alertStr = "NORMAL";
                     currentUbicacion = (numPotreros > 0) ? potrerosList[0].name : "Potrero Asignado";
                     activeAlertDist = 0.0;
+                    activeMargin = potreroThreshold;
+                    isHatoAlert = false;
                 }
             } else {
                 // MODO TRASLADO / TALANQUERA ABIERTA:
@@ -487,10 +550,12 @@ void loop() {
                 alertStr = "MODO_TRASLADO";
                 currentUbicacion = "Modo Traslado (Talanquera Abierta - Tránsito Libre)";
                 activeAlertDist = 0.0;
+                activeMargin = hatoThreshold;
+                isHatoAlert = false;
             }
             
-            // C. Actualizar nivel de alertas local con modulación progresiva por distancia y timeout
-            updateAlerts(nextAlertLevel, activeAlertDist, warningThreshold);
+            // C. Actualizar nivel de alertas local con modulación de volumen/cadencia y descarga
+            updateAlerts(nextAlertLevel, activeAlertDist, activeMargin, isHatoAlert);
         }
         // D. Publicar telemetría por MQTT con batería real e IMEI
         int currentBat = 100;
@@ -519,7 +584,9 @@ void loop() {
         Serial.printf("Coordenadas: Lat: %.6f, Lon: %.6f\n", currentPos.lat, currentPos.lon);
         Serial.printf("Ubicación Actual: %s\n", currentUbicacion);
         if (collarActivo) {
-            Serial.printf("¿En Hato?: %s | ¿En Potrero?: %s\n", insideHato ? "SÍ" : "NO", insidePotrero ? "SÍ" : "NO");
+            Serial.printf("¿En Hato?: %s (Margen: %.1fm) | ¿En Potrero?: %s (Margen: %.1fm)\n", 
+                          insideHato ? "SÍ" : "NO", hatoThreshold, 
+                          insidePotrero ? "SÍ" : "NO", potreroThreshold);
             Serial.printf("Distancia lindero Hato: %.2f m | Distancia lindero Potrero: %.2f m\n", distToHatoBorder, distToPotreroBorder);
         }
         
@@ -529,11 +596,15 @@ void loop() {
         } else if (currentAlert == ALERT_NONE) {
             Serial.println("NORMAL (Silencio / Seguro)");
         } else if (currentAlert == ALERT_WARNING) {
-            Serial.println("ADVERTENCIA (Lindero a < 3m - Bips lentos 4000Hz)");
+            if (isHatoAlert) {
+                Serial.printf("ADVERTENCIA HATO (Lindero Finca - Cadencia fija 300ms con VOLUMEN PROGRESIVO | Dist: %.1fm / Margen: %.1fm)\n", activeAlertDist, activeMargin);
+            } else {
+                Serial.printf("ADVERTENCIA POTRERO (Lindero Potrero - Cadencia Progresiva 800ms->100ms | Dist: %.1fm / Margen: %.1fm)\n", activeAlertDist, activeMargin);
+            }
         } else if (currentAlert == ALERT_DANGER) {
-            Serial.println("PELIGRO (Infracción Potrero - Bips rápidos 4000Hz)");
+            Serial.println("PELIGRO (Escape Potrero - Bips rápidos 80ms 4000Hz con timeout 60s - 100% Acústico)");
         } else if (currentAlert == ALERT_CRITICAL_HATO) {
-            Serial.println("¡¡ESCAPE CRÍTICO DE HATO (SONIDO CONTINUO MÁS FUERTE 4000Hz)!!");
+            Serial.println("¡¡ESCAPE CRÍTICO DE HATO (DESCARGA ÚNICA 1s en IO23 + Tono continuo 4000Hz con timeout 60s)!!");
         }
         Serial.println("------------------------------------------------");
     }

@@ -16,10 +16,10 @@ class OpsProvider extends ChangeNotifier {
   int? operatorId;
   String? sessionExpiredReason;
 
-  // Control de Inactividad (20 minutos)
+  // Control de Sesión Persistente (30 días de sesión continua para trabajo de campo)
   DateTime? lastActivityTime;
   Timer? _inactivityTimer;
-  static const Duration inactivityTimeout = Duration(minutes: 20);
+  static const Duration inactivityTimeout = Duration(days: 30);
 
   // Estado del Servidor Cloud VPS (Medición en vivo)
   bool isCloudServerOnline = true;
@@ -69,9 +69,9 @@ class OpsProvider extends ChangeNotifier {
       final savedRole = prefs.getString('auth_user_role');
       final savedTimeStr = prefs.getString('auth_last_activity');
 
-      if (savedEmail != null && savedTimeStr != null) {
-        final savedTime = DateTime.tryParse(savedTimeStr);
-        if (savedTime != null && DateTime.now().difference(savedTime) < inactivityTimeout) {
+      if (savedEmail != null && savedEmail.isNotEmpty) {
+        final savedTime = savedTimeStr != null ? DateTime.tryParse(savedTimeStr) : DateTime.now();
+        if (savedTime == null || DateTime.now().difference(savedTime) < inactivityTimeout) {
           isAuthenticated = true;
           operatorEmail = savedEmail;
           operatorName = savedName ?? 'Operador';
@@ -80,9 +80,9 @@ class OpsProvider extends ChangeNotifier {
           _startInactivityChecker();
           refreshServerData();
         } else {
-          // Sesión expirada
+          // Sesión expirada después de 30 días
           await _clearSavedSession();
-          sessionExpiredReason = 'Sesión expirada por inactividad (20 min). Inicia sesión nuevamente.';
+          sessionExpiredReason = 'Sesión cerrada por seguridad tras 30 días. Inicia sesión nuevamente.';
         }
       }
     } catch (_) {}
@@ -91,7 +91,7 @@ class OpsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Registra interacción del usuario (reinicia los 20 min)
+  /// Registra interacción del usuario (mantiene activa la sesión)
   void recordActivity() {
     if (!isAuthenticated) return;
     lastActivityTime = DateTime.now();
@@ -100,11 +100,11 @@ class OpsProvider extends ChangeNotifier {
 
   void _startInactivityChecker() {
     _inactivityTimer?.cancel();
-    _inactivityTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    _inactivityTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       if (isAuthenticated && lastActivityTime != null) {
         final elapsed = DateTime.now().difference(lastActivityTime!);
         if (elapsed >= inactivityTimeout) {
-          logout(reason: 'Sesión cerrada automáticamente por inactividad (20 minutos).');
+          logout(reason: 'Sesión expirada tras 30 días de inactividad.');
         }
       }
     });
@@ -149,8 +149,9 @@ class OpsProvider extends ChangeNotifier {
       } catch (_) {}
 
       _startInactivityChecker();
-      await refreshServerData();
       notifyListeners();
+      // Refrescar métricas en segundo plano sin congelar la pantalla de login
+      refreshServerData();
       return {'success': true};
     } else {
       return {'success': false, 'error': res['error'] ?? 'Credenciales incorrectas'};

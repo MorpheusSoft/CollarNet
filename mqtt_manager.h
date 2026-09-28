@@ -16,6 +16,9 @@ void handleMQTT();
 // Publica una trama de telemetría por MQTT en formato JSON comprimido
 bool publishTelemetry(double lat, double lon, int bateria, int senal, const String& alertType, const String& imei = "", int vbat = 0, bool isCharging = false, const String& netType = "CELULAR", bool gpsPwr = true, bool gpsFix = false, int sats = 0);
 
+// Publica un fotograma JPEG binario de la cámara por 4G LTE
+bool publishCameraFrame(const uint8_t* buf, size_t len);
+
 // Retorna el estado actual de conexión al Broker
 bool isMQTTConnected();
 

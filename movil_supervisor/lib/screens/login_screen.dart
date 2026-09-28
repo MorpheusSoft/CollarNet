@@ -22,11 +22,25 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = false;
   String? _errorMessage;
   bool _showAdvancedConfig = false;
+  bool _isServerOnline = false;
+  String _serverStatus = 'Verificando...';
 
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
+  }
+
+  Future<void> _testServerConnection() async {
+    final health = await context.read<FincaStateProvider>().checkServerHealth();
+    if (mounted) {
+      setState(() {
+        _isServerOnline = health['online'] == true;
+        _serverStatus = _isServerOnline
+            ? '🟢 Conectado (${health['latencyMs']}ms)'
+            : '🔴 Desconectado / Offline';
+      });
+    }
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -48,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           final state = context.read<FincaStateProvider>();
           _serverIpCtrl.text = state.serverIp;
+          _testServerConnection();
         }
       });
     } catch (_) {}
@@ -496,57 +511,130 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // 4. Configuración de Servidor IP (Opcional / Desplegable)
-                TextButton.icon(
-                  onPressed: () => setState(() => _showAdvancedConfig = !_showAdvancedConfig),
-                  icon: Icon(
-                    _showAdvancedConfig ? Icons.keyboard_arrow_up : Icons.tune_rounded,
-                    color: FincaTheme.textMuted,
-                    size: 16,
-                  ),
-                  label: Text(
-                    _showAdvancedConfig ? 'Ocultar conexión de servidor' : 'Configurar IP / Servidor',
-                    style: const TextStyle(color: FincaTheme.textMuted, fontSize: 12),
-                  ),
-                ),
-
-                if (_showAdvancedConfig) ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: FincaTheme.bgCard,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: FincaTheme.borderCard),
+                // 4. Configuración de Servidor IP (Desplegable y Preset Directo)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: FincaTheme.bgCard,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _isServerOnline ? FincaTheme.primaryGreen.withOpacity(0.5) : FincaTheme.warningAmber.withOpacity(0.5),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Dirección del Servidor Backend',
-                          style: TextStyle(fontSize: 11, color: FincaTheme.textMuted, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 6),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _isServerOnline ? Icons.check_circle : Icons.error_outline,
+                                color: _isServerOnline ? FincaTheme.accentGreenLight : FincaTheme.warningAmber,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _serverStatus,
+                                style: TextStyle(
+                                  color: _isServerOnline ? FincaTheme.accentGreenLight : FincaTheme.warningAmber,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          InkWell(
+                            onTap: () => setState(() => _showAdvancedConfig = !_showAdvancedConfig),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    _showAdvancedConfig ? 'Ocultar' : 'Cambiar IP',
+                                    style: const TextStyle(color: FincaTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                                  ),
+                                  Icon(
+                                    _showAdvancedConfig ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                    color: FincaTheme.textMuted,
+                                    size: 16,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_showAdvancedConfig) ...[
+                        const SizedBox(height: 10),
+                        const Divider(color: FincaTheme.borderCard, height: 1),
+                        const SizedBox(height: 10),
                         TextField(
                           controller: _serverIpCtrl,
                           style: const TextStyle(color: FincaTheme.textLight, fontSize: 13),
                           decoration: InputDecoration(
+                            labelText: 'IP / Host Servidor',
+                            labelStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 12),
                             hintText: 'www.cowai.net',
                             hintStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 12),
                             prefixIcon: const Icon(Icons.dns_rounded, color: FincaTheme.accentGreenLight, size: 18),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.refresh, color: FincaTheme.accentGreenLight, size: 18),
+                              onPressed: () async {
+                                if (_serverIpCtrl.text.trim().isNotEmpty) {
+                                  await context.read<FincaStateProvider>().updateServerIp(_serverIpCtrl.text.trim());
+                                }
+                                _testServerConnection();
+                              },
+                            ),
                             filled: true,
                             fillColor: FincaTheme.bgCardElevated,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                               borderSide: const BorderSide(color: FincaTheme.borderCard),
                             ),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
+                          onSubmitted: (val) async {
+                            if (val.trim().isNotEmpty) {
+                              await context.read<FincaStateProvider>().updateServerIp(val.trim());
+                            }
+                            _testServerConnection();
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            const Text('Presets: ', style: TextStyle(color: FincaTheme.textMuted, fontSize: 11)),
+                            ActionChip(
+                              label: const Text('Nube CowIA', style: TextStyle(fontSize: 10, color: FincaTheme.accentGreenLight, fontWeight: FontWeight.bold)),
+                              backgroundColor: FincaTheme.bgCardElevated,
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                _serverIpCtrl.text = 'www.cowai.net';
+                                await context.read<FincaStateProvider>().updateServerIp('www.cowai.net');
+                                _testServerConnection();
+                              },
+                            ),
+                            ActionChip(
+                              label: const Text('Wi-Fi (86.243)', style: TextStyle(fontSize: 10, color: FincaTheme.primaryGreen, fontWeight: FontWeight.bold)),
+                              backgroundColor: FincaTheme.bgCardElevated,
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                _serverIpCtrl.text = '192.168.86.243:3500';
+                                await context.read<FincaStateProvider>().updateServerIp('192.168.86.243:3500');
+                                _testServerConnection();
+                              },
+                            ),
+                          ],
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                ],
+                ),
 
                 const SizedBox(height: 20),
 

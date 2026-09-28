@@ -9,9 +9,32 @@ import { enqueueAction, getPendingQueue, removeQueueItem, cacheSet, cacheGet } f
 // Estado global de la aplicación móvil
 const state = {
   isOnline: navigator.onLine,
-  animals: [],
-  collars: [],
-  paddocks: [],
+  animals: [
+    {
+      id: 1,
+      animal_id: 1,
+      arete: 'VACA-001',
+      arete_visual: 'VACA-001',
+      raza: 'Brahman',
+      categoria: 'Novillo',
+      collar_id: 'COW-001',
+      potrero_nombre: 'Potrero Norte 1'
+    }
+  ],
+  collars: [
+    {
+      id: 'COW-001',
+      estado: 'EN_ALMACEN',
+      nivel_bateria: 90
+    }
+  ],
+  paddocks: [
+    {
+      id: 1,
+      nombre: 'Potrero Norte 1',
+      capacidad_max_cabezas: 50
+    }
+  ],
   owners: [],
   currentTab: 'tab-manga',
   activeQRScanner: null,
@@ -34,7 +57,10 @@ async function initApp() {
   setupCompassModule();
   setupOfflineModule();
 
-  // Cargar datos iniciales
+  // Poblar selectores de inmediato con datos en memoria
+  populateSelectOptions();
+
+  // Cargar datos sincronizados y refrescar
   await refreshData();
   await updateQueueBadge();
 
@@ -131,10 +157,10 @@ async function refreshData() {
         fetch('/api/propietarios').then(r => r.json()).catch(() => [])
       ]);
 
-      state.animals = Array.isArray(animalsRes) ? animalsRes : [];
-      state.collars = Array.isArray(collarsRes) ? collarsRes : [];
-      state.paddocks = Array.isArray(paddocksRes) ? paddocksRes : [];
-      state.owners = Array.isArray(ownersRes) ? ownersRes : [];
+      state.animals = Array.isArray(animalsRes) ? animalsRes : (animalsRes?.animales || animalsRes?.data || animalsRes?.value || []);
+      state.collars = Array.isArray(collarsRes) ? collarsRes : (collarsRes?.collares || collarsRes?.data || collarsRes?.value || []);
+      state.paddocks = Array.isArray(paddocksRes) ? paddocksRes : (paddocksRes?.potreros || paddocksRes?.data || paddocksRes?.value || []);
+      state.owners = Array.isArray(ownersRes) ? ownersRes : (ownersRes?.propietarios || ownersRes?.data || ownersRes?.value || []);
 
       // Guardar en IndexedDB para disponibilidad offline
       await cacheSet('cached_animals', state.animals);
@@ -165,12 +191,22 @@ function populateSelectOptions() {
   const mangaAnimalSel = document.getElementById('manga-select-animal');
   if (mangaAnimalSel) {
     mangaAnimalSel.innerHTML = '<option value="">Selecciona Res existente...</option>';
-    state.animals.forEach(a => {
+    if (state.animals.length === 0) {
       const opt = document.createElement('option');
-      opt.value = a.animal_id;
-      opt.textContent = `🐂 ${a.arete_visual} - ${a.raza || 'Sin raza'} (${a.collar_id ? 'Collar: ' + a.collar_id : 'Sin collar'})`;
+      opt.value = "";
+      opt.textContent = "No hay reses registradas (Usa ➕ Nueva)";
       mangaAnimalSel.appendChild(opt);
-    });
+    } else {
+      state.animals.forEach(a => {
+        const opt = document.createElement('option');
+        const areteTxt = a.arete_visual || a.arete || a.areteVisual || `ID ${a.id || a.animal_id}`;
+        opt.value = areteTxt;
+        opt.dataset.id = a.id || a.animal_id;
+        const colTxt = a.collar_id || a.collarId;
+        opt.textContent = `🐂 ${areteTxt} - ${a.raza || 'Brahman'} (${colTxt ? 'Collar: ' + colTxt : 'Sin collar / En manga'})`;
+        mangaAnimalSel.appendChild(opt);
+      });
+    }
   }
 
   // 2. Selector de Collares en Manga
@@ -180,7 +216,8 @@ function populateSelectOptions() {
     state.collars.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = `📱 ${c.id} (Bat: ${c.nivel_bateria ?? '--'}%)`;
+      const estadoTxt = c.estado === 'EN_ALMACEN' ? '✅ En Almacén' : (c.estado || 'Disponible');
+      opt.textContent = `📱 ${c.id} (${estadoTxt}) • Bat: ${c.nivel_bateria ?? 100}%`;
       mangaCollarSel.appendChild(opt);
     });
   }
@@ -288,11 +325,16 @@ function setupMangaModule() {
         await processMangaLink('ALTA_Y_VINCULAR', newAnimalPayload, `Alta y asignación arete ${areteVisual} con collar ${collarId}`);
       } else {
         animalId = document.getElementById('manga-select-animal').value;
-        const selectedAnimal = state.animals.find(a => String(a.animal_id) === String(animalId));
-        areteVisual = selectedAnimal ? selectedAnimal.arete_visual : `ID ${animalId}`;
+        const selectedAnimal = state.animals.find(a => 
+          String(a.animal_id || a.id) === String(animalId) || 
+          String(a.arete_visual) === String(animalId) ||
+          String(a.arete) === String(animalId)
+        );
+        areteVisual = selectedAnimal ? (selectedAnimal.arete_visual || selectedAnimal.arete) : `ID ${animalId}`;
 
         const linkPayload = {
-          animalId,
+          animalId: selectedAnimal ? (selectedAnimal.id || selectedAnimal.animal_id) : animalId,
+          areteVisual,
           collarId,
           potreroId
         };
@@ -314,21 +356,24 @@ async function processMangaLink(type, payload, description) {
         });
         if (!res.ok) {
           const errData = await res.json();
-          throw new Error(errData.error || 'Error al vincular en manga');
+          throw new Error(errData.error || 'Error al registrar y vincular res en manga');
         }
       } else {
-        // Reasignar animal
+        // Reasignar collar a animal existente en manga
         const selPotrero = state.paddocks.find(p => String(p.id) === String(payload.potreroId));
-        if (selPotrero) {
-          await fetch('/api/geocercas/sincronizar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              collarId: payload.collarId,
-              hatoId: selPotrero.hato_id || 1,
-              potreroId: payload.potreroId
-            })
-          });
+        const res = await fetch('/api/collares/vincular-rapido', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            areteVisual: payload.areteVisual,
+            collarId: payload.collarId,
+            potreroId: payload.potreroId || 1,
+            hatoId: selPotrero ? (selPotrero.hato_id || 1) : 1
+          })
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Error al vincular collar a la res');
         }
       }
 

@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/hato.dart';
 import '../models/potrero.dart';
+import 'gis_service.dart';
 
 class ApiService {
   static String defaultHost = 'www.cowai.net';
@@ -11,7 +14,18 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       var savedIp = prefs.getString('finca_server_ip');
-      if (savedIp == null || savedIp.contains('192.168.') || savedIp.isEmpty) {
+
+      if (kIsWeb) {
+        final origin = Uri.base.origin;
+        if (origin.startsWith('http://') || origin.startsWith('https://')) {
+          return '$origin/api';
+        }
+      }
+
+      if (savedIp == null ||
+          savedIp.isEmpty ||
+          savedIp.contains('192.168.') ||
+          savedIp.contains('10.0.2.2')) {
         savedIp = defaultHost;
         await prefs.setString('finca_server_ip', defaultHost);
       }
@@ -26,6 +40,32 @@ class ApiService {
     } catch (_) {
       return 'https://$defaultHost/api';
     }
+  }
+
+  static Future<void> setCustomServerIp(String ip) async {
+    final prefs = await SharedPreferences.getInstance();
+    var clean = ip.trim();
+    if (clean.isNotEmpty) {
+      if (clean.startsWith('http://')) clean = clean.substring(7);
+      if (clean.startsWith('https://')) clean = clean.substring(8);
+      if (clean.endsWith('/api')) clean = clean.substring(0, clean.length - 4);
+      if (clean.endsWith('/')) clean = clean.substring(0, clean.length - 1);
+      await prefs.setString('finca_server_ip', clean);
+    }
+  }
+
+  /// Verifica conectividad activa al servidor backend
+  Future<Map<String, dynamic>> checkServerHealth() async {
+    final baseUrl = await getBaseUrl();
+    final sw = Stopwatch()..start();
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/finca/resumen/1')).timeout(const Duration(seconds: 3));
+      sw.stop();
+      if (res.statusCode == 200) {
+        return {'online': true, 'latencyMs': sw.elapsedMilliseconds > 0 ? sw.elapsedMilliseconds : 10};
+      }
+    } catch (_) {}
+    return {'online': false, 'latencyMs': 0};
   }
 
   // 0. Autenticación de Usuario (Web / Backend / Offline Fallback)
@@ -194,12 +234,23 @@ class ApiService {
       final List<Hato> hatosList = [];
       
       for (var hJson in hatosJson) {
-        final geoJson = jsonDecode(hJson['geojson'] as String);
-        final coordinates = (geoJson['coordinates'] as List).first as List;
-        
-        final List<Map<String, dynamic>> vertices = coordinates.map((coord) {
-          return {'lat': coord[1], 'lng': coord[0]};
-        }).toList();
+        final dynamic rawGeo = hJson['geojson'];
+        Map<String, dynamic> geoJson = {};
+        if (rawGeo is String) {
+          try { geoJson = jsonDecode(rawGeo) as Map<String, dynamic>; } catch (_) {}
+        } else if (rawGeo is Map) {
+          geoJson = Map<String, dynamic>.from(rawGeo);
+        }
+
+        final List<Map<String, dynamic>> vertices = [];
+        final coordsList = (geoJson['coordinates'] as List?)?.firstOrNull as List?;
+        if (coordsList != null) {
+          for (var coord in coordsList) {
+            if (coord is List && coord.length >= 2) {
+              vertices.add({'lat': (coord[1] as num).toDouble(), 'lng': (coord[0] as num).toDouble()});
+            }
+          }
+        }
 
         if (vertices.isNotEmpty && 
             vertices.first['lat'] == vertices.last['lat'] && 
@@ -207,11 +258,19 @@ class ApiService {
           vertices.removeLast();
         }
 
+        final latLngs = vertices.map((v) => LatLng(v['lat'] as double, v['lng'] as double)).toList();
+        final calcArea = latLngs.length >= 3 ? GISService.calculateGeodesicAreaHa(latLngs) : 0.0;
+        final calcPerim = latLngs.length >= 3 ? GISService.calculateGeodesicPerimeterM(latLngs) : 0.0;
+        final rawArea = (hJson['area_hectareas'] ?? hJson['areaHa'] as num?)?.toDouble() ?? 0.0;
+        final areaHa = rawArea > 0 ? rawArea : calcArea;
+        final rawPerim = (hJson['perimetro_metros'] ?? hJson['perimeterM'] as num?)?.toDouble() ?? 0.0;
+        final perimeterM = rawPerim > 0 ? rawPerim : calcPerim;
+
         final hatoMap = {
           'id': hJson['id'].toString(),
-          'nombre': hJson['nombre'],
-          'areaHa': 0.0,
-          'perimeterM': 0.0,
+          'nombre': hJson['nombre'] ?? 'Hato',
+          'areaHa': areaHa,
+          'perimeterM': perimeterM,
           'vertices': vertices,
           'potreros': [],
           'permiteCrearPotreros': hJson['permite_crear_potreros'] == true || hJson['permiteCrearPotreros'] == true,
@@ -222,12 +281,23 @@ class ApiService {
       }
       
       for (var pJson in potrerosJson) {
-        final geoJson = jsonDecode(pJson['geojson'] as String);
-        final coordinates = (geoJson['coordinates'] as List).first as List;
-        
-        final List<Map<String, dynamic>> vertices = coordinates.map((coord) {
-          return {'lat': coord[1], 'lng': coord[0]};
-        }).toList();
+        final dynamic rawGeo = pJson['geojson'];
+        Map<String, dynamic> geoJson = {};
+        if (rawGeo is String) {
+          try { geoJson = jsonDecode(rawGeo) as Map<String, dynamic>; } catch (_) {}
+        } else if (rawGeo is Map) {
+          geoJson = Map<String, dynamic>.from(rawGeo);
+        }
+
+        final List<Map<String, dynamic>> vertices = [];
+        final coordsList = (geoJson['coordinates'] as List?)?.firstOrNull as List?;
+        if (coordsList != null) {
+          for (var coord in coordsList) {
+            if (coord is List && coord.length >= 2) {
+              vertices.add({'lat': (coord[1] as num).toDouble(), 'lng': (coord[0] as num).toDouble()});
+            }
+          }
+        }
 
         if (vertices.isNotEmpty && 
             vertices.first['lat'] == vertices.last['lat'] && 
@@ -235,12 +305,20 @@ class ApiService {
           vertices.removeLast();
         }
 
+        final latLngs = vertices.map((v) => LatLng(v['lat'] as double, v['lng'] as double)).toList();
+        final calcArea = latLngs.length >= 3 ? GISService.calculateGeodesicAreaHa(latLngs) : 0.0;
+        final calcPerim = latLngs.length >= 3 ? GISService.calculateGeodesicPerimeterM(latLngs) : 0.0;
+        final rawArea = (pJson['area_hectareas'] ?? pJson['areaHa'] as num?)?.toDouble() ?? 0.0;
+        final areaHa = rawArea > 0 ? rawArea : calcArea;
+        final rawPerim = (pJson['perimetro_metros'] ?? pJson['perimeterM'] as num?)?.toDouble() ?? 0.0;
+        final perimeterM = rawPerim > 0 ? rawPerim : calcPerim;
+
         final potreroMap = {
           'id': pJson['id'].toString(),
           'hatoId': pJson['hato_id'].toString(),
-          'nombre': pJson['nombre'],
-          'areaHa': 0.0,
-          'perimeterM': 0.0,
+          'nombre': pJson['nombre'] ?? 'Potrero',
+          'areaHa': areaHa,
+          'perimeterM': perimeterM,
           'vertices': vertices,
         };
         
@@ -253,6 +331,7 @@ class ApiService {
       
       return hatosList;
     } catch (e) {
+      debugPrint('Error en fetchHatos: $e');
       rethrow;
     }
   }

@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import apiRouter from './routes/api.js';
 import { initMQTT } from './services/mqttService.js';
@@ -29,6 +30,17 @@ const io = new Server(server, {
 
 // Compartir instancia de Socket.io en la aplicación Express
 app.set('io', io);
+
+// Middleware para habilitar CORS universal (Web, Móvil, PWAs y LAN)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, custom_server_url, x-user-role');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Middleware para procesar payloads JSON
 app.use(express.json());
@@ -79,7 +91,7 @@ if (fs.existsSync(iphoneAppsPath)) {
 
 // Ruta amigable y moderna para ver y descargar APKs y PWAs desde el móvil
 app.get('/descargas', (req, res) => {
-  const host = req.get('host') || 'cowai.net';
+  const host = req.get('host') || '192.168.86.31:3500';
   const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
   res.send(`
     <!DOCTYPE html>
@@ -302,6 +314,8 @@ async function start() {
       await pool.query(`
         ALTER TABLE propietarios ADD COLUMN IF NOT EXISTS tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE;
         ALTER TABLE animales ADD COLUMN IF NOT EXISTS hato_id INTEGER REFERENCES hatos(id) ON DELETE SET NULL;
+        ALTER TABLE hatos ADD COLUMN IF NOT EXISTS margen_advertencia_metros NUMERIC(5, 2) DEFAULT 10.00;
+        ALTER TABLE potreros ADD COLUMN IF NOT EXISTS margen_advertencia_metros NUMERIC(5, 2) DEFAULT 10.00;
         UPDATE propietarios SET tenant_id = (SELECT id FROM tenants ORDER BY id ASC LIMIT 1) WHERE tenant_id IS NULL;
         UPDATE animales SET hato_id = (SELECT hato_id FROM potreros WHERE id = animales.potrero_id) WHERE hato_id IS NULL AND potrero_id IS NOT NULL;
       `);
@@ -319,7 +333,7 @@ async function start() {
 
     // 3. Encender servidor HTTP y escuchar conexiones
     server.listen(PORT, '0.0.0.0', () => {
-      let localIp = '192.168.86.21';
+      let localIp = '192.168.86.31';
       try {
         const nets = os.networkInterfaces();
         for (const name of Object.keys(nets)) {

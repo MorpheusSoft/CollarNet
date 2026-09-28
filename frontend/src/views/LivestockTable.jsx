@@ -30,7 +30,8 @@ import {
   AlertTriangle,
   FileSpreadsheet,
   FileText,
-  Unlink
+  Unlink,
+  Video
 } from 'lucide-react';
 import { 
   registrarAnimal, 
@@ -55,7 +56,8 @@ export default function LivestockTable({
   selectedTenantId,
   selectedHatoId,
   onRefreshData,
-  onOpenProjection 
+  onOpenProjection,
+  onSelectAnimalForCamera
 }) {
   // Garantizar arreglos seguros ante cualquier estado asíncrono o nulo
   const safeMonitoring = useMemo(() => Array.isArray(monitoringData) ? monitoringData : [], [monitoringData]);
@@ -497,6 +499,17 @@ export default function LivestockTable({
       >
         <TrendingUp className="w-3 h-3" /> GDP
       </button>
+
+      {row.collar_id && (
+        <button
+          type="button"
+          onClick={() => onSelectAnimalForCamera?.(row)}
+          className="p-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 text-xs transition-all shadow-sm"
+          title={`Ver transmisión en vivo de la cámara del collar (${row.collar_id})`}
+        >
+          <Video className="w-3.5 h-3.5" />
+        </button>
+      )}
 
       <button
         type="button"

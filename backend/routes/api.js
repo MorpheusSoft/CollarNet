@@ -1,11 +1,19 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { saveHato, savePotrero } from '../services/geofenceService.js';
-import { publishToCollar } from '../services/mqttService.js';
+import { publishToCollar, publishCameraCmd } from '../services/mqttService.js';
 import { extractGeofenceFromPDF } from '../services/aiService.js';
 import { sendTelegramMessage, dispatchAlertNotification } from '../services/notificationService.js';
+import { pushCollarFrame, getCollarSnapshot, handleLiveStream } from '../services/cameraService.js';
 import multer from 'multer';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const LOCAL_STORE_PATH = path.join(__dirname, '../config/local_store.json');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -71,7 +79,7 @@ function verticesToGeoJSON(vertices) {
 /**
  * Helper para verificar si un punto [lat, lon] está dentro de un polígono [[lat, lon], ...]
  */
-function pointInPolygon(point, polygon) {
+export function pointInPolygon(point, polygon) {
   if (!point || !polygon || polygon.length < 3) return false;
   const lat = point[0], lon = point[1];
   let inside = false;
@@ -87,15 +95,15 @@ function pointInPolygon(point, polygon) {
 // ==========================================
 // ALMACÉN EN MEMORIA GLOBAL PARA DESARROLLO LOCAL & FALLBACK
 // ==========================================
-const memTenants = [
+export const memTenants = [
   { id: 1, nombre: 'Hacienda Santa Inés', rif: 'J-12345678-0', contacto: 'Luis Zambrano', telefono: '+58 412 111 2233', email: 'luis@collarnet.com', total_collares: 0, permite_crear_potreros: true, activo: true, creado_en: new Date().toISOString() }
 ];
 
-const memPropietarios = [
+export const memPropietarios = [
   { id: 1, nombre: 'Don Fernando Álvarez', documento_identidad: 'V-12345678', telefono: '+58 412 111 2233', correo: 'fernando@collarnet.com', creado_en: new Date().toISOString() }
 ];
 
-const memHatos = [
+export const memHatos = [
   {
     id: 1,
     nombre: 'Hato La Esperanza',
@@ -121,7 +129,7 @@ const memHatos = [
   }
 ];
 
-const memPotreros = [
+export const memPotreros = [
   {
     id: 1,
     hato_id: 1,
@@ -211,11 +219,45 @@ const memPotreros = [
   }
 ];
 
-const memLotes = [];
+export const memLotes = [];
 
-const memCollares = [];
+export const memCollares = [
+  {
+    id: 'COW-001',
+    numero_sim: '+584122684691',
+    imei: '864643061445526',
+    mac_address: 'ESP32-S3-SIM7670G',
+    numero_serie: 'PROTO-S3-001',
+    estado: 'EN_ALMACEN',
+    lote_id: null,
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    hato_nombre: null,
+    potrero_nombre: null,
+    animal_id: null,
+    animal_arete: null,
+    animal_raza: null,
+    animal_categoria: null,
+    ubicacion_almacen: 'Almacén Central (Disponible)',
+    motivo_estado: 'Dispositivo físico conectado a laptop listo para asignar',
+    version_firmware: '2.4.0-PROTOTIPO',
+    nivel_bateria: 100,
+    senal_celular: 4,
+    esta_cargando: true,
+    voltaje_mv: 4234,
+    medio_red: 'CELULAR',
+    gps_encendido: true,
+    gps_fijado: false,
+    satelites_visibles: 0,
+    latitud: 10.67134,
+    longitud: -71.60403,
+    activo: true,
+    creado_en: new Date().toISOString(),
+    ultima_conexion: new Date().toISOString()
+  }
+];
 
-const memHistorial = [];
+export const memHistorial = [];
 
 let memArreoActivo = {
   activo: false,
@@ -225,10 +267,10 @@ let memArreoActivo = {
   inicio: null
 };
 
-const memMedicamentos = [];
-const memEventosSanitarios = [];
+export const memMedicamentos = [];
+export const memEventosSanitarios = [];
 
-function enrichEventoSanitario(e) {
+export function enrichEventoSanitario(e) {
   const animal = memAnimales.find(a => a.id === e.animal_id || a.animal_id === e.animal_id || a.arete_visual === e.arete_visual) || {};
   const med = memMedicamentos.find(m => m.id === e.medicamento_id || m.nombre === e.medicamento_nombre) || {};
   
@@ -272,17 +314,52 @@ function enrichEventoSanitario(e) {
   };
 }
 
-const memUsuarios = [
+export const memUsuarios = [
   {
     id: 1,
     nombre: 'Administrador Principal CollarNet',
     email: 'admin@collarnet.com',
+    username: 'admin',
     password: 'admin123',
     password_hash: hashPassword('admin123'),
     rol: 'SUPERADMIN',
     finca_asignada: 'Todas las Fincas',
-    tenant_id: null,
+    tenant_id: 1,
     tenant_nombre: 'Plataforma Global CollarNet',
+    propietario_id: null,
+    propietario_nombre: null,
+    permite_crear_potreros: true,
+    activo: true,
+    creado_en: new Date().toISOString()
+  },
+  {
+    id: 7,
+    nombre: 'David Zambrano (Supervisor Técnico)',
+    email: 'david@collarnet.com',
+    username: 'david',
+    password: '12345678',
+    password_hash: hashPassword('12345678'),
+    rol: 'SUPERADMIN',
+    finca_asignada: 'Hacienda Santa Inés',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: null,
+    propietario_nombre: null,
+    permite_crear_potreros: true,
+    activo: true,
+    creado_en: new Date().toISOString()
+  },
+  {
+    id: 3,
+    nombre: 'Técnico Especialista de Campo',
+    email: 'tecnico@collarnet.com',
+    username: 'tecnico',
+    password: 'tecnico123',
+    password_hash: hashPassword('tecnico123'),
+    rol: 'OPERARIO',
+    finca_asignada: 'Taller y Despliegue',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
     propietario_id: null,
     propietario_nombre: null,
     permite_crear_potreros: true,
@@ -291,7 +368,338 @@ const memUsuarios = [
   }
 ];
 
-const memAnimales = [];
+export const memAnimales = [
+  {
+    id: 1,
+    animal_id: 1,
+    arete: 'VACA-001',
+    arete_visual: 'VACA-001',
+    raza: 'Brahman',
+    categoria: 'Vaca Lechera',
+    sexo: 'Hembra',
+    foto_url: null,
+    numero_hierro: 'H-001',
+    tenant_id: 1,
+    tenant_nombre: 'Hacienda Santa Inés',
+    propietario_id: 1,
+    propietario_nombre: 'Don Fernando Álvarez',
+    fecha_nacimiento: '2022-04-15',
+    collar_id: null,
+    collar_activo: false,
+    numero_sim: null,
+    nivel_bateria: null,
+    senal_celular: null,
+    esta_cargando: false,
+    voltaje_mv: null,
+    medio_red: null,
+    gps_encendido: false,
+    gps_fijado: false,
+    satelites_visibles: 0,
+    preferencia_red: 'CELULAR',
+    ultima_conexion: null,
+    version_firmware: null,
+    latitud: null,
+    longitud: null,
+    potrero_id: 1,
+    potrero_nombre: 'Potrero Norte 1',
+    potrero_asignado_nombre: 'Potrero Norte 1',
+    hato_id: 1,
+    hato_nombre: 'Hato La Esperanza',
+    peso_actual: 485.0,
+    estado_alerta: 'NORMAL',
+    estado_cerca: 'SIN_DISPOSITIVO',
+    activo: true
+  }
+];
+
+/**
+ * Procesa en memoria la telemetría recibida por MQTT/Serial y sincroniza animales y collares
+ */
+export function processTelemetryInMemory({
+  collarId,
+  imei,
+  lat,
+  lon,
+  bateria,
+  senal,
+  estaCargando,
+  vbat,
+  medioRed,
+  gpsEncendido,
+  gpsFijado,
+  satelites,
+  alert
+}) {
+  const cleanCollar = (collarId || 'COW-001').trim();
+  const cleanImei = imei ? String(imei).trim() : null;
+
+  // 1. Buscar o registrar collar
+  let col = memCollares.find(c => c.id === cleanCollar || (cleanImei && c.imei === cleanImei));
+  if (!col) {
+    col = {
+      id: cleanCollar,
+      numero_sim: '+584122684691',
+      imei: cleanImei || '864643061445526',
+      mac_address: 'ESP32-S3-SIM7670G',
+      numero_serie: 'PROTO-S3-001',
+      estado: 'ACTIVO',
+      lote_id: null,
+      tenant_id: 1,
+      tenant_nombre: 'Hacienda Santa Inés',
+      hato_nombre: 'Hato La Esperanza',
+      potrero_nombre: 'Potrero Norte 1',
+      animal_id: 1,
+      animal_arete: 'VACA-001',
+      animal_raza: 'Brahman Rojo',
+      animal_categoria: 'Vaca Lechera',
+      ubicacion_almacen: 'En Campo (Asignado)',
+      motivo_estado: 'Prototipo de hardware activo en campo',
+      version_firmware: '2.4.0-PROTOTIPO',
+      nivel_bateria: bateria !== undefined ? bateria : 95,
+      senal_celular: senal !== undefined ? senal : 4,
+      esta_cargando: Boolean(estaCargando),
+      voltaje_mv: vbat || 4200,
+      medio_red: medioRed || 'CELULAR',
+      gps_encendido: gpsEncendido !== undefined ? gpsEncendido : true,
+      gps_fijado: gpsFijado !== undefined ? gpsFijado : true,
+      satelites_visibles: satelites || 8,
+      latitud: !isNaN(lat) && lat !== 0 ? lat : 8.5385,
+      longitud: !isNaN(lon) && lon !== 0 ? lon : -70.3580,
+      activo: true,
+      creado_en: new Date().toISOString(),
+      ultima_conexion: new Date().toISOString()
+    };
+    memCollares.unshift(col);
+  }
+
+  // 2. Si el collar está en almacén y no está vinculado a un animal, solo actualizar su estado de hardware
+  const isAssigned = col.estado === 'ACTIVO' || !!col.animal_id || !!col.animal_arete;
+
+  const validCoords = !isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0);
+  const curLat = validCoords ? parseFloat(lat) : (col.latitud || 10.67134);
+  const curLon = validCoords ? parseFloat(lon) : (col.longitud || -71.60403);
+  const numBat = parseInt(bateria !== undefined ? bateria : (col.nivel_bateria || 100), 10);
+  const numSig = parseInt(senal !== undefined ? senal : (col.senal_celular || 4), 10);
+  const nowIso = new Date().toISOString();
+
+  // Sincronizar estado en collar siempre
+  col.latitud = curLat;
+  col.longitud = curLon;
+  col.nivel_bateria = numBat;
+  col.senal_celular = numSig;
+  col.esta_cargando = Boolean(estaCargando);
+  if (vbat !== undefined && vbat !== null) col.voltaje_mv = vbat;
+  col.medio_red = medioRed || col.medio_red || 'CELULAR';
+  col.gps_encendido = gpsEncendido !== undefined ? gpsEncendido : true;
+  col.gps_fijado = gpsFijado !== undefined ? gpsFijado : false;
+  col.satelites_visibles = satelites !== undefined ? satelites : 0;
+  col.ultima_conexion = nowIso;
+
+  if (!isAssigned) {
+    return {
+      collarId: col.id,
+      collar_id: col.id,
+      imei: col.imei || cleanImei || '864643061445526',
+      lat: curLat,
+      lon: curLon,
+      bateria: numBat,
+      nivel_bateria: numBat,
+      senal: numSig,
+      senal_celular: numSig,
+      esta_cargando: Boolean(estaCargando),
+      charging: Boolean(estaCargando),
+      voltaje_mv: vbat || col.voltaje_mv || 4234,
+      timestamp: nowIso,
+      estado: 'EN_ALMACEN',
+      collarActivo: false,
+      activo: true
+    };
+  }
+
+  // 3. Si el collar está asignado, buscar su animal vinculado
+  let animal = memAnimales.find(a => 
+    a.collar_id === col.id || 
+    (col.animal_id && (a.id === col.animal_id || a.animal_id === col.animal_id)) || 
+    (col.animal_arete && (a.arete_visual === col.animal_arete || a.arete === col.animal_arete))
+  );
+
+  if (!animal) {
+    animal = {
+      id: col.animal_id || (memAnimales.length + 1),
+      animal_id: col.animal_id || (memAnimales.length + 1),
+      arete: col.animal_arete || 'VACA-001',
+      arete_visual: col.animal_arete || 'VACA-001',
+      raza: col.animal_raza || 'Brahman',
+      categoria: col.animal_categoria || 'Vaca Lechera',
+      sexo: 'Hembra',
+      foto_url: null,
+      numero_hierro: 'H-001',
+      tenant_id: col.tenant_id || 1,
+      tenant_nombre: col.tenant_nombre || 'Hacienda Santa Inés',
+      propietario_id: 1,
+      propietario_nombre: 'Don Fernando Álvarez',
+      fecha_nacimiento: '2022-04-15',
+      collar_id: col.id,
+      numero_sim: col.numero_sim || '+584122684691',
+      nivel_bateria: numBat,
+      senal_celular: numSig,
+      potrero_id: 1,
+      potrero_nombre: col.potrero_nombre || 'Potrero Norte 1',
+      potrero_asignado_nombre: col.potrero_nombre || 'Potrero Norte 1',
+      hato_id: 1,
+      hato_nombre: col.hato_nombre || 'Hato La Esperanza',
+      peso_actual: 485.0,
+      activo: true
+    };
+    memAnimales.push(animal);
+  }
+
+  // 4. Evaluar geocercas
+  const hato = memHatos.find(h => h.id === animal.hato_id) || memHatos[0];
+  const potreroAsignado = memPotreros.find(p => p.id === animal.potrero_id) || memPotreros[0];
+
+  const dentroHato = hato && hato.vertices ? pointInPolygon([curLat, curLon], hato.vertices) : true;
+  const dentroPotrero = potreroAsignado && potreroAsignado.vertices ? pointInPolygon([curLat, curLon], potreroAsignado.vertices) : true;
+
+  let potreroActualNombre = 'Callejón / Tránsito';
+  for (const p of memPotreros) {
+    if (p.vertices && pointInPolygon([curLat, curLon], p.vertices)) {
+      potreroActualNombre = p.nombre;
+      break;
+    }
+  }
+
+  let alertType = 'NORMAL';
+  if (!dentroHato) {
+    alertType = 'ESCAPE_HATO';
+  } else if (!dentroPotrero) {
+    alertType = 'INFRACCION_ROTACION';
+  }
+
+  // 5. Sincronizar estado en animal
+  animal.latitud = curLat;
+  animal.longitud = curLon;
+  animal.nivel_bateria = numBat;
+  animal.senal_celular = numSig;
+  animal.esta_cargando = Boolean(estaCargando);
+  if (vbat !== undefined && vbat !== null) animal.voltaje_mv = vbat;
+  animal.medio_red = medioRed || animal.medio_red || 'CELULAR';
+  animal.gps_encendido = gpsEncendido !== undefined ? gpsEncendido : true;
+  animal.gps_fijado = gpsFijado !== undefined ? gpsFijado : false;
+  animal.satelites_visibles = satelites !== undefined ? satelites : 0;
+  animal.ultima_conexion = nowIso;
+  animal.estado_alerta = alertType;
+  animal.estado_cerca = alertType === 'NORMAL' ? 'DENTRO' : (alertType === 'ESCAPE_HATO' ? 'FUERA' : 'ADVERTENCIA');
+  animal.collar_id = col.id;
+  animal.collar_activo = true;
+
+  // 6. Sincronizar estado en collar asignado
+  col.estado = 'ACTIVO';
+  col.activo = true;
+  col.animal_id = animal.id;
+  col.animal_arete = animal.arete_visual;
+
+  return {
+    collarId: col.id,
+    collar_id: col.id,
+    animalId: animal.id,
+    animal_id: animal.id,
+    areteVisual: animal.arete_visual,
+    arete_visual: animal.arete_visual,
+    raza: animal.raza,
+    categoria: animal.categoria,
+    lat: curLat,
+    lon: curLon,
+    bateria: numBat,
+    nivel_bateria: numBat,
+    senal: numSig,
+    senal_celular: numSig,
+    esta_cargando: Boolean(estaCargando),
+    charging: Boolean(estaCargando),
+    voltaje_mv: vbat || col.voltaje_mv || 4200,
+    imei: col.imei || cleanImei || '864643061445526',
+    timestamp: nowIso,
+    alertType,
+    alerta: alertType,
+    potreroActual: potreroActualNombre,
+    potrero_nombre: potreroActualNombre,
+    potreroAsignadoNombre: potreroAsignado?.nombre || 'Potrero Norte 1',
+    hatoNombre: hato?.nombre || 'Hato La Esperanza',
+    distanciaHato: 0.0,
+    distancia_hato: 0.0,
+    dentroHato,
+    dentro_hato: dentroHato,
+    dentroPotrero,
+    dentro_potrero: dentroPotrero,
+    collarActivo: true,
+    activo: true,
+    medio_red: col.medio_red || 'CELULAR',
+    net: col.medio_red || 'CELULAR',
+    gps_encendido: col.gps_encendido,
+    gps_fijado: col.gps_fijado,
+    satelites_visibles: col.satelites_visibles,
+    sats: col.satelites_visibles
+  };
+}
+
+/**
+ * Carga el almacén local de respaldo si existe
+ */
+export function loadLocalStore() {
+  try {
+    if (fs.existsSync(LOCAL_STORE_PATH)) {
+      const data = JSON.parse(fs.readFileSync(LOCAL_STORE_PATH, 'utf8'));
+      if (Array.isArray(data.hatos) && data.hatos.length > 0) {
+        memHatos.length = 0;
+        memHatos.push(...data.hatos);
+      }
+      if (Array.isArray(data.potreros) && data.potreros.length > 0) {
+        memPotreros.length = 0;
+        memPotreros.push(...data.potreros);
+      }
+      if (Array.isArray(data.animales) && data.animales.length > 0) {
+        memAnimales.length = 0;
+        memAnimales.push(...data.animales);
+      }
+      if (Array.isArray(data.collares) && data.collares.length > 0) {
+        memCollares.length = 0;
+        memCollares.push(...data.collares);
+      }
+      console.log(`[LocalStore] 📂 Respaldo local cargado: ${memHatos.length} hatos, ${memPotreros.length} potreros, ${memAnimales.length} animales, ${memCollares.length} collares.`);
+    }
+  } catch (e) {
+    console.warn('[LocalStore] Error cargando local_store.json:', e.message);
+  }
+}
+
+/**
+ * Guarda en disco el estado actual de hatos, potreros, animales y collares
+ */
+export function saveLocalStore() {
+  try {
+    const dir = path.dirname(LOCAL_STORE_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const payload = {
+      hatos: memHatos,
+      potreros: memPotreros,
+      animales: memAnimales,
+      collares: memCollares,
+      savedAt: new Date().toISOString()
+    };
+    fs.writeFileSync(LOCAL_STORE_PATH, JSON.stringify(payload, null, 2), 'utf8');
+  } catch (e) {
+    console.warn('[LocalStore] Error guardando local_store.json:', e.message);
+  }
+}
+
+// Inicializar almacén persistente al cargar módulo
+if (fs.existsSync(LOCAL_STORE_PATH)) {
+  loadLocalStore();
+} else {
+  saveLocalStore();
+}
 
 function _updateMemAnimalWeight(id, arete, peso) {
   const numPeso = parseFloat(peso) || 400.0;
@@ -531,13 +939,16 @@ async function handleMonitoreoQuery(req, res) {
     console.warn('[Monitoreo Fallback Memory]');
     let filtered = [...memAnimales];
     if (tenantId && tenantId !== 'ALL') {
-      filtered = filtered.filter(a => String(a.tenant_id) === String(tenantId));
+      const match = filtered.filter(a => String(a.tenant_id) === String(tenantId));
+      if (match.length > 0) filtered = match;
     }
     if (hatoId && hatoId !== 'ALL') {
-      filtered = filtered.filter(a => String(a.hato_id) === String(hatoId));
+      const match = filtered.filter(a => String(a.hato_id) === String(hatoId));
+      if (match.length > 0) filtered = match;
     }
     if (propietarioId && propietarioId !== 'ALL') {
-      filtered = filtered.filter(a => String(a.propietario_id) === String(propietarioId));
+      const match = filtered.filter(a => String(a.propietario_id) === String(propietarioId));
+      if (match.length > 0) filtered = match;
     }
     res.json(filtered);
   }
@@ -545,6 +956,8 @@ async function handleMonitoreoQuery(req, res) {
 
 router.get('/animales/monitoreo', handleMonitoreoQuery);
 router.get('/monitoreo', handleMonitoreoQuery);
+router.get('/animales', handleMonitoreoQuery);
+router.get('/ganado', handleMonitoreoQuery);
 
 /**
  * GET /api/animales/:id/genealogia
@@ -657,19 +1070,20 @@ router.post('/geocercas/sincronizar', async (req, res) => {
       });
     }
 
-    // 1. Obtener coordenadas del Hato
-    const hatoQuery = `SELECT nombre, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;`;
+    // 1. Obtener coordenadas y margen de advertencia del Hato
+    const hatoQuery = `SELECT nombre, COALESCE(margen_advertencia_metros, 10.00) AS margen_advertencia_metros, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;`;
     const { rows: hatoRows } = await pool.query(hatoQuery, [hatoId]);
     if (hatoRows.length === 0) return res.status(404).json({ error: 'Hato no encontrado' });
 
     // 2. Obtener coordenadas y margen de advertencia del Potrero
-    const potreroQuery = `SELECT nombre, margen_advertencia_metros, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;`;
+    const potreroQuery = `SELECT nombre, COALESCE(margen_advertencia_metros, 10.00) AS margen_advertencia_metros, estado, modo_arreo_activo, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;`;
     const { rows: potreroRows } = await pool.query(potreroQuery, [potreroId]);
     if (potreroRows.length === 0) return res.status(404).json({ error: 'Potrero no encontrado' });
 
     const hatoVertices = extractVerticesFromGeoJSON(hatoRows[0].geojson);
     const potreroVertices = extractVerticesFromGeoJSON(potreroRows[0].geojson);
-    const margenAdvertencia = parseFloat(potreroRows[0].margen_advertencia_metros) || 10;
+    const margenHato = parseFloat(hatoRows[0].margen_advertencia_metros) || 10;
+    const margenPotrero = parseFloat(potreroRows[0].margen_advertencia_metros) || 10;
 
     // 3. Formatear payload comprimido para 2G / ESP32
     const isPotreroOpen = (potreroRows[0].estado === 'ABIERTO' || potreroRows[0].modo_arreo_activo === true);
@@ -678,9 +1092,11 @@ router.post('/geocercas/sincronizar', async (req, res) => {
       silence: false,
       h_id: parseInt(hatoId, 10),
       h_v: flattenCoordinates(hatoVertices),
+      h_tw: margenHato, // Umbral configurable del Hato en metros
       p_id: parseInt(potreroId, 10),
       p_v: flattenCoordinates(potreroVertices),
-      t_w: margenAdvertencia, // Umbral de alerta dinámico en metros según potrero
+      p_tw: margenPotrero, // Umbral configurable del Potrero en metros
+      t_w: margenPotrero, // Compatibilidad retrocompatible
       p_open: isPotreroOpen ? 1 : 0
     };
 
@@ -742,18 +1158,21 @@ function notifyDataUpdated(req, tipo, data = {}) {
  * Crea o actualiza un Hato vinculado a un Tenant/Adquirente.
  */
 router.post('/geocercas/hato', async (req, res) => {
-  const { id, nombre, vertices, tenantId } = req.body;
+  const { id, nombre, vertices, tenantId, margenAdvertencia } = req.body;
   const cleanTenantId = tenantId ? parseInt(tenantId, 10) : null;
+  const cleanMargen = margenAdvertencia ? parseFloat(margenAdvertencia) : 10.0;
   const geojsonStr = verticesToGeoJSON(vertices);
 
   try {
-    const hato = await saveHato(id, nombre, vertices, cleanTenantId);
+    const hato = await saveHato(id, nombre, vertices, cleanTenantId, cleanMargen);
     let hatoId = hato.id || (id ? parseInt(id, 10) : (memHatos.length > 0 ? Math.max(...memHatos.map(h => h.id)) + 1 : 1));
     const hatoObj = {
       id: hatoId,
       nombre: String(hato.nombre || nombre || 'Hato Nuevo').trim(),
       tenant_id: cleanTenantId,
+      margen_advertencia_metros: cleanMargen,
       geojson: geojsonStr,
+      vertices: vertices || [],
       creado_en: new Date().toISOString()
     };
     const existingIdx = memHatos.findIndex(h => h.id === hatoId);
@@ -762,6 +1181,7 @@ router.post('/geocercas/hato', async (req, res) => {
     } else {
       memHatos.push(hatoObj);
     }
+    saveLocalStore();
     notifyGeocercasUpdated(req);
     res.status(201).json(hatoObj);
   } catch (err) {
@@ -772,7 +1192,9 @@ router.post('/geocercas/hato', async (req, res) => {
       id: hatoId,
       nombre: String(nombre || 'Hato Nuevo').trim(),
       tenant_id: cleanTenantId,
+      margen_advertencia_metros: cleanMargen,
       geojson: geojsonStr,
+      vertices: vertices || [],
       creado_en: new Date().toISOString()
     };
 
@@ -782,6 +1204,7 @@ router.post('/geocercas/hato', async (req, res) => {
     } else {
       memHatos.push(hatoObj);
     }
+    saveLocalStore();
     notifyGeocercasUpdated(req);
     res.status(201).json(hatoObj);
   }
@@ -806,6 +1229,7 @@ router.post('/geocercas/potrero', async (req, res) => {
       capacidad_max_cabezas: capacidad ? parseInt(capacidad, 10) : 50,
       margen_advertencia_metros: margenAdvertencia ? parseFloat(margenAdvertencia) : 10.0,
       geojson: geojsonStr,
+      vertices: vertices || [],
       creado_en: new Date().toISOString()
     };
     const existingIdx = memPotreros.findIndex(p => p.id === potreroId);
@@ -814,6 +1238,7 @@ router.post('/geocercas/potrero', async (req, res) => {
     } else {
       memPotreros.push(potreroObj);
     }
+    saveLocalStore();
     notifyGeocercasUpdated(req);
     res.status(201).json(potreroObj);
   } catch (err) {
@@ -827,6 +1252,7 @@ router.post('/geocercas/potrero', async (req, res) => {
       capacidad_max_cabezas: capacidad ? parseInt(capacidad, 10) : 50,
       margen_advertencia_metros: margenAdvertencia ? parseFloat(margenAdvertencia) : 10.0,
       geojson: geojsonStr,
+      vertices: vertices || [],
       creado_en: new Date().toISOString()
     };
 
@@ -836,6 +1262,7 @@ router.post('/geocercas/potrero', async (req, res) => {
     } else {
       memPotreros.push(potreroObj);
     }
+    saveLocalStore();
     notifyGeocercasUpdated(req);
     res.status(201).json(potreroObj);
   }
@@ -846,17 +1273,25 @@ router.post('/geocercas/potrero', async (req, res) => {
  * Crea un Hato o Potrero a partir de una cadena de texto de coordenadas ingresadas manualmente.
  */
 router.post('/geocercas/crear-manual', async (req, res) => {
-  const { type, hatoId, nombre, coordenadasText } = req.body;
-  if (!type || !nombre || !coordenadasText) {
-    return res.status(400).json({ error: 'Faltan campos requeridos: type, nombre o coordenadasText' });
+  const { type, tipo, hatoId, nombre, coordenadasText, vertices: rawVertices, margenAdvertencia, tenantId } = req.body;
+  const targetType = (type || tipo || '').toLowerCase();
+  if (!targetType || !nombre) {
+    return res.status(400).json({ error: 'Faltan campos requeridos: type/tipo o nombre' });
   }
 
+  const cleanTenantId = tenantId ? parseInt(tenantId, 10) : 1;
+  const cleanMargen = margenAdvertencia ? parseFloat(margenAdvertencia) : 10.0;
+
   try {
-    const regex = /(-?\d+(?:\.\d+)?)\s*[\s,]\s*(-?\d+(?:\.\d+)?)/g;
-    let match;
-    const vertices = [];
-    while ((match = regex.exec(coordenadasText)) !== null) {
-      vertices.push([parseFloat(match[1]), parseFloat(match[2])]);
+    let vertices = [];
+    if (Array.isArray(rawVertices) && rawVertices.length >= 3) {
+      vertices = rawVertices.map(v => Array.isArray(v) ? [parseFloat(v[0]), parseFloat(v[1])] : [parseFloat(v.lat), parseFloat(v.lng)]);
+    } else if (coordenadasText) {
+      const regex = /(-?\d+(?:\.\d+)?)\s*[\s,]\s*(-?\d+(?:\.\d+)?)/g;
+      let match;
+      while ((match = regex.exec(coordenadasText)) !== null) {
+        vertices.push([parseFloat(match[1]), parseFloat(match[2])]);
+      }
     }
 
     if (vertices.length < 3) {
@@ -864,26 +1299,29 @@ router.post('/geocercas/crear-manual', async (req, res) => {
     }
 
     let result;
-    if (type === 'hato') {
+    if (targetType === 'hato') {
       try {
-        result = await saveHato(null, nombre, vertices);
+        result = await saveHato(null, nombre, vertices, cleanTenantId, cleanMargen);
       } catch (_) {
         const newId = memHatos.length > 0 ? Math.max(...memHatos.map(h => h.id)) + 1 : 1;
         result = {
           id: newId,
           nombre: String(nombre).trim(),
-          tenant_id: 1,
+          tenant_id: cleanTenantId,
+          margen_advertencia_metros: cleanMargen,
           geojson: verticesToGeoJSON(vertices),
+          vertices: vertices,
           creado_en: new Date().toISOString()
         };
         memHatos.push(result);
+        saveLocalStore();
       }
     } else {
       if (!hatoId) {
         return res.status(400).json({ error: 'Debe especificar el Hato asociado para crear un potrero.' });
       }
       try {
-        result = await savePotrero(null, parseInt(hatoId, 10), nombre, vertices);
+        result = await savePotrero(null, parseInt(hatoId, 10), nombre, vertices, 50, cleanMargen);
       } catch (_) {
         const newId = memPotreros.length > 0 ? Math.max(...memPotreros.map(p => p.id)) + 1 : 1;
         result = {
@@ -891,11 +1329,13 @@ router.post('/geocercas/crear-manual', async (req, res) => {
           hato_id: parseInt(hatoId, 10),
           nombre: String(nombre).trim(),
           capacidad_max_cabezas: 50,
-          margen_advertencia_metros: 10.0,
+          margen_advertencia_metros: cleanMargen,
           geojson: verticesToGeoJSON(vertices),
+          vertices: vertices,
           creado_en: new Date().toISOString()
         };
         memPotreros.push(result);
+        saveLocalStore();
       }
     }
 
@@ -1078,6 +1518,7 @@ router.get('/geocercas/hatos', async (req, res) => {
         h.nombre, 
         h.tenant_id, 
         t.nombre AS tenant_nombre,
+        COALESCE(h.margen_advertencia_metros, 10.00) AS margen_advertencia_metros,
         (SELECT COUNT(*)::INTEGER FROM potreros p WHERE p.hato_id = h.id) AS total_potreros,
         (SELECT COUNT(*)::INTEGER FROM animales a WHERE a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = h.id) AND a.collar_id IS NOT NULL) AS collares_activos,
         (SELECT COUNT(*)::INTEGER FROM animales a WHERE a.potrero_id IN (SELECT id FROM potreros WHERE hato_id = h.id)) AS total_animales,
@@ -1333,75 +1774,110 @@ async function checkHatoOccupied(hatoId) {
 
 /**
  * DELETE /api/geocercas/hato/:id
- * Elimina un Hato y sus pasturas solo si NO contiene animales activos.
+ * Elimina un Hato y sus pasturas (con soporte de borrado forzado y desvinculación automática).
  */
 router.delete('/geocercas/hato/:id', async (req, res) => {
   const { id } = req.params;
   const numId = parseInt(id, 10);
+  const force = req.query.force === 'true' || req.query.force === '1' || req.headers['x-force-delete'] === 'true';
 
-  const check = await checkHatoOccupied(id);
-  if (check.isOccupied) {
-    const aretesStr = check.animalAretes.slice(0, 5).join(', ') + (check.animalAretes.length > 5 ? '...' : '');
-    return res.status(400).json({
-      error: `No se puede eliminar el hato "${check.hatoNombre}" porque contiene ${check.totalCount} animal(es) activo(s) (${check.assignedCount} asignados, ${check.gpsCount} detectados por GPS: ${aretesStr}). Debe reubicar o desvincular el ganado antes de eliminar.`,
-      isOccupied: true,
-      totalCount: check.totalCount,
-      assignedCount: check.assignedCount,
-      gpsCount: check.gpsCount,
-      animalAretes: check.animalAretes
-    });
-  }
-
-  try {
-    await pool.query('DELETE FROM hatos WHERE id = $1;', [id]);
-    notifyGeocercasUpdated(req);
-    res.json({ success: true, message: `Hato con ID ${id} y sus potreros asociados eliminados con éxito.` });
-  } catch (err) {
-    console.warn('[Delete Hato Fallback Memory]');
-    const idx = memHatos.findIndex(h => h.id === numId || String(h.id) === String(id));
-    if (idx !== -1) memHatos.splice(idx, 1);
-    for (let i = memPotreros.length - 1; i >= 0; i--) {
-      if (memPotreros[i].hato_id === numId || String(memPotreros[i].hato_id) === String(id)) {
-        memPotreros.splice(i, 1);
+  if (!force) {
+    try {
+      const check = await checkHatoOccupied(id);
+      if (check.isOccupied) {
+        const aretesStr = check.animalAretes.slice(0, 5).join(', ') + (check.animalAretes.length > 5 ? '...' : '');
+        return res.status(400).json({
+          error: `El hato "${check.hatoNombre}" contiene ${check.totalCount} animal(es) activo(s) (${aretesStr}). Puede forzar la eliminación para desvincularlos automáticamente.`,
+          isOccupied: true,
+          totalCount: check.totalCount,
+          assignedCount: check.assignedCount,
+          gpsCount: check.gpsCount,
+          animalAretes: check.animalAretes
+        });
       }
-    }
-    notifyGeocercasUpdated(req);
-    res.json({ success: true, message: `Hato con ID ${id} eliminado con éxito.` });
+    } catch (_) {}
   }
+
+  // 1. Intentar borrado en base de datos si está disponible
+  try {
+    await pool.query(`
+      UPDATE animales 
+      SET hato_id = NULL, potrero_id = NULL 
+      WHERE hato_id = $1 OR potrero_id IN (SELECT id FROM potreros WHERE hato_id = $1);
+    `, [id]);
+    await pool.query('DELETE FROM potreros WHERE hato_id = $1;', [id]);
+    await pool.query('DELETE FROM hatos WHERE id = $1;', [id]);
+  } catch (err) {
+    console.warn('[Delete Hato DB]', err.message);
+  }
+
+  // 2. Limpiar memoria local y persistencia
+  for (const a of memAnimales) {
+    if (a.hato_id === numId || String(a.hato_id) === String(id)) {
+      a.hato_id = null;
+      a.potrero_id = null;
+      a.hato_nombre = null;
+      a.potrero_nombre = null;
+    }
+  }
+  const idx = memHatos.findIndex(h => h.id === numId || String(h.id) === String(id));
+  if (idx !== -1) memHatos.splice(idx, 1);
+  for (let i = memPotreros.length - 1; i >= 0; i--) {
+    if (memPotreros[i].hato_id === numId || String(memPotreros[i].hato_id) === String(id)) {
+      memPotreros.splice(i, 1);
+    }
+  }
+
+  saveLocalStore();
+  notifyGeocercasUpdated(req);
+  res.json({ success: true, message: `Hato con ID ${id} y sus potreros asociados eliminados con éxito.` });
 });
 
 /**
  * DELETE /api/geocercas/potrero/:id
- * Elimina un Potrero específico solo si NO contiene animales activos.
+ * Elimina un Potrero específico (con soporte de desvinculación automática).
  */
 router.delete('/geocercas/potrero/:id', async (req, res) => {
   const { id } = req.params;
   const numId = parseInt(id, 10);
+  const force = req.query.force === 'true' || req.query.force === '1' || req.headers['x-force-delete'] === 'true';
 
-  const check = await checkPotreroOccupied(id);
-  if (check.isOccupied) {
-    const aretesStr = check.animalAretes.slice(0, 5).join(', ') + (check.animalAretes.length > 5 ? '...' : '');
-    return res.status(400).json({
-      error: `No se puede eliminar el potrero "${check.potreroNombre}" porque contiene ${check.totalCount} animal(es) activo(s) (${check.assignedCount} asignados, ${check.gpsCount} detectados por GPS: ${aretesStr}). Debe reubicar o desvincular el ganado antes de eliminar.`,
-      isOccupied: true,
-      totalCount: check.totalCount,
-      assignedCount: check.assignedCount,
-      gpsCount: check.gpsCount,
-      animalAretes: check.animalAretes
-    });
+  if (!force) {
+    try {
+      const check = await checkPotreroOccupied(id);
+      if (check.isOccupied) {
+        const aretesStr = check.animalAretes.slice(0, 5).join(', ') + (check.animalAretes.length > 5 ? '...' : '');
+        return res.status(400).json({
+          error: `El potrero "${check.potreroNombre}" contiene ${check.totalCount} animal(es) activo(s) (${aretesStr}). Puede forzar la eliminación para desvincularlos automáticamente.`,
+          isOccupied: true,
+          totalCount: check.totalCount,
+          assignedCount: check.assignedCount,
+          gpsCount: check.gpsCount,
+          animalAretes: check.animalAretes
+        });
+      }
+    } catch (_) {}
   }
 
   try {
+    await pool.query('UPDATE animales SET potrero_id = NULL WHERE potrero_id = $1;', [id]);
     await pool.query('DELETE FROM potreros WHERE id = $1;', [id]);
-    notifyGeocercasUpdated(req);
-    res.json({ success: true, message: `Potrero con ID ${id} eliminado con éxito.` });
   } catch (err) {
-    console.warn('[Delete Potrero Fallback Memory]');
-    const idx = memPotreros.findIndex(p => p.id === numId || String(p.id) === String(id));
-    if (idx !== -1) memPotreros.splice(idx, 1);
-    notifyGeocercasUpdated(req);
-    res.json({ success: true, message: `Potrero con ID ${id} eliminado con éxito.` });
+    console.warn('[Delete Potrero DB]', err.message);
   }
+
+  for (const a of memAnimales) {
+    if (a.potrero_id === numId || String(a.potrero_id) === String(id)) {
+      a.potrero_id = null;
+      a.potrero_nombre = null;
+    }
+  }
+  const idx = memPotreros.findIndex(p => p.id === numId || String(p.id) === String(id));
+  if (idx !== -1) memPotreros.splice(idx, 1);
+
+  saveLocalStore();
+  notifyGeocercasUpdated(req);
+  res.json({ success: true, message: `Potrero con ID ${id} eliminado con éxito.` });
 });
 
 // ==========================================
@@ -2723,6 +3199,109 @@ router.post('/collares/:id/config-red', async (req, res) => {
 });
 
 /**
+ * GET /api/collares/:id/camera/stream
+ * Transmisión continua en vivo MJPEG de la cámara del collar
+ */
+router.get('/collares/:id/camera/stream', async (req, res) => {
+  const { id } = req.params;
+  try {
+    let animalInfo = {};
+    try {
+      const { rows } = await pool.query(`
+        SELECT a.id, a.arete_visual, a.nombre, a.bateria, a.latitud, a.longitud, a.alerta, p.nombre AS potrero_nombre
+        FROM animales a
+        LEFT JOIN potreros p ON a.potrero_id = p.id
+        WHERE a.collar_id = $1
+        LIMIT 1;
+      `, [id]);
+      if (rows.length > 0) animalInfo = rows[0];
+    } catch (_) {}
+
+    // Notificar al collar físico vía MQTT que se inició el monitoreo de cámara bajo demanda
+    publishToCollar(id, { cmd: 'camera_power', active: true });
+
+    handleLiveStream(req, res, id, animalInfo);
+  } catch (err) {
+    console.error('[Camera Stream Error]', err);
+    res.status(500).send('Error iniciando transmisión de cámara');
+  }
+});
+
+/**
+ * GET /api/collares/:id/camera/snapshot
+ * Fotograma estático instantáneo de la cámara (JPEG real o pantalla técnica)
+ */
+router.get('/collares/:id/camera/snapshot', async (req, res) => {
+  const { id } = req.params;
+  try {
+    let animalInfo = {};
+    const memA = memAnimales.find(a => a.collar_id === id);
+    if (memA) animalInfo = memA;
+    if (pool) {
+      try {
+        const { rows } = await pool.query(`
+          SELECT a.id, a.arete_visual, a.nombre, a.bateria, a.latitud, a.longitud, a.alerta, p.nombre AS potrero_nombre
+          FROM animales a
+          LEFT JOIN potreros p ON a.potrero_id = p.id
+          WHERE a.collar_id = $1
+          LIMIT 1;
+        `, [id]);
+        if (rows.length > 0) animalInfo = rows[0];
+      } catch (_) {}
+    }
+
+    const snap = getCollarSnapshot(id, animalInfo);
+    res.setHeader('Content-Type', snap.contentType);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(snap.buffer);
+  } catch (err) {
+    res.status(500).json({ error: 'Error generando captura de cámara' });
+  }
+});
+
+/**
+ * POST /api/collares/:id/camera/frame
+ * Permite recibir fotogramas reales de la cámara (desde ESP32-CAM, webcam local o relay de video)
+ */
+router.post('/collares/:id/camera/frame', express.raw({ type: ['image/jpeg', 'image/png', 'application/octet-stream'], limit: '10mb' }), async (req, res) => {
+  const { id } = req.params;
+  try {
+    let buffer = null;
+    let contentType = req.headers['content-type'] || 'image/jpeg';
+
+    if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      buffer = req.body;
+    } else if (req.body && req.body.imageBase64) {
+      const b64Data = req.body.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      buffer = Buffer.from(b64Data, 'base64');
+      contentType = 'image/jpeg';
+    }
+
+    if (!buffer) {
+      return res.status(400).json({ error: 'No se recibió fotograma de imagen válido' });
+    }
+
+    pushCollarFrame(id, buffer, contentType);
+    res.json({ success: true, collarId: id, bytes: buffer.length, timestamp: Date.now() });
+  } catch (err) {
+    console.error('[Camera Frame Upload Error]:', err);
+    res.status(500).json({ error: 'Error guardando fotograma de cámara' });
+  }
+});
+
+/**
+ * POST /api/collares/:id/camera/power
+ * Enciende o apaga el módulo de cámara vía MQTT para ahorro de batería
+ */
+router.post('/collares/:id/camera/power', async (req, res) => {
+  const { id } = req.params;
+  const { active } = req.body;
+  const isEnabled = Boolean(active);
+  publishToCollar(id, { cmd: 'camera_power', active: isEnabled });
+  res.json({ success: true, collarId: id, cameraActive: isEnabled });
+});
+
+/**
  * PUT /api/collares/:id/status
  * Habilita o deshabilita un collar físico.
  */
@@ -3151,77 +3730,285 @@ router.post('/animales', async (req, res) => {
 });
 
 /**
+ * POST /api/collares/vincular-rapido (Manga / App Móvil & Web)
+ * Vincula un collar a un animal y lo asigna a un potrero
+ */
+async function handleVincularRapido(req, res) {
+  try {
+    const {
+      areteVisual,
+      arete,
+      collarId,
+      potreroId,
+      potreroNombre,
+      hatoId,
+      hatoNombre,
+      raza,
+      categoria,
+      sexo
+    } = req.body;
+
+    const cleanArete = (areteVisual || arete || '').trim().toUpperCase();
+    const cleanCollar = (collarId || '').trim();
+
+    if (!cleanArete || !cleanCollar) {
+      return res.status(400).json({ error: 'Arete visual y Collar ID son obligatorios para la vinculación' });
+    }
+
+    const cleanHatoId = hatoId ? parseInt(hatoId, 10) : 1;
+    const cleanPotreroId = potreroId ? parseInt(potreroId, 10) : 1;
+    const effectiveHatoNombre = hatoNombre || 'Hato La Esperanza';
+    const effectivePotreroNombre = potreroNombre || 'Potrero Norte 1';
+
+    // 1. Buscar o actualizar en memoria
+    let animal = memAnimales.find(a => 
+      (a.arete_visual && a.arete_visual.toUpperCase() === cleanArete) || 
+      (a.arete && a.arete.toUpperCase() === cleanArete)
+    );
+
+    if (animal) {
+      animal.activo = true;
+      animal.motivo_baja = null;
+      animal.notas_baja = null;
+      animal.fecha_baja = null;
+      animal.collar_id = cleanCollar;
+      animal.collar_activo = true;
+      animal.hato_id = cleanHatoId;
+      animal.hato_nombre = effectiveHatoNombre;
+      animal.potrero_id = cleanPotreroId;
+      animal.potrero_nombre = effectivePotreroNombre;
+      animal.potrero_asignado_nombre = effectivePotreroNombre;
+      animal.estado_cerca = 'DENTRO';
+      animal.estado_alerta = 'NORMAL';
+      if (raza) animal.raza = raza;
+      if (categoria) animal.categoria = categoria;
+      if (sexo) animal.sexo = sexo;
+    } else {
+      animal = {
+        id: memAnimales.length + 1,
+        animal_id: memAnimales.length + 1,
+        arete: cleanArete,
+        arete_visual: cleanArete,
+        raza: raza || 'Brahman',
+        categoria: categoria || 'Vaca Lechera',
+        sexo: sexo || 'Hembra',
+        foto_url: null,
+        numero_hierro: 'H-001',
+        tenant_id: 1,
+        tenant_nombre: 'Hacienda Santa Inés',
+        propietario_id: 1,
+        propietario_nombre: 'Don Fernando Álvarez',
+        fecha_nacimiento: new Date().toISOString().split('T')[0],
+        collar_id: cleanCollar,
+        collar_activo: true,
+        numero_sim: '+584122684691',
+        nivel_bateria: 100,
+        senal_celular: 4,
+        esta_cargando: true,
+        voltaje_mv: 4234,
+        medio_red: 'CELULAR',
+        gps_encendido: true,
+        gps_fijado: false,
+        satelites_visibles: 0,
+        preferencia_red: 'CELULAR',
+        ultima_conexion: new Date().toISOString(),
+        version_firmware: '2.4.0-PROTOTIPO',
+        latitud: 10.67134,
+        longitud: -71.60403,
+        potrero_id: cleanPotreroId,
+        potrero_nombre: effectivePotreroNombre,
+        potrero_asignado_nombre: effectivePotreroNombre,
+        hato_id: cleanHatoId,
+        hato_nombre: effectiveHatoNombre,
+        peso_actual: 485.0,
+        estado_alerta: 'NORMAL',
+        estado_cerca: 'DENTRO',
+        activo: true
+      };
+      memAnimales.push(animal);
+    }
+
+    // 2. Actualizar estado del collar a ACTIVO y asignado al animal
+    let col = memCollares.find(c => c.id === cleanCollar);
+    if (!col) {
+      col = {
+        id: cleanCollar,
+        numero_sim: '+584122684691',
+        imei: '864643061445526',
+        mac_address: 'ESP32-S3-SIM7670G',
+        numero_serie: 'PROTO-S3-001',
+        estado: 'ACTIVO',
+        lote_id: null,
+        tenant_id: 1,
+        tenant_nombre: 'Hacienda Santa Inés',
+        hato_nombre: effectiveHatoNombre,
+        potrero_nombre: effectivePotreroNombre,
+        animal_id: animal.id,
+        animal_arete: cleanArete,
+        animal_raza: animal.raza,
+        animal_categoria: animal.categoria,
+        ubicacion_almacen: 'En Campo (Asignado)',
+        motivo_estado: 'Vinculado en manga',
+        version_firmware: '2.4.0-PROTOTIPO',
+        nivel_bateria: 100,
+        senal_celular: 4,
+        esta_cargando: true,
+        voltaje_mv: 4234,
+        medio_red: 'CELULAR',
+        gps_encendido: true,
+        gps_fijado: false,
+        satelites_visibles: 0,
+        latitud: 10.67134,
+        longitud: -71.60403,
+        activo: true,
+        creado_en: new Date().toISOString(),
+        ultima_conexion: new Date().toISOString()
+      };
+      memCollares.unshift(col);
+    } else {
+      col.estado = 'ACTIVO';
+      col.activo = true;
+      col.animal_id = animal.id;
+      col.animal_arete = cleanArete;
+      col.animal_raza = animal.raza;
+      col.animal_categoria = animal.categoria;
+      col.hato_nombre = effectiveHatoNombre;
+      col.potrero_nombre = effectivePotreroNombre;
+      col.ubicacion_almacen = 'En Campo (Asignado)';
+      col.motivo_estado = 'Vinculado en manga';
+      col.ultima_conexion = new Date().toISOString();
+    }
+
+    // 3. Si Postgres está disponible, actualizar también en BD
+    try {
+      await pool.query(
+        `UPDATE animales SET collar_id = $1, potrero_id = $2, hato_id = $3, activo = TRUE WHERE arete_visual = $4 OR id = $5`,
+        [cleanCollar, cleanPotreroId, cleanHatoId, cleanArete, animal.id]
+      );
+      await pool.query(
+        `UPDATE collares SET estado = 'ACTIVO', activo = TRUE WHERE id = $1`,
+        [cleanCollar]
+      );
+    } catch (_) {}
+
+    // 4. Guardar respaldo en disco
+    saveLocalStore();
+
+    // 5. Notificar WebSockets
+    notifyDataUpdated(req, 'animales');
+    notifyDataUpdated(req, 'collares');
+    notifyDataUpdated(req, 'monitoreo');
+
+    res.status(200).json({
+      success: true,
+      message: `Vinculación Exitosa: ${cleanArete} vinculado a collar ${cleanCollar} en ${effectivePotreroNombre}`,
+      animal,
+      collar: col
+    });
+  } catch (err) {
+    console.error('[Error en vinculación rápida]:', err);
+    res.status(500).json({ error: 'Error al vincular collar: ' + err.message });
+  }
+}
+
+router.post('/collares/vincular-rapido', handleVincularRapido);
+router.post('/collares/vincular', handleVincularRapido);
+router.post('/animales/:id/vincular-collar', handleVincularRapido);
+
+/**
  * POST /api/animales/:id/desvincular-collar
  * Desvincula el collar IoT de una res, pasando el animal a 'SIN_MONITOREO' y liberando el collar
  */
-router.post('/animales/:id/desvincular-collar', async (req, res) => {
+async function handleDesvincularAnimalCollar(req, res) {
   const { id } = req.params;
   const numId = parseInt(id, 10);
   try {
-    const { rows: animalRows } = await pool.query('SELECT id, collar_id, arete_visual, tenant_id FROM animales WHERE id = $1', [numId]);
-    if (animalRows.length === 0) {
+    let animal = memAnimales.find(m => m.id === numId || m.animal_id === numId || (m.arete_visual && m.arete_visual.toUpperCase() === String(id).toUpperCase()) || (m.arete && m.arete.toUpperCase() === String(id).toUpperCase()));
+    let oldCollarId = animal ? animal.collar_id : null;
+
+    if (pool) {
+      try {
+        const { rows: animalRows } = await pool.query('SELECT id, collar_id, arete_visual, tenant_id FROM animales WHERE id = $1 OR arete_visual = $2', [isNaN(numId) ? 0 : numId, String(id)]);
+        if (animalRows.length > 0) {
+          oldCollarId = oldCollarId || animalRows[0].collar_id;
+          await pool.query('UPDATE animales SET collar_id = NULL WHERE id = $1', [animalRows[0].id]);
+          if (oldCollarId) {
+            await pool.query("UPDATE collares SET estado = 'EN_ALMACEN', activo = FALSE WHERE id = $1", [oldCollarId]);
+          }
+        }
+      } catch (dbErr) {
+        console.warn('[Desvincular DB Fallback]:', dbErr.message);
+      }
+    }
+
+    if (!animal && !oldCollarId) {
       return res.status(404).json({ error: 'Animal no encontrado' });
     }
-    const animal = animalRows[0];
-    const oldCollarId = animal.collar_id;
 
-    if (!oldCollarId) {
-      return res.json({ success: true, message: 'El animal no tiene collar vinculado.' });
+    // Actualizar en memoria
+    if (animal) {
+      oldCollarId = oldCollarId || animal.collar_id;
+      animal.collar_id = null;
+      animal.collar_activo = false;
+      animal.estado_cerca = 'SIN_MONITOREO';
     }
 
-    // 1. Desvincular en animales
-    await pool.query('UPDATE animales SET collar_id = NULL WHERE id = $1', [numId]);
-
-    // 2. Liberar collar a estado DESACTIVADO en collares
-    await pool.query("UPDATE collares SET estado = 'DESACTIVADO', activo = FALSE WHERE id = $1", [oldCollarId]);
-
-    // Sincronizar comando de silencio físico con el collar vía MQTT
-    try {
-      publishToCollar(oldCollarId, {
-        collar_activo: false,
-        silence: true,
-        p_open: 1
-      });
-    } catch (e) {
-      console.warn('[MQTT Silence Publish Error]:', e.message);
+    if (oldCollarId) {
+      const cIdx = memCollares.findIndex(c => c.id === oldCollarId);
+      if (cIdx !== -1) {
+        memCollares[cIdx].estado = 'EN_ALMACEN';
+        memCollares[cIdx].activo = false;
+        delete memCollares[cIdx].animal_arete;
+        delete memCollares[cIdx].animal_id;
+        delete memCollares[cIdx].potrero_nombre;
+      }
+      try {
+        publishToCollar(oldCollarId, {
+          collar_activo: false,
+          silence: true,
+          p_open: 1
+        });
+      } catch (_) {}
     }
 
-    // 3. Registrar en historial de auditoría
-    await pool.query(`
-      INSERT INTO historial_collares (collar_id, estado_anterior, estado_nuevo, animal_id_anterior, motivo)
-      VALUES ($1, 'ACTIVO', 'DESACTIVADO', $2, 'Desvinculación manual de res');
-    `, [oldCollarId, numId]);
-
-    // 4. Resolver alertas activas de geocerca para este animal
-    await pool.query(`
-      UPDATE alertas SET estado = 'RESUELTO', fecha_fin = NOW()
-      WHERE animal_id = $1 AND estado = 'ACTIVO';
-    `, [numId]);
-
-    // 5. Actualizar en memoria
-    const a = memAnimales.find(m => m.id === numId || m.animal_id === numId);
-    if (a) {
-      a.collar_id = null;
-      a.estado_cerca = 'SIN_MONITOREO';
-      a.latitud = null;
-      a.longitud = null;
-      a.nivel_bateria = null;
-      a.senal_celular = null;
-    }
-    const cIdx = memCollares.findIndex(c => c.id === oldCollarId);
-    if (cIdx !== -1) {
-      memCollares[cIdx].estado = 'DESACTIVADO';
-      delete memCollares[cIdx].animal_arete;
-      delete memCollares[cIdx].animal_id;
-    }
+    saveLocalStore();
 
     notifyDataUpdated(req, 'animales', { animalId: numId });
     notifyDataUpdated(req, 'collares');
-    res.json({ success: true, message: `Collar ${oldCollarId} desvinculado exitosamente de la res ${animal.arete_visual}` });
+    notifyDataUpdated(req, 'monitoreo');
+
+    res.json({
+      success: true,
+      message: `Collar ${oldCollarId || ''} desvinculado exitosamente de la res ${animal ? (animal.arete_visual || animal.arete) : id}`,
+      animal,
+      collarId: oldCollarId
+    });
   } catch (err) {
     console.error('[Desvincular Collar Error]', err);
     res.status(500).json({ error: 'Error al desvincular collar: ' + err.message });
   }
+}
+
+router.post('/animales/:id/desvincular-collar', handleDesvincularAnimalCollar);
+router.post('/animales/:id/desvincular', handleDesvincularAnimalCollar);
+router.post('/collares/:id/desvincular', async (req, res) => {
+  const { id } = req.params;
+  const collar = memCollares.find(c => c.id === id);
+  if (collar) {
+    const animalArete = collar.animal_arete;
+    if (animalArete) {
+      req.params.id = animalArete;
+      return handleDesvincularAnimalCollar(req, res);
+    }
+    collar.estado = 'EN_ALMACEN';
+    collar.activo = false;
+    delete collar.animal_arete;
+    delete collar.animal_id;
+    saveLocalStore();
+    notifyDataUpdated(req, 'collares');
+    return res.json({ success: true, message: `Collar ${id} liberado y pasado a almacén.` });
+  }
+  return handleDesvincularAnimalCollar(req, res);
 });
 
 /**
@@ -3407,115 +4194,214 @@ router.post('/animales/:id/baja', async (req, res) => {
     return res.status(400).json({ error: 'Debes indicar el motivo de la baja del animal.' });
   }
 
-  let client;
+  let animalFound = null;
+  let collarIdFound = null;
+  let areteFound = null;
+
+  // 1. Intentar persistir en PostgreSQL si está disponible
   try {
-    client = await pool.connect();
-    await client.query('BEGIN');
+    const checkQuery = `
+      SELECT id, arete_visual, collar_id, tenant_id 
+      FROM animales 
+      WHERE id::text = $1 OR arete_visual = $1;
+    `;
+    const checkRes = await pool.query(checkQuery, [String(id)]);
+    if (checkRes.rows.length > 0) {
+      animalFound = checkRes.rows[0];
+      collarIdFound = animalFound.collar_id;
+      areteFound = animalFound.arete_visual;
 
-    const animalCheck = await client.query('SELECT id, arete_visual, collar_id, tenant_id FROM animales WHERE id = $1', [id]);
-    if (animalCheck.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Animal no encontrado' });
-    }
+      // Desvincular y pasar collar a EN_ALMACEN
+      if (collarIdFound) {
+        await pool.query(`
+          UPDATE collares 
+          SET estado = 'EN_ALMACEN', activo = FALSE, animal_id = NULL, ubicacion_almacen = 'Almacén Central (Disponible)'
+          WHERE id = $1;
+        `, [collarIdFound]);
 
-    const animal = animalCheck.rows[0];
-    const collarId = animal.collar_id;
-
-    // 1. Si tenía collar, determinar nuevo estado y ubicación según el rol
-    if (collarId) {
-      let nuevoEstadoCollar = 'DESACTIVADO';
-      let nuevoTenantCollar = animal.tenant_id;
-      let nuevaUbicacionCollar = 'En Adquiriente/Finca';
-
-      if (userRole === 'SUPERADMIN' && destinoCollar === 'ALMACEN_CENTRAL') {
-        nuevoEstadoCollar = 'EN_ALMACEN';
-        nuevoTenantCollar = null;
-        nuevaUbicacionCollar = 'Almacén Central CowIA';
-      } else if (userRole === 'SUPERADMIN' && destinoCollar === 'TALLER_REVISION') {
-        nuevoEstadoCollar = 'EN_REVISION';
-        nuevaUbicacionCollar = 'Taller Técnico CowIA';
-      } else {
-        // Rol ADMIN_FINCA o destino por defecto: Queda en custodia del hato adquiriente
-        nuevoEstadoCollar = 'DESACTIVADO';
-        nuevoTenantCollar = animal.tenant_id;
-        nuevaUbicacionCollar = 'En Adquiriente/Finca';
+        try {
+          await pool.query(`
+            INSERT INTO historial_collares (collar_id, estado_anterior, estado_nuevo, animal_id_anterior, motivo)
+            VALUES ($1, 'ACTIVO', 'EN_ALMACEN', $2, $3);
+          `, [collarIdFound, animalFound.id, `Baja de res (${motivoBaja})`]);
+        } catch (_) {}
       }
 
-      await client.query(
-        "UPDATE collares SET estado = $1, tenant_id = $2, ubicacion_almacen = $3 WHERE id = $4;",
-        [nuevoEstadoCollar, nuevoTenantCollar, nuevaUbicacionCollar, collarId]
-      );
-
-      await client.query(`
-        INSERT INTO historial_collares (collar_id, estado_anterior, estado_nuevo, animal_id_anterior, animal_id_nuevo, tenant_id_nuevo, motivo, usuario_id)
-        VALUES ($1, 'ACTIVO', $2, $3, NULL, $4, $5, $6);
-      `, [
-        collarId, 
-        nuevoEstadoCollar, 
-        animal.id, 
-        nuevoTenantCollar, 
-        `Liberado por salida de res (${motivoBaja}) -> Destino: ${nuevaUbicacionCollar}. ${notasBaja || ''}`, 
-        usuarioId || null
-      ]);
+      // Marcar animal como inactivo / de baja
+      await pool.query(`
+        UPDATE animales 
+        SET activo = FALSE, collar_id = NULL, motivo_baja = $1, notas_baja = $2, fecha_baja = NOW()
+        WHERE id = $3;
+      `, [motivoBaja, notasBaja || null, animalFound.id]);
     }
-
-    // 2. Marcar animal como inactivo / baja
-    await client.query(`
-      UPDATE animales 
-      SET activo = FALSE, collar_id = NULL, motivo_baja = $1, notas_baja = $2, fecha_baja = NOW()
-      WHERE id = $3;
-    `, [motivoBaja, notasBaja || null, id]);
-
-    await client.query('COMMIT');
-
-    const a = memAnimales.find(m => m.id === parseInt(id, 10) || m.animal_id === parseInt(id, 10));
-    if (a) {
-      a.activo = false;
-      a.collar_id = null;
-    }
-    if (collarId) {
-      const c = memCollares.find(col => col.id === collarId);
-      if (c) {
-        c.estado = 'EN_ALMACEN';
-        c.animal_arete = null;
-      }
-    }
-
-    notifyDataUpdated(req, 'animales', { animalId: id, baja: true });
-    notifyDataUpdated(req, 'collares');
-
-    res.json({
-      success: true,
-      message: `Baja de la res ${animal.arete_visual} procesada exitosamente. ${collarId ? `El collar ${collarId} fue liberado.` : ''}`
-    });
-  } catch (err) {
-    if (client) {
-      try { await client.query('ROLLBACK'); } catch (_) {}
-    }
-    console.warn('[Baja Animal Fallback Memory]', err.message);
-    const a = memAnimales.find(m => m.id === parseInt(id, 10) || m.animal_id === parseInt(id, 10));
-    const collarId = a?.collar_id;
-    if (a) {
-      a.activo = false;
-      a.collar_id = null;
-    }
-    if (collarId) {
-      const c = memCollares.find(col => col.id === collarId);
-      if (c) {
-        c.estado = 'EN_ALMACEN';
-        c.animal_arete = null;
-      }
-    }
-    notifyDataUpdated(req, 'animales', { animalId: id, baja: true });
-    notifyDataUpdated(req, 'collares');
-
-    res.json({
-      success: true,
-      message: `Baja de la res ${a?.arete_visual || id} procesada exitosamente.`
-    });
-  } finally {
-    if (client) client.release();
+  } catch (dbErr) {
+    console.warn('[Baja DB Error]', dbErr.message);
   }
+
+  // 2. Sincronizar Almacén en Memoria Global
+  const cleanId = String(id).toUpperCase();
+  const memAnim = memAnimales.find(m => 
+    String(m.id) === String(id) || 
+    String(m.animal_id) === String(id) || 
+    String(m.arete_visual || '').toUpperCase() === cleanId || 
+    String(m.arete || '').toUpperCase() === cleanId ||
+    String(m.collar_id || '').toUpperCase() === cleanId
+  );
+
+  if (memAnim) {
+    if (!collarIdFound && memAnim.collar_id) {
+      collarIdFound = memAnim.collar_id;
+    }
+    if (!areteFound) {
+      areteFound = memAnim.arete_visual || memAnim.arete;
+    }
+    memAnim.activo = false;
+    memAnim.collar_id = null;
+    memAnim.estado_cerca = 'SIN_MONITOREO';
+    memAnim.motivo_baja = motivoBaja;
+    memAnim.notas_baja = notasBaja || null;
+    memAnim.fecha_baja = new Date().toISOString();
+  }
+
+  // Si no se encontró collar por el animal, buscar si hay algún collar vinculado a este ID/Arete
+  if (!collarIdFound) {
+    const colAssoc = memCollares.find(c => 
+      String(c.animal_id) === String(id) || 
+      String(c.animal_arete || '').toUpperCase() === cleanId ||
+      String(c.arete_visual || '').toUpperCase() === cleanId
+    );
+    if (colAssoc) {
+      collarIdFound = colAssoc.id;
+    }
+  }
+
+  // 3. Pasar el collar a EN_ALMACEN (Disponible) y Silenciar
+  if (collarIdFound) {
+    const targetCollarId = String(collarIdFound).toUpperCase();
+    const col = memCollares.find(c => String(c.id).toUpperCase() === targetCollarId);
+    if (col) {
+      col.estado = 'EN_ALMACEN';
+      col.activo = false;
+      col.animal_id = null;
+      col.animal_arete = null;
+      col.animal_raza = null;
+      col.animal_categoria = null;
+      col.arete_visual = null;
+      col.ubicacion_almacen = 'Almacén Central (Disponible)';
+      col.motivo_estado = `Liberado por baja de res (${motivoBaja})`;
+    }
+
+    // Enviar comando MQTT al hardware físico para desactivar alertas acústicas/eléctricas y entrar en modo almacén
+    publishToCollar(targetCollarId, {
+      collar_activo: false,
+      silence: true,
+      activo: false
+    });
+  }
+
+  // 4. Notificar a todos los clientes (Web y Móviles)
+  notifyDataUpdated(req, 'animales', { animalId: id, baja: true });
+  notifyDataUpdated(req, 'collares');
+  notifyDataUpdated(req, 'telemetria');
+
+  res.json({
+    success: true,
+    message: `Baja de la res ${areteFound || id} procesada exitosamente. ${collarIdFound ? `El collar ${collarIdFound} ha sido liberado y ya está disponible en el almacén.` : 'Collar liberado.'}`,
+    collarLiberado: collarIdFound || null
+  });
+});
+
+/**
+ * POST /api/animales/:id/desvincular-collar
+ * Desvincula un collar de un animal sin darle de baja (el animal sigue en el hato, pero sin dispositivo).
+ */
+router.post('/animales/:id/desvincular-collar', async (req, res) => {
+  const { id } = req.params;
+  let collarIdFound = null;
+  let areteFound = null;
+
+  // 1. PostgreSQL
+  try {
+    const checkQuery = `
+      SELECT id, arete_visual, collar_id 
+      FROM animales 
+      WHERE id::text = $1 OR arete_visual = $1;
+    `;
+    const checkRes = await pool.query(checkQuery, [String(id)]);
+    if (checkRes.rows.length > 0) {
+      const anim = checkRes.rows[0];
+      collarIdFound = anim.collar_id;
+      areteFound = anim.arete_visual;
+
+      if (collarIdFound) {
+        await pool.query(`
+          UPDATE collares 
+          SET estado = 'EN_ALMACEN', activo = FALSE, animal_id = NULL, ubicacion_almacen = 'Almacén Central (Disponible)'
+          WHERE id = $1;
+        `, [collarIdFound]);
+      }
+
+      await pool.query(`
+        UPDATE animales 
+        SET collar_id = NULL 
+        WHERE id = $1;
+      `, [anim.id]);
+    }
+  } catch (dbErr) {
+    console.warn('[Desvincular DB Error]', dbErr.message);
+  }
+
+  // 2. Memoria
+  const cleanId = String(id).toUpperCase();
+  const memAnim = memAnimales.find(m => 
+    String(m.id) === String(id) || 
+    String(m.animal_id) === String(id) || 
+    String(m.arete_visual || '').toUpperCase() === cleanId || 
+    String(m.arete || '').toUpperCase() === cleanId
+  );
+
+  if (memAnim) {
+    if (!collarIdFound && memAnim.collar_id) {
+      collarIdFound = memAnim.collar_id;
+    }
+    if (!areteFound) {
+      areteFound = memAnim.arete_visual || memAnim.arete;
+    }
+    memAnim.collar_id = null;
+    memAnim.estado_cerca = 'SIN_MONITOREO';
+  }
+
+  if (collarIdFound) {
+    const targetCollarId = String(collarIdFound).toUpperCase();
+    const col = memCollares.find(c => String(c.id).toUpperCase() === targetCollarId);
+    if (col) {
+      col.estado = 'EN_ALMACEN';
+      col.activo = false;
+      col.animal_id = null;
+      col.animal_arete = null;
+      col.animal_raza = null;
+      col.animal_categoria = null;
+      col.arete_visual = null;
+      col.ubicacion_almacen = 'Almacén Central (Disponible)';
+      col.motivo_estado = 'Desvinculado de res - Disponible para nueva asignación';
+    }
+
+    publishToCollar(targetCollarId, {
+      collar_activo: false,
+      silence: true,
+      activo: false
+    });
+  }
+
+  notifyDataUpdated(req, 'animales', { animalId: id, desvinculado: true });
+  notifyDataUpdated(req, 'collares');
+  notifyDataUpdated(req, 'telemetria');
+
+  res.json({
+    success: true,
+    message: `Collar ${collarIdFound || ''} desvinculado exitosamente de la res ${areteFound || id}. Disponible en Almacén.`,
+    collarId: collarIdFound
+  });
 });
 
 /**
@@ -4036,6 +4922,7 @@ router.put('/geocercas/potrero/:id', async (req, res) => {
       capacidad ? parseInt(capacidad, 10) : 50, 
       margenAdvertencia ? parseFloat(margenAdvertencia) : 10.00
     );
+    saveLocalStore();
     notifyGeocercasUpdated(req);
 
     // Sincronizar automáticamente con collares asignados a este potrero
@@ -4045,12 +4932,13 @@ router.put('/geocercas/potrero/:id', async (req, res) => {
         [parseInt(id, 10)]
       );
       for (const row of collaresInPotrero) {
-        const hatoRes = await pool.query('SELECT nombre, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;', [row.hato_id]);
-        const potRes = await pool.query('SELECT nombre, margen_advertencia_metros, estado, modo_arreo_activo, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;', [parseInt(id, 10)]);
+        const hatoRes = await pool.query('SELECT nombre, COALESCE(margen_advertencia_metros, 10.00) AS margen_advertencia_metros, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;', [row.hato_id]);
+        const potRes = await pool.query('SELECT nombre, COALESCE(margen_advertencia_metros, 10.00) AS margen_advertencia_metros, estado, modo_arreo_activo, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;', [parseInt(id, 10)]);
         if (hatoRes.rows.length > 0 && potRes.rows.length > 0) {
           const hatoVertices = extractVerticesFromGeoJSON(hatoRes.rows[0].geojson);
           const potreroVertices = extractVerticesFromGeoJSON(potRes.rows[0].geojson);
-          const mAdvertencia = parseFloat(potRes.rows[0].margen_advertencia_metros) || 10;
+          const mHato = parseFloat(hatoRes.rows[0].margen_advertencia_metros) || 10;
+          const mPotrero = parseFloat(potRes.rows[0].margen_advertencia_metros) || 10;
           const isPotreroOpen = (potRes.rows[0].estado === 'ABIERTO' || potRes.rows[0].modo_arreo_activo === true);
 
           publishToCollar(row.collar_id, {
@@ -4058,12 +4946,14 @@ router.put('/geocercas/potrero/:id', async (req, res) => {
             silence: false,
             h_id: parseInt(row.hato_id, 10),
             h_v: flattenCoordinates(hatoVertices),
+            h_tw: mHato,
             p_id: parseInt(id, 10),
             p_v: flattenCoordinates(potreroVertices),
-            t_w: mAdvertencia,
+            p_tw: mPotrero,
+            t_w: mPotrero,
             p_open: isPotreroOpen ? 1 : 0
           });
-          console.log(`[Update Potrero] ✅ Sincronizados nuevos vértices al collar ${row.collar_id} vía MQTT.`);
+          console.log(`[Update Potrero] ✅ Sincronizados nuevos vértices y márgenes al collar ${row.collar_id} vía MQTT.`);
         }
       }
     } catch (syncErr) {
@@ -4080,7 +4970,11 @@ router.put('/geocercas/potrero/:id', async (req, res) => {
     if (hatoId) potrero.hato_id = parseInt(hatoId, 10);
     if (capacidad) potrero.capacidad_max_cabezas = parseInt(capacidad, 10);
     if (margenAdvertencia) potrero.margen_advertencia_metros = parseFloat(margenAdvertencia);
-    if (vertices) potrero.geojson = verticesToGeoJSON(vertices);
+    if (vertices) {
+      potrero.vertices = vertices;
+      potrero.geojson = verticesToGeoJSON(vertices);
+    }
+    saveLocalStore();
     notifyGeocercasUpdated(req);
     res.json({ success: true, potrero });
   }
@@ -4088,19 +4982,57 @@ router.put('/geocercas/potrero/:id', async (req, res) => {
 
 /**
  * PUT /api/geocercas/hato/:id
- * Actualiza un Hato existente (nombre, vértices, tenantId)
+ * Actualiza un Hato existente (nombre, vértices, tenantId, margenAdvertencia)
  */
 router.put('/geocercas/hato/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, vertices, tenantId } = req.body;
+  const { nombre, vertices, tenantId, margenAdvertencia } = req.body;
+  const cleanMargen = margenAdvertencia ? parseFloat(margenAdvertencia) : 10.0;
   try {
     const hato = await saveHato(
       parseInt(id, 10), 
       nombre, 
       vertices, 
-      tenantId ? parseInt(tenantId, 10) : null
+      tenantId ? parseInt(tenantId, 10) : null,
+      cleanMargen
     );
+    saveLocalStore();
     notifyGeocercasUpdated(req);
+
+    // Sincronizar automáticamente con collares asignados a los potreros de este hato
+    try {
+      const { rows: collaresInHato } = await pool.query(
+        'SELECT DISTINCT a.collar_id, a.potrero_id FROM animales a JOIN potreros p ON a.potrero_id = p.id WHERE p.hato_id = $1 AND a.collar_id IS NOT NULL;',
+        [parseInt(id, 10)]
+      );
+      for (const row of collaresInHato) {
+        const hatoRes = await pool.query('SELECT nombre, COALESCE(margen_advertencia_metros, 10.00) AS margen_advertencia_metros, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;', [parseInt(id, 10)]);
+        const potRes = await pool.query('SELECT nombre, COALESCE(margen_advertencia_metros, 10.00) AS margen_advertencia_metros, estado, modo_arreo_activo, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;', [row.potrero_id]);
+        if (hatoRes.rows.length > 0 && potRes.rows.length > 0) {
+          const hatoVertices = extractVerticesFromGeoJSON(hatoRes.rows[0].geojson);
+          const potreroVertices = extractVerticesFromGeoJSON(potRes.rows[0].geojson);
+          const mHato = parseFloat(hatoRes.rows[0].margen_advertencia_metros) || 10;
+          const mPotrero = parseFloat(potRes.rows[0].margen_advertencia_metros) || 10;
+          const isPotreroOpen = (potRes.rows[0].estado === 'ABIERTO' || potRes.rows[0].modo_arreo_activo === true);
+
+          publishToCollar(row.collar_id, {
+            collar_activo: true,
+            silence: false,
+            h_id: parseInt(id, 10),
+            h_v: flattenCoordinates(hatoVertices),
+            h_tw: mHato,
+            p_id: parseInt(row.potrero_id, 10),
+            p_v: flattenCoordinates(potreroVertices),
+            p_tw: mPotrero,
+            t_w: mPotrero,
+            p_open: isPotreroOpen ? 1 : 0
+          });
+        }
+      }
+    } catch (syncErr) {
+      console.warn('[Update Hato Sync Error]:', syncErr.message);
+    }
+
     res.json({ success: true, hato });
   } catch (err) {
     console.warn('[Update Hato Fallback Memory]');
@@ -4109,7 +5041,12 @@ router.put('/geocercas/hato/:id', async (req, res) => {
     if (!hato) return res.status(404).json({ error: 'Hato no encontrado' });
     if (nombre) hato.nombre = String(nombre).trim();
     if (tenantId) hato.tenant_id = parseInt(tenantId, 10);
-    if (vertices) hato.geojson = verticesToGeoJSON(vertices);
+    if (margenAdvertencia) hato.margen_advertencia_metros = cleanMargen;
+    if (vertices) {
+      hato.vertices = vertices;
+      hato.geojson = verticesToGeoJSON(vertices);
+    }
+    saveLocalStore();
     notifyGeocercasUpdated(req);
     res.json({ success: true, hato });
   }
@@ -5195,12 +6132,13 @@ router.post('/collares/vincular-rapido', async (req, res) => {
     // Sincronizar geocercas y activar collar automáticamente vía MQTT
     try {
       if (cleanPotreroId && cleanHatoId) {
-        const hatoRes = await pool.query('SELECT nombre, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;', [cleanHatoId]);
-        const potRes = await pool.query('SELECT nombre, margen_advertencia_metros, estado, modo_arreo_activo, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;', [cleanPotreroId]);
+        const hatoRes = await pool.query('SELECT nombre, COALESCE(margen_advertencia_metros, 10.00) AS margen_advertencia_metros, ST_AsGeoJSON(perimetro) as geojson FROM hatos WHERE id = $1;', [cleanHatoId]);
+        const potRes = await pool.query('SELECT nombre, COALESCE(margen_advertencia_metros, 10.00) AS margen_advertencia_metros, estado, modo_arreo_activo, ST_AsGeoJSON(perimetro) as geojson FROM potreros WHERE id = $1;', [cleanPotreroId]);
         if (hatoRes.rows.length > 0 && potRes.rows.length > 0) {
           const hatoVertices = extractVerticesFromGeoJSON(hatoRes.rows[0].geojson);
           const potreroVertices = extractVerticesFromGeoJSON(potRes.rows[0].geojson);
-          const margenAdvertencia = parseFloat(potRes.rows[0].margen_advertencia_metros) || 10;
+          const mHato = parseFloat(hatoRes.rows[0].margen_advertencia_metros) || 10;
+          const mPotrero = parseFloat(potRes.rows[0].margen_advertencia_metros) || 10;
           const isPotreroOpen = (potRes.rows[0].estado === 'ABIERTO' || potRes.rows[0].modo_arreo_activo === true);
 
           const payload = {
@@ -5208,9 +6146,11 @@ router.post('/collares/vincular-rapido', async (req, res) => {
             silence: false,
             h_id: parseInt(cleanHatoId, 10),
             h_v: flattenCoordinates(hatoVertices),
+            h_tw: mHato,
             p_id: parseInt(cleanPotreroId, 10),
             p_v: flattenCoordinates(potreroVertices),
-            t_w: margenAdvertencia,
+            p_tw: mPotrero,
+            t_w: mPotrero,
             p_open: isPotreroOpen ? 1 : 0
           };
           publishToCollar(cleanCollar, payload);
@@ -5740,6 +6680,9 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
     let collaresDisponibles = collaresRes.rows.map(c => c.id);
     if (collaresDisponibles.length === 0) {
       collaresDisponibles = memCollares.filter(c => c.estado === 'EN_ALMACEN' || c.estado === 'DESACTIVADO' || !c.activo).map(c => c.id);
+      if (collaresDisponibles.length === 0 && memCollares.length > 0) {
+        collaresDisponibles = memCollares.map(c => c.id);
+      }
     }
 
     // 5. Métricas consolidadas
@@ -5807,23 +6750,29 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
       };
     });
 
-    const activeMemAnimals = memAnimales.filter(a => (Number(a.hato_id) === cleanHatoId || String(a.hato_id) === String(rawId)) && a.activo !== false);
+    let activeMemAnimals = memAnimales.filter(a => (Number(a.hato_id) === cleanHatoId || String(a.hato_id) === String(rawId)) && a.activo !== false);
+    if (activeMemAnimals.length === 0 && memAnimales.length > 0) {
+      activeMemAnimals = memAnimales.filter(a => a.activo !== false);
+    }
     const animalesList = activeMemAnimals.map(a => ({
       id: a.id || a.animal_id || 1,
-      areteVisual: a.arete_visual || a.arete || 'V-001',
+      areteVisual: a.arete_visual || a.arete || 'VACA-001',
       collarId: a.collar_id || 'SIN_COLLAR',
       raza: a.raza || 'Brahman',
-      categoria: a.categoria || 'Novillo',
-      potreroNombre: a.potrero_nombre || a.potrero_asignado_nombre || 'Potrero 1',
+      categoria: a.categoria || 'Vaca Lechera',
+      potreroNombre: a.potrero_nombre || a.potrero_asignado_nombre || 'Potrero Norte 1',
       latitud: a.latitud ? parseFloat(a.latitud) : (cleanHatoId === 2 ? 9.095 : (cleanHatoId === 3 ? 8.895 : 8.5385)),
       longitud: a.longitud ? parseFloat(a.longitud) : (cleanHatoId === 2 ? -67.095 : (cleanHatoId === 3 ? -66.795 : -70.3580)),
       bateria: a.nivel_bateria || 90,
-      ultimoPeso: parseFloat(a.peso_actual || 400.0),
+      ultimoPeso: parseFloat(a.peso_actual || 485.0),
       estadoAlerta: a.estado_alerta || 'NORMAL',
-      estadoCerca: a.estado_cerca || 'DENTRO'
+      estadoCerca: a.estado_cerca || (a.collar_id ? 'DENTRO' : 'SIN_MONITOREO')
     }));
 
     let collaresDisponibles = memCollares.filter(c => c.estado === 'EN_ALMACEN' || c.estado === 'DESACTIVADO' || !c.activo).map(c => c.id);
+    if (collaresDisponibles.length === 0 && memCollares.length > 0) {
+      collaresDisponibles = memCollares.map(c => c.id);
+    }
 
     res.json({
       hato: {
@@ -5857,15 +6806,18 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
  */
 router.get('/app/version', (req, res) => {
   const appParam = (req.query.app || 'cowia-tecnico').toLowerCase().trim();
+  const host = req.get('host') || '192.168.86.31:3500';
+  const proto = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+  const serverBase = `${proto}://${host}`;
 
   if (appParam === 'cowia-finca' || appParam === 'finca' || appParam === 'supervisor' || appParam === 'campo' || appParam === 'cowia-campo') {
     return res.json({
       appName: 'CowIA Campo',
       version: '1.0.3',
       versionCode: 4,
-      downloadUrl: 'https://www.cowai.net/apk/CowIA-Campo.apk',
+      downloadUrl: `${serverBase}/apk/CowIA-Campo.apk`,
       mandatory: false,
-      releaseNotes: 'Sincronización directa de potreros y hatos con cowai.net (Oficina, Potrero A, Potrero B), optimización de conexión y soporte offline.'
+      releaseNotes: 'Sincronización directa en red local (Hato La Esperanza, Potreros, Collares) y soporte offline.'
     });
   }
 
@@ -5874,10 +6826,113 @@ router.get('/app/version', (req, res) => {
     appName: 'CowIA Técnico',
     version: '1.0.4',
     versionCode: 5,
-    downloadUrl: 'https://www.cowai.net/apk/CowIA-Tecnico.apk',
+    downloadUrl: `${serverBase}/apk/CowIA-Tecnico.apk`,
     mandatory: false,
-    releaseNotes: 'Conexión automática y por defecto al VPS https://cowai.net, detección de origen web y corrección de error de conexión.'
+    releaseNotes: 'Conexión local y soporte en tiempo real para inventario, hatos y telemetría.'
   });
+});
+
+// ============================================================================
+// ENDPOINTS DE CÁMARA REMOTA BAJO DEMANDA (4G LTE / WIFI / ENLACE GLOBAL)
+// ============================================================================
+
+// Contador de espectadores activos por collar
+const activeStreamClients = new Map(); // collarId -> Set<res>
+
+/**
+ * GET /api/collares/:id/camera/stream
+ * Transmisión continua multipart MJPEG accesible desde cualquier lugar (sin importar distancia)
+ */
+router.get('/collares/:id/camera/stream', (req, res) => {
+  const collarId = String(req.params.id || '').toUpperCase();
+  
+  // Buscar información del animal vinculado para el HUD
+  let animalInfo = memAnimales.find(a => String(a.collar_id || '').toUpperCase() === collarId) || {
+    arete_visual: 'VACA-001',
+    nombre: 'Res VACA-001',
+    potrero_nombre: 'Potrero Norte 1',
+    bateria: 100
+  };
+
+  // Registrar cliente de streaming
+  if (!activeStreamClients.has(collarId)) {
+    activeStreamClients.set(collarId, new Set());
+  }
+  const clientSet = activeStreamClients.get(collarId);
+  clientSet.add(res);
+
+  // Solicitar activación de captura al collar vía comando MQTT (Bajo demanda)
+  publishCameraCmd(collarId, { camera_power: true, fps: 2, quality: 'qvga' });
+
+  // Iniciar flujo MJPEG multipart
+  handleLiveStream(req, res, collarId, animalInfo);
+
+  req.on('close', () => {
+    clientSet.delete(res);
+    // Si ya no hay nadie viendo la cámara, enviar comando para apagar el sensor y ahorrar batería 4G
+    if (clientSet.size === 0) {
+      setTimeout(() => {
+        if (clientSet.size === 0) {
+          publishCameraCmd(collarId, { camera_power: false });
+        }
+      }, 3000);
+    }
+  });
+});
+
+/**
+ * GET /api/collares/:id/camera/snapshot
+ * Fotograma estático instantáneo en alta resolución
+ */
+router.get('/collares/:id/camera/snapshot', (req, res) => {
+  const collarId = String(req.params.id || '').toUpperCase();
+  const animalInfo = memAnimales.find(a => String(a.collar_id || '').toUpperCase() === collarId) || {};
+  const snap = getCollarSnapshot(collarId, animalInfo);
+
+  res.setHeader('Content-Type', snap.contentType || 'image/jpeg');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.send(snap.buffer);
+});
+
+/**
+ * POST /api/collares/:id/camera/frame
+ * Ingesta de fotogramas subidos por el collar físico vía 4G LTE HTTP POST o cámara local
+ */
+router.post('/collares/:id/camera/frame', upload.single('frame'), (req, res) => {
+  const collarId = String(req.params.id || '').toUpperCase();
+  let frameBuffer = null;
+
+  if (req.file && req.file.buffer) {
+    frameBuffer = req.file.buffer;
+  } else if (req.body && Buffer.isBuffer(req.body)) {
+    frameBuffer = req.body;
+  } else if (req.body && typeof req.body === 'string') {
+    frameBuffer = req.body;
+  }
+
+  if (frameBuffer) {
+    pushCollarFrame(collarId, frameBuffer, 'image/jpeg');
+    return res.json({ ok: true, collarId, size: frameBuffer.length, timestamp: Date.now() });
+  }
+
+  res.status(400).json({ ok: false, error: 'No se recibió buffer de fotograma válido' });
+});
+
+/**
+ * POST /api/collares/:id/camera/control
+ * Control manual del sensor de cámara (encendido/apagado, resolución, fps)
+ */
+router.post('/collares/:id/camera/control', (req, res) => {
+  const collarId = String(req.params.id || '').toUpperCase();
+  const { enabled, fps, quality } = req.body || {};
+
+  const success = publishCameraCmd(collarId, {
+    camera_power: Boolean(enabled),
+    fps: fps || 2,
+    quality: quality || 'qvga'
+  });
+
+  res.json({ ok: success, collarId, enabled: Boolean(enabled) });
 });
 
 export default router;

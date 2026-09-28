@@ -96,25 +96,26 @@ export async function evaluateAnimalPosition(animalId, lat, lon) {
 /**
  * Guarda o actualiza la geocerca de un Hato.
  */
-export async function saveHato(id, nombre, vertices, tenantId = null) {
+export async function saveHato(id, nombre, vertices, tenantId = null, margenAdvertencia = 10.00) {
   const wkt = verticesToWKT(vertices);
   const cleanTenant = tenantId ? parseInt(tenantId, 10) : null;
+  const margen = margenAdvertencia ? parseFloat(margenAdvertencia) : 10.00;
   if (id) {
     const query = `
       UPDATE hatos 
-      SET nombre = $1, perimetro = ST_GeomFromText($2, 4326), tenant_id = COALESCE($3, tenant_id)
-      WHERE id = $4 
+      SET nombre = $1, perimetro = ST_GeomFromText($2, 4326), tenant_id = COALESCE($3, tenant_id), margen_advertencia_metros = $4
+      WHERE id = $5 
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [nombre, wkt, cleanTenant, id]);
+    const { rows } = await pool.query(query, [nombre, wkt, cleanTenant, margen, id]);
     return rows[0];
   } else {
     const query = `
-      INSERT INTO hatos (nombre, perimetro, tenant_id) 
-      VALUES ($1, ST_GeomFromText($2, 4326), $3) 
+      INSERT INTO hatos (nombre, perimetro, tenant_id, margen_advertencia_metros) 
+      VALUES ($1, ST_GeomFromText($2, 4326), $3, $4) 
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [nombre, wkt, cleanTenant]);
+    const { rows } = await pool.query(query, [nombre, wkt, cleanTenant, margen]);
     return rows[0];
   }
 }

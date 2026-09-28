@@ -268,6 +268,7 @@ class _HatosScreenState extends State<HatosScreen> {
                                   onTap: () {
                                     setState(() {
                                       _selectedTenant = tenant;
+                                      _selectedAdquiriente = tenant;
                                     });
                                     Navigator.pop(sheetCtx);
 

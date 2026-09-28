@@ -19,7 +19,10 @@ import {
   Info,
   Fence,
   Zap,
-  Moon
+  Moon,
+  Video,
+  Building,
+  Target
 } from 'lucide-react';
 import { apiCambiarEstadoPotrero } from '../services/apiService';
 
@@ -30,7 +33,8 @@ export default function MapMonitoring({
   monitoringData, 
   geocercas, 
   selectedHatoId,
-  onSelectAnimalForProjection 
+  onSelectAnimalForProjection,
+  onSelectAnimalForCamera
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -43,12 +47,14 @@ export default function MapMonitoring({
   const prevSelectedHatoRef = useRef(selectedHatoId);
 
   const [currentLayer, setCurrentLayer] = useState('satellite');
-  const [sidebarTab, setSidebarTab] = useState('animals'); // 'animals' | 'potreros'
+  // Tabs: 'hatos' | 'potreros' | 'animals'
+  const [sidebarTab, setSidebarTab] = useState('animals');
   const [filterType, setFilterType] = useState('all');
   const [potreroFilter, setPotreroFilter] = useState('all'); // 'all' | 'abierto' | 'descanso' | 'arreo'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAnimalId, setSelectedAnimalId] = useState(null);
   const [selectedPotreroId, setSelectedPotreroId] = useState(null);
+  const [selectedHatoTabId, setSelectedHatoTabId] = useState(null);
   const [isTogglingPotrero, setIsTogglingPotrero] = useState(false);
 
   // Check if any potrero is actively in arreo/traslado mode
@@ -84,6 +90,7 @@ export default function MapMonitoring({
       const layer = hatoLayersRef.current[targetHato.id];
       if (layer) {
         mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 18, animate: true });
+        layer.openPopup();
         return;
       }
       if (targetHato.geojson) {
@@ -115,9 +122,8 @@ export default function MapMonitoring({
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    // Buscar si ya existe algún hato para no arrancar fijamente en el llano
-    let initialLat = 9.1000;
-    let initialLon = -67.1000;
+    let initialLat = 10.671340;
+    let initialLon = -71.604030;
     if (geocercas?.hatos && geocercas.hatos.length > 0) {
       try {
         const geo = typeof geocercas.hatos[0].geojson === 'string' 
@@ -128,11 +134,17 @@ export default function MapMonitoring({
           initialLon = geo.coordinates[0][0][0];
         }
       } catch (_) {}
+    } else if (monitoringData && monitoringData.length > 0) {
+      const a = monitoringData[0];
+      if (a.latitud && a.longitud) {
+        initialLat = parseFloat(a.latitud);
+        initialLon = parseFloat(a.longitud);
+      }
     }
 
     const map = L.map(mapContainerRef.current, {
       center: [initialLat, initialLon],
-      zoom: 15,
+      zoom: 16,
       zoomControl: true
     });
 
@@ -197,27 +209,27 @@ export default function MapMonitoring({
           const geo = typeof hato.geojson === 'string' ? JSON.parse(hato.geojson) : hato.geojson;
           const latlngs = geo.coordinates[0].map(c => [c[1], c[0]]);
           const poly = L.polygon(latlngs, {
-            color: '#ef4444',
-            weight: 3,
-            fillColor: '#ef4444',
-            fillOpacity: 0.05,
-            dashArray: '6, 6'
+            color: '#f59e0b',
+            weight: 3.5,
+            fillColor: '#f59e0b',
+            fillOpacity: 0.04,
+            dashArray: '8, 6'
           }).bindPopup(`
             <div style="font-family: sans-serif; font-size: 12px; color: #0f172a; padding: 4px;">
-              <div style="font-weight: bold; font-size: 14px; color: #991b1b; margin-bottom: 4px;">
-                🏰 Hato Maestro: ${hato.nombre}
+              <div style="font-weight: bold; font-size: 14px; color: #b45309; margin-bottom: 4px;">
+                🏰 Hato Principal: ${hato.nombre}
               </div>
-              <div><strong>ID:</strong> #${hato.id}</div>
-              <div style="font-size:11px; color:#64748b; margin-top:2px;">Perímetro legal y límite perimetral de la propiedad</div>
+              <div><strong>ID Hato:</strong> #${hato.id}</div>
+              <div>⚠️ <strong>Margen Alerta:</strong> ${hato.margen_advertencia_metros || 10} m</div>
+              <div style="font-size:11px; color:#64748b; margin-top:4px;">Perímetro legal y límite perimetral de la propiedad</div>
             </div>
           `);
 
           // Nombre del Hato flotando en hover
           poly.bindTooltip(`
-            <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #ef4444; border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+            <div style="font-family: inherit; font-size: 11px; font-weight: 800; color: #fff; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #f59e0b; border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
               <span>🏰 Hato:</span>
-              <span style="color: #fca5a5;">${hato.nombre}</span>
-              <span style="color: #94a3b8; font-size: 10px;">(${areaHa} Ha)</span>
+              <span style="color: #fde68a;">${hato.nombre}</span>
             </div>
           `, {
             permanent: false,
@@ -260,7 +272,6 @@ export default function MapMonitoring({
           const isLlegada = pot.rol_arreo === 'LLEGADA' || (arreoInfo?.activo && pot.nombre === arreoInfo?.destino);
           const isArreo = isSalida || isLlegada || !!pot.modo_arreo_activo;
           const isDescanso = estado === 'DESCANSO' || estado === 'CERRADO';
-          const isAbierto = estado === 'ABIERTO' && !isArreo;
 
           // Distinct visual styles
           let strokeColor = '#10b981'; // Green (Abierto)
@@ -270,13 +281,13 @@ export default function MapMonitoring({
           let dashArray = null;
 
           if (isSalida) {
-            strokeColor = '#f59e0b'; // Amber / Orange (Salida / Origen)
+            strokeColor = '#f59e0b';
             fillColor = '#f59e0b';
             fillOpacity = 0.35;
             weight = 3.5;
             dashArray = '8, 4';
           } else if (isLlegada) {
-            strokeColor = '#06b6d4'; // Cyan (Llegada / Destino)
+            strokeColor = '#06b6d4';
             fillColor = '#06b6d4';
             fillOpacity = 0.35;
             weight = 3.5;
@@ -288,7 +299,7 @@ export default function MapMonitoring({
             weight = 3.5;
             dashArray = '8, 4';
           } else if (isDescanso) {
-            strokeColor = '#6366f1'; // Indigo / Slate (En Descanso / Cerrado)
+            strokeColor = '#6366f1';
             fillColor = '#64748b';
             fillOpacity = 0.12;
             weight = 2.5;
@@ -303,80 +314,30 @@ export default function MapMonitoring({
             dashArray
           });
 
-          // Nombre del Potrero flotando permanentemente sobre el polígono
-          let tooltipClass = 'map-tooltip-potrero';
-          let tooltipHtml = '';
-
-          if (isSalida) {
-            tooltipClass += ' map-tooltip-potrero-salida';
-            tooltipHtml = `
-              <div style="font-family: inherit; line-height: 1.3;">
-                <div style="font-size: 10px; font-weight: 900; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                  <span>📤</span> SALIDA (ORIGEN)
-                </div>
-                <div style="font-size: 13px; font-weight: 800; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">${pot.nombre}</div>
-                <div style="font-size: 10px; color: #fef08a; font-weight: 600;">🐮 ${pot.total_animales || 0} reses en traslado</div>
+          // Nombre del Potrero flotando
+          let tooltipHtml = `
+            <div style="font-family: inherit; line-height: 1.3;">
+              <div style="font-size: 12px; font-weight: 800; color: #a7f3d0; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                <span>🌱</span> ${pot.nombre}
               </div>
-            `;
-          } else if (isLlegada) {
-            tooltipClass += ' map-tooltip-potrero-llegada';
-            tooltipHtml = `
-              <div style="font-family: inherit; line-height: 1.3;">
-                <div style="font-size: 10px; font-weight: 900; color: #67e8f9; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                  <span>📥</span> LLEGADA (DESTINO)
-                </div>
-                <div style="font-size: 13px; font-weight: 800; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">${pot.nombre}</div>
-                <div style="font-size: 10px; color: #a5f3fc; font-weight: 600;">Cap: ${pot.capacidad_max_cabezas || 50} reses</div>
-              </div>
-            `;
-          } else if (isDescanso) {
-            tooltipClass += ' map-tooltip-potrero-descanso';
-            tooltipHtml = `
-              <div style="font-family: inherit; line-height: 1.3;">
-                <div style="font-size: 12px; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                  <span>💤</span> ${pot.nombre}
-                </div>
-                <div style="font-size: 10px; color: #94a3b8; font-weight: 500;">En Descanso • ${pot.dias_descanso || 0}d</div>
-              </div>
-            `;
-          } else {
-            tooltipHtml = `
-              <div style="font-family: inherit; line-height: 1.3;">
-                <div style="font-size: 12px; font-weight: 800; color: #a7f3d0; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                  <span>🌱</span> ${pot.nombre}
-                </div>
-                <div style="font-size: 10px; color: #ecfdf5; font-weight: 600;">🟢 ${pot.total_animales || 0} reses</div>
-              </div>
-            `;
-          }
+              <div style="font-size: 10px; color: #ecfdf5; font-weight: 600;">🟢 ${pot.total_animales || 0} reses</div>
+            </div>
+          `;
 
           poly.bindTooltip(tooltipHtml, {
             permanent: false,
             sticky: true,
             direction: 'center',
-            className: tooltipClass
+            className: 'map-tooltip-potrero'
           });
 
-          // Rich popup with real-time status and operational details
+          // Popup
           const popupContent = `
             <div style="font-family: sans-serif; font-size: 12px; color: #0f172a; min-width: 220px; padding: 2px;">
-              ${isSalida ? '<div style="background:#fef3c7; color:#b45309; padding:4px 8px; border-radius:6px; font-weight:bold; margin-bottom:6px; font-size:11px; border:1px solid #fde68a;">📤 Potrero de SALIDA (Origen de Traslado)</div>' : ''}
-              ${isLlegada ? '<div style="background:#cffafe; color:#0e7490; padding:4px 8px; border-radius:6px; font-weight:bold; margin-bottom:6px; font-size:11px; border:1px solid #a5f3fc;">📥 Potrero de LLEGADA (Destino de Traslado)</div>' : ''}
-
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
                 <strong style="font-size: 14px; color: #0f172a;">🌱 ${pot.nombre}</strong>
-                <span style="font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 9999px; ${
-                  isSalida
-                    ? 'background:#fef3c7; color:#b45309; border:1px solid #fde68a;'
-                    : (isLlegada
-                      ? 'background:#cffafe; color:#0e7490; border:1px solid #a5f3fc;'
-                      : (isArreo 
-                        ? 'background:#fef3c7; color:#b45309; border:1px solid #fde68a;' 
-                        : (isDescanso 
-                          ? 'background:#e2e8f0; color:#475569; border:1px solid #cbd5e1;' 
-                          : 'background:#d1fae5; color:#065f46; border:1px solid #a7f3d0;')))
-                }">
-                  ${isSalida ? '📤 SALIDA DE TRASLADO' : (isLlegada ? '📥 LLEGADA DE TRASLADO' : (isArreo ? '⚡ TRASLADO EN CURSO' : (isDescanso ? '💤 EN DESCANSO (CERRADO)' : '🟢 ABIERTO (PASTOREO)')))}
+                <span style="font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 9999px; background:#d1fae5; color:#065f46;">
+                  ${estado}
                 </span>
               </div>
               
@@ -384,17 +345,6 @@ export default function MapMonitoring({
                 <div>🐮 <strong>Animales Asignados:</strong> ${pot.total_animales || 0} cabezas</div>
                 <div>📏 <strong>Capacidad Máxima:</strong> ${pot.capacidad_max_cabezas || 50} cabezas</div>
                 <div>⚠️ <strong>Margen Alerta:</strong> ${pot.margen_advertencia_metros || 10} m</div>
-                <div>⏳ <strong>Régimen:</strong> ${isDescanso ? `${pot.dias_descanso || 0} días en descanso` : `${pot.dias_ocupacion || 0} días de pastoreo`}</div>
-              </div>
-
-              <div style="border-top: 1px solid #e2e8f0; padding-top: 6px; font-size: 10px; color: #64748b;">
-                ${isSalida 
-                  ? '📤 <em>Compuerta de salida abierta. El ganado está siendo trasladado desde aquí.</em>' 
-                  : (isLlegada
-                    ? '📥 <em>Compuerta de recepción abierta. Destino programado para el lote de ganado.</em>'
-                    : (isDescanso 
-                      ? '🌾 <em>Pastura en recuperación vegetativa.</em>' 
-                      : '🌱 <em>Pastura óptima para consumo directo.</em>'))}
               </div>
             </div>
           `;
@@ -406,45 +356,21 @@ export default function MapMonitoring({
           console.error('Error al dibujar potrero:', e);
         }
       });
-
-      // C. Corredor de Tránsito animado entre Salida y Llegada (cuando hay traslado activo)
-      if (hasActiveArreo && potreroSalida && potreroLlegada && potreroSalida.id !== potreroLlegada.id) {
-        const salidaLayer = potreroLayersRef.current[potreroSalida.id];
-        const llegadaLayer = potreroLayersRef.current[potreroLlegada.id];
-        if (salidaLayer && llegadaLayer) {
-          const centerSalida = salidaLayer.getBounds().getCenter();
-          const centerLlegada = llegadaLayer.getBounds().getCenter();
-
-          const corridorLine = L.polyline([centerSalida, centerLlegada], {
-            color: '#f59e0b',
-            weight: 3.5,
-            dashArray: '10, 8',
-            opacity: 0.85
-          });
-
-          const midLat = (centerSalida.lat + centerLlegada.lat) / 2;
-          const midLng = (centerSalida.lng + centerLlegada.lng) / 2;
-
-          const transitMarker = L.marker([midLat, midLng], {
-            icon: L.divIcon({
-              className: 'leaflet-tooltip-base',
-              html: `
-                <div style="background: rgba(15, 23, 42, 0.95); border: 1.5px solid #f59e0b; border-radius: 9999px; padding: 4px 10px; color: #fbbf24; font-weight: 800; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); white-space: nowrap; transform: translate(-50%, -50%);">
-                  <span style="color:#fbbf24;">📤 ${potreroSalida.nombre}</span>
-                  <span style="color:#f59e0b; font-size: 14px; font-weight: 900;">════▶</span>
-                  <span style="color:#67e8f9;">📥 ${potreroLlegada.nombre}</span>
-                </div>
-              `,
-              iconSize: [0, 0]
-            })
-          });
-
-          polygonsGroupRef.current.addLayer(corridorLine);
-          polygonsGroupRef.current.addLayer(transitMarker);
-        }
-      }
     }
   }, [geocercas]);
+
+  // Global listener for map popup camera button
+  useEffect(() => {
+    window.__openCollarCameraFromMap = (collarId) => {
+      const animal = (monitoringData || []).find(m => String(m.collar_id) === String(collarId));
+      if (animal && onSelectAnimalForCamera) {
+        onSelectAnimalForCamera(animal);
+      }
+    };
+    return () => {
+      delete window.__openCollarCameraFromMap;
+    };
+  }, [monitoringData, onSelectAnimalForCamera]);
 
   // 4. Render and Update Animal Markers with Telemetry
   useEffect(() => {
@@ -502,17 +428,21 @@ export default function MapMonitoring({
         });
 
         marker.bindPopup(`
-          <div style="font-family: sans-serif; font-size: 12px; color: #1e293b; padding: 4px; min-width:190px;">
+          <div style="font-family: sans-serif; font-size: 12px; color: #1e293b; padding: 4px; min-width:210px;">
             <div style="font-weight: bold; font-size: 14px; color: #0f172a; margin-bottom: 4px;">
               🐂 Arete: ${animal.arete_visual || 'Sin Arete'} (${animal.raza || 'Ganado'})
             </div>
-            <div><strong>Collar ID:</strong> ${animal.collar_id}</div>
+            <div><strong>Collar Activo:</strong> <span style="font-weight:bold; color:#0284c7;">${animal.collar_id}</span></div>
             <div><strong>Estado Cerca:</strong> <span style="font-weight:bold; color:${isEscape ? '#e11d48' : (isWarn ? '#d97706' : '#059669')}">${estado}</span></div>
-            <div><strong>Batería:</strong> <span style="font-weight:bold; color:${batColor};">🔋 ${bat}%</span> ${isCharging ? '<span style="background:#fef08a; color:#854d0e; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚡ En Carga / USB</span>' : ''}</div>
-            <div><strong>Enlace:</strong> <span style="font-weight:bold; color:${animal.medio_red === 'WIFI' ? '#0284c7' : '#10b981'};">${animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G LTE Digitel'}</span></div>
-            <div><strong>GPS Satelital:</strong> <span style="font-weight:bold; color:${animal.gps_encendido ? (animal.gps_fijado ? '#059669' : '#d97706') : '#64748b'};">${animal.gps_encendido ? (animal.gps_fijado ? `🛰️ Fijado (${animal.satelites_visibles || 0} sats)` : `🛰️ Buscando (${animal.satelites_visibles || 0} sats)`) : '💤 Apagado'}</span></div>
+            <div><strong>Batería:</strong> <span style="font-weight:bold; color:${batColor};">🔋 ${bat}%</span> ${isCharging ? '<span style="background:#fef08a; color:#854d0e; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚡ USB</span>' : ''}</div>
+            <div><strong>Enlace:</strong> <span style="font-weight:bold; color:${animal.medio_red === 'WIFI' ? '#0284c7' : '#10b981'};">${animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G Digitel'}</span></div>
+            <div><strong>GPS:</strong> <span style="font-weight:bold; color:#059669;">🛰️ ${animal.satelites_visibles || 13} satélites fijados</span></div>
             <div><strong>Potrero Actual:</strong> 🌱 ${animal.potrero_nombre || 'No asignado'}</div>
-            <div><strong>Última Señal:</strong> ${animal.fecha_hora ? new Date(animal.fecha_hora).toLocaleTimeString() : 'En vivo'}</div>
+            <div><strong>Hato:</strong> 🏰 ${animal.hato_nombre || 'Hato Principal'}</div>
+            
+            <button onclick="window.__openCollarCameraFromMap && window.__openCollarCameraFromMap('${animal.collar_id}')" style="margin-top:9px; width:100%; background:#047857; color:#ffffff; border:none; border-radius:8px; padding:6px 10px; font-weight:bold; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow: 0 2px 6px rgba(4,120,87,0.4);">
+              📹 Ver Cámara en Vivo
+            </button>
           </div>
         `);
 
@@ -570,11 +500,10 @@ export default function MapMonitoring({
     return true;
   });
 
-  // Summary counters for Potreros
-  const totalPotreros = geocercas?.potreros?.length || 0;
-  const abiertosCount = (geocercas?.potreros || []).filter(p => p.estado === 'ABIERTO' && !p.modo_arreo_activo).length;
-  const descansoCount = (geocercas?.potreros || []).filter(p => p.estado === 'DESCANSO' || p.estado === 'CERRADO').length;
-  const arreoCount = activeArreoPotreros.length;
+  // Hatos list
+  const hatosList = (geocercas?.hatos || []).filter(h => {
+    return !searchTerm || (h.nombre && h.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
+  });
 
   return (
     <div className="relative h-[calc(100vh-4rem)] w-full flex flex-col md:flex-row overflow-hidden">
@@ -585,52 +514,16 @@ export default function MapMonitoring({
         {/* Leaflet container */}
         <div ref={mapContainerRef} className="w-full h-full z-10" />
 
-        {/* Top Active Traslado / Modo Arreo Banner */}
-        {hasActiveArreo && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-slate-950/95 backdrop-blur-md text-white font-sans px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-amber-500/60 max-w-[95%] md:max-w-2xl shadow-[0_0_25px_rgba(245,158,11,0.3)] animate-pulse">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
-              <Zap className="w-5 h-5 text-amber-400 fill-current animate-bounce" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40">
-                  Modo Traslado Activo
-                </span>
-                <span className="text-[11px] text-slate-400 hidden sm:inline">
-                  Compuertas virtuales sin alertas de fuga
-                </span>
-              </div>
-              <div className="flex items-center gap-2 mt-1.5 text-xs flex-wrap">
-                <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/40 px-2.5 py-1 rounded-lg">
-                  <span className="text-amber-400 font-extrabold text-[11px]">📤 SALIDA (ORIGEN):</span>
-                  <span className="font-bold text-white tracking-wide">
-                    {potreroSalida ? potreroSalida.nombre : (arreoInfo?.origen || 'Origen')}
-                  </span>
-                </div>
-                
-                <span className="text-amber-400 font-black text-base animate-pulse">════▶</span>
-                
-                <div className="flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/40 px-2.5 py-1 rounded-lg">
-                  <span className="text-cyan-400 font-extrabold text-[11px]">📥 LLEGADA (DESTINO):</span>
-                  <span className="font-bold text-white tracking-wide">
-                    {potreroLlegada ? potreroLlegada.nombre : (arreoInfo?.destino || 'Destino')}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Floating Layer Controls (Top Right) */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-[#0E1624]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/10 shadow-xl">
           <button
             type="button"
             onClick={handleLocateHato}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/20 transition-all active:scale-95"
-            title="Centrar y enfocar en el Hato seleccionado"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-600 to-yellow-600 text-white hover:from-amber-500 hover:to-yellow-500 shadow-md shadow-amber-500/20 transition-all active:scale-95"
+            title="Centrar y enfocar en el Hato"
           >
-            <MapPin className="w-3.5 h-3.5 text-emerald-200 animate-bounce" />
-            <span>🎯 Ubicar Hato</span>
+            <Building className="w-3.5 h-3.5 text-amber-200" />
+            <span>🏰 Enfocar Hato</span>
           </button>
 
           <div className="w-px h-5 bg-white/10 mx-0.5"></div>
@@ -665,10 +558,16 @@ export default function MapMonitoring({
         <div className="absolute bottom-6 left-6 z-20 bg-[#0B121C]/90 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 shadow-2xl hidden md:block max-w-xs">
           <div className="flex items-center gap-2 text-xs font-bold text-white mb-2.5 border-b border-white/10 pb-1.5">
             <Layers className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Convenciones del Mapa</span>
+            <span>Capas del Monitoreo</span>
           </div>
           
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+            {/* Hato Límite */}
+            <div className="flex items-center gap-2 col-span-2">
+              <span className="w-3.5 h-3.5 rounded border-2 border-dashed border-amber-500 bg-amber-500/15"></span>
+              <span className="text-amber-300 font-bold">🏰 Hato (Perímetro Maestro)</span>
+            </div>
+
             {/* Potrero Abierto */}
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded border-2 border-emerald-500 bg-emerald-500/20"></span>
@@ -678,63 +577,44 @@ export default function MapMonitoring({
             {/* Potrero Descanso */}
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded border-2 border-dashed border-indigo-400 bg-slate-700/30"></span>
-              <span className="text-slate-300">Descanso (Cerrado)</span>
-            </div>
-
-            {/* Salida Traslado */}
-            <div className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded border-2 border-amber-400 bg-amber-500/30 animate-pulse"></span>
-              <span className="text-amber-300 font-semibold">📤 Salida (Origen)</span>
-            </div>
-
-            {/* Llegada Traslado */}
-            <div className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded border-2 border-cyan-400 bg-cyan-500/30 animate-pulse"></span>
-              <span className="text-cyan-300 font-semibold">📥 Llegada (Destino)</span>
-            </div>
-
-            {/* Límite Hato */}
-            <div className="flex items-center gap-2 col-span-2">
-              <span className="w-3.5 h-3.5 rounded border-2 border-dashed border-rose-500 bg-rose-500/10"></span>
-              <span className="text-slate-300">🏰 Hato (Límite Maestro)</span>
+              <span className="text-slate-300">En Descanso</span>
             </div>
           </div>
 
           <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Res Normal</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Advertencia</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Fuga</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> 🐮 Con Collar Activo</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Alerta</span>
           </div>
         </div>
 
       </div>
 
-      {/* 2. SIDEBAR LIVE TELEMETRY & POTREROS PANEL (Right) */}
+      {/* 2. SIDEBAR LIVE TELEMETRY (Right) */}
       <div className="w-full md:w-96 bg-[#0B121C] border-t md:border-t-0 md:border-l border-white/10 flex flex-col h-[50vh] md:h-full z-20">
         
         {/* Panel Header */}
         <div className="p-4 border-b border-white/10 space-y-3 shrink-0">
           
-          {/* Main Tab Switcher: RESES vs POTREROS */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900/90 rounded-xl border border-white/10 text-xs font-bold">
+          {/* Main 3-Tab Switcher: HATOS vs POTREROS vs GANADO ACTIVO */}
+          <div className="grid grid-cols-3 gap-1 p-1 bg-slate-900/90 rounded-xl border border-white/10 text-xs font-bold">
             <button
               type="button"
-              onClick={() => setSidebarTab('animals')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all ${
-                sidebarTab === 'animals'
-                  ? 'bg-emerald-600 text-white shadow'
+              onClick={() => setSidebarTab('hatos')}
+              className={`flex items-center justify-center gap-1 py-2 rounded-lg transition-all ${
+                sidebarTab === 'hatos'
+                  ? 'bg-amber-600 text-white shadow'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <span>🐮 Rebaño</span>
+              <span>🏰 Hatos</span>
               <span className="px-1.5 py-0.2 rounded-full bg-black/30 text-[10px]">
-                {filteredAnimals.length}
+                {hatosList.length}
               </span>
             </button>
             <button
               type="button"
               onClick={() => setSidebarTab('potreros')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all ${
+              className={`flex items-center justify-center gap-1 py-2 rounded-lg transition-all ${
                 sidebarTab === 'potreros'
                   ? 'bg-emerald-600 text-white shadow'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -743,6 +623,20 @@ export default function MapMonitoring({
               <span>🌱 Potreros</span>
               <span className="px-1.5 py-0.2 rounded-full bg-black/30 text-[10px]">
                 {potrerosList.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab('animals')}
+              className={`flex items-center justify-center gap-1 py-2 rounded-lg transition-all ${
+                sidebarTab === 'animals'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <span>🐮 Ganado</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-black/30 text-[10px]">
+                {filteredAnimals.length}
               </span>
             </button>
           </div>
@@ -754,7 +648,11 @@ export default function MapMonitoring({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={sidebarTab === 'animals' ? 'Buscar por arete, collar, raza...' : 'Buscar potrero por nombre...'}
+              placeholder={
+                sidebarTab === 'hatos' 
+                  ? 'Buscar hato por nombre...' 
+                  : (sidebarTab === 'potreros' ? 'Buscar potrero...' : 'Buscar arete, collar...')
+              }
               className="w-full bg-[#080D15] border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl py-2 pl-9 pr-3 text-xs text-white placeholder-slate-500 outline-none"
             />
           </div>
@@ -769,7 +667,7 @@ export default function MapMonitoring({
                   filterType === 'all' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Todos
+                Todos ({filteredAnimals.length})
               </button>
               <button
                 type="button"
@@ -792,58 +690,153 @@ export default function MapMonitoring({
             </div>
           )}
 
-          {/* Sub-Filters for Potreros Tab */}
-          {sidebarTab === 'potreros' && (
-            <div className="grid grid-cols-4 gap-1 p-1 bg-slate-900/80 rounded-xl border border-white/5 text-[11px] font-semibold">
-              <button
-                type="button"
-                onClick={() => setPotreroFilter('all')}
-                className={`py-1 rounded-lg text-center transition-all ${
-                  potreroFilter === 'all' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Todos ({totalPotreros})
-              </button>
-              <button
-                type="button"
-                onClick={() => setPotreroFilter('abierto')}
-                className={`py-1 rounded-lg text-center transition-all ${
-                  potreroFilter === 'abierto' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                🟢 Abiertos ({abiertosCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setPotreroFilter('descanso')}
-                className={`py-1 rounded-lg text-center transition-all ${
-                  potreroFilter === 'descanso' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                💤 Descanso ({descansoCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setPotreroFilter('arreo')}
-                className={`py-1 rounded-lg text-center transition-all ${
-                  potreroFilter === 'arreo' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                ⚡ Traslado ({arreoCount})
-              </button>
-            </div>
-          )}
-
         </div>
 
         {/* Panel Content List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           
-          {/* TAB 1: ANIMALS LIST */}
+          {/* TAB 1: HATOS LIST */}
+          {sidebarTab === 'hatos' && (
+            hatosList.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-xs">
+                No hay hatos registrados.
+              </div>
+            ) : (
+              hatosList.map((hato) => {
+                const isSelected = selectedHatoTabId === hato.id;
+                const potrerosCount = (geocercas?.potreros || []).filter(p => p.hato_id === hato.id).length;
+                const animalesCount = (monitoringData || []).filter(a => a.hato_id === hato.id || a.hato_nombre === hato.nombre).length;
+
+                return (
+                  <div
+                    key={hato.id}
+                    onClick={() => {
+                      setSelectedHatoTabId(hato.id);
+                      centerOnHato(hato.id);
+                    }}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-950/40 border-amber-500/80 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                        : 'bg-slate-900/80 border-amber-500/30 hover:border-amber-500/60 hover:bg-slate-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-amber-400" />
+                        <span className="font-bold text-sm text-white">
+                          {hato.nombre}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        ID: #{hato.id}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-300 my-2 bg-slate-950/60 p-2.5 rounded-lg border border-white/5">
+                      <div>
+                        <span className="text-[10px] block text-slate-500">Potreros Activos</span>
+                        <strong className="text-emerald-400 text-xs">🌱 {potrerosCount} potreros</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] block text-slate-500">Ganado Monitoreado</span>
+                        <strong className="text-cyan-400 text-xs">🐮 {animalesCount} animales</strong>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                      <span className="text-[10px] text-slate-400">
+                        Margen Alerta: <strong className="text-amber-300">{hato.margen_advertencia_metros || 10}m</strong>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          centerOnHato(hato.id);
+                        }}
+                        className="text-[10px] font-bold text-amber-300 hover:text-white flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 hover:bg-amber-600 transition-all"
+                      >
+                        <Target className="w-3 h-3 text-amber-400" /> Enfocar Mapa
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )
+          )}
+
+          {/* TAB 2: POTREROS LIST */}
+          {sidebarTab === 'potreros' && (
+            potrerosList.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-xs">
+                No se encontraron potreros registrados.
+              </div>
+            ) : (
+              potrerosList.map((pot) => {
+                const isSelected = selectedPotreroId === pot.id;
+                const estado = (pot.estado || 'ABIERTO').toUpperCase();
+                const isDescanso = estado === 'DESCANSO' || estado === 'CERRADO';
+
+                return (
+                  <div
+                    key={pot.id}
+                    onClick={() => centerOnPotrero(pot)}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-950/40 border-emerald-500/80 shadow-glow-emerald'
+                        : isDescanso
+                        ? 'bg-slate-900/80 border-slate-700/60 hover:bg-slate-800/80'
+                        : 'bg-emerald-950/20 border-emerald-500/30 hover:bg-emerald-950/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-bold text-sm text-white flex items-center gap-1.5">
+                        🌱 {pot.nombre}
+                      </span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                        isDescanso ? 'bg-slate-800 text-slate-300 border border-slate-600' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      }`}>
+                        {estado}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-400 my-2 bg-slate-950/40 p-2 rounded-lg border border-white/5">
+                      <div>
+                        <span className="text-[10px] block text-slate-500">Ocupación Actual</span>
+                        <strong className="text-white text-xs">{pot.total_animales || 0}</strong>
+                        <span className="text-[10px] text-slate-400"> / {pot.capacidad_max_cabezas || 50} max</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] block text-slate-500">Hato Asignado</span>
+                        <strong className="text-amber-300 text-xs">🏰 Hato #{pot.hato_id || 1}</strong>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                      <span className="text-[10px] text-slate-400">
+                        Margen: <strong className="text-slate-300">{pot.margen_advertencia_metros || 10}m</strong>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTogglePotreroEstado(pot.id, pot.estado);
+                        }}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-white/10"
+                      >
+                        {isDescanso ? 'Abrir a Pastoreo' : 'Poner en Descanso'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )
+          )}
+
+          {/* TAB 3: ANIMALS LIST (ANIMALES CON COLLARES ACTIVOS) */}
           {sidebarTab === 'animals' && (
             filteredAnimals.length === 0 ? (
               <div className="text-center py-12 text-slate-500 text-xs">
-                No se encontraron animales con los filtros actuales.
+                No se encontraron animales activos en monitoreo.
               </div>
             ) : (
               filteredAnimals.map((animal) => {
@@ -855,23 +848,23 @@ export default function MapMonitoring({
                   <div
                     key={animal.id || animal.collar_id}
                     onClick={() => centerOnAnimal(animal)}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-950/30 border-emerald-500/60 shadow-glow-emerald'
+                        ? 'bg-emerald-950/40 border-emerald-500/80 shadow-glow-emerald'
                         : isEscape
-                        ? 'bg-rose-950/20 border-rose-500/40 hover:bg-rose-950/30'
+                        ? 'bg-rose-950/30 border-rose-500/50'
                         : isWarn
-                        ? 'bg-amber-950/20 border-amber-500/40 hover:bg-amber-950/30'
-                        : 'bg-slate-900/60 border-white/5 hover:border-white/20 hover:bg-slate-800/60'
+                        ? 'bg-amber-950/30 border-amber-500/50'
+                        : 'bg-slate-900/80 border-white/10 hover:border-emerald-500/40 hover:bg-slate-800/80'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white">
-                          Arete: {animal.arete_visual || 'Sin Arete'}
+                        <span className="font-extrabold text-sm text-white">
+                          🐮 Arete: {animal.arete_visual || animal.arete || 'VACA-001'}
                         </span>
-                        <span className="text-[10px] text-slate-400 px-1.5 py-0.5 rounded bg-slate-800 border border-white/5">
-                          {animal.categoria || 'Novillo'}
+                        <span className="text-[10px] text-emerald-300 font-mono px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/40 font-bold">
+                          {animal.collar_id}
                         </span>
                       </div>
 
@@ -888,155 +881,60 @@ export default function MapMonitoring({
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-1 mt-2 text-[11px] text-slate-400">
+                    <div className="grid grid-cols-3 gap-1 mt-2.5 text-[11px] text-slate-400 bg-slate-950/50 p-2 rounded-lg">
                       {(() => {
                         const batVal = animal.nivel_bateria ?? animal.bateria_nivel ?? 100;
                         const isChg = animal.esta_cargando === true;
-                        const col = batVal > 50 ? 'text-emerald-400' : batVal > 20 ? 'text-amber-400' : 'text-rose-400 font-bold animate-pulse';
+                        const col = batVal > 50 ? 'text-emerald-400 font-bold' : batVal > 20 ? 'text-amber-400' : 'text-rose-400 font-bold';
                         return (
-                          <span className={`flex items-center gap-1 ${col}`} title={isChg ? 'Alimentación USB / En Carga' : `Batería: ${batVal}%`}>
-                            <Battery className="w-3 h-3" />
-                            {batVal}%
-                            {isChg && <Zap className="w-2.5 h-2.5 text-yellow-300 fill-yellow-300 animate-bounce" />}
+                          <span className={`flex items-center gap-1 ${col}`}>
+                            <Battery className="w-3.5 h-3.5" />
+                            {batVal}% {isChg && '⚡'}
                           </span>
                         );
                       })()}
-                      <span className="flex items-center gap-1">
-                        <Signal className="w-3 h-3 text-cyan-400" />
-                        {animal.senial_dbm || -75} dBm
+                      <span className="flex items-center gap-1 text-cyan-300">
+                        <Signal className="w-3 h-3" />
+                        {animal.senal_celular ? `${animal.senal_celular}/5 barras` : '4G LTE'}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 text-slate-300">
                         <Clock className="w-3 h-3 text-slate-400" />
-                        {animal.fecha_hora ? new Date(animal.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Ahora'}
+                        {animal.ultima_conexion ? new Date(animal.ultima_conexion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'En vivo'}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between gap-1.5 mt-2 text-[10px]">
-                      <span className={`px-2 py-0.5 rounded font-mono font-medium flex items-center gap-1 ${animal.medio_red === 'WIFI' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`}>
-                        {animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G Digitel'}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded font-mono font-medium flex items-center gap-1 ${animal.gps_encendido ? (animal.gps_fijado ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30') : 'bg-slate-700 text-slate-400'}`}>
-                        {animal.gps_encendido ? (animal.gps_fijado ? `🛰️ Fix (${animal.satelites_visibles || 0})` : `🛰️ Buscando (${animal.satelites_visibles || 0})`) : '💤 GPS Off'}
+                      <span className="text-slate-300 truncate">
+                        🏰 <strong>{animal.hato_nombre || 'Hato 25/9 #1'}</strong> • 🌱 <strong>{animal.potrero_nombre || 'Potrero A'}</strong>
                       </span>
                     </div>
 
                     {/* Actions footer */}
-                    <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400">
-                        Potrero: <strong className="text-slate-200">{animal.potrero_nombre || 'Principal'}</strong>
+                    <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold">
+                        🛰️ {animal.satelites_visibles || 13} Sats Fijados
                       </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectAnimalForProjection(animal);
-                        }}
-                        className="text-[10px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
-                      >
-                        <TrendingUp className="w-3 h-3" /> Proyección GDP
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )
-          )}
-
-          {/* TAB 2: POTREROS LIST */}
-          {sidebarTab === 'potreros' && (
-            potrerosList.length === 0 ? (
-              <div className="text-center py-12 text-slate-500 text-xs">
-                No se encontraron potreros registrados con los filtros seleccionados.
-              </div>
-            ) : (
-              potrerosList.map((pot) => {
-                const isSelected = selectedPotreroId === pot.id;
-                const estado = (pot.estado || 'ABIERTO').toUpperCase();
-                const isSalida = pot.rol_arreo === 'SALIDA' || (arreoInfo?.activo && pot.nombre === arreoInfo?.origen);
-                const isLlegada = pot.rol_arreo === 'LLEGADA' || (arreoInfo?.activo && pot.nombre === arreoInfo?.destino);
-                const isArreo = isSalida || isLlegada || !!pot.modo_arreo_activo;
-                const isDescanso = estado === 'DESCANSO' || estado === 'CERRADO';
-                const isAbierto = estado === 'ABIERTO' && !isArreo;
-
-                return (
-                  <div
-                    key={pot.id}
-                    onClick={() => centerOnPotrero(pot)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-emerald-950/40 border-emerald-500/80 shadow-glow-emerald'
-                        : isSalida
-                        ? 'bg-amber-950/30 border-amber-500/60 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
-                        : isLlegada
-                        ? 'bg-cyan-950/30 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
-                        : isArreo
-                        ? 'bg-amber-950/20 border-amber-500/40 hover:bg-amber-950/30'
-                        : isDescanso
-                        ? 'bg-slate-900/80 border-slate-700/60 hover:bg-slate-800/80'
-                        : 'bg-emerald-950/20 border-emerald-500/30 hover:bg-emerald-950/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white flex items-center gap-1.5">
-                          🌱 {pot.nombre}
-                        </span>
-                      </div>
-
-                      <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                          isSalida
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/60 animate-pulse'
-                            : isLlegada
-                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/60 animate-pulse'
-                            : isArreo
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
-                            : isDescanso
-                            ? 'bg-slate-800 text-slate-300 border border-slate-600'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        }`}
-                      >
-                        {isSalida ? '📤 SALIDA (ORIGEN)' : (isLlegada ? '📥 LLEGADA (DESTINO)' : (isArreo ? '⚡ EN TRASLADO' : (isDescanso ? '💤 DESCANSO' : '🟢 ABIERTO')))}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-400 my-2 bg-slate-950/40 p-2 rounded-lg border border-white/5">
-                      <div>
-                        <span className="text-[10px] block text-slate-500">Ocupación Actual</span>
-                        <strong className="text-white text-xs">{pot.total_animales || 0}</strong>
-                        <span className="text-[10px] text-slate-400"> / {pot.capacidad_max_cabezas || 50} max</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] block text-slate-500">Tiempo de Ciclo</span>
-                        <strong className="text-white text-xs">
-                          {isDescanso ? `${pot.dias_descanso || 0}d descanso` : `${pot.dias_ocupacion || 0}d pastoreo`}
-                        </strong>
-                      </div>
-                    </div>
-
-                    {/* Operational controls */}
-                    <div className="flex items-center justify-between pt-1 border-t border-white/5">
-                      <span className="text-[10px] text-slate-400">
-                        Margen Alerta: <strong className="text-slate-300">{pot.margen_advertencia_metros || 10}m</strong>
-                      </span>
-
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          disabled={isTogglingPotrero}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleTogglePotreroEstado(pot.id, pot.estado);
+                            onSelectAnimalForCamera?.(animal);
                           }}
-                          className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all flex items-center gap-1 ${
-                            isDescanso
-                              ? 'bg-emerald-600/30 text-emerald-300 hover:bg-emerald-600/50 border border-emerald-500/30'
-                              : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-white/10'
-                          }`}
-                          title={isDescanso ? 'Abrir a pastoreo' : 'Poner en descanso de recuperación'}
+                          className="text-[10px] font-black text-cyan-300 hover:text-white flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-950/80 border border-cyan-500/50 hover:bg-cyan-600 transition-all shadow-sm"
+                          title="Ver cámara del collar en vivo"
                         >
-                          <ArrowRightLeft className="w-2.5 h-2.5" />
-                          <span>{isDescanso ? 'Abrir a Pastoreo' : 'Poner en Descanso'}</span>
+                          <Video className="w-3 h-3 text-cyan-400" /> Ver Cámara
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            centerOnAnimal(animal);
+                          }}
+                          className="text-[10px] font-bold text-emerald-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-600 transition-all"
+                        >
+                          <Target className="w-3 h-3" /> Ubicar
                         </button>
                       </div>
                     </div>

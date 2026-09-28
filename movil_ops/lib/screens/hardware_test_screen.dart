@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/ops_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/collar_camera_viewer_widget.dart';
 
 class HardwareTestScreen extends StatefulWidget {
   const HardwareTestScreen({super.key});
@@ -20,6 +21,9 @@ class _HardwareTestScreenState extends State<HardwareTestScreen> with SingleTick
   bool _isPulseActive = false;
   int _pulseCountdown = 60;
   Timer? _pulseTimer;
+
+  // Estado de Prueba de Cámara
+  bool _isCameraTestActive = false;
 
   // Animación del Osciloscopio IMU
   late AnimationController _animController;
@@ -160,11 +164,15 @@ class _HardwareTestScreenState extends State<HardwareTestScreen> with SingleTick
             _buildActuatorsTestCard(),
             const SizedBox(height: 14),
 
-            // 5. Telemetría de Energía y Módem 4G
+            // 5. Diagnóstico y Streaming de Cámara OV2640 en Vivo
+            _buildCameraTestCard(collar),
+            const SizedBox(height: 14),
+
+            // 6. Telemetría de Energía y Módem 4G
             _buildPowerAndModemCard(collar),
             const SizedBox(height: 20),
 
-            // 6. Botón de Certificación de Control de Calidad
+            // 7. Botón de Certificación de Control de Calidad
             _buildCertifyButton(context, collar),
             const SizedBox(height: 20),
           ],
@@ -603,6 +611,78 @@ class _HardwareTestScreenState extends State<HardwareTestScreen> with SingleTick
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCameraTestCard(dynamic collar) {
+    final collarId = collar?.id ?? 'COW-2026-0042';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isCameraTestActive ? AppTheme.primaryCyan : AppTheme.cardBorder,
+          width: _isCameraTestActive ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.videocam, color: AppTheme.primaryCyan, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'DIAGNÓSTICO DE CÁMARA (OV2640 / STREAMING)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              Switch(
+                value: _isCameraTestActive,
+                activeColor: AppTheme.primaryCyan,
+                onChanged: (val) {
+                  setState(() => _isCameraTestActive = val);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Prueba de alimentación óptica LDO 3.3V, sensor CMOS y codificador MJPEG.',
+            style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textSecondary),
+          ),
+          if (_isCameraTestActive) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CollarCameraViewerWidget(
+                animal: {
+                  'collar_id': collarId,
+                  'arete_visual': 'TEST-QC',
+                  'potrero_nombre': 'Banco de Pruebas Ops',
+                  'nivel_bateria': collar?.batteryPercent ?? 95,
+                  'latitud': 10.671340,
+                  'longitud': -71.604030,
+                  'estado_cerca': 'BANCO_TEST',
+                },
+                initialMode: CameraViewMode.split,
+                onClose: () => setState(() => _isCameraTestActive = false),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
