@@ -208,41 +208,51 @@ async function processTrackerBuffer(rxBuffer, clientKey, replyFn, sessionState, 
       }
       // D. Reporte de Ubicación GPS (UD o UD2)
       else if (content.startsWith('UD') || content.startsWith('UD2')) {
-        // Formato: UD,DDMMYY,HHMMSS,status,lat,NS,lon,EW,speed,course,alt,sats,batPct,...
+        // Formato: UD,DDMMYY,HHMMSS,status,lat,NS,lon,EW,speed,course,alt,sats,gsmSig,batPct,...
         const parts = content.split(',');
         const dateStr = parts[1];
         const timeStr = parts[2];
-        const status = parts[3]; // 'A' = FIX válido, 'V' = sin fix
+        const status = parts[3]; // 'A' = FIX satelital válido, 'V' = sin fix / bajo techo
         let lat = parseFloat(parts[4]);
         const ns = parts[5];
         let lon = parseFloat(parts[6]);
         const ew = parts[7];
         const speed = parseFloat(parts[8]) || 0;
+        const course = parseFloat(parts[9]) || 0;
+        const alt = parseFloat(parts[10]) || 0;
         const sats = parseInt(parts[11], 10) || 0;
-        const bat = parseInt(parts[12], 10) || 100;
+        const gsmSignal = parseInt(parts[12], 10) || 50;
+        const bat = parseInt(parts[13], 10) || 100;
 
-        if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
+        const isFix = (status === 'A' && !isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0));
+        if (isFix) {
           if (ns === 'S' || ns === 's') lat = -lat;
           if (ew === 'W' || ew === 'w') lon = -lon;
-
-          console.log(`[${transport} Tracker 3G GPS] 🎯 Collar ${collarId} -> Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)} | Fix: ${status === 'A'} | Sats: ${sats} | Bat: ${bat}%`);
-
-          const telemetry = {
-            collar_id: collarId,
-            collarId: collarId,
-            lat,
-            lon,
-            speed: Math.round(speed * 1.852),
-            sats,
-            gps_fix: status === 'A',
-            gps_pwr: true,
-            battery: bat,
-            net: '4G LTE (Digitel)'
-          };
-
-          await processTelemetryPayload(io, collarId, telemetry);
-          publishTelemetry(collarId, telemetry);
+          console.log(`[${transport} Tracker 3G GPS] 🎯 Collar ${collarId} -> Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)} | Fix: SÍ | Sats: ${sats} | Bat: ${bat}%`);
+        } else {
+          console.log(`[${transport} Tracker 3G GPS] 🏠 Collar ${collarId} en interiores (Sin FIX GPS aún) | Sats: ${sats} | Señal: ${gsmSignal}% | Bat: ${bat}%`);
         }
+
+        const telemetry = {
+          collar_id: collarId,
+          collarId: collarId,
+          sats,
+          gps_fix: isFix,
+          gps_pwr: true,
+          battery: bat,
+          signal: Math.min(5, Math.max(1, Math.round(gsmSignal / 20))),
+          csq: Math.round(gsmSignal / 3.2),
+          net: '4G LTE (Digitel)'
+        };
+
+        if (isFix) {
+          telemetry.lat = lat;
+          telemetry.lon = lon;
+          telemetry.speed = Math.round(speed * 1.852);
+        }
+
+        await processTelemetryPayload(io, collarId, telemetry);
+        publishTelemetry(collarId, telemetry);
       }
       // E. Alarma (AL)
       else if (content.startsWith('AL')) {
