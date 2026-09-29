@@ -58,10 +58,31 @@ export function initMQTT(io) {
       }
       
       const payload = JSON.parse(message.toString());
-      
-      // Soportar claves optimizadas o legibles
-      const lat = parseFloat(payload.lat !== undefined ? payload.lat : payload.latitude);
-      const lon = parseFloat(payload.lon !== undefined ? payload.lon : payload.longitude);
+      await processTelemetryPayload(io, collarId, payload);
+    } catch (err) {
+      console.error('[MQTT] Error procesando mensaje de telemetría:', err);
+    }
+  });
+}
+
+/**
+ * Publica telemetría cruda en el broker MQTT para interoperabilidad con clientes externos.
+ */
+export function publishTelemetry(collarId, payload) {
+  if (!mqttClient || !mqttClient.connected) return false;
+  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+  const topic = `${prefix}/${collarId}/telemetria`;
+  mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
+  return true;
+}
+
+/**
+ * Procesa e inyecta la telemetría recibida (sea vía MQTT o vía TCP puerto 7700).
+ */
+export async function processTelemetryPayload(io, collarId, payload) {
+  try {
+    const lat = parseFloat(payload.lat !== undefined ? payload.lat : payload.latitude);
+    const lon = parseFloat(payload.lon !== undefined ? payload.lon : payload.longitude);
       const bateria = Math.min(100, Math.max(0, parseInt(payload.bat !== undefined ? payload.bat : (payload.battery !== undefined ? payload.battery : 100), 10)));
       const senal = Math.min(5, Math.max(0, parseInt(payload.sig !== undefined ? payload.sig : (payload.signal !== undefined ? payload.signal : 4), 10)));
       const imei = payload.imei ? String(payload.imei).trim() : null;
@@ -196,8 +217,7 @@ export function initMQTT(io) {
     } catch (err) {
       console.error('[MQTT] Error procesando mensaje de telemetría:', err);
     }
-  });
-}
+  }
 
 /**
  * Publica un comando de actualización para un collar (ej: nuevas coordenadas de geocercas).

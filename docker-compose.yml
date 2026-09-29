@@ -43,8 +43,10 @@ services:
     restart: always
     ports:
       - "3500:3500"
+      - "7700:7700"
     environment:
       PORT: 3500
+      TRACKER_TCP_PORT: 7700
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-Pegaso#26}
       DB_HOST: db
