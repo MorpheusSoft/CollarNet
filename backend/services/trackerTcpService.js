@@ -119,7 +119,7 @@ async function processTrackerBuffer(rxBuffer, clientKey, replyFn, sessionState, 
           INSERT INTO collares (id, numero_sim, imei, numero_serie, estado, activo, nivel_bateria, senal_celular, version_firmware, fecha_instalacion, tenant_id)
           VALUES ($1, $2, $3, $4, 'ACTIVO', true, 100, 5, 'F10_A7670SA_LASA', CURRENT_DATE, (SELECT id FROM tenants ORDER BY id ASC LIMIT 1))
           ON CONFLICT (id) DO UPDATE SET ultima_conexion = NOW();
-        `, [collarId, '04122684691', collarId, collarId]);
+        `, [collarId, '04222684691', collarId, collarId]);
       } catch (_) {}
 
       // A. Identificación de Tarjeta SIM (CCID)
@@ -330,7 +330,7 @@ async function processTrackerBuffer(rxBuffer, clientKey, replyFn, sessionState, 
           INSERT INTO collares (id, numero_sim, imei, numero_serie, estado, activo, nivel_bateria, senal_celular, version_firmware, fecha_instalacion, tenant_id)
           VALUES ($1, $2, $3, $4, 'ACTIVO', true, 100, 5, 'F10_A7670SA_LASA', CURRENT_DATE, (SELECT id FROM tenants ORDER BY id ASC LIMIT 1))
           ON CONFLICT (id) DO NOTHING;
-        `, [termId, '04122684691', termId, termId]);
+        `, [termId, '04222684691', termId, termId]);
       } catch (_) {}
     }
     // B. Posición GPS (0x12 o 0x22)

@@ -3338,6 +3338,58 @@ router.put('/collares/:id/status', async (req, res) => {
 });
 
 /**
+ * PATCH /api/collares/:id
+ * Actualiza atributos configurables del collar (número SIM, notas, etc.)
+ */
+router.patch('/collares/:id', async (req, res) => {
+  const { id } = req.params;
+  const { numero_sim, numeroSim, notas } = req.body;
+  const nuevoSim = numero_sim !== undefined ? numero_sim : numeroSim;
+
+  try {
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    if (nuevoSim !== undefined) {
+      fields.push(`numero_sim = $${idx++}`);
+      values.push(String(nuevoSim).trim());
+    }
+    if (notas !== undefined) {
+      fields.push(`motivo_estado = $${idx++}`);
+      values.push(String(notas).trim());
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ error: 'No se enviaron campos para actualizar.' });
+    }
+
+    values.push(id);
+    const query = `
+      UPDATE collares 
+      SET ${fields.join(', ')} 
+      WHERE id = $${idx} 
+      RETURNING *;
+    `;
+    const { rows } = await pool.query(query, values);
+    if (rows.length === 0) return res.status(404).json({ error: 'Collar no encontrado.' });
+
+    // Actualizar también en memoria si existe
+    const cleanId = String(id).trim().toUpperCase();
+    const memIdx = memCollares.findIndex(c => String(c.id).toUpperCase() === cleanId);
+    if (memIdx !== -1) {
+      if (nuevoSim !== undefined) memCollares[memIdx].numero_sim = String(nuevoSim).trim();
+      if (notas !== undefined) memCollares[memIdx].motivo_estado = String(notas).trim();
+    }
+
+    res.json({ success: true, collar: rows[0] });
+  } catch (err) {
+    console.error('[Error PATCH collares]:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * GET /api/propietarios
  * Retorna todos los propietarios registrados.
  */
