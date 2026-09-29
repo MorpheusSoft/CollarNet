@@ -116,8 +116,8 @@ async function processTrackerBuffer(rxBuffer, clientKey, replyFn, sessionState, 
       // Auto-registrar en BD
       try {
         await pool.query(`
-          INSERT INTO collares (id, numero_sim, imei, numero_serie, estado, activo, nivel_bateria, senal_celular, version_firmware, fecha_instalacion)
-          VALUES ($1, $2, $3, $4, 'ACTIVO', true, 100, 5, 'F10_A7670SA_LASA', CURRENT_DATE)
+          INSERT INTO collares (id, numero_sim, imei, numero_serie, estado, activo, nivel_bateria, senal_celular, version_firmware, fecha_instalacion, tenant_id)
+          VALUES ($1, $2, $3, $4, 'ACTIVO', true, 100, 5, 'F10_A7670SA_LASA', CURRENT_DATE, (SELECT id FROM tenants ORDER BY id ASC LIMIT 1))
           ON CONFLICT (id) DO UPDATE SET ultima_conexion = NOW();
         `, [collarId, '04122684691', collarId, collarId]);
       } catch (_) {}
@@ -327,8 +327,8 @@ async function processTrackerBuffer(rxBuffer, clientKey, replyFn, sessionState, 
 
       try {
         await pool.query(`
-          INSERT INTO collares (id, numero_sim, imei, numero_serie, estado, activo, nivel_bateria, senal_celular, version_firmware, fecha_instalacion)
-          VALUES ($1, $2, $3, $4, 'ACTIVO', true, 100, 5, 'F10_A7670SA_LASA', CURRENT_DATE)
+          INSERT INTO collares (id, numero_sim, imei, numero_serie, estado, activo, nivel_bateria, senal_celular, version_firmware, fecha_instalacion, tenant_id)
+          VALUES ($1, $2, $3, $4, 'ACTIVO', true, 100, 5, 'F10_A7670SA_LASA', CURRENT_DATE, (SELECT id FROM tenants ORDER BY id ASC LIMIT 1))
           ON CONFLICT (id) DO NOTHING;
         `, [termId, '04122684691', termId, termId]);
       } catch (_) {}
