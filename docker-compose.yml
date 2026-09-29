@@ -44,6 +44,7 @@ services:
     ports:
       - "3500:3500"
       - "7700:7700"
+      - "7700:7700/udp"
     environment:
       PORT: 3500
       TRACKER_TCP_PORT: 7700

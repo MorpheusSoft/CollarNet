@@ -1,4 +1,5 @@
 import net from 'net';
+import dgram from 'dgram';
 import { processTelemetryPayload, publishTelemetry } from './mqttService.js';
 import pool from '../config/db.js';
 
@@ -62,238 +63,276 @@ function bcdToString(buffer) {
 }
 
 /**
- * Inicializa el servidor TCP en el puerto 7700 para receptar collares comerciales.
+ * Procesa un búfer de datos recibido por TCP o UDP.
+ */
+async function processTrackerBuffer(rxBuffer, clientKey, replyFn, sessionState, io, transport = 'TCP') {
+  let modified = false;
+
+  // ----------------------------------------------------
+  // CASO 1: Protocolo Binario GT06 / Concox (0x78 0x78 o 0x79 0x79)
+  // ----------------------------------------------------
+  while (rxBuffer.length >= 5) {
+    let startIdx = -1;
+    for (let i = 0; i < rxBuffer.length - 1; i++) {
+      if ((rxBuffer[i] === 0x78 && rxBuffer[i + 1] === 0x78) ||
+          (rxBuffer[i] === 0x79 && rxBuffer[i + 1] === 0x79)) {
+        startIdx = i;
+        break;
+      }
+    }
+
+    if (startIdx === -1) break;
+
+    if (startIdx > 0) {
+      rxBuffer = rxBuffer.slice(startIdx);
+    }
+
+    const isExtended = (rxBuffer[0] === 0x79 && rxBuffer[1] === 0x79);
+    const headerLen = isExtended ? 4 : 3;
+    
+    if (rxBuffer.length < headerLen) break;
+
+    const packetDataLen = isExtended 
+      ? rxBuffer.readUInt16BE(2) 
+      : rxBuffer.readUInt8(2);
+
+    const fullPacketLen = headerLen + packetDataLen + 2; // +2 por 0x0D 0x0A
+
+    if (rxBuffer.length < fullPacketLen) {
+      break; // Esperar más bytes
+    }
+
+    const packet = rxBuffer.slice(0, fullPacketLen);
+    rxBuffer = rxBuffer.slice(fullPacketLen);
+    modified = true;
+
+    const protocolNum = isExtended ? packet[4] : packet[3];
+    console.log(`[${transport} Tracker GT06] Paquete 0x${protocolNum.toString(16).padStart(2, '0').toUpperCase()} (${packet.length} B) de ${clientKey}:`, packet.toString('hex'));
+
+    // A. Login (0x01)
+    if (protocolNum === 0x01) {
+      const idBytes = packet.slice(4, 12);
+      let rawId = bcdToString(idBytes);
+      let termId = rawId.replace(/^0+/, '') || rawId;
+      if (rawId.includes('8081421526')) {
+        termId = '8081421526';
+      }
+      sessionState.terminalId = termId;
+
+      const serialOffset = packet.length - 6;
+      const serial = packet.readUInt16BE(serialOffset);
+
+      console.log(`[${transport} Tracker] Login exitoso para collar ID: ${termId} (Serial: ${serial})`);
+      const ack = createGt06Ack(0x01, serial);
+      replyFn(ack);
+      console.log(`[${transport} Tracker] Enviado Login ACK:`, ack.toString('hex'));
+
+      try {
+        await pool.query(`
+          INSERT INTO collares (id, numero_sim, imei, numero_serie, estado, activo, nivel_bateria, senal_celular, version_firmware, fecha_instalacion)
+          VALUES ($1, $2, $3, $4, 'ACTIVO', true, 100, 5, 'F10_A7670SA_LASA', CURRENT_DATE)
+          ON CONFLICT (id) DO NOTHING;
+        `, [termId, `SIM-${termId}`, termId, termId]);
+      } catch (_) {}
+    }
+    // B. Posición GPS (0x12 o 0x22)
+    else if (protocolNum === 0x12 || protocolNum === 0x22) {
+      const dateOffset = 4;
+      const year = 2000 + packet[dateOffset];
+      const month = packet[dateOffset + 1];
+      const day = packet[dateOffset + 2];
+      const hour = packet[dateOffset + 3];
+      const min = packet[dateOffset + 4];
+      const sec = packet[dateOffset + 5];
+
+      const satCount = packet[dateOffset + 6] & 0x0F;
+      const rawLat = packet.readUInt32BE(dateOffset + 7);
+      const rawLon = packet.readUInt32BE(dateOffset + 11);
+      const speed = packet[dateOffset + 15];
+
+      const courseStatus = packet.readUInt16BE(dateOffset + 16);
+      const isGpsFix = Boolean(courseStatus & 0x1000);
+      const isWest = Boolean(courseStatus & 0x0800);
+      const isNorth = Boolean(courseStatus & 0x0400);
+
+      let lat = rawLat / 1800000.0;
+      let lon = rawLon / 1800000.0;
+      if (!isNorth) lat = -lat;
+      if (isWest) lon = -lon;
+
+      const collarId = sessionState.terminalId || '8081421526';
+      console.log(`[${transport} Tracker GPS] Collar: ${collarId} -> Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)} | Vel: ${speed} km/h | Sats: ${satCount} | Fix: ${isGpsFix} | ${year}-${month}-${day} ${hour}:${min}:${sec}`);
+
+      if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && (lat !== 0 || lon !== 0)) {
+        const telemetry = {
+          lat,
+          lon,
+          speed,
+          sats: satCount,
+          gps_fix: isGpsFix,
+          gps_pwr: true,
+          net: '4G LTE',
+          collar_id: collarId
+        };
+        await processTelemetryPayload(io, collarId, telemetry);
+        publishTelemetry(collarId, telemetry);
+      }
+    }
+    // C. Heartbeat / Estado de Batería y Red (0x13)
+    else if (protocolNum === 0x13) {
+      const terminalInfo = packet[4];
+      const voltageLevel = packet[5];
+      const gsmSignal = packet[6];
+
+      let batteryPct = 100;
+      if (voltageLevel <= 6) {
+        const batteryMap = [0, 10, 25, 45, 65, 85, 100];
+        batteryPct = batteryMap[voltageLevel] || 100;
+      } else {
+        batteryPct = Math.min(100, Math.max(0, voltageLevel));
+      }
+
+      const serialOffset = packet.length - 6;
+      const serial = packet.readUInt16BE(serialOffset);
+
+      const collarId = sessionState.terminalId || '8081421526';
+      console.log(`[${transport} Tracker Heartbeat] Collar: ${collarId} | Bat: ${batteryPct}% (Nivel ${voltageLevel}) | CSQ: ${gsmSignal}`);
+      const ack = createGt06Ack(0x13, serial);
+      replyFn(ack);
+
+      const statusTelemetry = {
+        battery: batteryPct,
+        signal: Math.min(5, Math.max(1, Math.round(gsmSignal / 6))),
+        csq: gsmSignal,
+        net: '4G LTE',
+        collar_id: collarId
+      };
+      await processTelemetryPayload(io, collarId, statusTelemetry);
+      publishTelemetry(collarId, statusTelemetry);
+    }
+    // D. Alarma (0x16 o 0x26)
+    else if (protocolNum === 0x16 || protocolNum === 0x26) {
+      const serialOffset = packet.length - 6;
+      const serial = packet.readUInt16BE(serialOffset);
+      console.log(`[${transport} Tracker ALARMA] Alarma reportada por collar: ${sessionState.terminalId || clientKey}`);
+      const ack = createGt06Ack(protocolNum, serial);
+      replyFn(ack);
+    }
+  }
+
+  // ----------------------------------------------------
+  // CASO 2: Protocolo ASCII TK103: (ID...COMMAND...)
+  // ----------------------------------------------------
+  const rawStr = rxBuffer.toString('utf8');
+  const asciiMatches = rawStr.match(/\(([^\)]+)\)/g);
+  if (asciiMatches && asciiMatches.length > 0) {
+    for (const match of asciiMatches) {
+      const content = match.replace(/[()]/g, '');
+      console.log(`[${transport} Tracker ASCII TK103]: ${content}`);
+
+      const idMatch = content.match(/^(\d{10,12})/);
+      if (idMatch) {
+        let termId = idMatch[1].replace(/^0+/, '');
+        if (idMatch[1].includes('8081421526')) termId = '8081421526';
+        sessionState.terminalId = termId;
+
+        if (content.includes('BP05') || content.includes('BP00')) {
+          replyFn(Buffer.from(`(${idMatch[1]}AP05)`));
+          console.log(`[${transport} Tracker TK103] Enviado Login ACK a ${termId}`);
+        } else if (content.includes('BR00')) {
+          replyFn(Buffer.from(`(${idMatch[1]}AR00)`));
+        }
+      }
+    }
+    rxBuffer = Buffer.alloc(0);
+    modified = true;
+  }
+
+  // ----------------------------------------------------
+  // CASO 3: Trama de texto con etiquetas (Starry GPS / Formato texto directo)
+  // Ej: lat:22.695768,lon:114.371173,bat:100%,ID:8081421526
+  // o enlace Google Maps: maps?q=N22.695768,E114.371173
+  // ----------------------------------------------------
+  if (rawStr.includes('lat:') || rawStr.includes('ID:') || rawStr.includes('maps?q=')) {
+    const latMatch = rawStr.match(/lat[:=]([-+]?\d+\.\d+)/i);
+    const lonMatch = rawStr.match(/lon[:=]([-+]?\d+\.\d+)/i);
+    const idMatch = rawStr.match(/ID[:=](\d+)/i);
+    const batMatch = rawStr.match(/bat[:=](\d+)%/i);
+
+    let termId = sessionState.terminalId || '8081421526';
+    if (idMatch) termId = idMatch[1];
+    sessionState.terminalId = termId;
+
+    let parsedLat = null;
+    let parsedLon = null;
+
+    if (latMatch && lonMatch) {
+      parsedLat = parseFloat(latMatch[1]);
+      parsedLon = parseFloat(lonMatch[1]);
+    } else {
+      const gmapMatch = rawStr.match(/maps\?q=([NS])?([\d\.]+),([EW])?([\d\.]+)/i);
+      if (gmapMatch) {
+        parsedLat = parseFloat(gmapMatch[2]);
+        parsedLon = parseFloat(gmapMatch[4]);
+        if (gmapMatch[1] && gmapMatch[1].toUpperCase() === 'S') parsedLat = -parsedLat;
+        if (gmapMatch[3] && gmapMatch[3].toUpperCase() === 'W') parsedLon = -parsedLon;
+      }
+    }
+
+    if (parsedLat !== null && parsedLon !== null) {
+      const battery = batMatch ? parseInt(batMatch[1], 10) : 100;
+      console.log(`[${transport} Tracker Texto] Collar ${termId} -> Lat: ${parsedLat}, Lon: ${parsedLon}, Bat: ${battery}%`);
+      await processTelemetryPayload(io, termId, { lat: parsedLat, lon: parsedLon, battery, net: '4G LTE' });
+      publishTelemetry(termId, { lat: parsedLat, lon: parsedLon, battery, net: '4G LTE' });
+    }
+    rxBuffer = Buffer.alloc(0);
+    modified = true;
+  }
+
+  // Si no se procesó nada y el buffer supera 1 KB de basura no reconocida, vaciar para prevenir DoS
+  if (!modified && rxBuffer.length > 1024) {
+    console.warn(`[${transport} Tracker] Descartando ${rxBuffer.length} bytes no reconocidos de ${clientKey}`);
+    rxBuffer = Buffer.alloc(0);
+  }
+
+  return rxBuffer;
+}
+
+/**
+ * Inicializa los servidores TCP y UDP en el puerto 7700 para receptar collares comerciales.
  * @param {Object} io - Instancia del servidor de WebSockets de Socket.io
  */
 export function initTrackerTcpService(io) {
   const PORT = parseInt(process.env.TRACKER_TCP_PORT || '7700', 10);
   const HOST = '0.0.0.0';
 
-  const server = net.createServer((socket) => {
+  // ==========================================
+  // 1. SERVIDOR TCP (Puerto 7700)
+  // ==========================================
+  const tcpServer = net.createServer((socket) => {
     const clientKey = `${socket.remoteAddress}:${socket.remotePort}`;
     console.log(`[TCP Tracker] Nueva conexión entrante desde: ${clientKey}`);
+    socket.setKeepAlive(true, 30000);
 
-    // Contexto de sesión para el socket
-    let terminalId = null;
+    const sessionState = { terminalId: null };
     let rxBuffer = Buffer.alloc(0);
 
     socket.on('data', async (chunk) => {
+      console.log(`[TCP Tracker RAW] ${chunk.length} B de ${clientKey}: [HEX: ${chunk.toString('hex')}] [TXT: ${chunk.toString('utf8').replace(/[^\x20-\x7E]/g, '.')}]`);
       rxBuffer = Buffer.concat([rxBuffer, chunk]);
 
       try {
-        // ----------------------------------------------------
-        // CASO 1: Protocolo Binario GT06 / Concox (0x78 0x78 o 0x79 0x79)
-        // ----------------------------------------------------
-        while (rxBuffer.length >= 5) {
-          // Buscar cabecera GT06
-          let startIdx = -1;
-          for (let i = 0; i < rxBuffer.length - 1; i++) {
-            if ((rxBuffer[i] === 0x78 && rxBuffer[i + 1] === 0x78) ||
-                (rxBuffer[i] === 0x79 && rxBuffer[i + 1] === 0x79)) {
-              startIdx = i;
-              break;
-            }
-          }
-
-          if (startIdx === -1) {
-            break; // No hay cabecera binaria, verificar si es ASCII más abajo
-          }
-
-          if (startIdx > 0) {
-            rxBuffer = rxBuffer.slice(startIdx);
-          }
-
-          const isExtended = (rxBuffer[0] === 0x79 && rxBuffer[1] === 0x79);
-          const headerLen = isExtended ? 4 : 3; // 78 78 len (3B) o 79 79 len_h len_l (4B)
-          
-          if (rxBuffer.length < headerLen) break;
-
-          const packetDataLen = isExtended 
-            ? rxBuffer.readUInt16BE(2) 
-            : rxBuffer.readUInt8(2);
-
-          const fullPacketLen = headerLen + packetDataLen + 2; // +2 por 0x0D 0x0A
-
-          if (rxBuffer.length < fullPacketLen) {
-            break; // Esperar más bytes del buffer TCP
-          }
-
-          const packet = rxBuffer.slice(0, fullPacketLen);
-          rxBuffer = rxBuffer.slice(fullPacketLen);
-
-          const protocolNum = isExtended ? packet[4] : packet[3];
-          console.log(`[TCP Tracker GT06] Paquete 0x${protocolNum.toString(16).padStart(2, '0').toUpperCase()} (${packet.length} bytes) de ${clientKey}:`, packet.toString('hex'));
-
-          // A. Paquete de Login (0x01)
-          if (protocolNum === 0x01) {
-            // Bytes 4..11: Terminal ID (8 bytes BCD)
-            const idBytes = packet.slice(4, 12);
-            let rawId = bcdToString(idBytes);
-            // Quitar ceros a la izquierda para emparejar con el ID de 10 dígitos (ej. 8081421526)
-            terminalId = rawId.replace(/^0+/, '') || rawId;
-            socket.terminalId = terminalId;
-
-            // Extraer serial de 2 bytes (antes del CRC y 0x0D 0x0A)
-            const serialOffset = packet.length - 6;
-            const serial = packet.readUInt16BE(serialOffset);
-
-            console.log(`[TCP Tracker] Login exitoso para collar ID: ${terminalId} (Serial: ${serial})`);
-            const ack = createGt06Ack(0x01, serial);
-            socket.write(ack);
-            console.log(`[TCP Tracker] Enviado Login ACK:`, ack.toString('hex'));
-
-            // Auto-registro en DB si no existe
-            try {
-              await pool.query(`
-                INSERT INTO collares (id, numero_sim, imei, numero_serie, estado, activo, nivel_bateria, senal_celular, version_firmware, fecha_instalacion)
-                VALUES ($1, $2, $3, $4, 'ACTIVO', true, 100, 5, 'F10_A7670SA_LASA', CURRENT_DATE)
-                ON CONFLICT (id) DO NOTHING;
-              `, [terminalId, `SIM-${terminalId}`, terminalId, terminalId]);
-            } catch (_) {}
-          }
-          // B. Paquete de Posición GPS (0x12 o 0x22)
-          else if (protocolNum === 0x12 || protocolNum === 0x22) {
-            const dateOffset = 4;
-            const year = 2000 + packet[dateOffset];
-            const month = packet[dateOffset + 1];
-            const day = packet[dateOffset + 2];
-            const hour = packet[dateOffset + 3];
-            const min = packet[dateOffset + 4];
-            const sec = packet[dateOffset + 5];
-
-            const satCount = packet[dateOffset + 6] & 0x0F;
-            const rawLat = packet.readUInt32BE(dateOffset + 7);
-            const rawLon = packet.readUInt32BE(dateOffset + 11);
-            const speed = packet[dateOffset + 15]; // km/h
-
-            const courseStatus = packet.readUInt16BE(dateOffset + 16);
-            const isGpsFix = Boolean(courseStatus & 0x1000);
-            const isWest = Boolean(courseStatus & 0x0800);
-            const isNorth = Boolean(courseStatus & 0x0400);
-            const course = courseStatus & 0x03FF;
-
-            let lat = rawLat / 1800000.0;
-            let lon = rawLon / 1800000.0;
-            if (!isNorth) lat = -lat;
-            if (isWest) lon = -lon;
-
-            // Validar coordenadas razonables
-            if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && (lat !== 0 || lon !== 0)) {
-              console.log(`[TCP Tracker GPS] Collar: ${terminalId || clientKey} -> Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)} | Vel: ${speed} km/h | Sats: ${satCount} | Fecha: ${year}-${month}-${day} ${hour}:${min}:${sec}`);
-              
-              const telemetry = {
-                lat,
-                lon,
-                speed,
-                sats: satCount,
-                gps_fix: isGpsFix,
-                gps_pwr: true,
-                net: '4G LTE',
-                collar_id: terminalId || '8081421526'
-              };
-
-              if (terminalId) {
-                await processTelemetryPayload(io, terminalId, telemetry);
-                publishTelemetry(terminalId, telemetry);
-              }
-            }
-          }
-          // C. Paquete de Heartbeat / Estado de Batería y Red (0x13)
-          else if (protocolNum === 0x13) {
-            const terminalInfo = packet[4];
-            const voltageLevel = packet[5];
-            const gsmSignal = packet[6];
-
-            // Conversión de nivel de voltaje de batería (0-6) a porcentaje
-            let batteryPct = 100;
-            if (voltageLevel <= 6) {
-              const batteryMap = [0, 10, 25, 45, 65, 85, 100];
-              batteryPct = batteryMap[voltageLevel] || 100;
-            } else {
-              batteryPct = Math.min(100, Math.max(0, voltageLevel));
-            }
-
-            const serialOffset = packet.length - 6;
-            const serial = packet.readUInt16BE(serialOffset);
-
-            console.log(`[TCP Tracker Heartbeat] Collar: ${terminalId || clientKey} | Bat: ${batteryPct}% (Nivel ${voltageLevel}) | CSQ: ${gsmSignal}`);
-            const ack = createGt06Ack(0x13, serial);
-            socket.write(ack);
-
-            if (terminalId) {
-              const statusTelemetry = {
-                battery: batteryPct,
-                signal: Math.min(5, Math.max(1, Math.round(gsmSignal / 6))),
-                csq: gsmSignal,
-                net: '4G LTE',
-                collar_id: terminalId
-              };
-              await processTelemetryPayload(io, terminalId, statusTelemetry);
-              publishTelemetry(terminalId, statusTelemetry);
-            }
-          }
-          // D. Paquete de Alarma (0x16 o 0x26)
-          else if (protocolNum === 0x16 || protocolNum === 0x26) {
-            const serialOffset = packet.length - 6;
-            const serial = packet.readUInt16BE(serialOffset);
-            console.log(`[TCP Tracker ALARMA] Alarma reportada por collar: ${terminalId || clientKey}`);
-            const ack = createGt06Ack(protocolNum, serial);
-            socket.write(ack);
-          }
+        rxBuffer = await processTrackerBuffer(
+          rxBuffer, 
+          clientKey, 
+          (replyBuf) => socket.write(replyBuf), 
+          sessionState, 
+          io, 
+          'TCP'
+        );
+        if (sessionState.terminalId) {
+          socket.terminalId = sessionState.terminalId;
         }
-
-        // ----------------------------------------------------
-        // CASO 2: Protocolo de Texto ASCII TK103: (ID...COMMAND...)
-        // ----------------------------------------------------
-        const rawStr = rxBuffer.toString('utf8');
-        const asciiMatches = rawStr.match(/\(([^\)]+)\)/g);
-        if (asciiMatches && asciiMatches.length > 0) {
-          for (const match of asciiMatches) {
-            const content = match.replace(/[()]/g, '');
-            console.log(`[TCP Tracker ASCII TK103]: ${content}`);
-
-            // Formato típico TK103: 08081421526BP050000...
-            const idMatch = content.match(/^(\d{10,12})/);
-            if (idMatch) {
-              terminalId = idMatch[1].replace(/^0+/, '');
-              socket.terminalId = terminalId;
-
-              // Responder ACK según comando
-              if (content.includes('BP05') || content.includes('BP00')) {
-                // Login ACK
-                socket.write(`(${idMatch[1]}AP05)`);
-                console.log(`[TCP Tracker TK103] Enviado Login ACK a ${terminalId}`);
-              } else if (content.includes('BR00')) {
-                // Location ACK
-                socket.write(`(${idMatch[1]}AR00)`);
-              }
-            }
-          }
-          // Limpiar el texto procesado
-          rxBuffer = Buffer.alloc(0);
-        }
-
-        // ----------------------------------------------------
-        // CASO 3: Trama de texto con etiquetas (Starry GPS / Formato texto directo)
-        // Ej: lat:22.695768,lon:114.371173,bat:100%,ID:8081421526
-        // ----------------------------------------------------
-        if (rawStr.includes('lat:') || rawStr.includes('ID:')) {
-          const latMatch = rawStr.match(/lat[:=]([-+]?\d+\.\d+)/i);
-          const lonMatch = rawStr.match(/lon[:=]([-+]?\d+\.\d+)/i);
-          const idMatch = rawStr.match(/ID[:=](\d+)/i);
-          const batMatch = rawStr.match(/bat[:=](\d+)%/i);
-
-          if (idMatch) terminalId = idMatch[1];
-          if (latMatch && lonMatch && terminalId) {
-            const lat = parseFloat(latMatch[1]);
-            const lon = parseFloat(lonMatch[1]);
-            const battery = batMatch ? parseInt(batMatch[1], 10) : 100;
-            console.log(`[TCP Tracker Texto] Collar ${terminalId} -> Lat: ${lat}, Lon: ${lon}, Bat: ${battery}%`);
-            await processTelemetryPayload(io, terminalId, { lat, lon, battery, net: '4G LTE' });
-          }
-          rxBuffer = Buffer.alloc(0);
-        }
-
       } catch (err) {
         console.error(`[TCP Tracker] Error decodificando paquete de ${clientKey}:`, err);
       }
@@ -307,24 +346,64 @@ export function initTrackerTcpService(io) {
       console.warn(`[TCP Tracker] Error en socket ${clientKey}:`, err.message);
     });
 
-    // Timeout de inactividad de 5 minutos
-    socket.setTimeout(300000, () => {
+    // Timeout de inactividad de 10 minutos
+    socket.setTimeout(600000, () => {
       console.log(`[TCP Tracker] Timeout de inactividad en ${clientKey}. Cerrando conexión.`);
       socket.end();
     });
   });
 
-  server.on('error', (err) => {
+  tcpServer.on('error', (err) => {
     console.error(`[TCP Tracker] Error en servidor TCP puerto ${PORT}:`, err);
   });
 
-  server.listen(PORT, HOST, () => {
+  tcpServer.listen(PORT, HOST, () => {
     console.log(`=========================================`);
     console.log(` 📡 Servidor Receptor TCP para Collares GPS`);
     console.log(` Escuchando en: ${HOST}:${PORT} (TCP)`);
-    console.log(` Soporte: Protocolos GT06 / TK103 / F10`);
+    console.log(` Soporte: Protocolos GT06 / TK103 / Starry F10`);
     console.log(`=========================================`);
   });
 
-  return server;
+  // ==========================================
+  // 2. SERVIDOR UDP (Puerto 7700)
+  // ==========================================
+  try {
+    const udpServer = dgram.createSocket('udp4');
+    
+    udpServer.on('message', async (msg, rinfo) => {
+      const clientKey = `${rinfo.address}:${rinfo.port}`;
+      console.log(`[UDP Tracker RAW] ${msg.length} B de ${clientKey}: [HEX: ${msg.toString('hex')}] [TXT: ${msg.toString('utf8').replace(/[^\x20-\x7E]/g, '.')}]`);
+
+      const sessionState = { terminalId: null };
+      try {
+        await processTrackerBuffer(
+          msg,
+          clientKey,
+          (replyBuf) => {
+            udpServer.send(replyBuf, rinfo.port, rinfo.address, (sendErr) => {
+              if (sendErr) console.warn(`[UDP Tracker] Error enviando ACK a ${clientKey}:`, sendErr.message);
+            });
+          },
+          sessionState,
+          io,
+          'UDP'
+        );
+      } catch (err) {
+        console.error(`[UDP Tracker] Error procesando datagrama de ${clientKey}:`, err);
+      }
+    });
+
+    udpServer.on('error', (err) => {
+      console.warn(`[UDP Tracker] Error en servidor UDP puerto ${PORT}:`, err.message);
+    });
+
+    udpServer.bind(PORT, HOST, () => {
+      console.log(` 📡 Receptor UDP activo en: ${HOST}:${PORT} (UDP)`);
+    });
+  } catch (udpErr) {
+    console.warn(`[UDP Tracker] No se pudo inicializar receptor UDP:`, udpErr.message);
+  }
+
+  return tcpServer;
 }
