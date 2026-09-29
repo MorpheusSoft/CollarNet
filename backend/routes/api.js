@@ -2,6 +2,7 @@ import express from 'express';
 import pool from '../config/db.js';
 import { saveHato, savePotrero } from '../services/geofenceService.js';
 import { publishToCollar, publishCameraCmd } from '../services/mqttService.js';
+import { sendCommandToCollar } from '../services/trackerTcpService.js';
 import { extractGeofenceFromPDF } from '../services/aiService.js';
 import { sendTelegramMessage, dispatchAlertNotification } from '../services/notificationService.js';
 import { pushCollarFrame, getCollarSnapshot, handleLiveStream } from '../services/cameraService.js';
@@ -3387,6 +3388,37 @@ router.patch('/collares/:id', async (req, res) => {
     console.error('[Error PATCH collares]:', err);
     res.status(500).json({ error: err.message });
   }
+});
+
+/**
+ * POST /api/collares/:id/sonar
+ * Activa el zumbador / sonido de búsqueda del collar físico.
+ */
+router.post('/collares/:id/sonar', async (req, res) => {
+  const { id } = req.params;
+  const result = sendCommandToCollar(id, 'FIND');
+  return res.json({ 
+    success: result, 
+    collarId: id, 
+    mensaje: result ? 'Comando FIND enviado con éxito al collar físico.' : 'El collar no tiene un socket TCP activo en este momento.' 
+  });
+});
+
+/**
+ * POST /api/collares/:id/comando
+ * Envía un comando arbitrario de protocolo 3G (ej: FIND, CR, UPLOAD,60, etc.)
+ */
+router.post('/collares/:id/comando', async (req, res) => {
+  const { id } = req.params;
+  const { comando } = req.body;
+  const targetCmd = String(comando || 'FIND').trim();
+  const result = sendCommandToCollar(id, targetCmd);
+  return res.json({ 
+    success: result, 
+    collarId: id, 
+    comando: targetCmd,
+    mensaje: result ? `Comando ${targetCmd} transmitido al collar físico.` : 'El collar no tiene un socket TCP activo en este momento.'
+  });
 });
 
 /**

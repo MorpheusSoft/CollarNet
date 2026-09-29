@@ -3,6 +3,7 @@ import pool from '../config/db.js';
 import { evaluateAnimalPosition } from './geofenceService.js';
 import { processTelemetryInMemory } from '../routes/api.js';
 import { pushCollarFrame } from './cameraService.js';
+import { sendCommandToCollar } from './trackerTcpService.js';
 
 let mqttClient = null;
 
@@ -132,6 +133,11 @@ export async function processTelemetryPayload(io, collarId, payload) {
             `;
             await pool.query(insertTelemetryQuery, [animalId, lat, lon, bateria, senal]);
             await handleAlertLifecycle(animalId, checkResult.alertType, lat, lon);
+
+            if (checkResult.alertType !== 'NORMAL') {
+              console.log(`[Alerta Activa] Animal ${animalId} (${areteVisual}) en ${checkResult.alertType}. Enviando orden de sonar al collar ${matchedCollarId}`);
+              sendCommandToCollar(matchedCollarId, 'FIND');
+            }
           }
 
           if (hasValidCoords) {
