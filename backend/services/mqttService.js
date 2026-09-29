@@ -99,7 +99,8 @@ export async function processTelemetryPayload(io, collarId, payload) {
       // 1. Intentar persistencia y validación en PostgreSQL si la base de datos está disponible
       try {
         const collarQuery = `
-          SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.estado, c.imei AS db_imei 
+          SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.estado, c.imei AS db_imei,
+                 ST_Y(c.ultima_ubicacion) AS last_lat, ST_X(c.ultima_ubicacion) AS last_lon 
           FROM collares c 
           LEFT JOIN animales a ON a.collar_id = c.id 
           WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar);
@@ -116,9 +117,13 @@ export async function processTelemetryPayload(io, collarId, payload) {
             console.warn(`[MQTT Seguridad] Advertencia: Dispositivo con IMEI ${imei} transmitiendo para el collar ${matchedCollarId} (registrado con IMEI: ${dbImei}).`);
           }
 
+          const hasValidCoords = (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0));
+          const effectiveLat = hasValidCoords ? lat : (activeCollar.last_lat ? parseFloat(activeCollar.last_lat) : 10.0647);
+          const effectiveLon = hasValidCoords ? lon : (activeCollar.last_lon ? parseFloat(activeCollar.last_lon) : -69.3570);
+
           const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
 
-          if (animalId && isOperativo && !isNaN(lat) && !isNaN(lon)) {
+          if (animalId && isOperativo && hasValidCoords) {
             checkResult = await evaluateAnimalPosition(animalId, lat, lon);
 
             const insertTelemetryQuery = `
@@ -129,21 +134,38 @@ export async function processTelemetryPayload(io, collarId, payload) {
             await handleAlertLifecycle(animalId, checkResult.alertType, lat, lon);
           }
 
-          const updateCollarQuery = `
-            UPDATE collares 
-            SET nivel_bateria = $1, 
-                senal_celular = $2, 
-                ultima_conexion = NOW(),
-                ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
-                esta_cargando = $5,
-                voltaje_mv = $6,
-                medio_red = $7,
-                gps_encendido = $8,
-                gps_fijado = $9,
-                satelites_visibles = $10
-            WHERE id = $11;
-          `;
-          await pool.query(updateCollarQuery, [bateria, senal, lat, lon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+          if (hasValidCoords) {
+            const updateCollarQuery = `
+              UPDATE collares 
+              SET nivel_bateria = $1, 
+                  senal_celular = $2, 
+                  ultima_conexion = NOW(),
+                  ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
+                  esta_cargando = $5,
+                  voltaje_mv = $6,
+                  medio_red = $7,
+                  gps_encendido = $8,
+                  gps_fijado = $9,
+                  satelites_visibles = $10
+              WHERE id = $11;
+            `;
+            await pool.query(updateCollarQuery, [bateria, senal, lat, lon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+          } else {
+            const updateCollarStatusQuery = `
+              UPDATE collares 
+              SET nivel_bateria = $1, 
+                  senal_celular = $2, 
+                  ultima_conexion = NOW(),
+                  esta_cargando = $3,
+                  voltaje_mv = $4,
+                  medio_red = $5,
+                  gps_encendido = $6,
+                  gps_fijado = $7,
+                  satelites_visibles = $8
+              WHERE id = $9;
+            `;
+            await pool.query(updateCollarStatusQuery, [bateria, senal, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+          }
 
           broadcastData = {
             collarId: matchedCollarId,
@@ -152,8 +174,8 @@ export async function processTelemetryPayload(io, collarId, payload) {
             animal_id: animalId || null,
             areteVisual: areteVisual || 'SIN VÍNCULO',
             arete_visual: areteVisual || 'SIN VÍNCULO',
-            lat: parseFloat(lat),
-            lon: parseFloat(lon),
+            lat: effectiveLat,
+            lon: effectiveLon,
             bateria: parseInt(bateria, 10),
             nivel_bateria: parseInt(bateria, 10),
             senal: parseInt(senal, 10),
