@@ -1,15 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../providers/finca_state_provider.dart';
+import '../services/api_service.dart';
 import '../theme/finca_theme.dart';
 import '../widgets/collar_camera_viewer_widget.dart';
 
 class BuscarResScreen extends StatefulWidget {
-  const BuscarResScreen({Key? key}) : super(key: key);
+  final Map<String, dynamic>? initialAnimal;
+
+  const BuscarResScreen({Key? key, this.initialAnimal}) : super(key: key);
 
   @override
   State<BuscarResScreen> createState() => _BuscarResScreenState();
@@ -27,8 +32,8 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
 
   // Ubicación del Usuario
   Position? _userPosition;
-  double _userLat = 8.538500;
-  double _userLng = -70.358000;
+  double _userLat = 10.671340;
+  double _userLng = -71.604030;
   double _gpsAccuracy = 3.0;
   bool _gpsFixObtenido = false;
   String _gpsEstadoMensaje = 'Iniciando GPS satelital...';
@@ -38,17 +43,23 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
   bool _sensorBrujulaActivo = false;
 
   // Ubicación del Animal Destino (Target)
-  double _targetLat = 8.539136;
-  double _targetLng = -70.357356;
-  String _resSeleccionada = '🚨 V-999 "Mariposa" (EXTRAVIADA 100m)';
-  String _collarId = 'COL-0999';
-  double _nivelBateriaCollar = 76.0;
-  String _estadoPotrero = '¡FUERA DE CERCA! (A 100m)';
+  double _targetLat = 10.671340;
+  double _targetLng = -71.604030;
+  String _resSeleccionada = '🐄 VACA-001 (COW-001)';
+  String _resArete = 'VACA-001';
+  String _collarId = 'COW-001';
+  String _collarIp = '';
+  double _nivelBateriaCollar = 80.0;
+  String _estadoPotrero = 'Potrero A (En vivo)';
+  String _estadoCerca = 'DENTRO';
+  String _medioRed = 'CELULAR';
+  bool _isSimulationMode = false;
+  bool _sendingBuzzer = false;
 
   // Cálculos Geodésicos en Tiempo Real
-  double _distanciaMetros = 100.0;
-  double _rumboGrados = 45.0; // Rumbo absoluto hacia la res desde el Norte (0..360)
-  String _cardinal = 'NE';
+  double _distanciaMetros = 0.0;
+  double _rumboGrados = 0.0; // Rumbo absoluto hacia la res desde el Norte (0..360)
+  String _cardinal = 'N';
 
   // Simulación de Pasos Manuales (para prueba de escritorio)
   double _simulatedStepOffset = 0.0;
@@ -67,7 +78,44 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
 
+    _aplicarAnimalInicial();
     _inicializarSensores();
+  }
+
+  void _aplicarAnimalInicial() {
+    if (widget.initialAnimal != null) {
+      final a = widget.initialAnimal!;
+      final arete = a['arete_visual']?.toString() ?? a['areteVisual']?.toString() ?? a['arete']?.toString() ?? 'VACA-001';
+      final col = a['collar_id']?.toString() ?? a['collarId']?.toString() ?? 'COW-001';
+      final bat = ((a['nivel_bateria'] ?? a['bateria'] ?? 80) as num).toDouble();
+      final pot = a['potrero_nombre']?.toString() ?? a['potreroNombre']?.toString() ?? 'Potrero A';
+      final lat = ((a['latitud'] ?? a['lat'] ?? 10.67134) as num).toDouble();
+      final lng = ((a['longitud'] ?? a['lng'] ?? a['lon'] ?? -71.60403) as num).toDouble();
+      final ip = a['ip']?.toString() ?? '192.168.86.26';
+      final cerca = a['estado_cerca']?.toString() ?? 'DENTRO';
+
+      _targetLat = lat;
+      _targetLng = lng;
+      _collarId = col;
+      _collarIp = ip;
+      _resArete = arete;
+      _resSeleccionada = '🐄 $arete ($col)';
+      _nivelBateriaCollar = bat;
+      _estadoPotrero = pot;
+      _estadoCerca = cerca;
+      _isSimulationMode = false;
+    } else {
+      _targetLat = 10.67134;
+      _targetLng = -71.60403;
+      _collarId = 'COW-001';
+      _collarIp = '';
+      _resArete = 'VACA-001';
+      _resSeleccionada = '🐄 VACA-001 (COW-001)';
+      _nivelBateriaCollar = 80.0;
+      _estadoPotrero = 'Potrero A (En vivo)';
+      _estadoCerca = 'DENTRO';
+      _isSimulationMode = false;
+    }
   }
 
   @override
@@ -128,7 +176,8 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
           setState(() {
             _gpsEstadoMensaje = 'Permiso GPS denegado. Usando simulación geodésica.';
           });
-          _anclarVacaA100mDe(_userLat, _userLng);
+          if (_isSimulationMode) _anclarVacaA100mDe(_userLat, _userLng);
+          else _recalcularGeodesica();
           return;
         }
       }
@@ -137,7 +186,8 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
         setState(() {
           _gpsEstadoMensaje = 'Permiso GPS permanente denegado.';
         });
-        _anclarVacaA100mDe(_userLat, _userLng);
+        if (_isSimulationMode) _anclarVacaA100mDe(_userLat, _userLng);
+        else _recalcularGeodesica();
         return;
       }
 
@@ -157,7 +207,11 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
         });
       }
 
-      _anclarVacaA100mDe(_userLat, _userLng);
+      if (_isSimulationMode) {
+        _anclarVacaA100mDe(_userLat, _userLng);
+      } else {
+        _recalcularGeodesica();
+      }
 
       _positionStreamSubscription = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
@@ -180,7 +234,11 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
       if (mounted) {
         setState(() {
           _gpsEstadoMensaje = 'Modo Brújula Activo';
-          _anclarVacaA100mDe(_userLat, _userLng);
+          if (_isSimulationMode) {
+            _anclarVacaA100mDe(_userLat, _userLng);
+          } else {
+            _recalcularGeodesica();
+          }
         });
       }
     }
@@ -198,6 +256,11 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
     final double lng2Rad = lng1Rad + atan2(sin(rumboRad) * sin(distRad) * cos(lat1Rad), cos(distRad) - sin(lat1Rad) * sin(lat2Rad));
 
     setState(() {
+      _isSimulationMode = true;
+      _resArete = 'V-999';
+      _resSeleccionada = '🚨 V-999 "Mariposa" (Simulación 100m)';
+      _estadoPotrero = '¡FUERA DE CERCA! (A 100m)';
+      _estadoCerca = 'FUERA';
       _targetLat = lat2Rad * (180.0 / pi);
       _targetLng = lng2Rad * (180.0 / pi);
       _simulatedStepOffset = 0.0;
@@ -246,27 +309,25 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
   }
 
   List<Map<String, dynamic>> _obtenerListaAnimales(FincaStateProvider state) {
-    final List<Map<String, dynamic>> lista = [
-      {
-        'nombre': '🚨 V-999 "Mariposa" (EXTRAVIADA 100m)',
-        'arete': 'V-999',
-        'collar': 'COL-0999',
-        'bateria': 76.0,
-        'estado': '¡FUERA DE CERCA! (A 100m)',
-        'esSimulada': true,
-        'lat': _targetLat,
-        'lng': _targetLng,
-      }
-    ];
+    final List<Map<String, dynamic>> lista = [];
 
+    // 1. Agregar animales reales registrados en el sistema
+    bool collarRealEncontrado = false;
     for (var a in state.animales) {
-      final arete = a['areteVisual'] ?? 'Res';
+      final arete = a['areteVisual'] ?? a['arete_visual'] ?? a['arete'] ?? 'Res';
       if (arete.toString().contains('V-999')) continue;
-      final collar = a['collarId'] ?? 'S/C';
-      final bat = ((a['bateria'] ?? 90) as num).toDouble();
-      final pot = a['potreroNombre'] ?? 'Potrero Principal';
-      final lat = (a['latitud'] ?? 8.5385) as double;
-      final lng = (a['longitud'] ?? -70.3580) as double;
+      final collar = a['collarId'] ?? a['collar_id'] ?? 'COW-001';
+      final bat = ((a['bateria'] ?? a['nivel_bateria'] ?? 80) as num).toDouble();
+      final pot = a['potreroNombre'] ?? a['potrero_nombre'] ?? 'Potrero A';
+      final lat = ((a['latitud'] ?? a['lat'] ?? 10.67134) as num).toDouble();
+      final lng = ((a['longitud'] ?? a['lng'] ?? a['lon'] ?? -71.60403) as num).toDouble();
+      final ip = a['ip']?.toString() ?? '192.168.86.26';
+      final cerca = a['estado_cerca']?.toString() ?? 'DENTRO';
+      final medio = a['medio_red']?.toString() ?? a['medioRed']?.toString() ?? 'CELULAR';
+
+      if (collar.toString().contains('COW-001') || collar.toString().contains('8081421526')) {
+        collarRealEncontrado = true;
+      }
 
       lista.add({
         'nombre': '🐄 $arete ($collar)',
@@ -277,8 +338,42 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
         'esSimulada': false,
         'lat': lat,
         'lng': lng,
+        'ip': ip,
+        'estado_cerca': cerca,
+        'medio_red': medio,
       });
     }
+
+    // 2. Si no hay collar en la lista, asegurar que el collar físico real esté disponible
+    if (!collarRealEncontrado) {
+      lista.insert(0, {
+        'nombre': '🐄 VACA-001 (COW-001)',
+        'arete': 'VACA-001',
+        'collar': 'COW-001',
+        'bateria': 80.0,
+        'estado': 'Potrero A (En vivo)',
+        'esSimulada': false,
+        'lat': 10.67134,
+        'lng': -71.60403,
+        'ip': '',
+        'estado_cerca': 'DENTRO',
+        'medio_red': 'CELULAR',
+      });
+    }
+
+    // 3. Opción de simulación para pruebas de escritorio
+    lista.add({
+      'nombre': '🚨 V-999 "Mariposa" (Simulación 100m)',
+      'arete': 'V-999',
+      'collar': 'COL-0999',
+      'bateria': 76.0,
+      'estado': '¡FUERA DE CERCA! (A 100m)',
+      'esSimulada': true,
+      'lat': _targetLat,
+      'lng': _targetLng,
+      'ip': '192.168.86.26',
+      'estado_cerca': 'FUERA',
+    });
 
     return lista;
   }
@@ -294,6 +389,23 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
   Widget build(BuildContext context) {
     final fincaState = context.watch<FincaStateProvider>();
     final listaAnimales = _obtenerListaAnimales(fincaState);
+
+    // Sincronizar automáticamente coordenadas GPS en vivo reportadas por el collar físico
+    final itemActual = listaAnimales.firstWhere(
+      (a) => a['collar'] == _collarId,
+      orElse: () => listaAnimales.isNotEmpty ? listaAnimales.first : <String, dynamic>{},
+    );
+    if (!_isSimulationMode && itemActual.isNotEmpty) {
+      final double lat = (itemActual['lat'] as num?)?.toDouble() ?? 0.0;
+      final double lng = (itemActual['lng'] as num?)?.toDouble() ?? 0.0;
+      if (lat != 0.0 && lng != 0.0 && (lat != _targetLat || lng != _targetLng)) {
+        _targetLat = lat;
+        _targetLng = lng;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _recalcularGeodesica();
+        });
+      }
+    }
 
     final bool llegoAlAnimal = _distanciaMetros <= 5.0;
     final bool muyCerca = _distanciaMetros <= 15.0 && !llegoAlAnimal;
@@ -340,12 +452,14 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
             CollarCameraViewerWidget(
               animal: {
                 'collar_id': _collarId,
-                'arete_visual': 'V-999',
+                'arete_visual': _resArete,
                 'potrero_nombre': _estadoPotrero,
                 'nivel_bateria': _nivelBateriaCollar.toInt(),
                 'latitud': _targetLat,
                 'longitud': _targetLng,
-                'estado_cerca': 'FUERA',
+                'estado_cerca': _estadoCerca,
+                'ip': _collarIp,
+                'medio_red': _medioRed,
               },
               initialMode: _cameraMode,
               onModeChanged: (mode) {
@@ -489,12 +603,18 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
                       setState(() {
                         _resSeleccionada = val;
                         _collarId = item['collar'] as String;
+                        _resArete = item['arete'] as String? ?? 'VACA-001';
                         _nivelBateriaCollar = item['bateria'] as double;
                         _estadoPotrero = item['estado'] as String;
+                        _collarIp = item['ip'] as String? ?? '';
+                        _estadoCerca = item['estado_cerca'] as String? ?? 'DENTRO';
+                        _medioRed = item['medio_red'] as String? ?? 'CELULAR';
 
                         if (item['esSimulada'] == true) {
+                          _isSimulationMode = true;
                           _anclarVacaA100mDe(_userLat, _userLng);
                         } else {
+                          _isSimulationMode = false;
                           _targetLat = item['lat'] as double;
                           _targetLng = item['lng'] as double;
                           _simulatedStepOffset = 0.0;
@@ -987,29 +1107,17 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.volume_up, color: Colors.black),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              '🔔 ¡Pitido emitido en collar $_collarId! Vaca alertada acústicamente.',
-                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      backgroundColor: FincaTheme.warningAmber,
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.volume_up, color: Colors.black),
-                label: const Text(
-                  'ACTIVAR PITIDO EN COLLAR (BUZZER)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                onPressed: _sendingBuzzer ? null : _activarBuzzerCollar,
+                icon: _sendingBuzzer
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                      )
+                    : const Icon(Icons.volume_up, color: Colors.black),
+                label: Text(
+                  _sendingBuzzer ? 'EMITIENDO PITIDO ACÚSTICO...' : 'ACTIVAR PITIDO EN COLLAR (BUZZER)',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
             ),
@@ -1021,6 +1129,61 @@ class _BuscarResScreenState extends State<BuscarResScreen> with TickerProviderSt
           ],
         ),
     );
+  }
+
+  Future<void> _activarBuzzerCollar() async {
+    if (_sendingBuzzer) return;
+    setState(() => _sendingBuzzer = true);
+
+    try {
+      final baseUrl = await ApiService.getBaseUrl();
+      final res = await http.post(
+        Uri.parse('$baseUrl/collares/$_collarId/config-red'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'buzzer': true, 'beep': true, 'duration': 800, 'freq': 4000}),
+      ).timeout(const Duration(seconds: 4));
+
+      if (mounted) {
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.volume_up, color: Colors.black),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '🔔 ¡Pitido emitido en collar $_collarId! Vaca alertada acústicamente.',
+                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: FincaTheme.warningAmber,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('⚠️ Servidor respondió HTTP ${res.statusCode} al activar buzzer'),
+              backgroundColor: FincaTheme.errorCrimson,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ Error al emitir pitido: $e'),
+            backgroundColor: FincaTheme.errorCrimson,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sendingBuzzer = false);
+    }
   }
 
   String _obtenerCardinalDeRumbo(double rumbo) {

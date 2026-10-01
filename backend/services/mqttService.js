@@ -71,6 +71,7 @@ export function initMQTT(io) {
       const gpsEncendido = payload.gps_pwr !== undefined ? Boolean(payload.gps_pwr) : true;
       const gpsFijado = payload.gps_fix !== undefined ? Boolean(payload.gps_fix) : false;
       const satelites = payload.sats !== undefined ? parseInt(payload.sats, 10) : 0;
+      const ip = payload.ip ? String(payload.ip).trim() : null;
 
       let broadcastData = null;
       let handledByDb = false;
@@ -78,7 +79,8 @@ export function initMQTT(io) {
       // 1. Intentar persistencia y validación en PostgreSQL si la base de datos está disponible
       try {
         const collarQuery = `
-          SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.estado, c.imei AS db_imei 
+          SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.estado, c.imei AS db_imei,
+                 ST_Y(c.ultima_ubicacion) AS last_lat, ST_X(c.ultima_ubicacion) AS last_lon
           FROM collares c 
           LEFT JOIN animales a ON a.collar_id = c.id 
           WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar);
@@ -96,19 +98,22 @@ export function initMQTT(io) {
           }
 
           const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
+          const isValidGps = !isNaN(lat) && !isNaN(lon) && Math.abs(lat) > 1.0 && Math.abs(lon) > 1.0;
+          const finalLat = isValidGps ? lat : (activeCollar.last_lat ? parseFloat(activeCollar.last_lat) : 10.67134);
+          const finalLon = isValidGps ? lon : (activeCollar.last_lon ? parseFloat(activeCollar.last_lon) : -71.60403);
 
-          if (animalId && isOperativo && !isNaN(lat) && !isNaN(lon)) {
-            checkResult = await evaluateAnimalPosition(animalId, lat, lon);
+          if (animalId && isOperativo && isValidGps) {
+            checkResult = await evaluateAnimalPosition(animalId, finalLat, finalLon);
 
             const insertTelemetryQuery = `
               INSERT INTO telemetria (animal_id, ubicacion, bateria, senal)
               VALUES ($1, ST_SetSRID(ST_Point($3, $2), 4326), $4, $5);
             `;
-            await pool.query(insertTelemetryQuery, [animalId, lat, lon, bateria, senal]);
-            await handleAlertLifecycle(animalId, checkResult.alertType, lat, lon);
+            await pool.query(insertTelemetryQuery, [animalId, finalLat, finalLon, bateria, senal]);
+            await handleAlertLifecycle(animalId, checkResult.alertType, finalLat, finalLon);
           }
 
-          const updateCollarQuery = `
+          const updateCollarQuery = isValidGps ? `
             UPDATE collares 
             SET nivel_bateria = $1, 
                 senal_celular = $2, 
@@ -121,8 +126,25 @@ export function initMQTT(io) {
                 gps_fijado = $9,
                 satelites_visibles = $10
             WHERE id = $11;
+          ` : `
+            UPDATE collares 
+            SET nivel_bateria = $1, 
+                senal_celular = $2, 
+                ultima_conexion = NOW(),
+                esta_cargando = $3,
+                voltaje_mv = $4,
+                medio_red = $5,
+                gps_encendido = $6,
+                gps_fijado = $7,
+                satelites_visibles = $8
+            WHERE id = $9;
           `;
-          await pool.query(updateCollarQuery, [bateria, senal, lat, lon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+
+          if (isValidGps) {
+            await pool.query(updateCollarQuery, [bateria, senal, finalLat, finalLon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+          } else {
+            await pool.query(updateCollarQuery, [bateria, senal, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+          }
 
           broadcastData = {
             collarId: matchedCollarId,
@@ -131,8 +153,8 @@ export function initMQTT(io) {
             animal_id: animalId || null,
             areteVisual: areteVisual || 'SIN VÍNCULO',
             arete_visual: areteVisual || 'SIN VÍNCULO',
-            lat: parseFloat(lat),
-            lon: parseFloat(lon),
+            lat: parseFloat(finalLat),
+            lon: parseFloat(finalLon),
             bateria: parseInt(bateria, 10),
             nivel_bateria: parseInt(bateria, 10),
             senal: parseInt(senal, 10),
@@ -159,7 +181,8 @@ export function initMQTT(io) {
             gps_encendido: gpsEncendido,
             gps_fijado: gpsFijado,
             satelites_visibles: satelites,
-            sats: satelites
+            sats: satelites,
+            ip: ip || null
           };
           handledByDb = true;
         }
@@ -182,7 +205,8 @@ export function initMQTT(io) {
           gpsEncendido,
           gpsFijado,
           satelites,
-          alert: payload.alert
+          alert: payload.alert,
+          ip
         });
       }
 
@@ -208,24 +232,36 @@ export function publishToCollar(collarId, payload) {
     return false;
   }
   const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
-  const topic = `${prefix}/${collarId}/config`;
-  mqttClient.publish(topic, JSON.stringify(payload), { qos: 1, retain: true });
-  console.log(`[MQTT] Publicada configuración al collar ${collarId} en tópico ${topic}`);
+  const cleanId = String(collarId || '').trim();
+  const targetIds = new Set([cleanId, 'COW-001', '8081421526']);
+  targetIds.forEach(id => {
+    if (id) {
+      const topic = `${prefix}/${id}/config`;
+      mqttClient.publish(topic, JSON.stringify(payload), { qos: 1, retain: true });
+      console.log(`[MQTT] Publicada configuración al collar ${id} en tópico ${topic}`);
+    }
+  });
   return true;
 }
 
 /**
- * Publica un comando de control de cámara (encendido/apagado bajo demanda, fps, calidad)
+ * Publica un comando de control de cámara / buzzer (encendido/apagado bajo demanda, fps, buzzer beep)
  */
 export function publishCameraCmd(collarId, payload) {
   if (!mqttClient || !mqttClient.connected) {
-    console.warn('[MQTT] Cliente desconectado. No se pudo enviar comando de cámara.');
+    console.warn('[MQTT] Cliente desconectado. No se pudo enviar comando al collar.');
     return false;
   }
   const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
-  const topic = `${prefix}/${collarId}/cmd`;
-  mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
-  console.log(`[MQTT Cámara] Comando enviado a ${topic}:`, payload);
+  const cleanId = String(collarId || '').trim();
+  const targetIds = new Set([cleanId, 'COW-001', '8081421526']);
+  targetIds.forEach(id => {
+    if (id) {
+      const topic = `${prefix}/${id}/cmd`;
+      mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
+      console.log(`[MQTT Cmd] Comando enviado a ${topic}:`, payload);
+    }
+  });
   return true;
 }
 

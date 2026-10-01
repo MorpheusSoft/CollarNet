@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 
 enum CameraViewMode { split, floating, fullscreen }
+enum CameraStreamSource { esp32, server }
 
 class CollarCameraViewerWidget extends StatefulWidget {
   final Map<String, dynamic> animal;
@@ -27,12 +29,20 @@ class CollarCameraViewerWidget extends StatefulWidget {
 
 class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
   late CameraViewMode _currentMode;
+  CameraStreamSource _streamSource = CameraStreamSource.server;
   bool _isNightVision = false;
   bool _isLoading = true;
   bool _hasError = false;
+  String _errorMessage = 'Buscando señal de cámara...';
   Uint8List? _currentFrameBytes;
-  Timer? _frameTimer;
+  Timer? _pollingTimer;
+  http.Client? _streamClient;
+  StreamSubscription? _streamSubscription;
+  List<int> _mjpegBuffer = [];
+  bool _fetchingFrame = false;
+
   String _baseUrl = '';
+  String _esp32Ip = '';
   int _fps = 0;
   int _frameCount = 0;
   DateTime _lastFpsCalc = DateTime.now();
@@ -40,7 +50,7 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
   // PiP Drag Position
   Offset _pipPosition = const Offset(20, 100);
 
-  String get collarId => widget.animal['collar_id']?.toString() ?? 'COL-001';
+  String get collarId => widget.animal['collar_id']?.toString() ?? 'COW-001';
   String get areteVisual => widget.animal['arete_visual']?.toString() ?? widget.animal['arete']?.toString() ?? 'V-001';
   String get potrero => widget.animal['potrero_nombre']?.toString() ?? widget.animal['potrero']?.toString() ?? 'Principal';
   String get bateria => widget.animal['nivel_bateria']?.toString() ?? widget.animal['bateria']?.toString() ?? '92';
@@ -55,8 +65,31 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
 
   Future<void> _initCamera() async {
     _baseUrl = await ApiService.getBaseUrl();
+    final prefs = await SharedPreferences.getInstance();
 
-    // Notificar al backend encendido de cámara bajo demanda
+    // 1. Resolver IP del ESP32 si estuviese en red Wi-Fi local
+    final animalIp = widget.animal['ip']?.toString().trim();
+    final savedIp = prefs.getString('collar_esp32_cam_ip');
+
+    if (animalIp != null && animalIp.isNotEmpty && animalIp != 'null') {
+      _esp32Ip = animalIp;
+      await prefs.setString('collar_esp32_cam_ip', animalIp);
+    } else if (savedIp != null && savedIp.isNotEmpty) {
+      _esp32Ip = savedIp;
+    } else {
+      _esp32Ip = '';
+    }
+
+    // 2. Determinar fuente inicial: por defecto Servidor CowIA (4G Nube).
+    // Solo conmutar a Wi-Fi directo si el collar reporta explícitamente medio_red WIFI con IP local.
+    final net = (widget.animal['medio_red'] ?? widget.animal['net'] ?? '').toString().toUpperCase();
+    if (net == 'WIFI' && _esp32Ip.isNotEmpty) {
+      _streamSource = CameraStreamSource.esp32;
+    } else {
+      _streamSource = CameraStreamSource.server;
+    }
+
+    // 3. Notificar al backend encendido de cámara bajo demanda
     try {
       await http.post(
         Uri.parse('$_baseUrl/collares/$collarId/camera/power'),
@@ -65,13 +98,152 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
       ).timeout(const Duration(seconds: 3));
     } catch (_) {}
 
-    // Iniciar bucle de refresco continuo de fotogramas (1.5 - 2 FPS para ahorro de batería)
-    _fetchFrame();
-    _frameTimer = Timer.periodic(const Duration(milliseconds: 600), (_) => _fetchFrame());
+    // 3. Conectar al feed de video
+    _connectFeed();
   }
 
-  Future<void> _fetchFrame() async {
-    if (!mounted || _baseUrl.isEmpty) return;
+  void _connectFeed() {
+    _stopFeed();
+    if (_streamSource == CameraStreamSource.esp32) {
+      _startDirectEsp32Stream();
+    } else {
+      _startServerPolling();
+    }
+  }
+
+  bool _isFeedActive = false;
+
+  void _stopFeed() {
+    _isFeedActive = false;
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    try {
+      _streamSubscription?.cancel();
+      _streamSubscription = null;
+    } catch (_) {}
+    try {
+      _streamClient?.close();
+      _streamClient = null;
+    } catch (_) {}
+    _mjpegBuffer.clear();
+  }
+
+  // A. Transmisión MJPEG Directa desde ESP32 (:81/stream)
+  Future<void> _startDirectEsp32Stream() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+      _errorMessage = 'Conectando a ESP32 ($_esp32Ip:81)...';
+    });
+
+    try {
+      _streamClient = http.Client();
+      final streamUrl = 'http://$_esp32Ip:81/stream';
+      final request = http.Request('GET', Uri.parse(streamUrl));
+
+      final response = await _streamClient!.send(request).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode != 200) {
+        _onStreamFailed('ESP32 respondió HTTP ${response.statusCode}');
+        return;
+      }
+
+      _streamSubscription = response.stream.listen(
+        (chunk) {
+          _mjpegBuffer.addAll(chunk);
+
+          while (_mjpegBuffer.length > 4) {
+            int soi = -1;
+            for (int i = 0; i < _mjpegBuffer.length - 1; i++) {
+              if (_mjpegBuffer[i] == 0xFF && _mjpegBuffer[i + 1] == 0xD8) {
+                soi = i;
+                break;
+              }
+            }
+
+            if (soi == -1) {
+              if (_mjpegBuffer.length > 2) {
+                _mjpegBuffer = _mjpegBuffer.sublist(_mjpegBuffer.length - 2);
+              }
+              break;
+            }
+
+            int eoi = -1;
+            for (int i = soi + 2; i < _mjpegBuffer.length - 1; i++) {
+              if (_mjpegBuffer[i] == 0xFF && _mjpegBuffer[i + 1] == 0xD9) {
+                eoi = i + 2;
+                break;
+              }
+            }
+
+            if (eoi != -1) {
+              final frame = Uint8List.fromList(_mjpegBuffer.sublist(soi, eoi));
+              _mjpegBuffer = _mjpegBuffer.sublist(eoi);
+
+              if (mounted) {
+                setState(() {
+                  _currentFrameBytes = frame;
+                  _isLoading = false;
+                  _hasError = false;
+                  _frameCount++;
+                  final now = DateTime.now();
+                  if (now.difference(_lastFpsCalc).inSeconds >= 1) {
+                    _fps = _frameCount;
+                    _frameCount = 0;
+                    _lastFpsCalc = now;
+                  }
+                });
+              }
+            } else {
+              if (soi > 0) {
+                _mjpegBuffer = _mjpegBuffer.sublist(soi);
+              }
+              break;
+            }
+          }
+        },
+        onError: (err) => _onStreamFailed('Micro-corte Wi-Fi: $err'),
+        onDone: () => _onStreamFailed('Stream Wi-Fi finalizado'),
+        cancelOnError: true,
+      );
+    } catch (e) {
+      _onStreamFailed('No se pudo enlazar a http://$_esp32Ip:81/stream');
+    }
+  }
+
+  void _onStreamFailed(String reason) {
+    if (!mounted) return;
+    debugPrint('[CameraViewer] $reason. Intentando enlace con Servidor...');
+    setState(() {
+      _streamSource = CameraStreamSource.server;
+      _errorMessage = '$reason\nConmutando automáticamente a Servidor CowIA...';
+    });
+    _startServerPolling();
+  }
+
+  // B. Enlace de Alta Frecuencia con Servidor Cloud (/collares/:id/camera/snapshot)
+  void _startServerPolling() {
+    _stopFeed();
+    _isFeedActive = true;
+    _runContinuousPollingLoop();
+  }
+
+  Future<void> _runContinuousPollingLoop() async {
+    while (_isFeedActive && mounted && _streamSource == CameraStreamSource.server) {
+      await _fetchServerFrame();
+      if (_isFeedActive && mounted) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+  }
+
+  Future<void> _fetchServerFrame() async {
+    if (!mounted || _fetchingFrame) return;
+    _fetchingFrame = true;
+    if (_baseUrl.isEmpty) {
+      _baseUrl = await ApiService.getBaseUrl();
+    }
     try {
       final uri = Uri.parse('$_baseUrl/collares/$collarId/camera/snapshot?t=${DateTime.now().millisecondsSinceEpoch}');
       final res = await http.get(uri).timeout(const Duration(seconds: 3));
@@ -90,21 +262,31 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
             }
           });
         }
+      } else {
+        if (mounted && _currentFrameBytes == null) {
+          setState(() {
+            _hasError = true;
+            _isLoading = false;
+            _errorMessage = 'Sin fotograma en Servidor (HTTP ${res.statusCode})';
+          });
+        }
       }
     } catch (_) {
       if (mounted && _currentFrameBytes == null) {
         setState(() {
           _hasError = true;
           _isLoading = false;
+          _errorMessage = 'Servidor local no responde en $_baseUrl';
         });
       }
+    } finally {
+      _fetchingFrame = false;
     }
   }
 
   @override
   void dispose() {
-    _frameTimer?.cancel();
-    // Notificar al backend apagado de cámara
+    _stopFeed();
     if (_baseUrl.isNotEmpty) {
       http.post(
         Uri.parse('$_baseUrl/collares/$collarId/camera/power'),
@@ -120,6 +302,150 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
       _currentMode = mode;
     });
     widget.onModeChanged?.call(mode);
+  }
+
+  void _toggleStreamSource() {
+    setState(() {
+      if (_streamSource == CameraStreamSource.esp32) {
+        _streamSource = CameraStreamSource.server;
+      } else {
+        _streamSource = CameraStreamSource.esp32;
+      }
+    });
+    _connectFeed();
+  }
+
+  void _showSettingsDialog() {
+    final ipCtrl = TextEditingController(text: _esp32Ip);
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDlgState) => AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF1E293B)),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.tune_rounded, color: Color(0xFF06B6D4), size: 22),
+              SizedBox(width: 8),
+              Text('Ajustes de Cámara', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Fuente de Transmisión:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ChoiceChip(
+                      label: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.wifi, size: 14),
+                          SizedBox(width: 4),
+                          Text('ESP32 Wi-Fi', style: TextStyle(fontSize: 11)),
+                        ],
+                      ),
+                      selected: _streamSource == CameraStreamSource.esp32,
+                      selectedColor: const Color(0xFF06B6D4),
+                      onSelected: (val) {
+                        if (val) {
+                          setDlgState(() => _streamSource = CameraStreamSource.esp32);
+                          setState(() => _streamSource = CameraStreamSource.esp32);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ChoiceChip(
+                      label: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.cloud_outlined, size: 14),
+                          SizedBox(width: 4),
+                          Text('Servidor Nube', style: TextStyle(fontSize: 11)),
+                        ],
+                      ),
+                      selected: _streamSource == CameraStreamSource.server,
+                      selectedColor: const Color(0xFF10B981),
+                      onSelected: (val) {
+                        if (val) {
+                          setDlgState(() => _streamSource = CameraStreamSource.server);
+                          setState(() => _streamSource = CameraStreamSource.server);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text('IP Directa del Collar (ESP32):', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: ipCtrl,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: const Color(0xFF1E293B),
+                  hintText: '192.168.86.26',
+                  hintStyle: const TextStyle(color: Colors.white38),
+                  prefixIcon: const Icon(Icons.settings_ethernet, color: Color(0xFF06B6D4), size: 18),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF334155))),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                children: [
+                  ActionChip(
+                    label: const Text('86.26 (Collar)', style: TextStyle(fontSize: 10, color: Color(0xFF06B6D4))),
+                    backgroundColor: const Color(0xFF1E293B),
+                    onPressed: () => ipCtrl.text = '192.168.86.26',
+                  ),
+                  ActionChip(
+                    label: const Text('86.22 (Taller)', style: TextStyle(fontSize: 10, color: Colors.white70)),
+                    backgroundColor: const Color(0xFF1E293B),
+                    onPressed: () => ipCtrl.text = '192.168.86.22',
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('CANCELAR', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF06B6D4),
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () async {
+                final newIp = ipCtrl.text.trim();
+                if (newIp.isNotEmpty) {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('collar_esp32_cam_ip', newIp);
+                  setState(() {
+                    _esp32Ip = newIp;
+                  });
+                }
+                Navigator.pop(ctx);
+                _connectFeed();
+              },
+              child: const Text('GUARDAR Y CONECTAR', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -139,7 +465,7 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
       decoration: BoxDecoration(
         color: const Color(0xFF070D14),
         border: Border(
-          bottom: BorderSide(color: const Color(0xFF06B6D4).withOpacity(0.4), width: 2),
+          bottom: BorderSide(color: const Color(0xFF10B981).withOpacity(0.3), width: 2),
         ),
         boxShadow: const [
           BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4)),
@@ -178,23 +504,17 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
           decoration: BoxDecoration(
             color: const Color(0xFF0F172A),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF06B6D4), width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF06B6D4).withOpacity(0.4),
-                blurRadius: 16,
-                spreadRadius: 2,
-              ),
+            border: Border.all(color: const Color(0xFF06B6D4), width: 1.5),
+            boxShadow: const [
+              BoxShadow(color: Colors.black87, blurRadius: 16, offset: Offset(0, 8)),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: Stack(
-              children: [
-                _buildVideoFeed(),
-                _buildPipHUD(),
-              ],
-            ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              _buildVideoFeed(),
+              _buildPipHUD(),
+            ],
           ),
         ),
       ),
@@ -228,15 +548,30 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
     if (_hasError) {
       imageContent = Container(
         color: const Color(0xFF0F172A),
+        padding: const EdgeInsets.all(12),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.videocam_off, color: Color(0xFFEF4444), size: 36),
+              const Icon(Icons.videocam_off_rounded, color: Color(0xFFEF4444), size: 34),
               const SizedBox(height: 6),
               Text(
-                'Sin señal de cámara • Collar $collarId',
+                _errorMessage,
+                textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF06B6D4),
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: _showSettingsDialog,
+                icon: const Icon(Icons.tune, size: 14),
+                label: const Text('REINTENTAR / CAMBIAR FUENTE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -253,8 +588,20 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
     } else {
       imageContent = Container(
         color: const Color(0xFF0B1320),
-        child: const Center(
-          child: CircularProgressIndicator(color: Color(0xFF06B6D4), strokeWidth: 2),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: Color(0xFF06B6D4), strokeWidth: 2),
+              const SizedBox(height: 8),
+              Text(
+                _streamSource == CameraStreamSource.esp32
+                    ? 'Conectando a ESP32 ($_esp32Ip:81)...'
+                    : 'Cargando video desde Servidor...',
+                style: const TextStyle(color: Colors.white54, fontSize: 10),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -276,6 +623,7 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
 
   // Telemetría HUD Overlay
   Widget _buildTelemetryHUD({bool isFullscreen = false}) {
+    final isEsp32 = _streamSource == CameraStreamSource.esp32;
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -283,10 +631,10 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withOpacity(0.7),
+            Colors.black.withOpacity(0.75),
             Colors.transparent,
             Colors.transparent,
-            Colors.black.withOpacity(0.8),
+            Colors.black.withOpacity(0.85),
           ],
           stops: const [0.0, 0.25, 0.75, 1.0],
         ),
@@ -298,35 +646,51 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Badge EN VIVO
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF06B6D4), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF06B6D4),
-                        shape: BoxShape.circle,
-                      ),
+              // Badge EN VIVO (Interactivo para alternar fuente)
+              GestureDetector(
+                onTap: _toggleStreamSource,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _hasError
+                          ? const Color(0xFFEF4444)
+                          : (isEsp32 ? const Color(0xFF06B6D4) : const Color(0xFF10B981)),
+                      width: 1,
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'EN VIVO • CAM-01 (${_fps > 0 ? _fps : 2} fps)',
-                      style: const TextStyle(
-                        color: Color(0xFF06B6D4),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: _hasError
+                              ? const Color(0xFFEF4444)
+                              : (isEsp32 ? const Color(0xFF06B6D4) : const Color(0xFF10B981)),
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      Text(
+                        _hasError
+                            ? 'SIN SEÑAL (Toca p/ cambiar)'
+                            : (isEsp32
+                                ? 'ESP32 ($_esp32Ip) 🔄'
+                                : 'SERVIDOR COWIA 🔄'),
+                        style: TextStyle(
+                          color: _hasError
+                              ? const Color(0xFFEF4444)
+                              : (isEsp32 ? const Color(0xFF06B6D4) : const Color(0xFF10B981)),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -334,6 +698,17 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Botón Ajustes / Fuente de Video
+                  IconButton(
+                    iconSize: 18,
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.tune_rounded, color: Color(0xFF06B6D4)),
+                    tooltip: 'Cambiar Fuente / IP',
+                    onPressed: _showSettingsDialog,
+                  ),
+                  const SizedBox(width: 4),
+
                   // Night vision toggle
                   IconButton(
                     iconSize: 18,
@@ -350,7 +725,7 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
                       });
                     },
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
 
                   // Mode buttons
                   if (_currentMode != CameraViewMode.floating)
@@ -414,7 +789,7 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
                     ),
                   ),
                   Text(
-                    '🌱 $potrero  |  📱 4G Digitel  |  🔋 $bateria%',
+                    '🌱 $potrero  |  📡 ${widget.animal['medio_red'] ?? 'WIFI'}  |  🔋 $bateria%',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 10,
@@ -427,7 +802,7 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
               // Snapshot Action
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF06B6D4),
+                  backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   minimumSize: Size.zero,
@@ -436,9 +811,9 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('📸 Captura de Collar $collarId guardada en diagnóstico'),
+                      content: Text('📸 Captura de Collar $collarId guardada en galería'),
                       duration: const Duration(seconds: 2),
-                      backgroundColor: const Color(0xFF0891B2),
+                      backgroundColor: const Color(0xFF047857),
                     ),
                   );
                 },
@@ -478,6 +853,14 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
           ),
           Row(
             children: [
+              IconButton(
+                iconSize: 14,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.tune, color: Color(0xFF06B6D4)),
+                onPressed: _showSettingsDialog,
+              ),
+              const SizedBox(width: 6),
               IconButton(
                 iconSize: 14,
                 padding: EdgeInsets.zero,

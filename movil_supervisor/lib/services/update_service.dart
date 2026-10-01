@@ -30,7 +30,7 @@ class AppVersionMetadata {
       appName: json['appName'] ?? 'CowIA Campo',
       version: json['version'] ?? '1.0.0',
       versionCode: int.tryParse(json['versionCode']?.toString() ?? '1') ?? 1,
-      downloadUrl: json['downloadUrl'] ?? 'https://cowai.net/apk/CowIA-Campo.apk',
+      downloadUrl: json['downloadUrl'] ?? 'http://192.168.86.30:3500/apk/CowIA-Campo.apk',
       mandatory: json['mandatory'] == true,
       releaseNotes: json['releaseNotes'] ?? 'Mejoras en conectividad y estabilidad.',
     );

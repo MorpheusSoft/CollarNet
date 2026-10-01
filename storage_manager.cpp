@@ -21,7 +21,7 @@ bool saveCollarActiveState(bool active) {
 
 bool loadCollarActiveState() {
     if (!LittleFS.exists(ACTIVE_STATE_FILE)) {
-        return false; // Por defecto desactivado (silencio) si no se ha configurado
+        return true; // Por defecto ACTIVO si no se ha configurado
     }
     File file = LittleFS.open(ACTIVE_STATE_FILE, "r");
     if (!file) return false;

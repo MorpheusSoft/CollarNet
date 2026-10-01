@@ -9,7 +9,7 @@ import '../models/potrero.dart';
 import 'gis_service.dart';
 
 class ApiService {
-  // Servidor backend CollarNet (VPS de producción cowai.net por defecto)
+  // Servidor backend CollarNet oficial CowIA por defecto
   static const String defaultBaseUrl = 'https://cowai.net/api';
 
   static Future<String> getBaseUrl() async {
@@ -21,16 +21,19 @@ class ApiService {
       if (kIsWeb) {
         final origin = Uri.base.origin;
         if (origin.startsWith('http://') || origin.startsWith('https://')) {
-          final webApiUrl = '$origin/api';
-          await prefs.setString('custom_server_url', webApiUrl);
-          return webApiUrl;
+          if (savedUrl == null || savedUrl.contains('192.168.') || savedUrl.isEmpty) {
+            final webApiUrl = '$origin/api';
+            await prefs.setString('custom_server_url', webApiUrl);
+            return webApiUrl;
+          }
         }
       }
 
       if (savedUrl == null ||
           savedUrl.isEmpty ||
           savedUrl.contains('192.168.') ||
-          savedUrl.contains('10.0.2.2')) {
+          savedUrl.contains('10.0.2.2') ||
+          savedUrl.contains('localhost')) {
         savedUrl = defaultBaseUrl;
         await prefs.setString('custom_server_url', defaultBaseUrl);
       }
@@ -38,10 +41,7 @@ class ApiService {
       if (clean.startsWith('http://') || clean.startsWith('https://')) {
         return clean.endsWith('/api') ? clean : (clean.endsWith('/') ? '${clean}api' : '$clean/api');
       }
-      if (clean.contains('cowai.net') || (!clean.contains(':') && !RegExp(r'^\d+\.\d+\.\d+\.\d+').hasMatch(clean))) {
-        return 'https://$clean/api';
-      }
-      return 'http://$clean/api';
+      return clean.contains('cowai.net') ? 'https://$clean/api' : 'http://$clean/api';
     } catch (_) {
       return defaultBaseUrl;
     }

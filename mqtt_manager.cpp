@@ -1,3 +1,4 @@
+#include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "mqtt_manager.h"
@@ -78,16 +79,44 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
             Serial.printf("[MQTT] Recibido control de encendido de GPS: %s\n", pwr ? "ENCENDER" : "APAGAR");
             onGpsPowerChanged(pwr);
         }
-        if (doc.containsKey("camera_power") || doc.containsKey("camera_stream")) {
-            bool camPwr = doc.containsKey("camera_power") ? doc["camera_power"].as<bool>() : doc["camera_stream"].as<bool>();
-            int fps = doc.containsKey("fps") ? doc["fps"].as<int>() : 2;
-            String quality = doc.containsKey("quality") ? doc["quality"].as<String>() : "qvga";
-            Serial.printf("[MQTT] Recibido control de cámara en vivo: %s (FPS: %d)\n", camPwr ? "ACTIVAR" : "DESACTIVAR", fps);
-            onCameraStreamingControl(camPwr, fps, quality);
+        bool isCamPower = false;
+        bool camPwr = false;
+        if (doc.containsKey("cmd")) {
+            String c = doc["cmd"].as<String>();
+            if (c == "camera_power" || c == "camera_stream" || c == "camera") {
+                isCamPower = true;
+                camPwr = doc.containsKey("active") ? doc["active"].as<bool>() : true;
+            }
         }
-        if (doc.containsKey("snapshot") && doc["snapshot"].as<bool>()) {
+        if (doc.containsKey("camera_power")) {
+            isCamPower = true;
+            camPwr = doc["camera_power"].as<bool>();
+        } else if (doc.containsKey("camera_stream")) {
+            isCamPower = true;
+            camPwr = doc["camera_stream"].as<bool>();
+        }
+
+        if (isCamPower) {
+            int fps = doc.containsKey("fps") ? doc["fps"].as<int>() : 3;
+            String quality = doc.containsKey("quality") ? doc["quality"].as<String>() : "qvga";
+            Serial.printf("[MQTT] Recibido control de cámara en vivo: %s (FPS: %d, Calidad: %s)\n", 
+                          camPwr ? "ACTIVAR (REVERSE STREAM)" : "DESACTIVAR", fps, quality.c_str());
+            onCameraStreamingControl(camPwr, fps, quality);
+            return;
+        }
+
+        if ((doc.containsKey("cmd") && doc["cmd"] == "snapshot") || (doc.containsKey("snapshot") && doc["snapshot"].as<bool>())) {
             Serial.println("[MQTT] Recibida solicitud de captura snapshot en alta resolución.");
             onCameraSnapshotRequested();
+            return;
+        }
+
+        if ((doc.containsKey("cmd") && doc["cmd"] == "buzzer") || doc.containsKey("buzzer") || doc.containsKey("beep")) {
+            int duration = doc.containsKey("duration") ? doc["duration"].as<int>() : 800;
+            int freq = doc.containsKey("freq") ? doc["freq"].as<int>() : 4000;
+            Serial.printf("[MQTT] ¡Comando de Pitido Acústico (Buzzer) recibido! Duración: %d ms, Frec: %d Hz\n", duration, freq);
+            triggerRemoteBuzzerBeep(duration, freq);
+            return;
         }
     }
     
@@ -132,8 +161,8 @@ void initMQTT(const char* collarId, Client* netClient) {
     setMQTTNetworkClient(netClient);
     client.setServer(MQTT_SERVER, MQTT_PORT);
     client.setCallback(mqttCallback);
-    // 64 KB de búfer MQTT para soportar tramas JPEG binarias de cámara
-    client.setBufferSize(65536);
+    // 32 KB de búfer MQTT para soportar tramas JPEG binarias de cámara
+    client.setBufferSize(32768);
     
     reconnectMQTT();
 }
@@ -172,6 +201,9 @@ bool publishTelemetry(double lat, double lon, int bateria, int senal, const Stri
     }
     doc["charging"] = isCharging;
     doc["net"] = netType;
+    if (WiFi.status() == WL_CONNECTED) {
+        doc["ip"] = WiFi.localIP().toString();
+    }
     doc["gps_pwr"] = gpsPwr;
     doc["gps_fix"] = gpsFix;
     doc["sats"] = sats;
@@ -186,11 +218,36 @@ bool publishTelemetry(double lat, double lon, int bateria, int senal, const Stri
 }
 
 bool publishCameraFrame(const uint8_t* buf, size_t len) {
-    if (!client.connected() || buf == nullptr || len == 0) {
+    if (!client.connected()) {
+        Serial.println("[MQTT Cam] ❌ Cliente MQTT desconectado.");
+        return false;
+    }
+    if (buf == nullptr || len == 0) {
+        Serial.println("[MQTT Cam] ❌ Buffer de imagen vacío.");
         return false;
     }
     String camTopic = String(MQTT_TOPIC_PREFIX) + "/" + staticCollarId + "/camera";
-    return client.publish(camTopic.c_str(), buf, len);
+
+    // Modems celulares SIM7670 transmiten datos TCP mediante AT+CIPSEND (máximo 1460 bytes por comando).
+    // Usar beginPublish + chunks de 1024 bytes garantiza que paquetes grandes (como fotogramas JPEG)
+    // se envíen de forma limpia y confiable a través del módem celular hacia HiveMQ sin desbordar el búfer AT.
+    if (client.beginPublish(camTopic.c_str(), len, false)) {
+        size_t written = 0;
+        const size_t chunkSize = 1024;
+        while (written < len) {
+            size_t toWrite = (len - written > chunkSize) ? chunkSize : (len - written);
+            size_t sent = client.write(buf + written, toWrite);
+            if (sent == 0) {
+                Serial.printf("[MQTT Cam] ❌ client.write falló en byte %u de %u\n", (unsigned int)written, (unsigned int)len);
+                return false;
+            }
+            written += sent;
+        }
+        return (client.endPublish() == 1);
+    } else {
+        Serial.println("[MQTT Cam] ❌ client.beginPublish retornó false.");
+    }
+    return false;
 }
 
 bool isMQTTConnected() {

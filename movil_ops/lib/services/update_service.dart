@@ -31,7 +31,7 @@ class AppVersionMetadata {
       appName: json['appName'] ?? 'CowIA Técnico',
       version: json['version'] ?? '1.0.0',
       versionCode: int.tryParse(json['versionCode']?.toString() ?? '1') ?? 1,
-      downloadUrl: json['downloadUrl'] ?? 'https://cowai.net/apk/CowIA-Tecnico.apk',
+      downloadUrl: json['downloadUrl'] ?? 'http://192.168.86.30:3500/apk/CowIA-Tecnico.apk',
       mandatory: json['mandatory'] == true,
       releaseNotes: json['releaseNotes'] ?? 'Mejoras continuas de rendimiento y estabilidad.',
     );

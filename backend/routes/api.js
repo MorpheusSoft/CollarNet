@@ -428,7 +428,8 @@ export function processTelemetryInMemory({
   gpsEncendido,
   gpsFijado,
   satelites,
-  alert
+  alert,
+  ip
 }) {
   const cleanCollar = (collarId || 'COW-001').trim();
   const cleanImei = imei ? String(imei).trim() : null;
@@ -475,7 +476,7 @@ export function processTelemetryInMemory({
   // 2. Si el collar está en almacén y no está vinculado a un animal, solo actualizar su estado de hardware
   const isAssigned = col.estado === 'ACTIVO' || !!col.animal_id || !!col.animal_arete;
 
-  const validCoords = !isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0);
+  const validCoords = !isNaN(lat) && !isNaN(lon) && Math.abs(lat) > 1.0 && Math.abs(lon) > 1.0;
   const curLat = validCoords ? parseFloat(lat) : (col.latitud || 10.67134);
   const curLon = validCoords ? parseFloat(lon) : (col.longitud || -71.60403);
   const numBat = parseInt(bateria !== undefined ? bateria : (col.nivel_bateria || 100), 10);
@@ -493,6 +494,7 @@ export function processTelemetryInMemory({
   col.gps_encendido = gpsEncendido !== undefined ? gpsEncendido : true;
   col.gps_fijado = gpsFijado !== undefined ? gpsFijado : false;
   col.satelites_visibles = satelites !== undefined ? satelites : 0;
+  if (ip) col.ip = ip;
   col.ultima_conexion = nowIso;
 
   if (!isAssigned) {
@@ -512,7 +514,8 @@ export function processTelemetryInMemory({
       timestamp: nowIso,
       estado: 'EN_ALMACEN',
       collarActivo: false,
-      activo: true
+      activo: true,
+      ip: col.ip || null
     };
   }
 
@@ -592,6 +595,9 @@ export function processTelemetryInMemory({
   animal.estado_cerca = alertType === 'NORMAL' ? 'DENTRO' : (alertType === 'ESCAPE_HATO' ? 'FUERA' : 'ADVERTENCIA');
   animal.collar_id = col.id;
   animal.collar_activo = true;
+  if (ip || col.ip) {
+    animal.ip = ip || col.ip;
+  }
 
   // 6. Sincronizar estado en collar asignado
   col.estado = 'ACTIVO';
@@ -638,7 +644,8 @@ export function processTelemetryInMemory({
     gps_encendido: col.gps_encendido,
     gps_fijado: col.gps_fijado,
     satelites_visibles: col.satelites_visibles,
-    sats: col.satelites_visibles
+    sats: col.satelites_visibles,
+    ip: col.ip || null
   };
 }
 
@@ -902,6 +909,7 @@ async function handleMonitoreoQuery(req, res) {
         c.ultima_conexion,
         c.version_firmware,
         c.activo AS collar_activo,
+        c.ip AS ip,
         ST_Y(c.ultima_ubicacion) AS latitud,
         ST_X(c.ultima_ubicacion) AS longitud,
         p.id AS potrero_id,
@@ -6933,6 +6941,50 @@ router.post('/collares/:id/camera/control', (req, res) => {
   });
 
   res.json({ ok: success, collarId, enabled: Boolean(enabled) });
+});
+
+/**
+ * POST /api/collares/:id/camera/power
+ * Encendido / Apagado rápido de la cámara bajo demanda
+ */
+router.post('/collares/:id/camera/power', (req, res) => {
+  const collarId = String(req.params.id || '').toUpperCase();
+  const { active, enabled } = req.body || {};
+  const isPowerOn = (active !== undefined) ? Boolean(active) : Boolean(enabled);
+
+  const success = publishCameraCmd(collarId, {
+    camera_power: isPowerOn,
+    fps: 2,
+    quality: 'qvga'
+  });
+
+  res.json({ ok: success, collarId, active: isPowerOn });
+});
+
+/**
+ * POST /api/collares/:id/buzzer y /api/collares/:id/beep
+ * Disparo del zumbador acústico remoto del collar (IO5 PWM 4000Hz)
+ */
+router.post(['/collares/:id/buzzer', '/collares/:id/beep'], (req, res) => {
+  const collarId = String(req.params.id || '').toUpperCase();
+  const durationMs = parseInt(req.body?.duration || req.body?.durationMs || 800, 10);
+  const freq = parseInt(req.body?.freq || 4000, 10);
+
+  const success = publishCameraCmd(collarId, {
+    buzzer: true,
+    beep: true,
+    duration: durationMs,
+    freq: freq
+  });
+
+  console.log(`[API Buzzer] Comando de pitido enviado al collar ${collarId} (${durationMs}ms @ ${freq}Hz)`);
+  res.json({
+    ok: success,
+    collarId,
+    buzzer: true,
+    duration: durationMs,
+    mensaje: `Pitido acústico activado en el collar ${collarId}`
+  });
 });
 
 export default router;

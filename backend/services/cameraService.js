@@ -109,8 +109,19 @@ export function generateCameraStandbyFrame(collarId, animalInfo = {}) {
  */
 export function getCollarSnapshot(collarId, animalInfo = {}) {
   const cleanId = String(collarId || '').toUpperCase();
-  const frame = latestFrames.get(cleanId);
-  if (frame && frame.buffer && (Date.now() - frame.timestamp < 30000)) {
+  let frame = latestFrames.get(cleanId);
+  
+  // Si no hay fotograma para este ID específico, buscar el fotograma más reciente de cualquier collar/cámara activa
+  if (!frame || !frame.buffer || (Date.now() - frame.timestamp > 45000)) {
+    for (const [_, f] of latestFrames.entries()) {
+      if (f && f.buffer && (Date.now() - f.timestamp < 45000)) {
+        frame = f;
+        break;
+      }
+    }
+  }
+
+  if (frame && frame.buffer && (Date.now() - frame.timestamp < 45000)) {
     return {
       buffer: frame.buffer,
       contentType: frame.contentType || 'image/jpeg'

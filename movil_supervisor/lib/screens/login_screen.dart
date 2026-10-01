@@ -620,12 +620,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
                             ActionChip(
-                              label: const Text('Wi-Fi (86.243)', style: TextStyle(fontSize: 10, color: FincaTheme.primaryGreen, fontWeight: FontWeight.bold)),
+                              label: const Text('Wi-Fi (86.30)', style: TextStyle(fontSize: 10, color: FincaTheme.primaryGreen, fontWeight: FontWeight.bold)),
                               backgroundColor: FincaTheme.bgCardElevated,
                               padding: EdgeInsets.zero,
                               onPressed: () async {
-                                _serverIpCtrl.text = '192.168.86.243:3500';
-                                await context.read<FincaStateProvider>().updateServerIp('192.168.86.243:3500');
+                                _serverIpCtrl.text = '192.168.86.30:3500';
+                                await context.read<FincaStateProvider>().updateServerIp('192.168.86.30:3500');
                                 _testServerConnection();
                               },
                             ),

@@ -185,3 +185,15 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, b
         }
     }
 }
+
+void triggerRemoteBuzzerBeep(int durationMs, int freq) {
+    if (freq <= 0) freq = 4000;
+    Serial.printf("[Alerts] >> Disparando zumbador acustico remoto (%d Hz)...\n", freq);
+    playBuzzerTone(freq, 128);
+    delay(200);
+    playBuzzerTone(0, 0);
+    delay(100);
+    playBuzzerTone(freq, 128);
+    delay(200);
+    playBuzzerTone(0, 0);
+}

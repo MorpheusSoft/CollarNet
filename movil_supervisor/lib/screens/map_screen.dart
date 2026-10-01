@@ -873,7 +873,7 @@ class _MapScreenState extends State<MapScreen> {
                     Navigator.pop(ctx);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const BuscarResScreen()),
+                      MaterialPageRoute(builder: (_) => BuscarResScreen(initialAnimal: animal)),
                     );
                   },
                   icon: const Icon(Icons.explore, color: Colors.black),

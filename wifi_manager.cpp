@@ -33,9 +33,6 @@ void initWiFi() {
 void handleWiFi() {
     if (!wifiInitialized) return;
 
-    // Si el animal está en reposo, suspender los intentos de reconexión de Wi-Fi
-    if (!isAnimalMoving()) return;
-
     if (WiFi.status() != WL_CONNECTED) {
         unsigned long currentMillis = millis();
         if (currentMillis - lastReconnectAttempt >= WIFI_RECONNECT_INTERVAL) {

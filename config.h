@@ -16,13 +16,13 @@ enum NetPreference {
     NET_PREF_WIFI = 2      // Fuerza exclusivamente Wi-Fi
 };
 
-// Modo por defecto: Prioriza Wi-Fi en taller/oficina (para video y pruebas), conmuta a SIM 4G LTE en potreros
-#define DEFAULT_NET_PREF NET_PREF_AUTO
+// Modo por defecto: Conectar y operar por Wi-Fi de alta velocidad
+#define DEFAULT_NET_PREF NET_PREF_WIFI
 
 // Configuración de Pines de Hardware
 #define STATUS_LED_PIN 2     // LED de estado
 #define BUZZER_PIN 5         // Zumbador piezoeléctrico en IO5 (4000 Hz)
-#define IMPULSE_PIN 23       // Pin de disparo para pulso de descarga electrostática (MOSFET / Transistor)
+#define IMPULSE_PIN -1       // Pin de disparo de pulso (-1 si no está conectado o en ESP32-S3 donde no existe GPIO 23)
 #define IMPULSE_LED_PIN IMPULSE_PIN // Alias de compatibilidad
 #define MODEM_POWER_PIN 21   // Pin de alimentación del módulo SIM7670G en Waveshare
 

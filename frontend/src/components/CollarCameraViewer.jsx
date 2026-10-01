@@ -13,10 +13,19 @@ export default function CollarCameraViewer({
   onClose
 }) {
   // Fuentes: 'remote' (Stream 4G Nube Sin Límite de Distancia) | 'esp32' (MJPEG Directo :81/stream de Waveshare) | 'device' (Webcam/USB)
-  const [sourceType, setSourceType] = useState('remote');
-  const [esp32Ip, setEsp32Ip] = useState(() => {
-    return localStorage.getItem('collarnet_esp32_cam_ip') || window.location.hostname || '192.168.86.31';
+  const [sourceType, setSourceType] = useState(() => {
+    return (animal?.medio_red === 'WIFI' || animal?.net === 'WIFI' || animal?.ip) ? 'esp32' : 'remote';
   });
+  const [esp32Ip, setEsp32Ip] = useState(() => {
+    return animal?.ip || localStorage.getItem('collarnet_esp32_cam_ip') || window.location.hostname || '192.168.86.31';
+  });
+
+  useEffect(() => {
+    if (animal?.ip && animal.ip !== esp32Ip) {
+      setEsp32Ip(animal.ip);
+      localStorage.setItem('collarnet_esp32_cam_ip', animal.ip);
+    }
+  }, [animal?.ip]);
   const [deviceList, setDeviceList] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [showSettings, setShowSettings] = useState(false);

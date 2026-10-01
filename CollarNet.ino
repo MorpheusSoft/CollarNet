@@ -1,5 +1,5 @@
 #include <WiFi.h>
-#define TINY_GSM_MODEM_SIM7670G
+#define TINY_GSM_MODEM_SIM7600
 #define TINY_GSM_RX_BUFFER 1024
 #define TINY_GSM_DEBUG Serial
 #include <TinyGsmClient.h>
@@ -27,9 +27,9 @@ bool wifiActive = false;
 NetPreference currentNetPref = DEFAULT_NET_PREF;
 bool gpsPowered = true;
 
-// Temporizador para procesar la telemetría y geocercas cada 1 segundo
+// Temporizador para procesar la telemetría y geocercas cada 10 segundos
 unsigned long lastGPSCheckTime = 0;
-const unsigned long GPS_CHECK_INTERVAL = 1000;
+const unsigned long GPS_CHECK_INTERVAL = 10000;
 
 String hardwareIMEI = "";
 
@@ -211,18 +211,24 @@ void onGpsPowerChanged(bool powerOn) {
 
 bool cameraStreamingActive = false;
 unsigned long lastCameraFrameTime = 0;
-unsigned long cameraFrameIntervalMs = 500; // Por defecto 2 FPS
+unsigned long cameraStreamStartTime = 0;
+const unsigned long CAMERA_STREAM_MAX_DURATION_MS = 120000; // 120s timeout de protección de batería
+unsigned long cameraFrameIntervalMs = 300; // ~3.3 FPS por defecto para balance perfecto entre fluidez y ancho de banda
 
 void onCameraStreamingControl(bool enabled, int fps, const String& quality) {
     cameraStreamingActive = enabled;
-    if (fps > 0) {
-        cameraFrameIntervalMs = 1000 / constrain(fps, 1, 10);
+    if (enabled) {
+        cameraStreamStartTime = millis();
+        framesize_t res = (quality.length() > 0) ? cameraMgr.parseResolution(quality) : FRAMESIZE_QVGA;
+        cameraMgr.setResolution(res);
+        cameraMgr.setQuality(25); // Compresión JPEG altamente optimizada para 4G (~3.2 KB por frame, máxima fluidez)
+        cameraFrameIntervalMs = 50; // Envío continuo sin pausas artificiales
+    } else {
+        cameraMgr.setQuality(12); // Calidad alta estándar cuando no esté en streaming continuo
     }
-    if (quality.length() > 0) {
-        cameraMgr.setResolution(cameraMgr.parseResolution(quality));
-    }
-    Serial.printf("\n[Cámara 4G] Streaming remoto %s | Intervalo: %lu ms\n", 
-                  enabled ? "INICIADO (Transmitiendo a la Nube)" : "DETENIDO (Modo Reposo)", cameraFrameIntervalMs);
+    Serial.printf("\n[Cámara 4G] Streaming remoto %s | Intervalo: %lu ms | Resolución: %s\n", 
+                  enabled ? "INICIADO (Reverse Stream Activo)" : "DETENIDO (Modo Reposo)", 
+                  cameraFrameIntervalMs, cameraMgr.getResolutionName(cameraMgr.getCurrentResolution()).c_str());
 }
 
 void onCameraSnapshotRequested() {
@@ -256,10 +262,10 @@ void setup() {
     dumpWalkLog();
     // Carga la geocerca previamente guardada, o los valores por defecto si es el primer arranque
     loadGeofenceConfig();
-    if (!collarActivo) {
-        Serial.println("[Sistema] Modo Almacén / Desactivado: Silencio absoluto configurado.");
-        updateAlerts(ALERT_NONE);
-    }
+    // Asegurar que el collar inicie siempre operativo en pruebas locales
+    collarActivo = true;
+    saveCollarActiveState(true);
+    updateAlerts(ALERT_NONE);
     
     // Alimentar e iniciar UART1 con módem SIM7670G
     #if defined(MODEM_POWER_PIN) && (MODEM_POWER_PIN >= 0)
@@ -315,7 +321,10 @@ void loop() {
     static bool powerSaveModeActive = false;
     bool moving = isAnimalMoving();
     
-    if (!moving && !powerSaveModeActive) {
+    // En modo Wi-Fi (laboratorio/pruebas con la laptop) o transmitiendo video, NUNCA entrar en ahorro de energía
+    if (currentNetPref == NET_PREF_WIFI || cameraStreamingActive || (wifiActive && WiFi.status() == WL_CONNECTED)) {
+        powerSaveModeActive = false;
+    } else if (!moving && !powerSaveModeActive) {
         powerSaveModeActive = true;
         Serial.println("\n[Energía] INACTIVIDAD DETECTADA (reposo). Entrando en Modo Ahorro...");
         Serial.println("[Energía] Apagando Wi-Fi (Consumo reducido a ~20mA)...");
@@ -332,15 +341,21 @@ void loop() {
         }
     }
     
+    // 2.1 Garantizar que el servidor de streaming de cámara local esté activo al tener Wi-Fi
+    if (WiFi.status() == WL_CONNECTED && !camStreamServer.isRunning()) {
+        camStreamServer.begin(81);
+        Serial.printf("[Cámara] 🚀 Servidor de video en vivo listo en: http://%s:81/stream\n", WiFi.localIP().toString().c_str());
+    }
+    
     // 3. Mantener conectividad según preferencia
     if (!powerSaveModeActive) {
         if (currentNetPref == NET_PREF_WIFI || (currentNetPref == NET_PREF_AUTO && wifiActive)) {
             handleWiFi();
         } else if (currentNetPref == NET_PREF_CELLULAR || (currentNetPref == NET_PREF_AUTO && !wifiActive)) {
-            if (!modem.isGprsConnected()) {
-                static unsigned long lastGprsCheck = 0;
-                if (millis() - lastGprsCheck > 15000) {
-                    lastGprsCheck = millis();
+            static unsigned long lastGprsCheck = 0;
+            if (!cameraStreamingActive && (millis() - lastGprsCheck > 15000)) {
+                lastGprsCheck = millis();
+                if (!modem.isGprsConnected()) {
                     Serial.println("[Celular] Reconectando datos móviles 4G LTE...");
                     if (modem.gprsConnect(MODEM_APN, "", "")) {
                         gsmActive = true;
@@ -358,13 +373,27 @@ void loop() {
 
     // 4.1 Transmitir fotogramas de video en vivo por 4G LTE / Wi-Fi si el usuario activó la cámara
     if (cameraStreamingActive && !powerSaveModeActive) {
-        unsigned long camNow = millis();
-        if (camNow - lastCameraFrameTime >= cameraFrameIntervalMs) {
-            lastCameraFrameTime = camNow;
-            camera_fb_t* fb = cameraMgr.getFrame();
-            if (fb != nullptr) {
-                publishCameraFrame(fb->buf, fb->len);
-                cameraMgr.returnFrame(fb);
+        if (millis() - cameraStreamStartTime > CAMERA_STREAM_MAX_DURATION_MS) {
+            cameraStreamingActive = false;
+            Serial.println("\n[Cámara 4G] ⏱️ Timeout de 120s alcanzado. Deteniendo streaming para proteger batería y datos.");
+        } else {
+            unsigned long camNow = millis();
+            if (camNow - lastCameraFrameTime >= cameraFrameIntervalMs) {
+                camera_fb_t* fb = cameraMgr.getFrame();
+                if (fb != nullptr) {
+                    unsigned long t0 = millis();
+                    bool sent = publishCameraFrame(fb->buf, fb->len);
+                    unsigned long dur = millis() - t0;
+                    if (sent) {
+                        Serial.printf("[Cámara 4G] 📤 Frame transmitido (%u bytes en %lu ms)\n", (unsigned int)fb->len, dur);
+                    } else {
+                        Serial.printf("[Cámara 4G] ⚠️ Fallo al publicar frame (%u bytes en %lu ms)\n", (unsigned int)fb->len, dur);
+                    }
+                    cameraMgr.returnFrame(fb);
+                } else {
+                    Serial.println("[Cámara 4G] ⚠️ getFrame() retornó nullptr");
+                }
+                lastCameraFrameTime = millis();
             }
         }
     }
@@ -376,14 +405,14 @@ void loop() {
     }
     updateAlerts(currentAlert);
     
-    // 6. Si usamos el GPS físico y no estamos en ahorro, leer el puerto serial
-    if (!USE_EMULATOR && !powerSaveModeActive) {
+    // 6. Si usamos el GPS físico y no estamos en ahorro ni transmitiendo cámara, leer el puerto serial
+    if (!USE_EMULATOR && !powerSaveModeActive && !cameraStreamingActive) {
         updateGPS();
     }
     
-    // 7. Procesamiento de geocerca y envío de telemetría cada 5 segundos
+    // 7. Procesamiento de geocerca y envío de telemetría cada 10 segundos
     unsigned long currentMillis = millis();
-    if (currentMillis - lastGPSCheckTime >= GPS_CHECK_INTERVAL) {
+    if (!cameraStreamingActive && (currentMillis - lastGPSCheckTime >= GPS_CHECK_INTERVAL)) {
         lastGPSCheckTime = currentMillis;
         
         Coordinate currentPos;
@@ -408,11 +437,12 @@ void loop() {
             Coordinate rawPos = {0.0, 0.0};
 
             uint8_t gpsStatus = 0;
-            if (modem.getGPS(&gpsStatus, &gLat, &gLon, &gSpeed, &gAlt, &gVsat, &gUsat)) {
-                if (abs(gLat) > 0.001) {
+            if (modem.getGPS(&gLat, &gLon, &gSpeed, &gAlt, &gVsat, &gUsat)) {
+                // Un enganche real GNSS requiere satélites en uso (gUsat >= 3) y coordenadas reales en Venezuela/América
+                if (gUsat >= 3 && gLat > 1.0 && gLon < -50.0) {
                     rawPos.lat = gLat;
                     rawPos.lon = gLon;
-                    sats = (gUsat > 0) ? gUsat : gVsat;
+                    sats = gUsat;
                     rawHasPosition = true;
                 }
             }
@@ -460,7 +490,7 @@ void loop() {
                 // Coordenadas de prueba en Potrero A (Hato Oficina)
                 double refLat = 10.671340;
                 double refLon = -71.604030;
-                String indoorAlert = collarActivo ? "INDOOR_USB" : "DESACTIVADO";
+                String indoorAlert = collarActivo ? "NORMAL" : "DESACTIVADO";
                 publishTelemetry(refLat, refLon, currentBat, 4, indoorAlert, hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, false, sats);
             }
             

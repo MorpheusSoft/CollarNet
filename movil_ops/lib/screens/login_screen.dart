@@ -327,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 decoration: InputDecoration(
                                   labelText: 'URL Servidor API',
                                   labelStyle: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
-                                  hintText: 'http://192.168.86.31:3500/api',
+                                  hintText: 'http://192.168.86.30:3500/api',
                                   hintStyle: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
                                   filled: true,
                                   fillColor: AppTheme.surface,
@@ -353,11 +353,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   Text('Presets: ', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.textMuted)),
                                   ActionChip(
-                                    label: Text('Wi-Fi (86.243)', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.primaryCyan, fontWeight: FontWeight.w700)),
+                                    label: Text('Wi-Fi (86.30)', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.primaryCyan, fontWeight: FontWeight.w700)),
                                     backgroundColor: AppTheme.surface,
                                     padding: EdgeInsets.zero,
                                     onPressed: () async {
-                                      _serverCtrl.text = 'http://192.168.86.243:3500/api';
+                                      _serverCtrl.text = 'http://192.168.86.30:3500/api';
                                       await ApiService.setCustomBaseUrl(_serverCtrl.text);
                                       _testServerConnection();
                                     },

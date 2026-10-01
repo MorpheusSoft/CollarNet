@@ -12,6 +12,14 @@ CameraStreamServer camStreamServer;
 CameraStreamServer::CameraStreamServer() : httpdHandle(nullptr), serverPort(81) {}
 
 static esp_err_t stream_handler(httpd_req_t *req) {
+    if (!cameraMgr.isReady()) {
+        httpd_resp_set_status(req, "503 Service Unavailable");
+        httpd_resp_set_type(req, "text/plain");
+        httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+        httpd_resp_send(req, "Camara no disponible. Verifique que el switch 'CAM' este en 'ON'.", HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+
     cameraMgr.registerViewer();
     struct timeval _timestamp;
     esp_err_t res = ESP_OK;
@@ -29,11 +37,21 @@ static esp_err_t stream_handler(httpd_req_t *req) {
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
     httpd_resp_set_hdr(req, "X-Framerate", "30");
 
+    int noFrameRetries = 0;
     while (true) {
+        if (!cameraMgr.isReady()) {
+            break;
+        }
+
         if (!cameraMgr.getBroadcastFrame(_jpg_buf, _jpg_buf_len, frameId, _timestamp)) {
+            noFrameRetries++;
+            if (noFrameRetries > 250) { // 2.5 segundos sin fotogramas
+                break;
+            }
             vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
+        noFrameRetries = 0;
 
         // Si ya enviamos este fotograma específico a este cliente, esperamos el siguiente
         if (frameId == lastSentFrameId) {
