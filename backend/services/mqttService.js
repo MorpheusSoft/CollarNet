@@ -3,6 +3,7 @@ import pool from '../config/db.js';
 import { evaluateAnimalPosition } from './geofenceService.js';
 import { processTelemetryInMemory } from '../routes/api.js';
 import { pushCollarFrame } from './cameraService.js';
+import { sendCommandToCollar } from './trackerTcpService.js';
 
 let mqttClient = null;
 
@@ -58,10 +59,31 @@ export function initMQTT(io) {
       }
       
       const payload = JSON.parse(message.toString());
-      
-      // Soportar claves optimizadas o legibles
-      const lat = parseFloat(payload.lat !== undefined ? payload.lat : payload.latitude);
-      const lon = parseFloat(payload.lon !== undefined ? payload.lon : payload.longitude);
+      await processTelemetryPayload(io, collarId, payload);
+    } catch (err) {
+      console.error('[MQTT] Error procesando mensaje de telemetría:', err);
+    }
+  });
+}
+
+/**
+ * Publica telemetría cruda en el broker MQTT para interoperabilidad con clientes externos.
+ */
+export function publishTelemetry(collarId, payload) {
+  if (!mqttClient || !mqttClient.connected) return false;
+  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+  const topic = `${prefix}/${collarId}/telemetria`;
+  mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
+  return true;
+}
+
+/**
+ * Procesa e inyecta la telemetría recibida (sea vía MQTT o vía TCP puerto 7700).
+ */
+export async function processTelemetryPayload(io, collarId, payload) {
+  try {
+    const lat = parseFloat(payload.lat !== undefined ? payload.lat : payload.latitude);
+    const lon = parseFloat(payload.lon !== undefined ? payload.lon : payload.longitude);
       const bateria = Math.min(100, Math.max(0, parseInt(payload.bat !== undefined ? payload.bat : (payload.battery !== undefined ? payload.battery : 100), 10)));
       const senal = Math.min(5, Math.max(0, parseInt(payload.sig !== undefined ? payload.sig : (payload.signal !== undefined ? payload.signal : 4), 10)));
       const imei = payload.imei ? String(payload.imei).trim() : null;
@@ -97,53 +119,59 @@ export function initMQTT(io) {
             console.warn(`[MQTT Seguridad] Advertencia: Dispositivo con IMEI ${imei} transmitiendo para el collar ${matchedCollarId} (registrado con IMEI: ${dbImei}).`);
           }
 
-          const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
-          const isValidGps = !isNaN(lat) && !isNaN(lon) && Math.abs(lat) > 1.0 && Math.abs(lon) > 1.0;
-          const finalLat = isValidGps ? lat : (activeCollar.last_lat ? parseFloat(activeCollar.last_lat) : 10.67134);
-          const finalLon = isValidGps ? lon : (activeCollar.last_lon ? parseFloat(activeCollar.last_lon) : -71.60403);
+          const hasValidCoords = (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) > 1.0 && Math.abs(lon) > 1.0);
+          const effectiveLat = hasValidCoords ? lat : (activeCollar.last_lat ? parseFloat(activeCollar.last_lat) : 10.67134);
+          const effectiveLon = hasValidCoords ? lon : (activeCollar.last_lon ? parseFloat(activeCollar.last_lon) : -71.60403);
 
-          if (animalId && isOperativo && isValidGps) {
-            checkResult = await evaluateAnimalPosition(animalId, finalLat, finalLon);
+          const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
+
+          if (animalId && isOperativo && hasValidCoords) {
+            checkResult = await evaluateAnimalPosition(animalId, effectiveLat, effectiveLon);
 
             const insertTelemetryQuery = `
               INSERT INTO telemetria (animal_id, ubicacion, bateria, senal)
               VALUES ($1, ST_SetSRID(ST_Point($3, $2), 4326), $4, $5);
             `;
-            await pool.query(insertTelemetryQuery, [animalId, finalLat, finalLon, bateria, senal]);
-            await handleAlertLifecycle(animalId, checkResult.alertType, finalLat, finalLon);
+            await pool.query(insertTelemetryQuery, [animalId, effectiveLat, effectiveLon, bateria, senal]);
+            await handleAlertLifecycle(animalId, checkResult.alertType, effectiveLat, effectiveLon);
+
+            if (checkResult.alertType !== 'NORMAL') {
+              console.log(`[Alerta Activa] Animal ${animalId} (${areteVisual}) en ${checkResult.alertType}. Enviando orden de sonar al collar ${matchedCollarId}`);
+              sendCommandToCollar(matchedCollarId, 'FIND');
+            }
           }
 
-          const updateCollarQuery = isValidGps ? `
-            UPDATE collares 
-            SET nivel_bateria = $1, 
-                senal_celular = $2, 
-                ultima_conexion = NOW(),
-                ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
-                esta_cargando = $5,
-                voltaje_mv = $6,
-                medio_red = $7,
-                gps_encendido = $8,
-                gps_fijado = $9,
-                satelites_visibles = $10
-            WHERE id = $11;
-          ` : `
-            UPDATE collares 
-            SET nivel_bateria = $1, 
-                senal_celular = $2, 
-                ultima_conexion = NOW(),
-                esta_cargando = $3,
-                voltaje_mv = $4,
-                medio_red = $5,
-                gps_encendido = $6,
-                gps_fijado = $7,
-                satelites_visibles = $8
-            WHERE id = $9;
-          `;
-
-          if (isValidGps) {
-            await pool.query(updateCollarQuery, [bateria, senal, finalLat, finalLon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+          if (hasValidCoords) {
+            const updateCollarQuery = `
+              UPDATE collares 
+              SET nivel_bateria = $1, 
+                  senal_celular = $2, 
+                  ultima_conexion = NOW(),
+                  ultima_ubicacion = ST_SetSRID(ST_Point($4, $3), 4326),
+                  esta_cargando = $5,
+                  voltaje_mv = $6,
+                  medio_red = $7,
+                  gps_encendido = $8,
+                  gps_fijado = $9,
+                  satelites_visibles = $10
+              WHERE id = $11;
+            `;
+            await pool.query(updateCollarQuery, [bateria, senal, effectiveLat, effectiveLon, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
           } else {
-            await pool.query(updateCollarQuery, [bateria, senal, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
+            const updateCollarStatusQuery = `
+              UPDATE collares 
+              SET nivel_bateria = $1, 
+                  senal_celular = $2, 
+                  ultima_conexion = NOW(),
+                  esta_cargando = $3,
+                  voltaje_mv = $4,
+                  medio_red = $5,
+                  gps_encendido = $6,
+                  gps_fijado = $7,
+                  satelites_visibles = $8
+              WHERE id = $9;
+            `;
+            await pool.query(updateCollarStatusQuery, [bateria, senal, estaCargando, vbat, medioRed, gpsEncendido, gpsFijado, satelites, matchedCollarId]);
           }
 
           broadcastData = {
@@ -153,8 +181,8 @@ export function initMQTT(io) {
             animal_id: animalId || null,
             areteVisual: areteVisual || 'SIN VÍNCULO',
             arete_visual: areteVisual || 'SIN VÍNCULO',
-            lat: parseFloat(finalLat),
-            lon: parseFloat(finalLon),
+            lat: parseFloat(effectiveLat),
+            lon: parseFloat(effectiveLon),
             bateria: parseInt(bateria, 10),
             nivel_bateria: parseInt(bateria, 10),
             senal: parseInt(senal, 10),
@@ -220,8 +248,7 @@ export function initMQTT(io) {
     } catch (err) {
       console.error('[MQTT] Error procesando mensaje de telemetría:', err);
     }
-  });
-}
+  }
 
 /**
  * Publica un comando de actualización para un collar (ej: nuevas coordenadas de geocercas).

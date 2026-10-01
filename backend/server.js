@@ -8,6 +8,7 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import apiRouter from './routes/api.js';
 import { initMQTT } from './services/mqttService.js';
+import { initTrackerTcpService } from './services/trackerTcpService.js';
 import pool from './config/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -316,6 +317,12 @@ async function start() {
         ALTER TABLE animales ADD COLUMN IF NOT EXISTS hato_id INTEGER REFERENCES hatos(id) ON DELETE SET NULL;
         ALTER TABLE hatos ADD COLUMN IF NOT EXISTS margen_advertencia_metros NUMERIC(5, 2) DEFAULT 10.00;
         ALTER TABLE potreros ADD COLUMN IF NOT EXISTS margen_advertencia_metros NUMERIC(5, 2) DEFAULT 10.00;
+        ALTER TABLE collares ADD COLUMN IF NOT EXISTS esta_cargando BOOLEAN DEFAULT FALSE;
+        ALTER TABLE collares ADD COLUMN IF NOT EXISTS voltaje_mv INT;
+        ALTER TABLE collares ADD COLUMN IF NOT EXISTS medio_red VARCHAR(20) DEFAULT 'CELULAR';
+        ALTER TABLE collares ADD COLUMN IF NOT EXISTS gps_encendido BOOLEAN DEFAULT TRUE;
+        ALTER TABLE collares ADD COLUMN IF NOT EXISTS gps_fijado BOOLEAN DEFAULT FALSE;
+        ALTER TABLE collares ADD COLUMN IF NOT EXISTS satelites_visibles INT DEFAULT 0;
         UPDATE propietarios SET tenant_id = (SELECT id FROM tenants ORDER BY id ASC LIMIT 1) WHERE tenant_id IS NULL;
         UPDATE animales SET hato_id = (SELECT hato_id FROM potreros WHERE id = animales.potrero_id) WHERE hato_id IS NULL AND potrero_id IS NOT NULL;
       `);
@@ -329,6 +336,13 @@ async function start() {
       initMQTT(io);
     } catch (mqttErr) {
       console.warn('⚠️ Aviso MQTT:', mqttErr.message);
+    }
+
+    // 3. Arrancar servidor receptor TCP multi-protocolo (GT06 / TK103) para rastreadores GPS de ganado
+    try {
+      initTrackerTcpService(io);
+    } catch (tcpErr) {
+      console.warn('⚠️ Aviso Receptor TCP GPS:', tcpErr.message);
     }
 
     // 3. Encender servidor HTTP y escuchar conexiones
