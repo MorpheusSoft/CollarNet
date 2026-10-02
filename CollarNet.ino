@@ -412,7 +412,7 @@ void loop() {
     
     // 7. Procesamiento de geocerca y envío de telemetría cada 10 segundos
     unsigned long currentMillis = millis();
-    if (!cameraStreamingActive && (currentMillis - lastGPSCheckTime >= GPS_CHECK_INTERVAL)) {
+    if (currentMillis - lastGPSCheckTime >= GPS_CHECK_INTERVAL) {
         lastGPSCheckTime = currentMillis;
         
         Coordinate currentPos;
@@ -429,8 +429,8 @@ void loop() {
             hasPosition = true;
             sats = 8;
             age = 0;
-        } else {
-            // Obtener coordenada del receptor GNSS del módem SIM7670G
+        } else if (!cameraStreamingActive) {
+            // Obtener coordenada del receptor GNSS del módem SIM7670G solo si no hay streaming activo sobre el bus AT
             float gLat = 0.0, gLon = 0.0, gSpeed = 0.0, gAlt = 0.0;
             int gVsat = 0, gUsat = 0;
             bool rawHasPosition = false;

@@ -590,7 +590,7 @@ export default function MapMonitoring({
       </div>
 
       {/* 2. SIDEBAR LIVE TELEMETRY (Right) */}
-      <div className="w-full md:w-96 bg-[#0B121C] border-t md:border-t-0 md:border-l border-white/10 flex flex-col h-[50vh] md:h-full z-20">
+      <div className="w-full md:w-80 lg:w-84 xl:w-96 bg-[#0B121C] border-t md:border-t-0 md:border-l border-white/10 flex flex-col h-[50vh] md:h-full z-20 flex-shrink-0">
         
         {/* Panel Header */}
         <div className="p-4 border-b border-white/10 space-y-3 shrink-0">

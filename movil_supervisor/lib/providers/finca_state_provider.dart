@@ -10,7 +10,7 @@ class FincaStateProvider with ChangeNotifier {
   bool _isOnline = true;
   bool _isLoading = false;
   bool _authLoaded = false;
-  String _serverIp = '192.168.86.30:3500';
+  String _serverIp = 'www.cowai.net';
 
   // Información del Usuario Autenticado (Web / Central)
   Map<String, dynamic>? _currentUser;
@@ -117,17 +117,14 @@ class FincaStateProvider with ChangeNotifier {
   Future<void> _loadConfig() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _serverIp = prefs.getString('finca_server_ip') ?? '192.168.86.30:3500';
+      _serverIp = prefs.getString('finca_server_ip') ?? 'www.cowai.net';
       if (_serverIp.isEmpty ||
-          _serverIp.contains('cowai.net') ||
-          _serverIp.contains('192.168.86.21') ||
-          _serverIp.contains('192.168.86.31') ||
-          _serverIp.contains('192.168.86.243') ||
+          _serverIp.contains('192.168.') ||
           _serverIp.contains('10.0.2.2') ||
           _serverIp.contains('localhost') ||
           _serverIp.contains('127.0.0.1')) {
-        _serverIp = '192.168.86.30:3500';
-        await prefs.setString('finca_server_ip', '192.168.86.30:3500');
+        _serverIp = 'www.cowai.net';
+        await prefs.setString('finca_server_ip', 'www.cowai.net');
       }
       _hatoId = prefs.getInt('finca_selected_hato_id') ?? 1;
       _hatoNombre = prefs.getString('finca_selected_hato_nombre') ?? 'Hato La Esperanza';

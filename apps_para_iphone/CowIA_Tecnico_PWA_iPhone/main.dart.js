@@ -1,4 +1,4 @@
-(function dartProgram(){function copyProperties(a,b){var s=Object.keys(a)
+﻿(function dartProgram(){function copyProperties(a,b){var s=Object.keys(a)
 for(var r=0;r<s.length;r++){var q=s[r]
 b[q]=a[q]}}function mixinPropertiesHard(a,b){var s=Object.keys(a)
 for(var r=0;r<s.length;r++){var q=s[r]
@@ -31788,11 +31788,11 @@ return A.m(n.mB("String","custom_server_url",k),$async$e5)
 case 10:q=k
 s=1
 break
-case 9:s=m==null||m.length===0||B.c.n(m,"cowai.net")||B.c.n(m,"192.168.86.21")||B.c.n(m,"192.168.86.31")||B.c.n(m,"10.0.2.2")?11:12
+case 9:s=m==null||m.length===0||B.c.n(m,"192.168.")||B.c.n(m,"192.168.86.21")||B.c.n(m,"192.168.86.31")||B.c.n(m,"10.0.2.2")?11:12
 break
-case 11:m="http://192.168.86.243:3500/api"
+case 11:m="https://cowai.net/api"
 s=13
-return A.m(n.mB("String","custom_server_url","http://192.168.86.243:3500/api"),$async$e5)
+return A.m(n.mB("String","custom_server_url","https://cowai.net/api"),$async$e5)
 case 13:case 12:j=B.c.bW(m)
 if(J.a7h(j,"http://")||J.a7h(j,"https://")){if(J.aTu(j,"/api"))i=j
 else i=J.aTu(j,"/")?A.j(j)+"api":A.j(j)+"/api"
@@ -31807,7 +31807,7 @@ s=6
 break
 case 4:p=3
 g=o.pop()
-q="http://192.168.86.243:3500/api"
+q="https://cowai.net/api"
 s=1
 break
 s=6
@@ -108153,7 +108153,7 @@ $0(){var s=0,r=A.D(t.H),q=this,p,o
 var $async$$0=A.E(function(a,b){if(a===1)return A.A(b,r)
 for(;;)switch(s){case 0:p=q.a
 o=p.f
-o.scJ("http://192.168.86.243:3500/api")
+o.scJ("https://cowai.net/api")
 s=2
 return A.m(A.l8(o.a.a),$async$$0)
 case 2:p.ln()
@@ -109900,7 +109900,7 @@ g=g==null?null:J.a9(g)
 g=A.bU(g==null?"1":g,null)
 if(g==null)g=1
 f=i.h(0,"downloadUrl")
-if(f==null)f="http://192.168.86.243:3500/apk/CowIA-Tecnico.apk"
+if(f==null)f="https://cowai.net/apk/CowIA-Tecnico.apk"
 e=J.d(i.h(0,"mandatory"),!0)
 i=i.h(0,"releaseNotes")
 if(i==null)i="Mejoras continuas de rendimiento y estabilidad."

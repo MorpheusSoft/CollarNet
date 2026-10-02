@@ -2,15 +2,14 @@
 
 
 
-// Ruta sintética de caminata del animal para validación
+// Ruta sintética de caminata del animal para validación (Hato Oficina / Potrero A)
 Coordinate mockRoute[] = {
-    {9.1000, -67.1005}, // Paso 0: Centro de Potrero 1 (Seguro, lejos de bordes)
-    {9.1000, -67.1001}, // Paso 1: Acercándose a la división central interna (Seguro)
-    {9.1000, -67.0999}, // Paso 2: Cruzando a Potrero 2 (Seguro, transición interna sin alertas)
-    {9.1000, -67.0995}, // Paso 3: Centro de Potrero 2 (Seguro)
-    {9.1000, -67.09907},// Paso 4: Aproximación al borde derecho del Hato (Pre-alerta, a ~7.7m del límite)
-    {9.1000, -67.0988}, // Paso 5: Escape exterior al este del Hato (Alerta Peligro)
-    {9.1000, -67.1005}  // Paso 6: Retorno y rearme rápido en Potrero 1 (Seguro)
+    {10.671340, -71.604120}, // Paso 0: Centro de Potrero A (Seguro, dentro de cerca)
+    {10.671360, -71.604080}, // Paso 1: Caminata interna en Potrero A (Seguro)
+    {10.671340, -71.604020}, // Paso 2: Borde este de Potrero A (Aproximación / Pre-alerta)
+    {10.671340, -71.603900}, // Paso 3: Lindero este del Hato Principal (Alerta Advertencia)
+    {10.671340, -71.603680}, // Paso 4: Escape exterior fuera del Hato (Alerta Peligro / Zumbador)
+    {10.671340, -71.604120}  // Paso 5: Retorno seguro al centro de Potrero A (Rearme)
 };
 
 const int totalRoutePoints = sizeof(mockRoute) / sizeof(mockRoute[0]);

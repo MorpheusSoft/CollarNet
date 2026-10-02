@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding, onOpenApkDownload }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1200);
 
   let menuItems = [];
 

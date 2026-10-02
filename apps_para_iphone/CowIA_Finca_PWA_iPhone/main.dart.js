@@ -1,4 +1,4 @@
-(function dartProgram(){function copyProperties(a,b){var s=Object.keys(a)
+﻿(function dartProgram(){function copyProperties(a,b){var s=Object.keys(a)
 for(var r=0;r<s.length;r++){var q=s[r]
 b[q]=a[q]}}function mixinPropertiesHard(a,b){var s=Object.keys(a)
 for(var r=0;r<s.length;r++){var q=s[r]
@@ -8779,11 +8779,11 @@ l=A.at5().guA()
 if(J.a6_(l,"http://")||J.a6_(l,"https://")){j=A.j(l)
 q=j+"/api"
 s=1
-break}s=m==null||m.length===0||B.d.p(m,"cowai.net")||B.d.p(m,"192.168.86.21")||B.d.p(m,"192.168.86.31")||B.d.p(m,"10.0.2.2")?8:9
+break}s=m==null||m.length===0||B.d.p(m,"192.168.")||B.d.p(m,"192.168.86.21")||B.d.p(m,"192.168.86.31")||B.d.p(m,"10.0.2.2")?8:9
 break
-case 8:m="192.168.86.243:3500"
+case 8:m="cowai.net"
 s=10
-return A.n(n.mE("String","finca_server_ip","192.168.86.243:3500"),$async$fu)
+return A.n(n.mE("String","finca_server_ip","cowai.net"),$async$fu)
 case 10:case 9:k=B.d.cZ(m)
 if(J.a6_(k,"http://")||J.a6_(k,"https://")){if(J.aPJ(k,"/api"))j=k
 else j=J.aPJ(k,"/")?A.j(k)+"api":A.j(k)+"/api"
@@ -8798,7 +8798,7 @@ s=6
 break
 case 4:p=3
 h=o.pop()
-q="http://192.168.86.243:3500/api"
+q="https://cowai.net/api"
 s=1
 break
 s=6
@@ -48709,13 +48709,13 @@ s=6
 return A.n(A.jj(),$async$rU)
 case 6:n=b
 l=A.cv(n.a.h(0,"finca_server_ip"))
-if(l==null)l="192.168.86.243:3500"
+if(l==null)l="cowai.net"
 o.e=l
 s=l.length===0||B.d.p(l,"cowai.net")||B.d.p(l,"192.168.86.21")||B.d.p(l,"192.168.86.31")||B.d.p(l,"10.0.2.2")||B.d.p(l,"localhost")||B.d.p(l,"127.0.0.1")?7:8
 break
-case 7:o.e="192.168.86.243:3500"
+case 7:o.e="cowai.net"
 s=9
-return A.n(n.mE("String","finca_server_ip","192.168.86.243:3500"),$async$rU)
+return A.n(n.mE("String","finca_server_ip","cowai.net"),$async$rU)
 case 9:case 8:l=A.eS(n.a.h(0,"finca_selected_hato_id"))
 o.r=l==null?1:l
 l=A.cv(n.a.h(0,"finca_selected_hato_nombre"))
@@ -50032,9 +50032,9 @@ A.aBm.prototype={
 $0(){var s=0,r=A.G(t.H),q=this,p
 var $async$$0=A.H(function(a,b){if(a===1)return A.D(b,r)
 for(;;)switch(s){case 0:p=q.a
-p.f.sct("192.168.86.243:3500")
+p.f.sct("cowai.net")
 s=2
-return A.n(A.d0(q.b,!1,t.l).l_("192.168.86.243:3500"),$async$$0)
+return A.n(A.d0(q.b,!1,t.l).l_("cowai.net"),$async$$0)
 case 2:p.o3()
 return A.E(null,r)}})
 return A.F($async$$0,r)},
@@ -51533,7 +51533,7 @@ g=g==null?null:J.bw(g)
 g=A.fF(g==null?"1":g,null)
 if(g==null)g=1
 f=i.h(0,"downloadUrl")
-if(f==null)f="http://192.168.86.243:3500/apk/CowIA-Campo.apk"
+if(f==null)f="https://cowai.net/apk/CowIA-Campo.apk"
 e=J.c(i.h(0,"mandatory"),!0)
 i=i.h(0,"releaseNotes")
 if(i==null)i="Mejoras en conectividad y estabilidad."
@@ -111357,7 +111357,7 @@ B.acg=new A.l9(null,null,null,null,null,null,null,null,null,null,null,null,null,
 B.pg=new A.aF(B.p,1,B.x,-1)
 B.hY=new A.dR(4,B.h0,B.pg)
 B.PG=new A.l9(null,null,null,"Tipo de Biol\xf3gico / Vacuna",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.hY,!0,null,null,null,null)
-B.PH=new A.l9(null,null,null,"Servidor CowIA",null,null,null,null,null,null,"192.168.86.243:3500",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.hY,!0,null,null,null,null)
+B.PH=new A.l9(null,null,null,"Servidor CowIA",null,null,null,null,null,null,"cowai.net",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.hY,!0,null,null,null,null)
 B.PI=new A.l9(null,null,null,"Seleccionar Potrero a Tratar",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.hY,!0,null,null,null,null)
 B.PL=new A.d6(0.25,0.5,B.Z)
 B.Wa=new A.f(0.05,0)
@@ -113832,7 +113832,7 @@ B.a7V=new A.a_("GUIARME CON BR\xdaJULA HACIA ESTA RES",null,B.kG,null,null,null,
 B.a7W=new A.a_("Cancelar",null,B.Ev,null,null,null,null,null,null,null)
 B.a7X=new A.a_("\xbfEliminar Potrero?",null,B.eF,null,null,null,null,null,null,null)
 B.a7Y=new A.a_("Confinamiento de trabajo en manga/cepo. Silencio de potrero activo en patio.",null,B.dl,null,null,null,null,null,null,null)
-B.a7Z=new A.a_("Ingresa la direcci\xf3n o IP del servidor (ej: 192.168.86.243:3500):",null,B.dk,null,null,null,null,null,null,null)
+B.a7Z=new A.a_("Ingresa la direcci\xf3n o IP del servidor (ej: cowai.net):",null,B.dk,null,null,null,null,null,null,null)
 B.a81=new A.a_("Manga & Vinculaci\xf3n (3T)",null,null,null,null,null,null,null,null,null)
 B.a3i=new A.k(!0,B.a7,null,null,null,null,26,B.v,null,0.5,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a83=new A.a_("CowIA Finca",null,B.a3i,B.cD,null,null,null,null,null,null)

@@ -80,6 +80,17 @@ export default function CollarCameraViewer({
     getCameras();
   }, []);
 
+  // Cerrar cámara con la tecla Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // 2. Control de cámara local si está seleccionada
   useEffect(() => {
     if (sourceType === 'device') {
@@ -258,38 +269,37 @@ export default function CollarCameraViewer({
       {/* Barra de Cabecera Superior del Visor */}
       <div 
         onMouseDown={handleMouseDown}
-        className="px-3 py-2.5 bg-slate-900/95 backdrop-blur-md border-b border-white/10 flex items-center justify-between select-none z-20"
+        className="px-2.5 py-2 bg-slate-900/98 backdrop-blur-md border-b border-white/10 flex items-center justify-between select-none z-20 gap-2 shrink-0 overflow-x-auto no-scrollbar"
       >
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-950/90 border border-rose-500/60 text-rose-300 text-[10px] font-black uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping inline-block" />
-            <span>En Vivo</span>
+        <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-950/90 border border-rose-500/60 text-rose-300 text-[10px] font-black uppercase tracking-wider shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping inline-block" />
+            <span className="hidden sm:inline">En Vivo</span>
           </div>
-          <span className="text-xs font-black text-white flex items-center gap-1.5">
-            <span>📷 {nombre}</span>
-            <span className="text-cyan-400 font-mono text-[11px] bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-500/30">
+          <span className="text-xs font-black text-white flex items-center gap-1 min-w-0 truncate">
+            <span className="text-cyan-400 font-mono text-[11px] bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-500/30 shrink-0">
               {arete}
             </span>
-          </span>
-          <span className="hidden md:inline-block text-[10px] text-slate-300 font-mono bg-white/5 px-2 py-0.5 rounded">
-            Collar: {collarId}
+            <span className="hidden xl:inline text-[10px] text-slate-400 font-mono">
+              ({collarId})
+            </span>
           </span>
         </div>
 
         {/* Botones de Control de la Cámara */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           {/* Selector de Modo de Transmisión */}
           <button
             type="button"
             onClick={() => setSourceType(sourceType === 'esp32' ? 'remote' : (sourceType === 'remote' ? 'device' : 'esp32'))}
-            className="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white shadow transition-all"
+            className="px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white shadow transition-all shrink-0"
             title="Cambiar fuente de video"
           >
             {sourceType === 'esp32' && <Cpu size={13} className="text-cyan-200" />}
             {sourceType === 'remote' && <Globe size={13} className="text-emerald-200" />}
             {sourceType === 'device' && <Video size={13} className="text-amber-200" />}
-            <span className="hidden sm:inline">
-              {sourceType === 'esp32' ? 'ESP32-S3 Directo' : (sourceType === 'remote' ? 'Stream 4G' : 'Cámara Local')}
+            <span className="hidden lg:inline text-[11px]">
+              {sourceType === 'esp32' ? 'ESP32 :81' : (sourceType === 'remote' ? 'Stream 4G' : 'Cámara USB')}
             </span>
           </button>
 
@@ -297,7 +307,7 @@ export default function CollarCameraViewer({
           <button
             type="button"
             onClick={() => setShowSettings(!showSettings)}
-            className={`p-1.5 rounded-lg text-xs transition-colors ${showSettings ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+            className={`p-1.5 rounded-lg text-xs transition-colors shrink-0 ${showSettings ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
             title="Configurar IP del ESP32 / Ajustes de Cámara"
           >
             <Settings size={14} />
@@ -307,7 +317,7 @@ export default function CollarCameraViewer({
           <button
             type="button"
             onClick={() => setHudVisible(!hudVisible)}
-            className={`p-1.5 rounded-lg text-xs transition-colors ${hudVisible ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:text-white'}`}
+            className={`p-1.5 rounded-lg text-xs transition-colors shrink-0 ${hudVisible ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:text-white'}`}
             title="Mostrar/Ocultar HUD Telemetría"
           >
             <Eye size={14} />
@@ -317,7 +327,7 @@ export default function CollarCameraViewer({
           <button
             type="button"
             onClick={() => setNightMode(!nightMode)}
-            className={`p-1.5 rounded-lg text-xs transition-colors ${nightMode ? 'bg-emerald-500/20 text-emerald-300' : 'text-slate-400 hover:text-white'}`}
+            className={`p-1.5 rounded-lg text-xs transition-colors shrink-0 ${nightMode ? 'bg-emerald-500/20 text-emerald-300' : 'text-slate-400 hover:text-white'}`}
             title="Alternar Modo Visión Nocturna / IR"
           >
             {nightMode ? <Moon size={14} /> : <Sun size={14} />}
@@ -328,7 +338,7 @@ export default function CollarCameraViewer({
             type="button"
             onClick={handleTakeSnapshot}
             disabled={snapshotLoading}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors shrink-0"
             title="Tomar y Descargar Foto Instantánea Real"
           >
             <Download size={14} />
@@ -338,7 +348,7 @@ export default function CollarCameraViewer({
           <button
             type="button"
             onClick={() => onModeChange && onModeChange('split')}
-            className={`p-1.5 rounded-lg text-xs transition-colors ${mode === 'split' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-white'}`}
+            className={`p-1.5 rounded-lg text-xs transition-colors shrink-0 ${mode === 'split' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-white'}`}
             title="Modo Pantalla Dividida (Split)"
           >
             <Split size={14} />
@@ -348,7 +358,7 @@ export default function CollarCameraViewer({
           <button
             type="button"
             onClick={() => onModeChange && onModeChange('floating')}
-            className={`p-1.5 rounded-lg text-xs transition-colors ${mode === 'floating' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-white'}`}
+            className={`p-1.5 rounded-lg text-xs transition-colors shrink-0 ${mode === 'floating' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-white'}`}
             title="Modo Ventana Flotante (Picture-in-Picture)"
           >
             <Layout size={14} />
@@ -358,20 +368,21 @@ export default function CollarCameraViewer({
           <button
             type="button"
             onClick={() => onModeChange && onModeChange(mode === 'fullscreen' ? 'split' : 'fullscreen')}
-            className={`p-1.5 rounded-lg text-xs transition-colors ${mode === 'fullscreen' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-white'}`}
+            className={`p-1.5 rounded-lg text-xs transition-colors shrink-0 ${mode === 'fullscreen' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-white'}`}
             title="Pantalla Completa"
           >
             {mode === 'fullscreen' ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
 
-          {/* Cerrar Visor */}
+          {/* Botón Cerrar Visor - SIEMPRE VISIBLE Y DESTACADO */}
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-colors ml-1"
-            title="Cerrar Cámara"
+            className="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs flex items-center gap-1 transition-all shrink-0 ml-1.5 shadow-md shadow-rose-950/50 active:scale-95 z-30"
+            title="Cerrar Cámara (Esc)"
           >
-            <X size={15} />
+            <X size={15} className="stroke-[3]" />
+            <span className="font-extrabold text-[11px] tracking-wide">Cerrar</span>
           </button>
         </div>
       </div>
@@ -515,7 +526,7 @@ export default function CollarCameraViewer({
         {hudVisible && !streamError && (
           <div className="absolute inset-0 pointer-events-none p-3 flex flex-col justify-between z-10 text-[11px] font-mono">
             {/* HUD Top Bar */}
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-2">
               <div className="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/15 text-white flex items-center gap-2">
                 <span className="text-cyan-400 font-black flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block animate-pulse" />
@@ -525,13 +536,26 @@ export default function CollarCameraViewer({
                 <span className="text-emerald-300 font-bold">POV COLLAR</span>
               </div>
 
-              <div className="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/15 text-white flex items-center gap-2">
-                <Battery size={14} className={bateria > 20 ? "text-emerald-400" : "text-rose-400"} />
-                <span className="font-bold">{bateria}%</span>
-                <span className="text-slate-500">•</span>
-                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
-                  {alerta}
-                </span>
+              <div className="flex items-center gap-2 pointer-events-auto">
+                <div className="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/15 text-white flex items-center gap-2">
+                  <Battery size={14} className={bateria > 20 ? "text-emerald-400" : "text-rose-400"} />
+                  <span className="font-bold">{bateria}%</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
+                    {alerta}
+                  </span>
+                </div>
+
+                {/* Botón HUD para salir de la cámara en vivo */}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-2.5 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white font-black text-xs flex items-center gap-1 shadow-lg shadow-black/60 border border-rose-400/50 cursor-pointer active:scale-95 transition-all"
+                  title="Cerrar cámara en vivo (Esc)"
+                >
+                  <X size={14} className="stroke-[3]" />
+                  <span className="font-bold text-[11px]">Salir</span>
+                </button>
               </div>
             </div>
 
@@ -599,6 +623,19 @@ export default function CollarCameraViewer({
               </button>
             </div>
           </div>
+        )}
+
+        {/* Botón flotante siempre visible cuando el HUD esté desactivado o haya error */}
+        {(!hudVisible || streamError) && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 z-30 px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 backdrop-blur-md shadow-2xl transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer font-bold text-xs"
+            title="Cerrar Cámara (Esc)"
+          >
+            <X size={15} className="stroke-[2.5]" />
+            <span>Cerrar</span>
+          </button>
         )}
       </div>
     </div>

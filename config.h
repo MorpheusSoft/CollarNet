@@ -33,7 +33,7 @@ enum NetPreference {
 #define MODEM_APN "gprsweb.digitel.ve"
 
 // Configuración del GPS / GNSS
-#define USE_EMULATOR false   // false: usa el GNSS real del SIM7670G
+#define USE_EMULATOR true    // true: simula caminata y alertas de geocerca en interiores
 #define GPS_RX_PIN 17
 #define GPS_TX_PIN 18
 #define GPS_BAUD 115200
@@ -42,7 +42,7 @@ enum NetPreference {
 #define WIFI_CONNECT_TIMEOUT 15000 // Tiempo de espera máximo para conectar al Wi-Fi (15s)
 #define WIFI_RECONNECT_INTERVAL 10000 // Intervalo de intento de reconexión (10s)
 
-// Configuración del Broker MQTT
+// Configuración del Broker MQTT Oficial CowIA (cowai.net)
 #define MQTT_SERVER "broker.hivemq.com"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC_PREFIX "collarnet/lzambrano"

@@ -15,7 +15,7 @@ import mqtt from 'mqtt';
 // 1. Configuración del Collar y Conectividad
 const COLLAR_ID = process.env.COLLAR_ID || process.argv[2] || 'COLLAR_01';
 const BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://broker.hivemq.com:1883';
-const TOPIC_PREFIX = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+const TOPIC_PREFIX = process.env.MQTT_TOPIC_PREFIX || 'collarnet/simulacion';
 const TELEMETRIA_TOPIC = `${TOPIC_PREFIX}/${COLLAR_ID}/telemetria`;
 const CMD_TOPIC = `${TOPIC_PREFIX}/${COLLAR_ID}/cmd`;
 
