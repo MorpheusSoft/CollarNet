@@ -18,11 +18,20 @@ import {
   Heart,
   HeartPulse,
   Bell,
-  Wrench
+  Wrench,
+  X
 } from 'lucide-react';
 
-export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding, onOpenApkDownload }) {
-  const [collapsed, setCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1200);
+export default function Sidebar({ 
+  currentTab, 
+  onChangeTab, 
+  user, 
+  onGoToLanding, 
+  onOpenApkDownload,
+  onCloseMobile,
+  isMobileDrawer = false
+}) {
+  const [collapsed, setCollapsed] = useState(() => !isMobileDrawer && typeof window !== 'undefined' && window.innerWidth < 1200);
 
   let menuItems = [];
 
@@ -66,28 +75,53 @@ export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding, 
 
   return (
     <aside
-      className={`bg-[#0B121C] border-r border-white/10 flex flex-col justify-between transition-all duration-300 z-20 ${
-        collapsed ? 'w-18' : 'w-64'
-      }`}
+      className={
+        isMobileDrawer
+          ? "w-full h-full flex flex-col justify-between overflow-y-auto bg-[#0B121C]"
+          : `bg-[#0B121C] border-r border-white/10 flex flex-col justify-between transition-all duration-300 z-20 ${
+              collapsed ? 'w-18' : 'w-64'
+            }`
+      }
     >
       <div className="p-3">
         
-        {/* Collapse toggle button */}
-        <div className="flex items-center justify-between px-3 py-2 mb-3">
-          {!collapsed && (
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Menú Principal
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-auto"
-            title={collapsed ? 'Expandir menú' : 'Contraer menú'}
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
-        </div>
+        {/* Mobile Header or Desktop Collapse toggle button */}
+        {isMobileDrawer ? (
+          <div className="flex items-center justify-between px-3 py-2 mb-3 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-slate-950 font-black text-xs">
+                <Radio className="w-3.5 h-3.5" />
+              </div>
+              <span className="font-display font-black text-sm text-white tracking-tight">
+                Menú Principal
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Cerrar menú"
+            >
+              <X className="w-5 h-5 text-rose-400" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between px-3 py-2 mb-3">
+            {!collapsed && (
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Menú Principal
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-auto"
+              title={collapsed ? 'Expandir menú' : 'Contraer menú'}
+            >
+              {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+          </div>
+        )}
 
         {/* Navigation Items */}
         <nav className="space-y-1">
@@ -99,16 +133,19 @@ export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding, 
               <button
                 key={item.id}
                 type="button"
-                onClick={() => onChangeTab(item.id)}
+                onClick={() => {
+                  onChangeTab(item.id);
+                  if (isMobileDrawer && onCloseMobile) onCloseMobile();
+                }}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
                   isActive
                     ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
-                title={collapsed ? item.label : undefined}
+                title={!isMobileDrawer && collapsed ? item.label : undefined}
               >
                 <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-                {!collapsed && <span>{item.label}</span>}
+                {(isMobileDrawer || !collapsed) && <span>{item.label}</span>}
               </button>
             );
           })}
@@ -121,7 +158,10 @@ export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding, 
         {/* Descargar APK según Rol */}
         <button
           type="button"
-          onClick={onOpenApkDownload}
+          onClick={() => {
+            onOpenApkDownload();
+            if (isMobileDrawer && onCloseMobile) onCloseMobile();
+          }}
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-left shadow-sm ${
             user?.rol === 'SUPERADMIN'
               ? 'text-cyan-400 bg-cyan-950/40 border border-cyan-500/40 hover:bg-cyan-900/50 hover:border-cyan-400'
@@ -134,7 +174,7 @@ export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding, 
           ) : (
             <Smartphone className="w-4 h-4 shrink-0 text-emerald-400" />
           )}
-          {!collapsed && (
+          {(isMobileDrawer || !collapsed) && (
             <span className="truncate">
               {user?.rol === 'SUPERADMIN' ? 'Descargar App Técnico (APK)' : 'Descargar App de Campo (APK)'}
             </span>
@@ -143,12 +183,15 @@ export default function Sidebar({ currentTab, onChangeTab, user, onGoToLanding, 
 
         <button
           type="button"
-          onClick={onGoToLanding}
+          onClick={() => {
+            onGoToLanding();
+            if (isMobileDrawer && onCloseMobile) onCloseMobile();
+          }}
           className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           title="Ver Portal / Presentación de Producto"
         >
           <Home className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Portal Comercial</span>}
+          {(isMobileDrawer || !collapsed) && <span>Portal Comercial</span>}
         </button>
       </div>
 

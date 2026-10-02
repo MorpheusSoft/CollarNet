@@ -72,6 +72,7 @@ export default function App() {
   const [activeCameraAnimal, setActiveCameraAnimal] = useState(null);
   const [cameraMode, setCameraMode] = useState('split'); // 'split' | 'floating' | 'fullscreen'
   const [showApkModal, setShowApkModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Load Core Data based on User Role, Selected Tenant & Selected Hato
   const loadAllData = async () => {
@@ -294,21 +295,55 @@ export default function App() {
         hatos={activeHatos}
         selectedHatoId={selectedHatoId}
         onSelectHato={setSelectedHatoId}
+        onToggleMobileMenu={() => setMobileMenuOpen(prev => !prev)}
       />
 
-      {/* 2. Main Body with Sidebar + Tab Content */}
-      <div className="flex-1 flex overflow-hidden">
-        
-        <Sidebar
-          currentTab={currentTab}
-          onChangeTab={setCurrentTab}
-          user={user}
-          onGoToLanding={() => setCurrentView('landing')}
-          onOpenApkDownload={() => setShowApkModal(true)}
-        />
+      {/* Mobile Drawer (Slide-over overlay on small screens) */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="relative flex flex-col w-72 max-w-[85vw] bg-[#0B121C] border-r border-white/15 shadow-2xl z-10 h-full animate-in slide-in-from-left duration-200">
+            <Sidebar
+              currentTab={currentTab}
+              onChangeTab={(tab) => {
+                setCurrentTab(tab);
+                setMobileMenuOpen(false);
+              }}
+              user={user}
+              onGoToLanding={() => {
+                setCurrentView('landing');
+                setMobileMenuOpen(false);
+              }}
+              onOpenApkDownload={() => {
+                setShowApkModal(true);
+                setMobileMenuOpen(false);
+              }}
+              onCloseMobile={() => setMobileMenuOpen(false)}
+              isMobileDrawer={true}
+            />
+          </div>
+        </div>
+      )}
 
-        <div className="flex-1 flex overflow-hidden">
-          <main className="flex-1 overflow-y-auto bg-[#070D14] min-w-0">
+      {/* 2. Main Body with Sidebar + Tab Content */}
+      <div className="flex-1 flex overflow-hidden min-w-0">
+        
+        {/* Desktop Sidebar (hidden on mobile and tablet portrait) */}
+        <div className="hidden lg:flex shrink-0">
+          <Sidebar
+            currentTab={currentTab}
+            onChangeTab={setCurrentTab}
+            user={user}
+            onGoToLanding={() => setCurrentView('landing')}
+            onOpenApkDownload={() => setShowApkModal(true)}
+          />
+        </div>
+
+        <div className="flex-1 flex overflow-hidden min-w-0">
+          <main className="flex-1 overflow-y-auto bg-[#070D14] min-w-0 w-full">
             <ErrorBoundary key={currentTab} onReset={loadAllData}>
               {/* SuperAdmin Tenants Module */}
             {currentTab === 'tenants' && user?.rol === 'SUPERADMIN' && (
@@ -437,7 +472,7 @@ export default function App() {
 
           {/* Split-Screen Collar Camera Panel */}
           {activeCameraAnimal && cameraMode === 'split' && (
-            <aside className="w-full sm:w-[380px] md:w-[410px] lg:w-[440px] xl:w-[500px] 2xl:w-[560px] border-l border-emerald-500/20 bg-slate-950/95 flex flex-col h-full shadow-2xl relative z-20 flex-shrink-0 max-w-full">
+            <aside className="fixed inset-0 z-40 md:relative md:inset-auto w-full md:w-[410px] lg:w-[440px] xl:w-[500px] 2xl:w-[560px] border-l border-emerald-500/20 bg-slate-950/95 flex flex-col h-full shadow-2xl relative flex-shrink-0 max-w-full">
               <CollarCameraViewer
                 animal={activeCameraAnimal}
                 mode="split"
