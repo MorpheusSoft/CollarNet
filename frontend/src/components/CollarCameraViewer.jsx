@@ -61,6 +61,30 @@ export default function CollarCameraViewer({
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
+  // Floating PiP Resize state
+  const calculateInitialPipSize = () => {
+    if (typeof window === 'undefined') return { width: 440, height: 300 };
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const savedW = localStorage.getItem('collarnet_pip_w');
+    const savedH = localStorage.getItem('collarnet_pip_h');
+    if (savedW && savedH) {
+      const sw = parseInt(savedW, 10);
+      const sh = parseInt(savedH, 10);
+      if (sw >= 260 && sw <= w - 10 && sh >= 180 && sh <= h - 10) {
+        return { width: sw, height: sh };
+      }
+    }
+    const initW = Math.min(460, Math.max(280, w - 24));
+    const initH = Math.min(320, Math.max(200, Math.round(initW * 0.68)));
+    return { width: initW, height: initH };
+  };
+
+  const sizeRef = useRef(calculateInitialPipSize());
+  const [pipSize, setPipSize] = useState(sizeRef.current);
+  const isResizingRef = useRef(false);
+  const resizeStartRef = useRef({ x: 0, y: 0, w: 0, h: 0 });
+
   const collarId = animal?.collar_id || 'COW-001';
   const arete = animal?.arete_visual || animal?.arete || 'VACA-001';
   const nombre = animal?.nombre || `Res ${arete}`;
@@ -264,6 +288,44 @@ export default function CollarCameraViewer({
     };
   };
 
+  // Iniciar redimensionamiento (mouse o touch)
+  const startResize = (clientX, clientY, e) => {
+    if (mode !== 'floating') return;
+    if (e) {
+      e.stopPropagation();
+      if (e.cancelable && e.type !== 'touchstart') e.preventDefault();
+    }
+    isResizingRef.current = true;
+    resizeStartRef.current = {
+      x: clientX,
+      y: clientY,
+      w: sizeRef.current.width,
+      h: sizeRef.current.height
+    };
+  };
+
+  // Presets rápidos de tamaño para la ventana flotante
+  const setPipPreset = (preset) => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    let targetW = 440;
+    let targetH = 300;
+    if (preset === 'sm') {
+      targetW = Math.min(320, w - 20);
+      targetH = Math.min(230, h - 60);
+    } else if (preset === 'md') {
+      targetW = Math.min(460, w - 20);
+      targetH = Math.min(320, h - 60);
+    } else if (preset === 'lg') {
+      targetW = Math.min(620, w - 20);
+      targetH = Math.min(420, h - 60);
+    }
+    sizeRef.current = { width: targetW, height: targetH };
+    setPipSize({ width: targetW, height: targetH });
+    localStorage.setItem('collarnet_pip_w', String(targetW));
+    localStorage.setItem('collarnet_pip_h', String(targetH));
+  };
+
   const handleMouseDown = (e) => {
     if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
     startDrag(e.clientX, e.clientY, e);
@@ -278,14 +340,32 @@ export default function CollarCameraViewer({
 
   useEffect(() => {
     const handleMove = (clientX, clientY, e) => {
+      // 1. Manejo de Redimensionamiento
+      if (isResizingRef.current) {
+        if (e && e.cancelable) e.preventDefault();
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const maxW = Math.max(260, w - posRef.current.x - 10);
+        const maxH = Math.max(180, h - posRef.current.y - 10);
+        const deltaX = clientX - resizeStartRef.current.x;
+        const deltaY = clientY - resizeStartRef.current.y;
+        const newW = Math.max(260, Math.min(maxW, resizeStartRef.current.w + deltaX));
+        const newH = Math.max(180, Math.min(maxH, resizeStartRef.current.h + deltaY));
+
+        sizeRef.current = { width: newW, height: newH };
+        setPipSize({ width: newW, height: newH });
+        return;
+      }
+
+      // 2. Manejo de Arrastre
       if (!isDraggingRef.current) return;
       if (e && e.cancelable) {
         e.preventDefault();
       }
       const w = window.innerWidth;
       const h = window.innerHeight;
-      const cardWidth = Math.min(460, w - 24);
-      const cardHeight = Math.min(340, h - 80);
+      const cardWidth = Math.min(sizeRef.current.width, w - 24);
+      const cardHeight = Math.min(sizeRef.current.height, h - 80);
       const maxX = Math.max(0, w - cardWidth);
       const maxY = Math.max(0, h - cardHeight);
 
@@ -298,11 +378,16 @@ export default function CollarCameraViewer({
 
     const onMouseMove = (e) => handleMove(e.clientX, e.clientY, e);
     const onTouchMove = (e) => {
-      if (isDraggingRef.current && e.touches && e.touches[0]) {
+      if ((isDraggingRef.current || isResizingRef.current) && e.touches && e.touches[0]) {
         handleMove(e.touches[0].clientX, e.touches[0].clientY, e);
       }
     };
     const onDragEnd = () => {
+      if (isResizingRef.current) {
+        isResizingRef.current = false;
+        localStorage.setItem('collarnet_pip_w', String(sizeRef.current.width));
+        localStorage.setItem('collarnet_pip_h', String(sizeRef.current.height));
+      }
       isDraggingRef.current = false;
     };
 
@@ -328,8 +413,17 @@ export default function CollarCameraViewer({
   if (mode === 'split') {
     containerClass += "relative w-full h-full min-h-[440px] border border-cyan-500/40 rounded-2xl";
   } else if (mode === 'floating') {
-    containerClass += "fixed z-[99999] w-[92vw] sm:w-[460px] max-w-[95vw] h-[280px] sm:h-[320px] rounded-2xl border-2 border-cyan-400 shadow-2xl shadow-cyan-950/80";
-    containerStyle = { left: `${pipPos.x}px`, top: `${pipPos.y}px` };
+    containerClass += "fixed z-[99999] rounded-2xl border-2 border-cyan-400 shadow-2xl shadow-cyan-950/80";
+    containerStyle = { 
+      left: `${pipPos.x}px`, 
+      top: `${pipPos.y}px`,
+      width: `${pipSize.width}px`,
+      height: `${pipSize.height}px`,
+      minWidth: '260px',
+      minHeight: '180px',
+      maxWidth: '98vw',
+      maxHeight: '92vh'
+    };
   } else if (mode === 'fullscreen') {
     containerClass += "fixed inset-0 z-[99999] w-screen h-screen rounded-none border-none bg-slate-950";
   }
@@ -354,11 +448,48 @@ export default function CollarCameraViewer({
         >
           <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs pointer-events-none">
             <Move size={14} className="text-cyan-400 animate-pulse" />
-            <span className="tracking-wide">Mover Cámara Flotante</span>
+            <span className="tracking-wide">Mover Cámara</span>
           </div>
-          <div className="flex items-center gap-2 text-cyan-400/80 pointer-events-none">
-            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">Arrastra aquí</span>
-            <GripHorizontal size={18} />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-cyan-400/80 mr-0.5 hidden sm:inline">Tamaño:</span>
+            <button
+              type="button"
+              onClick={() => setPipPreset('sm')}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                pipSize.width <= 340 
+                  ? 'bg-cyan-400 text-slate-950 font-black shadow-sm' 
+                  : 'bg-cyan-900/60 text-cyan-300 hover:bg-cyan-800'
+              }`}
+              title="Tamaño Pequeño (320px)"
+            >
+              S
+            </button>
+            <button
+              type="button"
+              onClick={() => setPipPreset('md')}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                pipSize.width > 340 && pipSize.width <= 500 
+                  ? 'bg-cyan-400 text-slate-950 font-black shadow-sm' 
+                  : 'bg-cyan-900/60 text-cyan-300 hover:bg-cyan-800'
+              }`}
+              title="Tamaño Mediano (460px)"
+            >
+              M
+            </button>
+            <button
+              type="button"
+              onClick={() => setPipPreset('lg')}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                pipSize.width > 500 
+                  ? 'bg-cyan-400 text-slate-950 font-black shadow-sm' 
+                  : 'bg-cyan-900/60 text-cyan-300 hover:bg-cyan-800'
+              }`}
+              title="Tamaño Grande (620px)"
+            >
+              L
+            </button>
+            <div className="w-px h-3.5 bg-cyan-700/60 mx-1"></div>
+            <GripHorizontal size={18} className="text-cyan-400 pointer-events-none" />
           </div>
         </div>
       )}
@@ -740,6 +871,25 @@ export default function CollarCameraViewer({
             <X size={15} className="stroke-[2.5]" />
             <span>Cerrar</span>
           </button>
+        )}
+
+        {/* Tirador de Redimensionamiento (Esquina Inferior Derecha) para Mouse y Touch */}
+        {mode === 'floating' && (
+          <div
+            onMouseDown={(e) => startResize(e.clientX, e.clientY, e)}
+            onTouchStart={(e) => {
+              if (e.touches && e.touches[0]) {
+                startResize(e.touches[0].clientX, e.touches[0].clientY, e);
+              }
+            }}
+            className="absolute bottom-0 right-0 w-8 h-8 flex items-end justify-end p-1.5 cursor-nwse-resize z-40 text-cyan-400 hover:text-cyan-200 select-none bg-gradient-to-tl from-cyan-950/80 to-transparent rounded-br-2xl transition-colors"
+            style={{ touchAction: 'none' }}
+            title="Arrastra esta esquina para agrandar o achicar la ventana flotante libremente"
+          >
+            <svg className="w-4 h-4 pointer-events-none drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 15l-6 6M21 9l-12 12" strokeLinecap="round" />
+            </svg>
+          </div>
         )}
       </div>
     </div>

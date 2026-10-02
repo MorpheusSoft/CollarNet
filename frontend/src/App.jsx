@@ -19,6 +19,7 @@ import HealthRuminationView from './views/HealthRuminationView';
 import ApkDownloadModal from './components/ApkDownloadModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import CollarCameraViewer from './components/CollarCameraViewer';
+import { GripVertical, GripHorizontal } from 'lucide-react';
 
 import { 
   fetchMonitoreo, 
@@ -73,6 +74,99 @@ export default function App() {
   const [cameraMode, setCameraMode] = useState('split'); // 'split' | 'floating' | 'fullscreen'
   const [showApkModal, setShowApkModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Split-Screen Camera Panel Splitter Resizer (Desktop W / Mobile H)
+  const [cameraSplitWidth, setCameraSplitWidth] = useState(() => {
+    if (typeof window === 'undefined') return 440;
+    const saved = localStorage.getItem('collarnet_cam_split_w');
+    return saved ? Math.min(800, Math.max(300, parseInt(saved, 10))) : 440;
+  });
+
+  const [cameraSplitHeight, setCameraSplitHeight] = useState(() => {
+    if (typeof window === 'undefined') return 460;
+    const saved = localStorage.getItem('collarnet_cam_split_h');
+    return saved ? Math.min(650, Math.max(260, parseInt(saved, 10))) : 460;
+  });
+
+  const cameraSplitWidthRef = useRef(cameraSplitWidth);
+  const cameraSplitHeightRef = useRef(cameraSplitHeight);
+  const isResizingCamSplitterRef = useRef(false);
+  const camSplitterStartRef = useRef({ x: 0, y: 0, initialW: 440, initialH: 460 });
+
+  useEffect(() => {
+    cameraSplitWidthRef.current = cameraSplitWidth;
+  }, [cameraSplitWidth]);
+
+  useEffect(() => {
+    cameraSplitHeightRef.current = cameraSplitHeight;
+  }, [cameraSplitHeight]);
+
+  const startCamSplitterResize = (clientX, clientY, e) => {
+    if (e) {
+      e.stopPropagation();
+      if (e.cancelable && e.type !== 'touchstart') e.preventDefault();
+    }
+    isResizingCamSplitterRef.current = true;
+    camSplitterStartRef.current = {
+      x: clientX,
+      y: clientY,
+      initialW: cameraSplitWidthRef.current,
+      initialH: cameraSplitHeightRef.current
+    };
+  };
+
+  useEffect(() => {
+    const handleMove = (clientX, clientY, e) => {
+      if (!isResizingCamSplitterRef.current) return;
+      if (e && e.cancelable) e.preventDefault();
+
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        // En móvil: el divisor está arriba de la cámara. Arrastrar hacia arriba agranda la cámara.
+        const deltaY = clientY - camSplitterStartRef.current.y;
+        const maxH = Math.min(650, Math.round(window.innerHeight * 0.75));
+        const newH = Math.max(260, Math.min(maxH, camSplitterStartRef.current.initialH - deltaY));
+        setCameraSplitHeight(newH);
+        cameraSplitHeightRef.current = newH;
+      } else {
+        // En desktop: divisor a la izquierda de la cámara. Arrastrar hacia la izquierda ensancha la cámara.
+        const deltaX = camSplitterStartRef.current.x - clientX;
+        const maxW = Math.min(800, window.innerWidth - 350);
+        const newW = Math.max(300, Math.min(maxW, camSplitterStartRef.current.initialW + deltaX));
+        setCameraSplitWidth(newW);
+        cameraSplitWidthRef.current = newW;
+      }
+    };
+
+    const onMouseMove = (e) => handleMove(e.clientX, e.clientY, e);
+    const onTouchMove = (e) => {
+      if (isResizingCamSplitterRef.current && e.touches && e.touches[0]) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY, e);
+      }
+    };
+    const onEnd = () => {
+      if (isResizingCamSplitterRef.current) {
+        isResizingCamSplitterRef.current = false;
+        localStorage.setItem('collarnet_cam_split_w', String(cameraSplitWidthRef.current));
+        localStorage.setItem('collarnet_cam_split_h', String(cameraSplitHeightRef.current));
+        window.dispatchEvent(new Event('resize'));
+      }
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchcancel', onEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+    };
+  }, []);
 
   // Load Core Data based on User Role, Selected Tenant & Selected Hato
   const loadAllData = async () => {
@@ -472,14 +566,72 @@ export default function App() {
 
           {/* Split-Screen Collar Camera Panel */}
           {activeCameraAnimal && cameraMode === 'split' && (
-            <aside className="w-full md:w-[410px] lg:w-[440px] xl:w-[500px] 2xl:w-[560px] border-t md:border-t-0 md:border-l border-emerald-500/20 bg-slate-950/95 flex flex-col min-h-[460px] md:h-full shadow-2xl flex-shrink-0">
-              <CollarCameraViewer
-                animal={activeCameraAnimal}
-                mode="split"
-                onModeChange={setCameraMode}
-                onClose={handleCloseCamera}
-              />
-            </aside>
+            <>
+              {/* 1. Versión Desktop: Divisor Vertical (Ajuste Horizontal) */}
+              <div
+                onMouseDown={(e) => startCamSplitterResize(e.clientX, e.clientY, e)}
+                onTouchStart={(e) => {
+                  if (e.touches && e.touches[0]) {
+                    startCamSplitterResize(e.touches[0].clientX, e.touches[0].clientY, e);
+                  }
+                }}
+                onDoubleClick={() => {
+                  setCameraSplitWidth(440);
+                  localStorage.setItem('collarnet_cam_split_w', '440');
+                  window.dispatchEvent(new Event('resize'));
+                }}
+                className="hidden md:flex w-2.5 hover:w-3.5 bg-slate-900 border-x border-white/10 hover:border-emerald-500/50 hover:bg-emerald-950/40 cursor-col-resize items-center justify-center select-none z-30 flex-shrink-0 transition-all group"
+                style={{ touchAction: 'none' }}
+                title="Arrastra para cambiar el ancho de la cámara y del panel principal (Doble clic para reiniciar a 440px)"
+              >
+                <div className="w-1 h-8 rounded-full bg-slate-600 group-hover:bg-emerald-400 transition-colors flex items-center justify-center">
+                  <GripVertical size={10} className="text-slate-950 opacity-0 group-hover:opacity-100" />
+                </div>
+              </div>
+
+              {/* 2. Versión Móvil: Divisor Horizontal (Ajuste Vertical) */}
+              <div
+                onMouseDown={(e) => startCamSplitterResize(e.clientX, e.clientY, e)}
+                onTouchStart={(e) => {
+                  if (e.touches && e.touches[0]) {
+                    startCamSplitterResize(e.touches[0].clientX, e.touches[0].clientY, e);
+                  }
+                }}
+                onDoubleClick={() => {
+                  setCameraSplitHeight(460);
+                  localStorage.setItem('collarnet_cam_split_h', '460');
+                  window.dispatchEvent(new Event('resize'));
+                }}
+                className="flex md:hidden h-7 w-full bg-slate-900 border-y border-white/15 hover:border-emerald-500/50 hover:bg-emerald-950/50 cursor-row-resize items-center justify-between px-4 select-none z-30 flex-shrink-0 transition-all group shadow-md"
+                style={{ touchAction: 'none' }}
+                title="Arrastra verticalmente para ajustar la altura de la cámara (Doble toque para reiniciar a 460px)"
+              >
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 group-hover:text-emerald-300 font-bold">
+                  <span className="text-emerald-400 font-mono">📹</span>
+                  <span>Ajustar altura de la cámara</span>
+                </div>
+                <div className="flex items-center gap-1 text-slate-500 group-hover:text-emerald-400">
+                  <span className="text-[9px] font-mono opacity-70">Arrastrar</span>
+                  <GripHorizontal size={14} />
+                </div>
+              </div>
+
+              <aside 
+                className="w-full border-t md:border-t-0 md:border-l border-emerald-500/20 bg-slate-950/95 flex flex-col shadow-2xl flex-shrink-0"
+                style={{
+                  width: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${cameraSplitWidth}px` : '100%',
+                  height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${cameraSplitHeight}px` : undefined,
+                  minHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? '260px' : undefined
+                }}
+              >
+                <CollarCameraViewer
+                  animal={activeCameraAnimal}
+                  mode="split"
+                  onModeChange={setCameraMode}
+                  onClose={handleCloseCamera}
+                />
+              </aside>
+            </>
           )}
         </div>
 

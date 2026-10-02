@@ -22,7 +22,9 @@ import {
   Moon,
   Video,
   Building,
-  Target
+  Target,
+  GripVertical,
+  GripHorizontal
 } from 'lucide-react';
 import { apiCambiarEstadoPotrero } from '../services/apiService';
 
@@ -56,6 +58,105 @@ export default function MapMonitoring({
   const [selectedPotreroId, setSelectedPotreroId] = useState(null);
   const [selectedHatoTabId, setSelectedHatoTabId] = useState(null);
   const [isTogglingPotrero, setIsTogglingPotrero] = useState(false);
+
+  // Tamaños ajustables para el panel lateral (desktop) y mapa (móvil)
+  const [panelWidth, setPanelWidth] = useState(() => {
+    if (typeof window === 'undefined') return 350;
+    const saved = localStorage.getItem('collarnet_map_panel_w');
+    return saved ? Math.min(650, Math.max(260, parseInt(saved, 10))) : 350;
+  });
+  const [mapHeight, setMapHeight] = useState(() => {
+    if (typeof window === 'undefined') return 380;
+    const saved = localStorage.getItem('collarnet_map_h');
+    return saved ? Math.min(650, Math.max(220, parseInt(saved, 10))) : 380;
+  });
+
+  const panelWidthRef = useRef(panelWidth);
+  const mapHeightRef = useRef(mapHeight);
+  const isResizingSplitterRef = useRef(false);
+  const splitterStartRef = useRef({ x: 0, y: 0, initialW: 350, initialH: 380 });
+
+  useEffect(() => {
+    panelWidthRef.current = panelWidth;
+  }, [panelWidth]);
+
+  useEffect(() => {
+    mapHeightRef.current = mapHeight;
+  }, [mapHeight]);
+
+  // Manejador de inicio de arrastre del divisor
+  const startSplitterResize = (clientX, clientY, e) => {
+    if (e) {
+      e.stopPropagation();
+      if (e.cancelable && e.type !== 'touchstart') e.preventDefault();
+    }
+    isResizingSplitterRef.current = true;
+    splitterStartRef.current = {
+      x: clientX,
+      y: clientY,
+      initialW: panelWidthRef.current,
+      initialH: mapHeightRef.current
+    };
+  };
+
+  useEffect(() => {
+    const handleMove = (clientX, clientY, e) => {
+      if (!isResizingSplitterRef.current) return;
+      if (e && e.cancelable) e.preventDefault();
+
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        // En móvil: redimensionar altura vertical del mapa
+        const deltaY = clientY - splitterStartRef.current.y;
+        const maxH = Math.min(650, Math.round(window.innerHeight * 0.75));
+        const newH = Math.max(220, Math.min(maxH, splitterStartRef.current.initialH + deltaY));
+        setMapHeight(newH);
+        mapHeightRef.current = newH;
+      } else {
+        // En desktop: redimensionar ancho horizontal del panel
+        const deltaX = splitterStartRef.current.x - clientX;
+        const maxW = Math.min(650, window.innerWidth - 300);
+        const newW = Math.max(260, Math.min(maxW, splitterStartRef.current.initialW + deltaX));
+        setPanelWidth(newW);
+        panelWidthRef.current = newW;
+      }
+
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+
+    const onMouseMove = (e) => handleMove(e.clientX, e.clientY, e);
+    const onTouchMove = (e) => {
+      if (isResizingSplitterRef.current && e.touches && e.touches[0]) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY, e);
+      }
+    };
+    const onEnd = () => {
+      if (isResizingSplitterRef.current) {
+        isResizingSplitterRef.current = false;
+        localStorage.setItem('collarnet_map_panel_w', String(panelWidthRef.current));
+        localStorage.setItem('collarnet_map_h', String(mapHeightRef.current));
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchcancel', onEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+    };
+  }, []);
 
   // Check if any potrero is actively in arreo/traslado mode
   const arreoInfo = geocercas?.arreo || null;
@@ -520,7 +621,13 @@ export default function MapMonitoring({
     <div className="relative w-full flex flex-col md:flex-row min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden">
       
       {/* 1. MAP VIEWPORT (Center/Left) */}
-      <div className="relative w-full h-[52vh] min-h-[360px] md:h-full md:flex-1 flex-shrink-0">
+      <div 
+        className="relative w-full md:h-full md:flex-1 flex-shrink-0"
+        style={{ 
+          height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${mapHeight}px` : undefined,
+          minHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? '220px' : undefined
+        }}
+      >
         
         {/* Leaflet container */}
         <div ref={mapContainerRef} className="w-full h-full z-10" />
@@ -600,8 +707,63 @@ export default function MapMonitoring({
 
       </div>
 
+      {/* DIVISOR AJUSTABLE (Splitter Resizer) ENTRE MAPA Y PANEL */}
+      {/* 1. Versión Desktop: Divisor Vertical (Ajuste Horizontal) */}
+      <div
+        onMouseDown={(e) => startSplitterResize(e.clientX, e.clientY, e)}
+        onTouchStart={(e) => {
+          if (e.touches && e.touches[0]) {
+            startSplitterResize(e.touches[0].clientX, e.touches[0].clientY, e);
+          }
+        }}
+        onDoubleClick={() => {
+          setPanelWidth(350);
+          localStorage.setItem('collarnet_map_panel_w', '350');
+          if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+        }}
+        className="hidden md:flex w-2.5 hover:w-3.5 bg-slate-900 border-x border-white/10 hover:border-emerald-500/50 hover:bg-emerald-950/40 cursor-col-resize items-center justify-center select-none z-30 flex-shrink-0 transition-all group"
+        style={{ touchAction: 'none' }}
+        title="Arrastra para cambiar el ancho del mapa y del panel de vacas (Doble clic para reiniciar)"
+      >
+        <div className="w-1 h-8 rounded-full bg-slate-600 group-hover:bg-emerald-400 transition-colors flex items-center justify-center">
+          <GripVertical size={10} className="text-slate-950 opacity-0 group-hover:opacity-100" />
+        </div>
+      </div>
+
+      {/* 2. Versión Móvil: Divisor Horizontal (Ajuste Vertical) */}
+      <div
+        onMouseDown={(e) => startSplitterResize(e.clientX, e.clientY, e)}
+        onTouchStart={(e) => {
+          if (e.touches && e.touches[0]) {
+            startSplitterResize(e.touches[0].clientX, e.touches[0].clientY, e);
+          }
+        }}
+        onDoubleClick={() => {
+          setMapHeight(380);
+          localStorage.setItem('collarnet_map_h', '380');
+          if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+        }}
+        className="flex md:hidden h-7 w-full bg-slate-900 border-y border-white/15 hover:border-emerald-500/50 hover:bg-emerald-950/50 cursor-row-resize items-center justify-between px-4 select-none z-30 flex-shrink-0 transition-all group shadow-md"
+        style={{ touchAction: 'none' }}
+        title="Arrastra verticalmente para agrandar o achicar el mapa"
+      >
+        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 group-hover:text-emerald-300 font-bold">
+          <Layers size={12} className="text-emerald-400" />
+          <span>Ajustar altura del mapa</span>
+        </div>
+        <div className="flex items-center gap-1 text-slate-500 group-hover:text-emerald-400">
+          <span className="text-[9px] font-mono opacity-70">Arrastrar</span>
+          <GripHorizontal size={14} />
+        </div>
+      </div>
+
       {/* 2. SIDEBAR LIVE TELEMETRY (Right) */}
-      <div className="w-full md:w-80 lg:w-84 xl:w-96 bg-[#0B121C] border-t md:border-t-0 md:border-l border-white/10 flex flex-col min-h-[460px] md:h-full z-20 flex-shrink-0">
+      <div 
+        className="w-full bg-[#0B121C] border-t md:border-t-0 border-white/10 flex flex-col min-h-[460px] md:h-full z-20 flex-shrink-0"
+        style={{ 
+          width: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${panelWidth}px` : '100%' 
+        }}
+      >
         
         {/* Panel Header */}
         <div className="p-4 border-b border-white/10 space-y-3 shrink-0">
