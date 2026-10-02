@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Camera, Video, X, Maximize2, Minimize2, Split, Layout, Download, 
   Battery, MapPin, Radio, Eye, Sun, Moon, Settings, RefreshCw, AlertCircle,
@@ -43,8 +44,19 @@ export default function CollarCameraViewer({
   const localStreamRef = useRef(null);
   const broadcastTimerRef = useRef(null);
 
-  // Floating PiP Drag state
-  const [pipPos, setPipPos] = useState({ x: window.innerWidth - 480, y: window.innerHeight - 380 });
+  // Floating PiP Drag state con coordenadas iniciales seguras para cualquier dispositivo
+  const calculateInitialPipPos = () => {
+    if (typeof window === 'undefined') return { x: 20, y: 80 };
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const cardWidth = Math.min(460, w - 30);
+    const cardHeight = Math.min(320, h - 120);
+    const initialX = Math.max(15, w - cardWidth - 25);
+    const initialY = Math.max(75, h - cardHeight - 25);
+    return { x: initialX, y: initialY };
+  };
+
+  const [pipPos, setPipPos] = useState(calculateInitialPipPos);
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
@@ -217,51 +229,100 @@ export default function CollarCameraViewer({
     }
   };
 
-  // Drag listeners para el modo Ventana Flotante (PiP)
-  const handleMouseDown = (e) => {
+  // Si cambia a modo flotante, asegurar que esté dentro de los límites visibles de la pantalla
+  useEffect(() => {
+    if (mode === 'floating' && typeof window !== 'undefined') {
+      setPipPos(prev => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const cardWidth = Math.min(460, w - 30);
+        const cardHeight = Math.min(320, h - 120);
+        const maxX = Math.max(10, w - cardWidth - 10);
+        const maxY = Math.max(70, h - cardHeight - 10);
+        if (prev.x < 10 || prev.x > maxX || prev.y < 70 || prev.y > maxY) {
+          return {
+            x: Math.max(15, w - cardWidth - 25),
+            y: Math.max(75, h - cardHeight - 25)
+          };
+        }
+        return prev;
+      });
+    }
+  }, [mode]);
+
+  // Drag listeners para el modo Ventana Flotante (PiP) - Compatible con Mouse y Touch
+  const handleDragStart = (clientX, clientY) => {
     if (mode !== 'floating') return;
     isDraggingRef.current = true;
     dragOffsetRef.current = {
-      x: e.clientX - pipPos.x,
-      y: e.clientY - pipPos.y
+      x: clientX - pipPos.x,
+      y: clientY - pipPos.y
     };
   };
 
+  const handleMouseDown = (e) => {
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
+    handleDragStart(e.clientX, e.clientY);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
+    if (e.touches && e.touches[0]) {
+      handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMove = (clientX, clientY) => {
       if (!isDraggingRef.current) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const cardWidth = Math.min(460, w - 30);
+      const cardHeight = Math.min(320, h - 120);
+      const maxX = Math.max(10, w - cardWidth - 10);
+      const maxY = Math.max(70, h - cardHeight - 10);
       setPipPos({
-        x: Math.max(10, Math.min(window.innerWidth - 440, e.clientX - dragOffsetRef.current.x)),
-        y: Math.max(10, Math.min(window.innerHeight - 300, e.clientY - dragOffsetRef.current.y))
+        x: Math.max(10, Math.min(maxX, clientX - dragOffsetRef.current.x)),
+        y: Math.max(70, Math.min(maxY, clientY - dragOffsetRef.current.y))
       });
     };
 
-    const handleMouseUp = () => {
+    const onMouseMove = (e) => handleMove(e.clientX, e.clientY);
+    const onTouchMove = (e) => {
+      if (isDraggingRef.current && e.touches && e.touches[0]) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+    const onDragEnd = () => {
       isDraggingRef.current = false;
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onDragEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onDragEnd);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onDragEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onDragEnd);
     };
   }, []);
 
-  // Clases según el modo de visualización
+  // Clases y estilos según el modo de visualización (Garantizar z-index máximo y sin conflictos relative/fixed)
   let containerStyle = {};
-  let containerClass = "relative bg-[#030712] border border-cyan-500/40 rounded-2xl overflow-hidden shadow-2xl flex flex-col";
+  let containerClass = "bg-[#030712] overflow-hidden shadow-2xl flex flex-col ";
 
   if (mode === 'split') {
-    containerClass += " w-full h-full min-h-[440px]";
+    containerClass += "relative w-full h-full min-h-[440px] border border-cyan-500/40 rounded-2xl";
   } else if (mode === 'floating') {
-    containerClass += " fixed z-50 w-[460px] h-[320px] cursor-move resize";
+    containerClass += "fixed z-[99999] w-[92vw] sm:w-[460px] max-w-[95vw] h-[280px] sm:h-[320px] rounded-2xl border-2 border-cyan-400 shadow-2xl shadow-cyan-950/80";
     containerStyle = { left: `${pipPos.x}px`, top: `${pipPos.y}px` };
   } else if (mode === 'fullscreen') {
-    containerClass += " fixed inset-0 z-50 w-screen h-screen rounded-none border-none";
+    containerClass += "fixed inset-0 z-[99999] w-screen h-screen rounded-none border-none bg-slate-950";
   }
 
-  return (
+  const viewerContent = (
     <div className={containerClass} style={containerStyle}>
       {/* Canvas oculto para capturas y relay */}
       <canvas ref={canvasRef} className="hidden" />
@@ -269,7 +330,8 @@ export default function CollarCameraViewer({
       {/* Barra de Cabecera Superior del Visor */}
       <div 
         onMouseDown={handleMouseDown}
-        className="px-2.5 py-2 bg-slate-900/98 backdrop-blur-md border-b border-white/10 flex items-center justify-between select-none z-20 gap-2 shrink-0 overflow-x-auto no-scrollbar"
+        onTouchStart={handleTouchStart}
+        className={`px-2.5 py-2 bg-slate-900/98 backdrop-blur-md border-b border-white/10 flex items-center justify-between select-none z-20 gap-2 shrink-0 overflow-x-auto no-scrollbar ${mode === 'floating' ? 'cursor-move' : ''}`}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
           <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-950/90 border border-rose-500/60 text-rose-300 text-[10px] font-black uppercase tracking-wider shrink-0">
@@ -640,4 +702,11 @@ export default function CollarCameraViewer({
       </div>
     </div>
   );
+
+  // En modo Flotante (PiP) o Pantalla Completa, montar directamente en document.body para evitar overflow o z-index truncados
+  if (mode !== 'split' && typeof document !== 'undefined') {
+    return createPortal(viewerContent, document.body);
+  }
+
+  return viewerContent;
 }

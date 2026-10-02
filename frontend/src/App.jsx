@@ -472,7 +472,7 @@ export default function App() {
 
           {/* Split-Screen Collar Camera Panel */}
           {activeCameraAnimal && cameraMode === 'split' && (
-            <aside className="fixed inset-0 z-40 md:relative md:inset-auto w-full md:w-[410px] lg:w-[440px] xl:w-[500px] 2xl:w-[560px] border-l border-emerald-500/20 bg-slate-950/95 flex flex-col h-full shadow-2xl relative flex-shrink-0 max-w-full">
+            <aside className="fixed inset-0 z-40 md:relative md:inset-auto w-full md:w-[410px] lg:w-[440px] xl:w-[500px] 2xl:w-[560px] border-l border-emerald-500/20 bg-slate-950/95 flex flex-col h-full shadow-2xl flex-shrink-0 max-w-full">
               <CollarCameraViewer
                 animal={activeCameraAnimal}
                 mode="split"
