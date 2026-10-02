@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { 
   Camera, Video, X, Maximize2, Minimize2, Split, Layout, Download, 
   Battery, MapPin, Radio, Eye, Sun, Moon, Settings, RefreshCw, AlertCircle,
-  Play, StopCircle, Wifi, Cpu, Globe
+  Play, StopCircle, Wifi, Cpu, Globe, Move, GripHorizontal
 } from 'lucide-react';
 import { API_BASE } from '../services/apiService';
 
@@ -49,14 +49,15 @@ export default function CollarCameraViewer({
     if (typeof window === 'undefined') return { x: 20, y: 80 };
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const cardWidth = Math.min(460, w - 30);
-    const cardHeight = Math.min(320, h - 120);
-    const initialX = Math.max(15, w - cardWidth - 25);
-    const initialY = Math.max(75, h - cardHeight - 25);
+    const cardWidth = Math.min(460, w - 24);
+    const cardHeight = Math.min(340, h - 80);
+    const initialX = Math.max(12, w - cardWidth - 20);
+    const initialY = Math.max(70, h - cardHeight - 20);
     return { x: initialX, y: initialY };
   };
 
-  const [pipPos, setPipPos] = useState(calculateInitialPipPos);
+  const posRef = useRef(calculateInitialPipPos());
+  const [pipPos, setPipPos] = useState(posRef.current);
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
@@ -232,65 +233,73 @@ export default function CollarCameraViewer({
   // Si cambia a modo flotante, asegurar que esté dentro de los límites visibles de la pantalla
   useEffect(() => {
     if (mode === 'floating' && typeof window !== 'undefined') {
-      setPipPos(prev => {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        const cardWidth = Math.min(460, w - 30);
-        const cardHeight = Math.min(320, h - 120);
-        const maxX = Math.max(10, w - cardWidth - 10);
-        const maxY = Math.max(70, h - cardHeight - 10);
-        if (prev.x < 10 || prev.x > maxX || prev.y < 70 || prev.y > maxY) {
-          return {
-            x: Math.max(15, w - cardWidth - 25),
-            y: Math.max(75, h - cardHeight - 25)
-          };
-        }
-        return prev;
-      });
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const cardWidth = Math.min(460, w - 24);
+      const cardHeight = Math.min(340, h - 80);
+      const maxX = Math.max(0, w - cardWidth);
+      const maxY = Math.max(0, h - cardHeight);
+      
+      let x = posRef.current.x;
+      let y = posRef.current.y;
+      if (x < 10 || x > maxX || y < 60 || y > maxY) {
+        x = Math.max(12, w - cardWidth - 20);
+        y = Math.max(70, h - cardHeight - 20);
+        posRef.current = { x, y };
+        setPipPos({ x, y });
+      }
     }
   }, [mode]);
 
-  // Drag listeners para el modo Ventana Flotante (PiP) - Compatible con Mouse y Touch
-  const handleDragStart = (clientX, clientY) => {
+  // Iniciar arrastre (mouse o touch)
+  const startDrag = (clientX, clientY, e) => {
     if (mode !== 'floating') return;
+    if (e && e.cancelable && e.type !== 'touchstart') {
+      e.preventDefault();
+    }
     isDraggingRef.current = true;
     dragOffsetRef.current = {
-      x: clientX - pipPos.x,
-      y: clientY - pipPos.y
+      x: clientX - posRef.current.x,
+      y: clientY - posRef.current.y
     };
   };
 
   const handleMouseDown = (e) => {
     if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
-    handleDragStart(e.clientX, e.clientY);
+    startDrag(e.clientX, e.clientY, e);
   };
 
   const handleTouchStart = (e) => {
     if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
     if (e.touches && e.touches[0]) {
-      handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+      startDrag(e.touches[0].clientX, e.touches[0].clientY, e);
     }
   };
 
   useEffect(() => {
-    const handleMove = (clientX, clientY) => {
+    const handleMove = (clientX, clientY, e) => {
       if (!isDraggingRef.current) return;
+      if (e && e.cancelable) {
+        e.preventDefault();
+      }
       const w = window.innerWidth;
       const h = window.innerHeight;
-      const cardWidth = Math.min(460, w - 30);
-      const cardHeight = Math.min(320, h - 120);
-      const maxX = Math.max(10, w - cardWidth - 10);
-      const maxY = Math.max(70, h - cardHeight - 10);
-      setPipPos({
-        x: Math.max(10, Math.min(maxX, clientX - dragOffsetRef.current.x)),
-        y: Math.max(70, Math.min(maxY, clientY - dragOffsetRef.current.y))
-      });
+      const cardWidth = Math.min(460, w - 24);
+      const cardHeight = Math.min(340, h - 80);
+      const maxX = Math.max(0, w - cardWidth);
+      const maxY = Math.max(0, h - cardHeight);
+
+      const newX = Math.max(0, Math.min(maxX, clientX - dragOffsetRef.current.x));
+      const newY = Math.max(0, Math.min(maxY, clientY - dragOffsetRef.current.y));
+
+      posRef.current = { x: newX, y: newY };
+      setPipPos({ x: newX, y: newY });
     };
 
-    const onMouseMove = (e) => handleMove(e.clientX, e.clientY);
+    const onMouseMove = (e) => handleMove(e.clientX, e.clientY, e);
     const onTouchMove = (e) => {
       if (isDraggingRef.current && e.touches && e.touches[0]) {
-        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        handleMove(e.touches[0].clientX, e.touches[0].clientY, e);
       }
     };
     const onDragEnd = () => {
@@ -299,13 +308,16 @@ export default function CollarCameraViewer({
 
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onDragEnd);
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend', onDragEnd);
+    window.addEventListener('touchcancel', onDragEnd);
+
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onDragEnd);
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onDragEnd);
+      window.removeEventListener('touchcancel', onDragEnd);
     };
   }, []);
 
@@ -327,11 +339,36 @@ export default function CollarCameraViewer({
       {/* Canvas oculto para capturas y relay */}
       <canvas ref={canvasRef} className="hidden" />
 
+      {/* 0. Barra Superior de Arrastre Dedicada (Exclusiva para Modo Flotante / PiP) */}
+      {mode === 'floating' && (
+        <div
+          onMouseDown={(e) => startDrag(e.clientX, e.clientY, e)}
+          onTouchStart={(e) => {
+            if (e.touches && e.touches[0]) {
+              startDrag(e.touches[0].clientX, e.touches[0].clientY, e);
+            }
+          }}
+          className="h-8 bg-cyan-950/95 hover:bg-cyan-900 border-b border-cyan-500/40 flex items-center justify-between px-3 cursor-grab active:cursor-grabbing select-none shrink-0 transition-colors"
+          style={{ touchAction: 'none', userSelect: 'none' }}
+          title="Presiona y arrastra para mover la ventana flotante libremente por la pantalla"
+        >
+          <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs pointer-events-none">
+            <Move size={14} className="text-cyan-400 animate-pulse" />
+            <span className="tracking-wide">Mover Cámara Flotante</span>
+          </div>
+          <div className="flex items-center gap-2 text-cyan-400/80 pointer-events-none">
+            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">Arrastra aquí</span>
+            <GripHorizontal size={18} />
+          </div>
+        </div>
+      )}
+
       {/* Barra de Cabecera Superior del Visor */}
       <div 
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        className={`px-2.5 py-2 bg-slate-900/98 backdrop-blur-md border-b border-white/10 flex items-center justify-between select-none z-20 gap-2 shrink-0 overflow-x-auto no-scrollbar ${mode === 'floating' ? 'cursor-move' : ''}`}
+        className={`px-2.5 py-2 bg-slate-900/98 backdrop-blur-md border-b border-white/10 flex items-center justify-between select-none z-20 gap-2 shrink-0 overflow-x-auto no-scrollbar ${mode === 'floating' ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        style={{ touchAction: mode === 'floating' ? 'none' : 'auto' }}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
           <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-950/90 border border-rose-500/60 text-rose-300 text-[10px] font-black uppercase tracking-wider shrink-0">
@@ -547,7 +584,9 @@ export default function CollarCameraViewer({
             key={streamKey}
             src={esp32StreamUrl}
             alt={`Cámara Waveshare ESP32 ${collarId}`}
-            className={`w-full h-full object-cover select-none transition-all duration-300 ${
+            draggable="false"
+            onDragStart={(e) => e.preventDefault()}
+            className={`w-full h-full object-cover select-none transition-all duration-300 pointer-events-none ${
               nightMode ? 'filter brightness-125 contrast-125 hue-rotate-90 saturate-200' : ''
             }`}
             onError={() => {
@@ -565,7 +604,9 @@ export default function CollarCameraViewer({
             key={streamKey}
             src={remoteStreamUrl}
             alt={`Cámara Collar ${collarId}`}
-            className={`w-full h-full object-cover select-none transition-all duration-300 ${
+            draggable="false"
+            onDragStart={(e) => e.preventDefault()}
+            className={`w-full h-full object-cover select-none transition-all duration-300 pointer-events-none ${
               nightMode ? 'filter brightness-125 contrast-125 hue-rotate-90 saturate-200' : ''
             }`}
           />
@@ -578,7 +619,8 @@ export default function CollarCameraViewer({
             autoPlay
             playsInline
             muted
-            className={`w-full h-full object-cover select-none transition-all duration-300 ${
+            draggable="false"
+            className={`w-full h-full object-cover select-none transition-all duration-300 pointer-events-none ${
               nightMode ? 'filter brightness-125 contrast-125 hue-rotate-90 saturate-200' : ''
             }`}
           />

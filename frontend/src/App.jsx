@@ -342,8 +342,8 @@ export default function App() {
           />
         </div>
 
-        <div className="flex-1 flex overflow-hidden min-w-0">
-          <main className="flex-1 overflow-y-auto bg-[#070D14] min-w-0 w-full">
+        <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-w-0">
+          <main className="w-full flex-1 md:overflow-y-auto bg-[#070D14] min-w-0">
             <ErrorBoundary key={currentTab} onReset={loadAllData}>
               {/* SuperAdmin Tenants Module */}
             {currentTab === 'tenants' && user?.rol === 'SUPERADMIN' && (
@@ -472,7 +472,7 @@ export default function App() {
 
           {/* Split-Screen Collar Camera Panel */}
           {activeCameraAnimal && cameraMode === 'split' && (
-            <aside className="fixed inset-0 z-40 md:relative md:inset-auto w-full md:w-[410px] lg:w-[440px] xl:w-[500px] 2xl:w-[560px] border-l border-emerald-500/20 bg-slate-950/95 flex flex-col h-full shadow-2xl flex-shrink-0 max-w-full">
+            <aside className="w-full md:w-[410px] lg:w-[440px] xl:w-[500px] 2xl:w-[560px] border-t md:border-t-0 md:border-l border-emerald-500/20 bg-slate-950/95 flex flex-col min-h-[460px] md:h-full shadow-2xl flex-shrink-0">
               <CollarCameraViewer
                 animal={activeCameraAnimal}
                 mode="split"

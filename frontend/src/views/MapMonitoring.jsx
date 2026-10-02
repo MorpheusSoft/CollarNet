@@ -159,7 +159,18 @@ export default function MapMonitoring({
     const polygonsGroup = L.featureGroup().addTo(map);
     polygonsGroupRef.current = polygonsGroup;
 
+    // Observar cambios de tamaño del contenedor para reajustar Leaflet automáticamente
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
+      resizeObserver.disconnect();
       map.remove();
       mapInstanceRef.current = null;
     };
@@ -506,10 +517,10 @@ export default function MapMonitoring({
   });
 
   return (
-    <div className="relative h-[calc(100vh-4rem)] w-full flex flex-col md:flex-row overflow-hidden">
+    <div className="relative w-full flex flex-col md:flex-row min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden">
       
       {/* 1. MAP VIEWPORT (Center/Left) */}
-      <div className="relative flex-1 h-[50vh] md:h-full w-full">
+      <div className="relative w-full h-[52vh] min-h-[360px] md:h-full md:flex-1 flex-shrink-0">
         
         {/* Leaflet container */}
         <div ref={mapContainerRef} className="w-full h-full z-10" />
@@ -590,7 +601,7 @@ export default function MapMonitoring({
       </div>
 
       {/* 2. SIDEBAR LIVE TELEMETRY (Right) */}
-      <div className="w-full md:w-80 lg:w-84 xl:w-96 bg-[#0B121C] border-t md:border-t-0 md:border-l border-white/10 flex flex-col h-[50vh] md:h-full z-20 flex-shrink-0">
+      <div className="w-full md:w-80 lg:w-84 xl:w-96 bg-[#0B121C] border-t md:border-t-0 md:border-l border-white/10 flex flex-col min-h-[460px] md:h-full z-20 flex-shrink-0">
         
         {/* Panel Header */}
         <div className="p-4 border-b border-white/10 space-y-3 shrink-0">
