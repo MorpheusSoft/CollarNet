@@ -730,15 +730,21 @@ void loop() {
         static unsigned long lastTelemetryPublishTime = 0;
         static AlertLevel lastPublishedAlert = ALERT_NONE;
         bool alertChanged = (nextAlertLevel != lastPublishedAlert);
-        if (currentMillis - lastTelemetryPublishTime >= 10000 || alertChanged) {
+        if (currentMillis - lastTelemetryPublishTime >= 3000 || alertChanged) {
             lastTelemetryPublishTime = currentMillis;
             lastPublishedAlert = nextAlertLevel;
-            int currentBat = 100;
-            int currentVbat = 4227;
-            bool isCharging = false;
-            readBatteryStatus(currentBat, currentVbat, isCharging);
+            
+            static unsigned long lastBatteryReadTime = 0;
+            static int cachedBat = 100;
+            static int cachedVbat = 4227;
+            static bool cachedCharging = false;
+            if (currentMillis - lastBatteryReadTime >= 30000 || lastBatteryReadTime == 0) {
+                lastBatteryReadTime = currentMillis;
+                readBatteryStatus(cachedBat, cachedVbat, cachedCharging);
+            }
+            
             int mockSignal = (sats > 4) ? 5 : 3;
-            publishTelemetry(currentPos.lat, currentPos.lon, currentBat, mockSignal, alertStr, hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, true, sats);
+            publishTelemetry(currentPos.lat, currentPos.lon, cachedBat, mockSignal, alertStr, hardwareIMEI, cachedVbat, cachedCharging, getActiveNetType(), gpsPowered, true, sats);
         }
         
         // E. Registrar muestra en la Caja Negra de memoria Flash (LittleFS)
