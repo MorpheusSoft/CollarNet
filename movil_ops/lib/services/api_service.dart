@@ -457,6 +457,7 @@ class ApiService {
           'hatoId': parentHatoId ?? 1,
           'nombre': potrero.nombre,
           'capacidad': 10,
+          'margenAdvertencia': potrero.warningWidthM,
           'vertices': potrero.vertices.map((v) => [v.latitude, v.longitude]).toList(),
         }),
       ).timeout(const Duration(seconds: 10));

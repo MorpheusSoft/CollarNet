@@ -72,10 +72,10 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, b
         ledState = false;
     }
     
-    // Actualizar parámetros si se proporcionan valores válidos (o recordar los últimos calculados por GNSS)
-    if (distToBorder > 0.0 || warningMargin != 10.0 || isHatoAlert) {
+    // Si viene de una evaluación de posición explícita (con margen > 0), actualizar variables de contexto
+    if (distToBorder >= 0.0 && warningMargin > 0.0) {
         lastDistToBorder = distToBorder;
-        lastWarningMargin = (warningMargin > 0.0) ? warningMargin : 10.0;
+        lastWarningMargin = warningMargin;
         lastIsHatoAlert = isHatoAlert;
     }
 
@@ -98,9 +98,9 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, b
     unsigned long currentMillis = millis();
     bool buzzerTimedOut = (currentMillis - alertStateStartTime >= BUZZER_TIMEOUT_MS);
 
-    double effDist = (distToBorder > 0.0) ? distToBorder : lastDistToBorder;
-    double effMargin = (warningMargin > 0.0) ? warningMargin : lastWarningMargin;
-    bool effIsHato = isHatoAlert || lastIsHatoAlert;
+    double effDist = lastDistToBorder;
+    double effMargin = (lastWarningMargin > 0.0) ? lastWarningMargin : 3.0;
+    bool effIsHato = lastIsHatoAlert;
 
     // 1. MODO CRÍTICO HATO: ESCAPE MAYOR DE LA FINCA (Tono continuo 4000Hz a máxima potencia + Descarga ÚNICA de 1 segundo)
     if (currentAlert == ALERT_CRITICAL_HATO) {
@@ -181,11 +181,11 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, b
         // En zona de advertencia del potrero: pitido intermitente progresivo por cadencia
         double clampedDist = (effDist < 0.0) ? 0.0 : ((effDist > effMargin) ? effMargin : effDist);
         double ratio = clampedDist / effMargin; // 1.0 (al borde del margen) a 0.0 (en la cerca)
-        // Intervalo de alternancia: de 800ms (lento a 10m) a 100ms (rápido en la cerca)
-        toggleInterval = 100 + (unsigned long)(ratio * 700.0);
+        // Intervalo de alternancia: de 700ms (lento al borde del margen) a 180ms (rápido en la cerca)
+        toggleInterval = 180 + (unsigned long)(ratio * 520.0);
     } else if (currentAlert == ALERT_DANGER) {
-        // Fuera del potrero: intermitencia rápida de máxima frecuencia (80ms ON / 80ms OFF)
-        toggleInterval = 80;
+        // Fuera del potrero: intermitencia rápida claramente distinguible (140ms ON / 140ms OFF)
+        toggleInterval = 140;
     } else {
         if (STATUS_LED_PIN >= 0) digitalWrite(STATUS_LED_PIN, LOW);
         playBuzzerTone(0, 0);

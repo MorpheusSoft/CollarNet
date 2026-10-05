@@ -11,6 +11,7 @@ class Potrero {
   Color color;
   String? notas;
   DateTime fechaRegistro;
+  double warningWidthM;
 
   Potrero({
     required this.id,
@@ -22,6 +23,7 @@ class Potrero {
     this.color = const Color(0xFF10B981),
     this.notas,
     DateTime? fechaRegistro,
+    this.warningWidthM = 10.0,
   }) : fechaRegistro = fechaRegistro ?? DateTime.now();
 
   Map<String, dynamic> toJson() {
@@ -36,6 +38,8 @@ class Potrero {
           .toList(),
       'color': color.value,
       'notas': notas,
+      'warningWidthM': warningWidthM,
+      'margenAdvertencia': warningWidthM,
       'fechaRegistro': fechaRegistro.toIso8601String(),
     };
   }
@@ -55,6 +59,7 @@ class Potrero {
           .toList(),
       color: json['color'] != null ? Color(json['color'] as int) : const Color(0xFF10B981),
       notas: json['notas'] as String?,
+      warningWidthM: (json['warningWidthM'] ?? json['margen_advertencia_metros'] ?? 10.0 as num).toDouble(),
       fechaRegistro: json['fechaRegistro'] != null
           ? DateTime.parse(json['fechaRegistro'] as String)
           : DateTime.now(),
@@ -71,6 +76,7 @@ class Potrero {
     Color? color,
     String? notas,
     DateTime? fechaRegistro,
+    double? warningWidthM,
   }) {
     return Potrero(
       id: id ?? this.id,
@@ -82,6 +88,7 @@ class Potrero {
       color: color ?? this.color,
       notas: notas ?? this.notas,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
+      warningWidthM: warningWidthM ?? this.warningWidthM,
     );
   }
 }

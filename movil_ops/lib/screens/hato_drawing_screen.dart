@@ -263,7 +263,7 @@ class _HatoDrawingScreenState extends State<HatoDrawingScreen> {
     );
 
     final TextEditingController notesCtrl = TextEditingController();
-    final TextEditingController warningDistanceCtrl = TextEditingController(text: '25');
+    final TextEditingController warningDistanceCtrl = TextEditingController(text: isHato ? '10' : '3');
     Color selectedColor = isHato ? AppTheme.warningAmber : AppTheme.primaryCyan;
     bool permiteCrearPotreros = true;
 
@@ -512,115 +512,116 @@ class _HatoDrawingScreenState extends State<HatoDrawingScreen> {
                         ),
                       ),
 
-                      if (isHato) ...[
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'DISTANCIA DE ALARMA INTERIOR',
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            isHato ? 'MARGEN SONORO EXTERIOR HATO' : 'MARGEN SONORO POTRERO',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: isHato ? AppTheme.warningAmber : AppTheme.primaryCyan,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: (isHato ? AppTheme.warningAmber : AppTheme.primaryCyan).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isHato ? 'Pitido Fijo Continuo' : 'Pitido Intermitente',
                               style: GoogleFonts.inter(
                                 fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: isHato ? AppTheme.warningAmber : AppTheme.primaryCyan,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isHato
+                            ? 'Al cruzar este margen sonará un pitido fijo continuo (más fuerte conforme se acerque al límite exterior).'
+                            : 'Al entrar en este margen sonará un pitido intermitente (con mayor cadencia conforme se acerque a la cerca).',
+                        style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textSecondary),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Campo Numérico Directo para Distancia
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: warningDistanceCtrl,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              style: GoogleFonts.outfit(
+                                fontSize: 16,
                                 fontWeight: FontWeight.w800,
-                                color: AppTheme.warningAmber,
-                                letterSpacing: 0.5,
+                                color: AppTheme.textPrimary,
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppTheme.warningAmber.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                'Alarma Animal',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: AppTheme.surfaceLight,
+                                hintText: isHato ? 'Ej. 10' : 'Ej. 3',
+                                suffixText: 'metros',
+                                suffixStyle: GoogleFonts.inter(
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.warningAmber,
+                                  color: isHato ? AppTheme.warningAmber : AppTheme.primaryCyan,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.notification_important_outlined,
+                                  color: isHato ? AppTheme.warningAmber : AppTheme.primaryCyan,
+                                  size: 20,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'El collar sonará cuando el animal esté a esta distancia en metros antes de alcanzar el límite del hato para evitar que se escape.',
-                          style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textSecondary),
-                        ),
-                        const SizedBox(height: 8),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
 
-                        // Campo Numérico Directo para Distancia
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: warningDistanceCtrl,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                style: GoogleFonts.outfit(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppTheme.textPrimary,
+                      // Chips de sugerencia rápida
+                      Row(
+                        children: (isHato ? [1, 2, 5, 10, 25] : [1, 2, 3, 5, 10]).map((dist) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: InkWell(
+                              onTap: () {
+                                warningDistanceCtrl.text = '$dist';
+                                setDlgState(() {});
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.surfaceLight,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppTheme.cardBorder),
                                 ),
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: AppTheme.surfaceLight,
-                                  hintText: 'Ej. 25',
-                                  suffixText: 'metros',
-                                  suffixStyle: GoogleFonts.inter(
-                                    fontSize: 12,
+                                child: Text(
+                                  '${dist}m',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
                                     fontWeight: FontWeight.w700,
-                                    color: AppTheme.warningAmber,
-                                  ),
-                                  prefixIcon: const Icon(
-                                    Icons.notification_important_outlined,
-                                    color: AppTheme.warningAmber,
-                                    size: 20,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
+                                    color: AppTheme.textSecondary,
                                   ),
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Chips de sugerencia rápida
-                        Row(
-                          children: [10, 15, 25, 35, 50].map((dist) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: InkWell(
-                                onTap: () {
-                                  warningDistanceCtrl.text = '$dist';
-                                  setDlgState(() {});
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.surfaceLight,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppTheme.cardBorder),
-                                  ),
-                                  child: Text(
-                                    '${dist}m',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
+                          );
+                        }).toList(),
+                      ),
+                      if (isHato) ...[
                         const SizedBox(height: 14),
-
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -709,8 +710,8 @@ class _HatoDrawingScreenState extends State<HatoDrawingScreen> {
                                         : (isHato ? 'Hato Principal' : 'Potrero $defaultPotreroLetter');
 
                                     try {
+                                      final parsedWarning = double.tryParse(warningDistanceCtrl.text.trim()) ?? (isHato ? 25.0 : 3.0);
                                       if (isHato) {
-                                        final parsedWarning = double.tryParse(warningDistanceCtrl.text.trim()) ?? 25.0;
                                         final newHato = Hato(
                                           id: 'hato_${DateTime.now().millisecondsSinceEpoch}',
                                           nombre: name,
@@ -734,6 +735,7 @@ class _HatoDrawingScreenState extends State<HatoDrawingScreen> {
                                           vertices: List<LatLng>.from(drawing.draftVertices),
                                           color: selectedColor,
                                           notas: notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
+                                          warningWidthM: parsedWarning,
                                         );
                                         await agro.addPotreroToHato(widget.parentHato!.id, newPotrero);
                                       }

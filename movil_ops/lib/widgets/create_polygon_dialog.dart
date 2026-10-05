@@ -252,53 +252,67 @@ class _CreatePolygonDialogState extends State<CreatePolygonDialog> {
                 ),
               ),
 
-              if (isHato) ...[
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'DISTANCIA DE ALARMA INTERIOR',
-                      style: TextStyle(
-                        color: Color(0xFFF59E0B),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isHato ? 'MARGEN SONORO EXTERIOR HATO' : 'MARGEN SONORO POTRERO',
+                    style: TextStyle(
+                      color: isHato ? const Color(0xFFF59E0B) : const Color(0xFF10B981),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'Alarma Animal',
-                        style: TextStyle(color: Color(0xFFF59E0B), fontSize: 10, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Distancia interior antes de la cerca donde el collar sonará para evitar que el animal se acerque al límite.',
-                  style: TextStyle(color: Colors.grey, fontSize: 11),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _warningController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1E293B),
-                    hintText: 'Ej. 25',
-                    suffixText: 'metros',
-                    suffixStyle: const TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.w700, fontSize: 12),
-                    prefixIcon: const Icon(Icons.notification_important_outlined, color: Color(0xFFF59E0B), size: 18),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (isHato ? const Color(0xFFF59E0B) : const Color(0xFF10B981)).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      isHato ? 'Pitido Fijo Continuo' : 'Pitido Intermitente',
+                      style: TextStyle(
+                        color: isHato ? const Color(0xFFF59E0B) : const Color(0xFF10B981),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isHato
+                    ? 'Al cruzar este margen exterior sonará un pitido fijo continuo, aumentando el volumen al acercarse al límite.'
+                    : 'Al acercarse o cruzar este margen sonará un pitido intermitente, con mayor cadencia al acercarse al límite.',
+                style: const TextStyle(color: Colors.grey, fontSize: 11),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _warningController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: const Color(0xFF1E293B),
+                  hintText: isHato ? 'Ej. 10' : 'Ej. 1 o 3',
+                  suffixText: 'metros',
+                  suffixStyle: TextStyle(
+                    color: isHato ? const Color(0xFFF59E0B) : const Color(0xFF10B981),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.notification_important_outlined,
+                    color: isHato ? const Color(0xFFF59E0B) : const Color(0xFF10B981),
+                    size: 18,
+                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
+              ),
+              if (isHato) ...[
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
