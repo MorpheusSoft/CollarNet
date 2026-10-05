@@ -27,9 +27,9 @@ bool wifiActive = false;
 NetPreference currentNetPref = DEFAULT_NET_PREF;
 bool gpsPowered = true;
 
-// Temporizador de alta frecuencia para evaluación de geocercas y GNSS (cada 1.5s)
+// Temporizador de alta frecuencia para evaluación de geocercas y GNSS (cada 1.0s)
 unsigned long lastGPSCheckTime = 0;
-const unsigned long GPS_CHECK_INTERVAL = 1500;
+const unsigned long GPS_CHECK_INTERVAL = 1000;
 
 String hardwareIMEI = "";
 
@@ -48,7 +48,7 @@ String readHardwareIMEI() {
     modem.sendAT("+CGSN");
     if (modem.waitResponse(1000L, GF("\r\n")) == 1) {
         String imei = SerialAT.readStringUntil('\n');
-        modem.waitResponse();
+        modem.waitResponse(200L);
         imei.trim();
         if (imei.length() >= 14) {
             return imei;
@@ -57,7 +57,7 @@ String readHardwareIMEI() {
     modem.sendAT("+SIMEI?");
     if (modem.waitResponse(1000L, GF("+SIMEI: ")) == 1) {
         String imei = SerialAT.readStringUntil('\n');
-        modem.waitResponse();
+        modem.waitResponse(200L);
         imei.trim();
         if (imei.length() >= 14) {
             return imei;
@@ -69,9 +69,9 @@ String readHardwareIMEI() {
 // Función para consultar porcentaje de batería, voltaje y estado de carga vía módem AT+CBC
 bool readBatteryStatus(int &percent, int &voltageMv, bool &isCharging) {
     modem.sendAT("+CBC");
-    if (modem.waitResponse(1000L, GF("+CBC:")) == 1) {
+    if (modem.waitResponse(300L, GF("+CBC:")) == 1) {
         String resp = SerialAT.readStringUntil('\n');
-        modem.waitResponse();
+        modem.waitResponse(80L);
         resp.trim();
 
         if (resp.endsWith("V") || resp.indexOf('.') != -1) {
@@ -414,6 +414,18 @@ bool parseSIM7670GNSS(const String& raw, double& outLat, double& outLon, int& ou
     return false;
 }
 
+// Consulta de tramas satelitales GNSS ultra-rápida y no bloqueante (máx 350ms, típicamente ~30ms)
+String getFastSIM7670GNSS() {
+    modem.sendAT("+CGNSSINFO");
+    if (modem.waitResponse(350L, GF("+CGNSSINFO:")) != 1) {
+        return "";
+    }
+    String res = SerialAT.readStringUntil('\n');
+    modem.waitResponse(80L);
+    res.trim();
+    return "+CGNSSINFO: " + res;
+}
+
 void loop() {
     // 1. Mantener el acelerómetro actualizado en cada ciclo
     updateIMU();
@@ -535,7 +547,7 @@ void loop() {
             Coordinate rawPos = {0.0, 0.0};
 
             // Consultar datos de satélites y posición directamente del receptor SIM7670G (+CGNSSINFO)
-            String rawInfo = modem.getGPSraw();
+            String rawInfo = getFastSIM7670GNSS();
             if (rawInfo.length() > 0) {
                 Serial.printf("[GNSS RAW] %s\n", rawInfo.c_str());
             }
@@ -552,9 +564,16 @@ void loop() {
 
             if (rawHasPosition) {
                 if (everHadFix) {
-                    // Filtro Exponencial EMA para eliminar deriva y parpadeos (70% lectura actual, 30% anterior)
-                    currentPos.lat = 0.7 * rawPos.lat + 0.3 * lastKnownPos.lat;
-                    currentPos.lon = 0.7 * rawPos.lon + 0.3 * lastKnownPos.lon;
+                    // Calcular desplazamiento respecto a la última posición conocida
+                    double jumpDist = getDistanceToSegment(rawPos, lastKnownPos, lastKnownPos);
+                    if (jumpDist > 15.0) {
+                        // Salto o transición tras pérdida de señal: sincronizar directamente sin arrastrar inercia
+                        currentPos = rawPos;
+                    } else {
+                        // Filtro EMA responsivo a 1Hz (85% lectura instantánea, 15% anterior para rechazo de ruido fino)
+                        currentPos.lat = 0.85 * rawPos.lat + 0.15 * lastKnownPos.lat;
+                        currentPos.lon = 0.85 * rawPos.lon + 0.15 * lastKnownPos.lon;
+                    }
                 } else {
                     currentPos = rawPos;
                 }
@@ -563,7 +582,7 @@ void loop() {
                 hasPosition = true;
                 age = 0;
             } else if (everHadFix) {
-                // Retener última posición conocida
+                // Retener última posición conocida durante micro-pérdidas
                 currentPos = lastKnownPos;
                 hasPosition = true;
                 age = millis() - lastGPSCheckTime;

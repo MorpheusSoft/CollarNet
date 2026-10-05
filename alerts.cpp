@@ -1,5 +1,36 @@
 #include "alerts.h"
 #include "config.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
+extern bool collarActivo;
+static TaskHandle_t alertTaskHandle = NULL;
+
+static void alertTaskFunc(void* pvParameters) {
+    while (true) {
+        extern AlertLevel currentAlert;
+        if (!collarActivo) {
+            currentAlert = ALERT_NONE;
+        }
+        updateAlerts(currentAlert);
+        vTaskDelay(pdMS_TO_TICKS(15)); // Ejecución garantizada a 15ms en Core 0
+    }
+}
+
+void startAlertTask() {
+    if (alertTaskHandle == NULL) {
+        xTaskCreatePinnedToCore(
+            alertTaskFunc,
+            "AlertTask",
+            4096,
+            NULL,
+            2,
+            &alertTaskHandle,
+            0 // Core 0 independiente de la ejecución de Arduino loop (Core 1)
+        );
+        Serial.println("[Alerts] Tarea FreeRTOS de alertas iniciada en Core 0 (cadencia garantizada de 15ms).");
+    }
+}
 
 AlertLevel currentAlert = ALERT_NONE;
 unsigned long lastToggleTime = 0;
@@ -60,6 +91,7 @@ void initAlerts() {
     playBuzzerTone(0, 0);
 
     Serial.println("[Alerts] ¡Buzzer en IO5 e Impulso en IO23 listos!");
+    startAlertTask();
 }
 
 static double lastDistToBorder = 0.0;
@@ -70,8 +102,8 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, i
     if (level != currentAlert) {
         currentAlert = level;
         alertStateStartTime = millis();
-        lastToggleTime = 0;
-        ledState = false;
+        lastToggleTime = millis();
+        ledState = (level != ALERT_NONE); // Iniciar sonando de inmediato al entrar en zona de alerta
     }
     
     // Solo actualizar variables de contexto si provienen de una evaluación explícita (valores >= 0)

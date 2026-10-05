@@ -161,6 +161,8 @@ void initMQTT(const char* collarId, Client* netClient) {
     setMQTTNetworkClient(netClient);
     client.setServer(MQTT_SERVER, MQTT_PORT);
     client.setCallback(mqttCallback);
+    client.setSocketTimeout(1); // 1 segundo máximo para evitar congelar el procesador
+    client.setKeepAlive(15);
     // 32 KB de búfer MQTT para soportar tramas JPEG binarias de cámara
     client.setBufferSize(32768);
     
