@@ -9,7 +9,7 @@ enum AlertLevel {
 };
 
 void initAlerts();
-void updateAlerts(AlertLevel level, double distToBorder = 0.0, double warningMargin = 10.0, bool isHatoAlert = false);
+void updateAlerts(AlertLevel level, double distToBorder = -1.0, double warningMargin = -1.0, int isHatoAlert = -1);
 void triggerRemoteBuzzerBeep(int durationMs = 800, int freq = 4000);
 
 #endif // ALERTS_H

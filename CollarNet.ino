@@ -705,7 +705,7 @@ void loop() {
             }
             
             // C. Actualizar nivel de alertas local con modulación de volumen/cadencia y descarga
-            updateAlerts(nextAlertLevel, activeAlertDist, activeMargin, isHatoAlert);
+            updateAlerts(nextAlertLevel, activeAlertDist, activeMargin, isHatoAlert ? 1 : 0);
         }
         // D. Publicar telemetría por MQTT con batería real e IMEI
         static unsigned long lastTelemetryPublishTime = 0;

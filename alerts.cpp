@@ -20,8 +20,10 @@ void playBuzzerTone(unsigned int freq, uint8_t dutyCycle = 128) {
         ledcWriteTone(BUZZER_CHANNEL, freq);
         ledcWrite(BUZZER_CHANNEL, dutyCycle); // Modulación de volumen / intensidad acústica PWM
     } else {
+        ledcWrite(BUZZER_CHANNEL, 0);
         ledcWriteTone(BUZZER_CHANNEL, 0);
-        ledcWrite(BUZZER_CHANNEL, 0);   // Silencio total
+        pinMode(BUZZER_PIN, OUTPUT);
+        digitalWrite(BUZZER_PIN, LOW);   // Silencio total forzado a 0V
     }
 }
 
@@ -64,7 +66,7 @@ static double lastDistToBorder = 0.0;
 static double lastWarningMargin = 10.0;
 static bool lastIsHatoAlert = false;
 
-void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, bool isHatoAlert) {
+void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, int isHatoAlert) {
     if (level != currentAlert) {
         currentAlert = level;
         alertStateStartTime = millis();
@@ -72,11 +74,15 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, b
         ledState = false;
     }
     
-    // Si viene de una evaluación de posición explícita (con margen > 0), actualizar variables de contexto
-    if (distToBorder >= 0.0 && warningMargin > 0.0) {
+    // Solo actualizar variables de contexto si provienen de una evaluación explícita (valores >= 0)
+    if (distToBorder >= 0.0) {
         lastDistToBorder = distToBorder;
+    }
+    if (warningMargin > 0.0) {
         lastWarningMargin = warningMargin;
-        lastIsHatoAlert = isHatoAlert;
+    }
+    if (isHatoAlert >= 0) {
+        lastIsHatoAlert = (isHatoAlert == 1);
     }
 
     // Silenciado instantáneo, corte de descarga y rearme de descarga al retornar a Zona Segura (ALERT_NONE)
@@ -149,8 +155,7 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, b
     }
 
     // 2. ADVERTENCIA PREVENTIVA DE HATO (Cruzando margen de cercanía exterior):
-    // El usuario pidió: "cuando llegue y cruce el margen del hato, debe es hacer un pitido fijo(como el que ya trae),
-    // y entre mas se acerque al limite mas fuerte debe sonar el pitido" (Pitido fijo continuo, modulando volumen)
+    // Pitido fijo continuo con modulación de volumen según proximidad
     if (currentAlert == ALERT_WARNING && effIsHato) {
         if (STATUS_LED_PIN >= 0) digitalWrite(STATUS_LED_PIN, HIGH);
         
@@ -170,22 +175,21 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, b
     }
 
     // 3. ADVERTENCIA PREVENTIVA O ESCAPE DE POTRERO:
-    // El usuario pidió: "cuando se acerque llegue y pase el margen que empiece a pitar pero intermitentemente,
-    // entre mas se acerque al limite del potrero, debe sonar con mas frecuencias... y en ambos casos la alarma
-    // debe estar sonando durante un minuto se salga o no del limite al menos que se salga del margen regresando al potrero"
-    unsigned long toggleInterval = 400;
+    // Cadencia intermitente nítida con pulso activo de 120ms y silencios bien audibles
+    unsigned long onDuration = 120;  // 120ms de pitido nítido
+    unsigned long offDuration = 400; // pausa de silencio
     unsigned int toneFrequency = 4000;
     uint8_t toneDutyCycle = 128;
 
     if (currentAlert == ALERT_WARNING) {
         // En zona de advertencia del potrero: pitido intermitente progresivo por cadencia
         double clampedDist = (effDist < 0.0) ? 0.0 : ((effDist > effMargin) ? effMargin : effDist);
-        double ratio = clampedDist / effMargin; // 1.0 (al borde del margen) a 0.0 (en la cerca)
-        // Intervalo de alternancia: de 700ms (lento al borde del margen) a 180ms (rápido en la cerca)
-        toggleInterval = 180 + (unsigned long)(ratio * 520.0);
+        double ratio = clampedDist / effMargin; // 1.0 (en el margen exterior) a 0.0 (en la cerca)
+        // Pausa entre pitidos: de 1100ms (lento al borde del margen) a 220ms (rápido en la cerca)
+        offDuration = 220 + (unsigned long)(ratio * 880.0);
     } else if (currentAlert == ALERT_DANGER) {
-        // Fuera del potrero: intermitencia rápida claramente distinguible (140ms ON / 140ms OFF)
-        toggleInterval = 140;
+        // Fuera del potrero: intermitencia rápida claramente distinguible (120ms BEEP / 200ms SILENCIO)
+        offDuration = 200;
     } else {
         if (STATUS_LED_PIN >= 0) digitalWrite(STATUS_LED_PIN, LOW);
         playBuzzerTone(0, 0);
@@ -193,7 +197,9 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, b
         return;
     }
 
-    if (currentMillis - lastToggleTime >= toggleInterval) {
+    // Máquina de estados asimétrica (pulso ON corto y pausa OFF audible)
+    unsigned long stateDuration = ledState ? onDuration : offDuration;
+    if (currentMillis - lastToggleTime >= stateDuration) {
         lastToggleTime = currentMillis;
         ledState = !ledState;
         if (STATUS_LED_PIN >= 0) digitalWrite(STATUS_LED_PIN, ledState ? HIGH : LOW);
