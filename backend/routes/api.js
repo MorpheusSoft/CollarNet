@@ -1282,7 +1282,7 @@ router.post('/geocercas/potrero', async (req, res) => {
  * Crea un Hato o Potrero a partir de una cadena de texto de coordenadas ingresadas manualmente.
  */
 router.post('/geocercas/crear-manual', async (req, res) => {
-  const { type, tipo, hatoId, nombre, coordenadasText, vertices: rawVertices, margenAdvertencia, tenantId } = req.body;
+  const { type, tipo, hatoId, nombre, coordenadasText, vertices: rawVertices, margenAdvertencia, capacidad, capacidadMaxCabezas, tenantId } = req.body;
   const targetType = (type || tipo || '').toLowerCase();
   if (!targetType || !nombre) {
     return res.status(400).json({ error: 'Faltan campos requeridos: type/tipo o nombre' });
@@ -1290,6 +1290,7 @@ router.post('/geocercas/crear-manual', async (req, res) => {
 
   const cleanTenantId = tenantId ? parseInt(tenantId, 10) : 1;
   const cleanMargen = margenAdvertencia ? parseFloat(margenAdvertencia) : 10.0;
+  const cleanCapacidad = (capacidad || capacidadMaxCabezas) ? parseInt(capacidad || capacidadMaxCabezas, 10) : 50;
 
   try {
     let vertices = [];
@@ -1330,14 +1331,14 @@ router.post('/geocercas/crear-manual', async (req, res) => {
         return res.status(400).json({ error: 'Debe especificar el Hato asociado para crear un potrero.' });
       }
       try {
-        result = await savePotrero(null, parseInt(hatoId, 10), nombre, vertices, 50, cleanMargen);
+        result = await savePotrero(null, parseInt(hatoId, 10), nombre, vertices, cleanCapacidad, cleanMargen);
       } catch (_) {
         const newId = memPotreros.length > 0 ? Math.max(...memPotreros.map(p => p.id)) + 1 : 1;
         result = {
           id: newId,
           hato_id: parseInt(hatoId, 10),
           nombre: String(nombre).trim(),
-          capacidad_max_cabezas: 50,
+          capacidad_max_cabezas: cleanCapacidad,
           margen_advertencia_metros: cleanMargen,
           geojson: verticesToGeoJSON(vertices),
           vertices: vertices,

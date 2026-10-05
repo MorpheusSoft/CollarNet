@@ -111,9 +111,9 @@ class ApiService {
             'nombre': 'David Zambrano (Supervisor Finca)',
             'email': 'david@collarnet.com',
             'rol': 'ADMIN_FINCA',
-            'fincaAsignada': 'Hacienda Santa Inés',
-            'tenantId': 1,
-            'tenantNombre': 'Hacienda Santa Inés',
+            'fincaAsignada': 'Los Corralistos',
+            'tenantId': 6,
+            'tenantNombre': 'Los Corralistos',
             'permiteCrearPotreros': true,
           },
           'message': 'Inicio de sesión exitoso (Supervisor David)',
@@ -128,9 +128,9 @@ class ApiService {
             'nombre': 'Ing. Carlos Mendoza (Gerente / Supervisor)',
             'email': 'finca@collarnet.com',
             'rol': 'ADMIN_FINCA',
-            'fincaAsignada': 'Hacienda Santa Inés',
-            'tenantId': 1,
-            'tenantNombre': 'Hacienda Santa Inés',
+            'fincaAsignada': 'Los Corralistos',
+            'tenantId': 6,
+            'tenantNombre': 'Los Corralistos',
             'permiteCrearPotreros': true,
           },
           'message': 'Inicio de sesión exitoso (Gerente Finca)',
@@ -146,7 +146,7 @@ class ApiService {
             'email': 'admin@collarnet.com',
             'rol': 'SUPERADMIN',
             'fincaAsignada': 'Todas las Fincas',
-            'tenantId': 1,
+            'tenantId': 6,
             'tenantNombre': 'Plataforma Global CollarNet',
             'permiteCrearPotreros': true,
           },
@@ -162,9 +162,9 @@ class ApiService {
             'nombre': 'Manuel Gómez (Operario Manga)',
             'email': 'campo@collarnet.com',
             'rol': 'OPERARIO_CAMPO',
-            'fincaAsignada': 'Hacienda Santa Inés',
-            'tenantId': 1,
-            'tenantNombre': 'Hacienda Santa Inés',
+            'fincaAsignada': 'Los Corralistos',
+            'tenantId': 6,
+            'tenantNombre': 'Los Corralistos',
             'permiteCrearPotreros': false,
           },
           'message': 'Inicio de sesión exitoso (Operario Campo)',
@@ -180,8 +180,8 @@ class ApiService {
             'email': 'propietario@collarnet.com',
             'rol': 'PROPIETARIO',
             'fincaAsignada': 'Multi-Finca',
-            'tenantId': 1,
-            'tenantNombre': 'Hacienda Santa Inés',
+            'tenantId': 6,
+            'tenantNombre': 'Los Corralistos',
             'permiteCrearPotreros': false,
           },
           'message': 'Inicio de sesión exitoso (Propietario)',
@@ -197,9 +197,9 @@ class ApiService {
             'nombre': identifier.trim(),
             'email': '$cleanId@collarnet.com',
             'rol': 'ADMIN_FINCA',
-            'fincaAsignada': 'Hacienda Santa Inés',
-            'tenantId': 1,
-            'tenantNombre': 'Hacienda Santa Inés',
+            'fincaAsignada': 'Los Corralistos',
+            'tenantId': 6,
+            'tenantNombre': 'Los Corralistos',
             'permiteCrearPotreros': true,
           },
           'message': 'Inicio de sesión exitoso',
@@ -217,7 +217,7 @@ class ApiService {
   Future<List<Hato>> fetchHatos({int? tenantId}) async {
     final baseUrl = await getBaseUrl();
     try {
-      final uri = tenantId != null 
+      final uri = (tenantId != null && tenantId > 0)
           ? Uri.parse('$baseUrl/geocercas/hatos?tenantId=$tenantId')
           : Uri.parse('$baseUrl/geocercas/hatos');
       final hatosResponse = await http.get(uri).timeout(const Duration(seconds: 5));
@@ -225,7 +225,19 @@ class ApiService {
         throw Exception('Error al cargar hatos');
       }
       
-      final List<dynamic> hatosJson = jsonDecode(hatosResponse.body);
+      var hatosJson = jsonDecode(hatosResponse.body) as List<dynamic>;
+      // Si la consulta por tenantId resultó vacía, reintentar sin filtro para mostrar los hatos registrados
+      if (hatosJson.isEmpty && tenantId != null) {
+        try {
+          final fallbackResponse = await http.get(Uri.parse('$baseUrl/geocercas/hatos')).timeout(const Duration(seconds: 5));
+          if (fallbackResponse.statusCode == 200) {
+            final fallbackJson = jsonDecode(fallbackResponse.body);
+            if (fallbackJson is List && fallbackJson.isNotEmpty) {
+              hatosJson = fallbackJson;
+            }
+          }
+        } catch (_) {}
+      }
       
       final potrerosResponse = await http.get(Uri.parse('$baseUrl/geocercas/potreros')).timeout(const Duration(seconds: 5));
       if (potrerosResponse.statusCode != 200) {

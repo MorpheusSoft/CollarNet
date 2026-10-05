@@ -16,8 +16,8 @@ enum NetPreference {
     NET_PREF_WIFI = 2      // Fuerza exclusivamente Wi-Fi
 };
 
-// Modo por defecto: Conectar y operar por Wi-Fi de alta velocidad
-#define DEFAULT_NET_PREF NET_PREF_WIFI
+// Modo por defecto: Fuerza exclusivamente SIM 4G LTE Digitel (Red Celular)
+#define DEFAULT_NET_PREF NET_PREF_CELLULAR
 
 // Configuración de Pines de Hardware
 #define STATUS_LED_PIN 2     // LED de estado
@@ -33,7 +33,8 @@ enum NetPreference {
 #define MODEM_APN "gprsweb.digitel.ve"
 
 // Configuración del GPS / GNSS
-#define USE_EMULATOR true    // true: simula caminata y alertas de geocerca en interiores
+#define USE_EMULATOR false   // false: activa receptor GNSS físico real del SIM7670G para pruebas en área amplia
+#define RESET_GEOFENCE_ON_BOOT false // false: preserva geocercas sincronizadas vía MQTT desde cowai.net
 #define GPS_RX_PIN 17
 #define GPS_TX_PIN 18
 #define GPS_BAUD 115200

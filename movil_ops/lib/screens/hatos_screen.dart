@@ -21,6 +21,7 @@ class _HatosScreenState extends State<HatosScreen> {
   String _searchQuery = '';
 
   List<Map<String, dynamic>> _tenants = [
+    {'id': 6, 'nombre': 'Los Corralistos'},
     {'id': 1, 'nombre': 'Hacienda Santa Inés (Demo)'},
     {'id': 2, 'nombre': 'Fundo El Roble (Guárico)'},
     {'id': 3, 'nombre': 'Ganadería San Pedro'},

@@ -205,6 +205,10 @@ void onNetworkPreferenceChanged(NetPreference newPref) {
 void onGpsPowerChanged(bool powerOn) {
     gpsPowered = powerOn;
     Serial.printf("\n[GNSS] Cambiando estado de alimentación satelital a: %s\n", powerOn ? "ENCENDIDO" : "APAGADO");
+    if (powerOn) {
+        modem.sendAT("+CGNSSMODE=15,0");
+        modem.waitResponse(1000);
+    }
     modem.sendAT(powerOn ? "+CGNSSPWR=1" : "+CGNSSPWR=0");
     modem.waitResponse();
 }
@@ -284,9 +288,12 @@ void setup() {
     hardwareIMEI = readHardwareIMEI();
     Serial.printf("[Hardware] ✅ IMEI Identificado: %s\n", hardwareIMEI.c_str());
 
-    // Encender GPS satelital interno del SIM7670G
-    Serial.println("[GNSS] Encendiendo receptor GNSS satelital del SIM7670G...");
+    // Encender GPS satelital interno del SIM7670G con multi-constelación activa
+    Serial.println("[GNSS] Encendiendo receptor GNSS satelital del SIM7670G (GPS+GLONASS+BeiDou+Galileo)...");
+    modem.sendAT("+CGNSSMODE=15,0");
+    modem.waitResponse(1000);
     modem.sendAT("+CGNSSPWR=1");
+    modem.waitResponse(3000);
     delay(500);
     gpsPowered = true;
 
@@ -311,6 +318,100 @@ void setup() {
     
     Serial.println("\n[Sistema] Iniciando monitoreo de geocerca...");
     lastGPSCheckTime = millis();
+}
+
+// Decodificador nativo de tramas satelitales +CGNSSINFO para SIM7670G (GPS+GLONASS+Galileo+BeiDou)
+bool parseSIM7670GNSS(const String& raw, double& outLat, double& outLon, int& outSats) {
+    outLat = 0.0;
+    outLon = 0.0;
+    outSats = 0;
+    if (raw.length() < 10) return false;
+
+    String str = raw;
+    int pIdx = str.indexOf("+CGNSSINFO:");
+    if (pIdx >= 0) {
+        str = str.substring(pIdx + 11);
+    }
+    str.trim();
+
+    // Contar satélites visibles sumando los campos numéricos de constelaciones
+    int c1 = str.indexOf(',');
+    if (c1 > 0) {
+        int c2 = str.indexOf(',', c1 + 1);
+        int c3 = (c2 > 0) ? str.indexOf(',', c2 + 1) : -1;
+        int c4 = (c3 > 0) ? str.indexOf(',', c3 + 1) : -1;
+        int c5 = (c4 > 0) ? str.indexOf(',', c4 + 1) : -1;
+        int sGps = str.substring(c1 + 1, c2).toInt();
+        int sGlo = (c2 > 0 && c3 > 0) ? str.substring(c2 + 1, c3).toInt() : 0;
+        int sGal = (c3 > 0 && c4 > 0) ? str.substring(c3 + 1, c4).toInt() : 0;
+        int sBds = (c4 > 0 && c5 > 0) ? str.substring(c4 + 1, c5).toInt() : 0;
+        outSats = sGps + sGlo + sGal + sBds;
+    }
+
+    // Buscar indicador de hemisferio Norte/Sur: ",N," o ",S,"
+    int nsIdx = str.indexOf(",N,");
+    char nsChar = 'N';
+    if (nsIdx < 0) {
+        nsIdx = str.indexOf(",S,");
+        nsChar = 'S';
+    }
+    if (nsIdx < 0) {
+        // Aún no hay enganche de latitud (esperando fijación 2D/3D)
+        return false;
+    }
+
+    // Extraer latitud inmediatamente antes de ",N," o ",S,"
+    int latStart = str.lastIndexOf(',', nsIdx - 1);
+    if (latStart < 0) return false;
+    String latStr = str.substring(latStart + 1, nsIdx);
+    latStr.trim();
+    if (latStr.length() < 4) return false;
+
+    // Buscar indicador Este/Oeste: ",W," o ",E," después de la latitud
+    int ewIdx = str.indexOf(",W,", nsIdx + 3);
+    char ewChar = 'W';
+    if (ewIdx < 0) {
+        ewIdx = str.indexOf(",E,", nsIdx + 3);
+        ewChar = 'E';
+    }
+    if (ewIdx < 0) return false;
+
+    // Extraer longitud entre nsIdx + 3 y ewIdx
+    String lonStr = str.substring(nsIdx + 3, ewIdx);
+    lonStr.trim();
+    if (lonStr.length() < 4) return false;
+
+    // Convertir formato a Grados Decimales
+    double rawLat = latStr.toDouble();
+    double finalLat = 0.0;
+    if (rawLat < 90.0) {
+        // Formato nativo SIM7670: ya viene en Grados Decimales (dd.dddddd)
+        finalLat = rawLat * (nsChar == 'S' ? -1.0 : 1.0);
+    } else {
+        // Formato NMEA estándar: ddmm.mmmm
+        double degLat = floor(rawLat / 100.0);
+        double minLat = fmod(rawLat, 100.0);
+        finalLat = (degLat + (minLat / 60.0)) * (nsChar == 'S' ? -1.0 : 1.0);
+    }
+
+    double rawLon = lonStr.toDouble();
+    double finalLon = 0.0;
+    if (rawLon < 180.0) {
+        // Formato nativo SIM7670: ya viene en Grados Decimales (ddd.dddddd)
+        finalLon = rawLon * (ewChar == 'W' ? -1.0 : 1.0);
+    } else {
+        // Formato NMEA estándar: dddmm.mmmm
+        double degLon = floor(rawLon / 100.0);
+        double minLon = fmod(rawLon, 100.0);
+        finalLon = (degLon + (minLon / 60.0)) * (ewChar == 'W' ? -1.0 : 1.0);
+    }
+
+    if (abs(finalLat) > 0.001 && abs(finalLon) > 0.001) {
+        outLat = finalLat;
+        outLon = finalLon;
+        return true;
+    }
+    return false;
 }
 
 void loop() {
@@ -405,8 +506,8 @@ void loop() {
     }
     updateAlerts(currentAlert);
     
-    // 6. Si usamos el GPS físico y no estamos en ahorro ni transmitiendo cámara, leer el puerto serial
-    if (!USE_EMULATOR && !powerSaveModeActive && !cameraStreamingActive) {
+    // 6. Si usamos el GPS físico y no estamos en ahorro, leer el puerto serial
+    if (!USE_EMULATOR && !powerSaveModeActive) {
         updateGPS();
     }
     
@@ -429,22 +530,24 @@ void loop() {
             hasPosition = true;
             sats = 8;
             age = 0;
-        } else if (!cameraStreamingActive) {
-            // Obtener coordenada del receptor GNSS del módem SIM7670G solo si no hay streaming activo sobre el bus AT
-            float gLat = 0.0, gLon = 0.0, gSpeed = 0.0, gAlt = 0.0;
-            int gVsat = 0, gUsat = 0;
+        } else {
             bool rawHasPosition = false;
             Coordinate rawPos = {0.0, 0.0};
 
-            uint8_t gpsStatus = 0;
-            if (modem.getGPS(&gLat, &gLon, &gSpeed, &gAlt, &gVsat, &gUsat)) {
-                // Un enganche real GNSS requiere satélites en uso (gUsat >= 3) y coordenadas reales en Venezuela/América
-                if (gUsat >= 3 && gLat > 1.0 && gLon < -50.0) {
-                    rawPos.lat = gLat;
-                    rawPos.lon = gLon;
-                    sats = gUsat;
-                    rawHasPosition = true;
-                }
+            // Consultar datos de satélites y posición directamente del receptor SIM7670G (+CGNSSINFO)
+            String rawInfo = modem.getGPSraw();
+            if (rawInfo.length() > 0) {
+                Serial.printf("[GNSS RAW] %s\n", rawInfo.c_str());
+            }
+            double pLat = 0.0, pLon = 0.0;
+            int pSats = 0;
+            if (parseSIM7670GNSS(rawInfo, pLat, pLon, pSats)) {
+                rawPos.lat = pLat;
+                rawPos.lon = pLon;
+                sats = (pSats > 0) ? pSats : 6;
+                rawHasPosition = true;
+            } else if (pSats > 0) {
+                sats = pSats;
             }
 
             if (rawHasPosition) {
@@ -478,7 +581,7 @@ void loop() {
 
             Serial.println("\n------------------------------------------------");
             Serial.println("[GNSS SIM7670G] Esperando enganche de satélites en cielo abierto...");
-            Serial.printf("Satélites: %d | Batería: %d%% (%d mV) | ⚡ Carga USB: %s\n", 
+            Serial.printf("Satélites en vista: %d | Batería: %d%% (%d mV) | ⚡ Carga USB: %s\n", 
                           sats, currentBat, currentVbat, isCharging ? "ACTIVA" : "DESCONECTADA");
             Serial.printf("Dispositivo IMEI: %s\n", hardwareIMEI.c_str());
             Serial.println("------------------------------------------------");
@@ -487,11 +590,12 @@ void loop() {
             static unsigned long lastIndoorTelemetryTime = 0;
             if (millis() - lastIndoorTelemetryTime >= 3000) {
                 lastIndoorTelemetryTime = millis();
-                // Coordenadas de prueba en Potrero A (Hato Oficina)
-                double refLat = 10.671340;
-                double refLon = -71.604030;
+                // Coordenadas: si alguna vez tuvo fijación real, enviar lastKnownPos;
+                // si aún no ha enganchado satélites, enviar 0.0 para no falsificar la ubicación
+                double pubLat = everHadFix ? lastKnownPos.lat : 0.0;
+                double pubLon = everHadFix ? lastKnownPos.lon : 0.0;
                 String indoorAlert = collarActivo ? "NORMAL" : "DESACTIVADO";
-                publishTelemetry(refLat, refLon, currentBat, 4, indoorAlert, hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, false, sats);
+                publishTelemetry(pubLat, pubLon, currentBat, 4, indoorAlert, hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, false, sats);
             }
             
             // Colocar alerta en NONE y silenciar de inmediato

@@ -860,7 +860,8 @@ export default function GeofenceDesign({
         formNombre, 
         tipoPerimetro === 'potrero' ? formHatoId : null, 
         vertices, 
-        formMargen
+        Number(formMargen) > 0 ? Number(formMargen) : 10,
+        Number(formCapacidad) > 0 ? Number(formCapacidad) : 50
       );
 
       setStatusMsg({ 
@@ -1649,40 +1650,59 @@ export default function GeofenceDesign({
 
                 {/* Margen sonoro (Hato o Potrero) */}
                 {tipoPerimetro === 'potrero' ? (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] font-semibold text-emerald-400 block mb-1">
+                          Margen Sonoro Potrero (m)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="1"
+                          max="100"
+                          value={formMargen}
+                          onChange={(e) => setFormMargen(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                          required
+                          className="w-full bg-[#080D15] border border-emerald-500/30 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">Capacidad Reses</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={formCapacidad}
+                          onChange={(e) => setFormCapacidad(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                          required
+                          className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-emerald-400/80 leading-relaxed bg-emerald-950/20 p-2 rounded-lg border border-emerald-500/20">
+                      ⚡ <strong>Comportamiento acústico:</strong> Al entrar al margen suena <strong>intermitente</strong>. Entre más se acerque al límite, sonará con <strong>más frecuencia</strong> (cadencia más rápida). Suena hasta por 1 min salvo que regrese al potrero.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
                     <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">Margen Sonoro (m)</label>
+                      <label className="text-[11px] font-semibold text-rose-400 block mb-1">
+                        Margen Sonoro Exterior Hato (m)
+                      </label>
                       <input
                         type="number"
                         step="0.5"
+                        min="1"
+                        max="200"
                         value={formMargen}
-                        onChange={(e) => setFormMargen(parseFloat(e.target.value))}
+                        onChange={(e) => setFormMargen(e.target.value === '' ? '' : parseFloat(e.target.value))}
                         required
-                        className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-500"
+                        className="w-full bg-[#080D15] border border-rose-500/30 rounded-xl p-2 text-xs text-white outline-none focus:border-rose-500"
                       />
                     </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">Capacidad Reses</label>
-                      <input
-                        type="number"
-                        value={formCapacidad}
-                        onChange={(e) => setFormCapacidad(parseInt(e.target.value, 10))}
-                        required
-                        className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-500"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">Margen Sonoro Exterior (m)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={formMargen}
-                      onChange={(e) => setFormMargen(parseFloat(e.target.value))}
-                      required
-                      className="w-full bg-[#080D15] border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-emerald-500"
-                    />
+                    <p className="text-[10px] text-rose-400/80 leading-relaxed bg-rose-950/20 p-2 rounded-lg border border-rose-500/20">
+                      🚨 <strong>Comportamiento acústico:</strong> Al cruzar este margen hace un <strong>pitido fijo continuo</strong>. Entre más se acerque al límite, <strong>más fuerte</strong> suena. Suena hasta por 1 min salvo que regrese adentro.
+                    </p>
                   </div>
                 )}
 

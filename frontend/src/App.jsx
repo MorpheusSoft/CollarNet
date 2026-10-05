@@ -262,7 +262,14 @@ export default function App() {
           const index = prev.findIndex(a => a.collar_id === telemetry.collar_id);
           if (index >= 0) {
             const updated = [...prev];
-            updated[index] = { ...updated[index], ...telemetry };
+            const newLat = telemetry.latitud ?? telemetry.lat;
+            const newLon = telemetry.longitud ?? telemetry.lon;
+            updated[index] = { 
+              ...updated[index], 
+              ...telemetry,
+              latitud: newLat !== undefined && newLat !== null ? newLat : updated[index].latitud,
+              longitud: newLon !== undefined && newLon !== null ? newLon : updated[index].longitud
+            };
             return updated;
           }
           // Si el collar no está vinculado a una res, NO inyectar una fila fantasma en el inventario ganadero

@@ -88,7 +88,7 @@ class FincaStateProvider with ChangeNotifier {
   String get currentUserName => _currentUser?['nombre'] ?? 'David Zambrano';
   String get currentUserEmail => _currentUser?['email'] ?? 'david@collarnet.com';
   String get currentUserRole => _currentUser?['rol'] ?? 'ADMIN_FINCA';
-  String get currentUserTenant => _currentUser?['tenantNombre'] ?? 'Hacienda Santa Inés';
+  String get currentUserTenant => _currentUser?['tenantNombre'] ?? 'Los Corralistos';
   bool get permiteCrearPotreros => _currentUser?['permiteCrearPotreros'] == true || _currentUser?['rol'] == 'SUPERADMIN' || _currentUser?['rol'] == 'ADMIN_FINCA';
 
   String get serverIp => _serverIp;
@@ -239,10 +239,16 @@ class FincaStateProvider with ChangeNotifier {
     }
 
     try {
-      // 1. Obtener la lista de Hatos asignados al Tenant / Adquiriente (Hacienda Santa Inés = 1)
-      final tenantId = _currentUser?['tenantId'] as int? ?? 1;
+      // 1. Obtener la lista de Hatos asignados al Tenant / Adquiriente
+      final userRole = _currentUser?['rol'] as String?;
+      final rawTenantId = _currentUser?['tenantId'] as int?;
+      final tenantId = (userRole == 'SUPERADMIN') ? null : (rawTenantId ?? 6);
       try {
-        final hatos = await _apiService.fetchHatos(tenantId: tenantId);
+        var hatos = await _apiService.fetchHatos(tenantId: tenantId);
+        // Si el filtro específico por tenant no devolvió hatos, consultar todos los hatos disponibles
+        if (hatos.isEmpty && tenantId != null) {
+          hatos = await _apiService.fetchHatos();
+        }
         _hatosDisponibles = hatos.asMap().entries.map((entry) {
           final idx = entry.key + 1;
           final h = entry.value;

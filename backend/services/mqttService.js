@@ -120,8 +120,8 @@ export async function processTelemetryPayload(io, collarId, payload) {
           }
 
           const hasValidCoords = (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) > 1.0 && Math.abs(lon) > 1.0);
-          const effectiveLat = hasValidCoords ? lat : (activeCollar.last_lat ? parseFloat(activeCollar.last_lat) : 10.67134);
-          const effectiveLon = hasValidCoords ? lon : (activeCollar.last_lon ? parseFloat(activeCollar.last_lon) : -71.60403);
+          const effectiveLat = hasValidCoords ? lat : (activeCollar.last_lat ? parseFloat(activeCollar.last_lat) : null);
+          const effectiveLon = hasValidCoords ? lon : (activeCollar.last_lon ? parseFloat(activeCollar.last_lon) : null);
 
           const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
 
@@ -180,9 +180,10 @@ export async function processTelemetryPayload(io, collarId, payload) {
             animalId: animalId || null,
             animal_id: animalId || null,
             areteVisual: areteVisual || 'SIN VÍNCULO',
-            arete_visual: areteVisual || 'SIN VÍNCULO',
-            lat: parseFloat(effectiveLat),
-            lon: parseFloat(effectiveLon),
+            lat: effectiveLat !== null ? parseFloat(effectiveLat) : null,
+            lon: effectiveLon !== null ? parseFloat(effectiveLon) : null,
+            latitud: effectiveLat !== null ? parseFloat(effectiveLat) : null,
+            longitud: effectiveLon !== null ? parseFloat(effectiveLon) : null,
             bateria: parseInt(bateria, 10),
             nivel_bateria: parseInt(bateria, 10),
             senal: parseInt(senal, 10),
@@ -264,7 +265,7 @@ export function publishToCollar(collarId, payload) {
   targetIds.forEach(id => {
     if (id) {
       const topic = `${prefix}/${id}/config`;
-      mqttClient.publish(topic, JSON.stringify(payload), { qos: 1, retain: true });
+      mqttClient.publish(topic, JSON.stringify(payload), { qos: 1, retain: false });
       console.log(`[MQTT] Publicada configuración al collar ${id} en tópico ${topic}`);
     }
   });

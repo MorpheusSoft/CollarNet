@@ -489,8 +489,8 @@ export default function MapMonitoring({
     if (!mapInstanceRef.current || !monitoringData) return;
 
     monitoringData.forEach(animal => {
-      const lat = parseFloat(animal.latitud);
-      const lon = parseFloat(animal.longitud);
+      const lat = parseFloat(animal.latitud ?? animal.lat);
+      const lon = parseFloat(animal.longitud ?? animal.lon);
       if (isNaN(lat) || isNaN(lon)) return;
 
       const estado = animal.estado_cerca || 'DENTRO';

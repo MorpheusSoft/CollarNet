@@ -121,9 +121,9 @@ class ApiService {
           'nombre': 'David Zambrano (Supervisor Técnico)',
           'email': 'david@collarnet.com',
           'rol': 'SUPERADMIN',
-          'fincaAsignada': 'Hacienda Santa Inés',
-          'tenantId': 1,
-          'tenantNombre': 'Hacienda Santa Inés',
+          'fincaAsignada': 'Los Corralistos',
+          'tenantId': 6,
+          'tenantNombre': 'Los Corralistos',
           'permiteCrearPotreros': true,
         },
         'message': 'Inicio de sesión exitoso (Supervisor David)',
@@ -138,9 +138,9 @@ class ApiService {
           'nombre': 'Técnico Especialista de Campo',
           'email': 'tecnico@collarnet.com',
           'rol': 'OPERARIO',
-          'fincaAsignada': 'Taller y Despliegue',
-          'tenantId': 1,
-          'tenantNombre': 'Hacienda Santa Inés',
+          'fincaAsignada': 'Los Corralistos',
+          'tenantId': 6,
+          'tenantNombre': 'Los Corralistos',
           'permiteCrearPotreros': true,
         },
         'message': 'Inicio de sesión exitoso (Técnico Ops)',
@@ -388,6 +388,7 @@ class ApiService {
 
     // Fallback con opciones estándar de finca
     return [
+      {'id': 6, 'nombre': 'Los Corralistos'},
       {'id': 1, 'nombre': 'Hacienda Santa Inés (Demo)'},
       {'id': 2, 'nombre': 'Fundo El Roble (Guárico)'},
       {'id': 3, 'nombre': 'Ganadería San Pedro'},
@@ -396,7 +397,7 @@ class ApiService {
 
   Future<Hato> saveHato(Hato hato, {int? tenantId}) async {
     final baseUrl = await getBaseUrl();
-    final effectiveTenantId = tenantId ?? hato.tenantId ?? 1;
+    final effectiveTenantId = tenantId ?? hato.tenantId ?? 6;
     try {
       final numId = int.tryParse(hato.id);
       final response = await http.post(

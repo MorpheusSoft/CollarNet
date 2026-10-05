@@ -1,5 +1,6 @@
 #include "storage_manager.h"
 #include "geofence.h"
+#include "config.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 
@@ -193,30 +194,31 @@ bool loadGeofenceConfig() {
 void loadDefaultGeofence() {
     collarActivo = loadCollarActiveState();
     Serial.printf("[Storage] Estado operativo (default): %s\n", collarActivo ? "ACTIVO" : "DESACTIVADO (SILENCIO TOTAL)");
-    Serial.println("[Storage] Cargando geocerca de Oficina actualizada recién por el usuario...");
+    Serial.println("[Storage] Cargando geocerca de Área Amplia para pruebas...");
     
-    // Perímetro Hato Oficina (Guardado recién por el usuario)
-    hatoMaster.id = 5;
+    // Perímetro Hato Maestro Área Amplia (~1.3 km x 1.3 km de cobertura)
+    hatoMaster.id = 100;
+    hatoMaster.name = "Hato Principal (Área Amplia)";
     hatoMaster.numVertices = 4;
-    hatoVertices[0] = {10.671444006, -71.604396701};
-    hatoVertices[1] = {10.671546803, -71.603959501};
-    hatoVertices[2] = {10.671256863, -71.603892446};
-    hatoVertices[3] = {10.671164609, -71.604324281};
+    hatoVertices[0] = {10.677000, -71.610000}; // Vértice Noroeste
+    hatoVertices[1] = {10.677000, -71.598000}; // Vértice Noreste
+    hatoVertices[2] = {10.665000, -71.598000}; // Vértice Sureste
+    hatoVertices[3] = {10.665000, -71.610000}; // Vértice Suroeste
 
-    // Potrero Oficina A (Guardado recién por el usuario)
-    potrerosList[0].id = 9;
+    // Potrero de Pruebas Amplio (~650m x 650m)
+    potrerosList[0].id = 10;
     potrerosList[0].numVertices = 4;
-    potrerosList[0].name = "Potrero Oficina A";
-    potreroVertices[0] = {10.671404469, -71.604294777};
-    potreroVertices[1] = {10.671467728, -71.604050696};
-    potreroVertices[2] = {10.671285857, -71.604002416};
-    potreroVertices[3] = {10.671219961, -71.604251862};
+    potrerosList[0].name = "Potrero Área Amplia";
+    potreroVertices[0] = {10.674000, -71.607000}; // Vértice Noroeste
+    potreroVertices[1] = {10.674000, -71.601000}; // Vértice Noreste
+    potreroVertices[2] = {10.668000, -71.601000}; // Vértice Sureste
+    potreroVertices[3] = {10.668000, -71.607000}; // Vértice Suroeste
 
     numPotreros = 1;
-    hatoWarningThreshold = 10.0;
-    potreroWarningThreshold = 10.0;
+    hatoWarningThreshold = 20.0;
+    potreroWarningThreshold = 15.0;
     
-    Serial.println("[Storage] Geocerca de Oficina inicializada en memoria RAM.");
+    Serial.println("[Storage] Geocerca de Área Amplia inicializada en memoria RAM.");
 }
 
 const char* WALK_LOG_FILE = "/walk_log.txt";

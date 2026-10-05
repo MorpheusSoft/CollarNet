@@ -163,11 +163,11 @@ export async function apiIniciarModoArreo(origen, destino, duracionMinutos = 45,
   return data;
 }
 
-export async function apiCrearManual(tipo, nombre, hatoId, vertices, margenAdvertencia = 10) {
+export async function apiCrearManual(tipo, nombre, hatoId, vertices, margenAdvertencia = 10, capacidad = 50) {
   const res = await fetch(`${API_BASE}/geocercas/crear-manual`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tipo, nombre, hatoId, vertices, margenAdvertencia })
+    body: JSON.stringify({ tipo, nombre, hatoId, vertices, margenAdvertencia, capacidad })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Error al crear geocerca manual');
