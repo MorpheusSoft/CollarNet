@@ -108,6 +108,10 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, i
     
     // Solo actualizar variables de contexto si provienen de una evaluación explícita (valores >= 0)
     if (distToBorder >= 0.0) {
+        // Si la distancia al lindero cambia por más de 1.0m (indicando movimiento activo):
+        if (abs(distToBorder - lastDistToBorder) > 1.0) {
+            alertStateStartTime = millis(); // Rearmar el temporizador de alerta sonora
+        }
         lastDistToBorder = distToBorder;
     }
     if (warningMargin > 0.0) {
@@ -134,7 +138,9 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, i
     }
 
     unsigned long currentMillis = millis();
-    bool buzzerTimedOut = (currentMillis - alertStateStartTime >= BUZZER_TIMEOUT_MS);
+    // En ALERT_WARNING (margen preventivo) NUNCA se silencia por timeout mientras esté en el margen.
+    // En ESCAPE (ALERT_DANGER / CRITICAL) solo se silencia si permanece más de 60s sin moverse.
+    bool buzzerTimedOut = (currentAlert != ALERT_WARNING) && (currentMillis - alertStateStartTime >= BUZZER_TIMEOUT_MS);
 
     double effDist = lastDistToBorder;
     double effMargin = (lastWarningMargin > 0.0) ? lastWarningMargin : 3.0;

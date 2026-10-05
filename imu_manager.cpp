@@ -14,8 +14,8 @@
 // 1800 es aproximadamente un 11% de gravedad, ideal para descartar ruido y captar pasos del animal.
 const uint32_t MOTION_THRESHOLD = 1800;
 
-// Tiempo necesario de quietud para entrar en modo de ahorro (30 segundos)
-const unsigned long INACTIVITY_TIMEOUT = 30000; 
+// Tiempo necesario de quietud para entrar en modo de ahorro (5 minutos)
+const unsigned long INACTIVITY_TIMEOUT = 300000;
 
 // Variables globales internas de estado
 int16_t prevAx = 0, prevAy = 0, prevAz = 0;

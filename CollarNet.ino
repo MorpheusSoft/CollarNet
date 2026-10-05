@@ -434,8 +434,8 @@ void loop() {
     static bool powerSaveModeActive = false;
     bool moving = isAnimalMoving();
     
-    // En modo Wi-Fi (laboratorio/pruebas con la laptop) o transmitiendo video, NUNCA entrar en ahorro de energía
-    if (currentNetPref == NET_PREF_WIFI || cameraStreamingActive || (wifiActive && WiFi.status() == WL_CONNECTED)) {
+    // Durante collar activo (monitoreo en campo), en modo Wi-Fi o video, NUNCA entrar en ahorro de energía prematuro
+    if (collarActivo || currentNetPref == NET_PREF_WIFI || cameraStreamingActive || (wifiActive && WiFi.status() == WL_CONNECTED)) {
         powerSaveModeActive = false;
     } else if (!moving && !powerSaveModeActive) {
         powerSaveModeActive = true;
