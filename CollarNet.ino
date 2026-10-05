@@ -27,9 +27,9 @@ bool wifiActive = false;
 NetPreference currentNetPref = DEFAULT_NET_PREF;
 bool gpsPowered = true;
 
-// Temporizador para procesar la telemetría y geocercas cada 10 segundos
+// Temporizador de alta frecuencia para evaluación de geocercas y GNSS (cada 1.5s)
 unsigned long lastGPSCheckTime = 0;
-const unsigned long GPS_CHECK_INTERVAL = 10000;
+const unsigned long GPS_CHECK_INTERVAL = 1500;
 
 String hardwareIMEI = "";
 
@@ -633,34 +633,22 @@ void loop() {
             distToHatoBorder = (hatoMaster.numVertices > 0) ? getDistanceToPolygon(currentPos, hatoMaster.vertices, hatoMaster.numVertices) : 0.0;
             distToPotreroBorder = (numPotreros > 0 && potrerosList[0].numVertices > 0) ? getDistanceToPolygon(currentPos, potrerosList[0].vertices, potrerosList[0].numVertices) : 0.0;
 
+            bool hasPotrero = (numPotreros > 0 && potrerosList[0].numVertices >= 3 && !potreroAbierto);
+
             if (!insideHato) {
-                // FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA + DESCARGA ÚNICA DE 1s
+                // 1. FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA + DESCARGA ÚNICA DE 1s
                 nextAlertLevel = ALERT_CRITICAL_HATO;
                 alertStr = "ESCAPE_HATO";
                 currentUbicacion = "¡¡FUERA DEL HATO (ESCAPE MAYOR)!!";
                 activeAlertDist = distToHatoBorder;
                 activeMargin = hatoThreshold;
                 isHatoAlert = true;
-            } else if (distToHatoBorder <= hatoThreshold) {
-                // APROXIMÁNDOSE AL LÍMITE EXTERIOR DEL HATO: PITIDO FIJO CON MODULACIÓN DE VOLUMEN
-                nextAlertLevel = ALERT_WARNING;
-                alertStr = "PROXIMIDAD_HATO";
-                currentUbicacion = "Aproximándose a lindero de Hato (Advertencia Fija - Volumen Progresivo)";
-                activeAlertDist = distToHatoBorder;
-                activeMargin = hatoThreshold;
-                isHatoAlert = true;
-            } else if (!potreroAbierto) {
-                // MODO POTRERO CERRADO (Pastoreo regular con contención en potrero)
-                if (!insidePotrero) {
-                    // Fuera del Potrero asignado (Escape de potrero / Infracción de rotación - 100% Acústico)
-                    nextAlertLevel = ALERT_DANGER;
-                    alertStr = "ESCAPE_POTRERO";
-                    currentUbicacion = "Fuera de Potrero Asignado (Escape de Potrero)";
-                    activeAlertDist = distToPotreroBorder;
-                    activeMargin = potreroThreshold;
-                    isHatoAlert = false;
-                } else if (distToPotreroBorder <= potreroThreshold) {
-                    // Dentro del Potrero pero dentro del margen de advertencia (progresivo por cadencia)
+            } else if (hasPotrero && insidePotrero) {
+                // 2. DENTRO DEL POTRERO ASIGNADO (ZONA AUTORIZADA):
+                // Como está dentro de su potrero, NO debe sonar la alerta del Hato,
+                // incluso si el potrero colinda con el lindero exterior.
+                if (distToPotreroBorder <= potreroThreshold) {
+                    // Dentro del margen de advertencia del potrero: PITIDO INTERMITENTE progresivo por cadencia
                     nextAlertLevel = ALERT_WARNING;
                     alertStr = "PROXIMIDAD_POTRERO";
                     currentUbicacion = "Aproximándose a lindero de potrero (Advertencia Cadencia Progresiva)";
@@ -668,36 +656,71 @@ void loop() {
                     activeMargin = potreroThreshold;
                     isHatoAlert = false;
                 } else {
-                    // Dentro del Potrero seguro
+                    // Seguro dentro del potrero
                     nextAlertLevel = ALERT_NONE;
                     alertStr = "NORMAL";
-                    currentUbicacion = (numPotreros > 0) ? potrerosList[0].name : "Potrero Asignado";
+                    currentUbicacion = potrerosList[0].name;
                     activeAlertDist = 0.0;
                     activeMargin = potreroThreshold;
                     isHatoAlert = false;
                 }
+            } else if (hasPotrero && !insidePotrero) {
+                // 3. FUERA DEL POTRERO ASIGNADO (ESCAPE DE POTRERO / ROTACIÓN):
+                // Salió del potrero pero sigue dentro del Hato.
+                if (distToHatoBorder <= hatoThreshold) {
+                    // Salió del potrero y ahora amenaza el lindero exterior del Hato: PITIDO FIJO CONTINUO
+                    nextAlertLevel = ALERT_WARNING;
+                    alertStr = "PROXIMIDAD_HATO";
+                    currentUbicacion = "Fuera de potrero y cerca de lindero de Hato (Advertencia Fija)";
+                    activeAlertDist = distToHatoBorder;
+                    activeMargin = hatoThreshold;
+                    isHatoAlert = true;
+                } else {
+                    // Fuera del potrero en callejones o potreros internos: PITIDO INTERMITENTE RÁPIDO
+                    nextAlertLevel = ALERT_DANGER;
+                    alertStr = "ESCAPE_POTRERO";
+                    currentUbicacion = "Fuera de Potrero Asignado (Infracción de Rotación)";
+                    activeAlertDist = distToPotreroBorder;
+                    activeMargin = potreroThreshold;
+                    isHatoAlert = false;
+                }
             } else {
-                // MODO TRASLADO / TALANQUERA ABIERTA:
-                // Permite salir del potrero sin emitir alarma de potrero.
-                // Solo sonará si se acerca o cruza los límites exteriores del Hato (evaluado arriba).
-                nextAlertLevel = ALERT_NONE;
-                alertStr = "MODO_TRASLADO";
-                currentUbicacion = "Modo Traslado (Talanquera Abierta - Tránsito Libre)";
-                activeAlertDist = 0.0;
-                activeMargin = hatoThreshold;
-                isHatoAlert = false;
+                // 4. MODO TRASLADO (TALANQUERA ABIERTA) O SIN POTRERO ASIGNADO:
+                if (distToHatoBorder <= hatoThreshold) {
+                    // Solo vigilar el lindero exterior del Hato: PITIDO FIJO CONTINUO
+                    nextAlertLevel = ALERT_WARNING;
+                    alertStr = "PROXIMIDAD_HATO";
+                    currentUbicacion = "Aproximándose a lindero de Hato (Advertencia Fija - Volumen Progresivo)";
+                    activeAlertDist = distToHatoBorder;
+                    activeMargin = hatoThreshold;
+                    isHatoAlert = true;
+                } else {
+                    nextAlertLevel = ALERT_NONE;
+                    alertStr = potreroAbierto ? "MODO_TRASLADO" : "NORMAL";
+                    currentUbicacion = potreroAbierto ? "Modo Traslado (Talanquera Abierta - Tránsito Libre)" : "Hato General (Zona Segura)";
+                    activeAlertDist = 0.0;
+                    activeMargin = hatoThreshold;
+                    isHatoAlert = false;
+                }
             }
             
             // C. Actualizar nivel de alertas local con modulación de volumen/cadencia y descarga
             updateAlerts(nextAlertLevel, activeAlertDist, activeMargin, isHatoAlert);
         }
         // D. Publicar telemetría por MQTT con batería real e IMEI
-        int currentBat = 100;
-        int currentVbat = 4227;
-        bool isCharging = false;
-        readBatteryStatus(currentBat, currentVbat, isCharging);
-        int mockSignal = (sats > 4) ? 5 : 3;
-        publishTelemetry(currentPos.lat, currentPos.lon, currentBat, mockSignal, alertStr, hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, true, sats);
+        static unsigned long lastTelemetryPublishTime = 0;
+        static AlertLevel lastPublishedAlert = ALERT_NONE;
+        bool alertChanged = (nextAlertLevel != lastPublishedAlert);
+        if (currentMillis - lastTelemetryPublishTime >= 10000 || alertChanged) {
+            lastTelemetryPublishTime = currentMillis;
+            lastPublishedAlert = nextAlertLevel;
+            int currentBat = 100;
+            int currentVbat = 4227;
+            bool isCharging = false;
+            readBatteryStatus(currentBat, currentVbat, isCharging);
+            int mockSignal = (sats > 4) ? 5 : 3;
+            publishTelemetry(currentPos.lat, currentPos.lon, currentBat, mockSignal, alertStr, hardwareIMEI, currentVbat, isCharging, getActiveNetType(), gpsPowered, true, sats);
+        }
         
         // E. Registrar muestra en la Caja Negra de memoria Flash (LittleFS)
         String timeStr = String(millis() / 1000) + "s";
