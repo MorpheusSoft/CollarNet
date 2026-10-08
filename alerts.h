@@ -11,6 +11,8 @@ enum AlertLevel {
 void initAlerts();
 void startAlertTask();
 void updateAlerts(AlertLevel level, double distToBorder = -1.0, double warningMargin = -1.0, int isHatoAlert = -1);
+void resetAlertBudget();
+bool isAlertTimedOut();
 void triggerRemoteBuzzerBeep(int durationMs = 800, int freq = 4000);
 
 #endif // ALERTS_H

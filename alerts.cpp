@@ -5,14 +5,17 @@
 
 extern bool collarActivo;
 static TaskHandle_t alertTaskHandle = NULL;
+volatile bool remoteBuzzerActive = false;
 
 static void alertTaskFunc(void* pvParameters) {
     while (true) {
         extern AlertLevel currentAlert;
-        if (!collarActivo) {
-            currentAlert = ALERT_NONE;
+        if (!remoteBuzzerActive) {
+            if (!collarActivo) {
+                currentAlert = ALERT_NONE;
+            }
+            updateAlerts(currentAlert);
         }
-        updateAlerts(currentAlert);
         vTaskDelay(pdMS_TO_TICKS(15)); // Ejecución garantizada a 15ms en Core 0
     }
 }
@@ -36,8 +39,9 @@ AlertLevel currentAlert = ALERT_NONE;
 unsigned long lastToggleTime = 0;
 bool ledState = false;
 static bool buzzerActive = false;
-static unsigned long alertStateStartTime = 0;
-const unsigned long BUZZER_TIMEOUT_MS = 60000; // 1 minuto de protección acústica
+static unsigned long alertEpisodeStartTime = 0;
+static bool buzzerTimedOut = false;
+const unsigned long BUZZER_TIMEOUT_MS = 60000; // 60 segundos máximos de alerta acústica por evento
 
 // Control de pulso único de descarga electrostática (1 segundo)
 static bool dischargeTriggered = false;
@@ -48,6 +52,7 @@ const int BUZZER_CHANNEL = 0;
 
 void playBuzzerTone(unsigned int freq, uint8_t dutyCycle = 128) {
     if (freq > 0) {
+        ledcAttachPin(BUZZER_PIN, BUZZER_CHANNEL);
         ledcWriteTone(BUZZER_CHANNEL, freq);
         ledcWrite(BUZZER_CHANNEL, dutyCycle); // Modulación de volumen / intensidad acústica PWM
     } else {
@@ -56,6 +61,23 @@ void playBuzzerTone(unsigned int freq, uint8_t dutyCycle = 128) {
         pinMode(BUZZER_PIN, OUTPUT);
         digitalWrite(BUZZER_PIN, LOW);   // Silencio total forzado a 0V
     }
+}
+
+void resetAlertBudget() {
+    alertEpisodeStartTime = 0;
+    buzzerTimedOut = false;
+    buzzerActive = false;
+    lastToggleTime = 0;
+    ledState = false;
+    playBuzzerTone(0, 0);
+    dischargeTriggered = false; // Rearmar la descarga para el próximo escape
+    dischargeStartTime = 0;
+    if (STATUS_LED_PIN >= 0) digitalWrite(STATUS_LED_PIN, LOW);
+    if (IMPULSE_PIN >= 0) digitalWrite(IMPULSE_PIN, LOW);
+}
+
+bool isAlertTimedOut() {
+    return buzzerTimedOut;
 }
 
 void initAlerts() {
@@ -99,19 +121,10 @@ static double lastWarningMargin = 10.0;
 static bool lastIsHatoAlert = false;
 
 void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, int isHatoAlert) {
-    if (level != currentAlert) {
-        currentAlert = level;
-        alertStateStartTime = millis();
-        lastToggleTime = millis();
-        ledState = (level != ALERT_NONE); // Iniciar sonando de inmediato al entrar en zona de alerta
-    }
-    
+    unsigned long currentMillis = millis();
+
     // Solo actualizar variables de contexto si provienen de una evaluación explícita (valores >= 0)
     if (distToBorder >= 0.0) {
-        // Si la distancia al lindero cambia por más de 1.0m (indicando movimiento activo):
-        if (abs(distToBorder - lastDistToBorder) > 1.0) {
-            alertStateStartTime = millis(); // Rearmar el temporizador de alerta sonora
-        }
         lastDistToBorder = distToBorder;
     }
     if (warningMargin > 0.0) {
@@ -121,26 +134,36 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, i
         lastIsHatoAlert = (isHatoAlert == 1);
     }
 
-    // Silenciado instantáneo, corte de descarga y rearme de descarga al retornar a Zona Segura (ALERT_NONE)
+    // 1. Detección de Transición de Nivel
+    if (level != currentAlert) {
+        // Si estábamos en Zona Segura (ALERT_NONE) e ingresamos a cualquier alerta (WARNING, DANGER, CRITICAL):
+        if (currentAlert == ALERT_NONE && level != ALERT_NONE) {
+            alertEpisodeStartTime = currentMillis;
+            buzzerTimedOut = false;
+            lastToggleTime = currentMillis;
+            ledState = true;
+            Serial.printf("[Alerts] 🔔 Nuevo evento de alerta iniciado (Nivel %d). Presupuesto acustico: 60s.\n", (int)level);
+        }
+        currentAlert = level;
+    }
+
+    // 2. Si el nivel actual es ALERT_NONE (Zona Segura o retorno al potrero):
+    // Silenciado instantáneo y rearme completo para el siguiente escape
     if (currentAlert == ALERT_NONE) {
-        if (STATUS_LED_PIN >= 0) digitalWrite(STATUS_LED_PIN, LOW);
-        if (IMPULSE_PIN >= 0) digitalWrite(IMPULSE_PIN, LOW);
-        playBuzzerTone(0, 0);
-        buzzerActive = false;
-        alertStateStartTime = 0;
-        lastToggleTime = 0;
-        ledState = false;
-        dischargeTriggered = false; // Rearmar la descarga para el próximo escape
-        dischargeStartTime = 0;
-        lastDistToBorder = 0.0;
-        lastIsHatoAlert = false;
+        resetAlertBudget();
         return;
     }
 
-    unsigned long currentMillis = millis();
-    // En ALERT_WARNING (margen preventivo) NUNCA se silencia por timeout mientras esté en el margen.
-    // En ESCAPE (ALERT_DANGER / CRITICAL) solo se silencia si permanece más de 60s sin moverse.
-    bool buzzerTimedOut = (currentAlert != ALERT_WARNING) && (currentMillis - alertStateStartTime >= BUZZER_TIMEOUT_MS);
+    // 3. Control de Timeout de 60 Segundos:
+    // Aplica a TODO el ciclo (margen de advertencia, escape de potrero o escape de hato)
+    if (alertEpisodeStartTime > 0 && (currentMillis - alertEpisodeStartTime >= BUZZER_TIMEOUT_MS)) {
+        if (!buzzerTimedOut) {
+            buzzerTimedOut = true;
+            playBuzzerTone(0, 0);
+            buzzerActive = false;
+            Serial.println("[Alerts] ⏱️ Timeout de 60s alcanzado. Zumbador silenciado por proteccion animal.");
+        }
+    }
 
     double effDist = lastDistToBorder;
     double effMargin = (lastWarningMargin > 0.0) ? lastWarningMargin : 3.0;
@@ -256,12 +279,14 @@ void updateAlerts(AlertLevel level, double distToBorder, double warningMargin, i
 
 void triggerRemoteBuzzerBeep(int durationMs, int freq) {
     if (freq <= 0) freq = 4000;
-    Serial.printf("[Alerts] >> Disparando zumbador acustico remoto (%d Hz)...\n", freq);
+    remoteBuzzerActive = true;
+    Serial.printf("[Alerts] >> Disparando zumbador acustico remoto (%d Hz, %d ms)...\n", freq, durationMs);
     playBuzzerTone(freq, 128);
-    delay(200);
+    delay(220);
     playBuzzerTone(0, 0);
     delay(100);
     playBuzzerTone(freq, 128);
-    delay(200);
+    delay(220);
     playBuzzerTone(0, 0);
+    remoteBuzzerActive = false;
 }

@@ -93,6 +93,36 @@ export function pointInPolygon(point, polygon) {
   return inside;
 }
 
+/**
+ * Calcula la distancia en metros desde un punto [lat, lon] al perímetro de un polígono.
+ */
+export function distanceToPolygonMeters(point, polygon) {
+  if (!point || !polygon || polygon.length < 2) return 0;
+  let minDist = Infinity;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const p1 = polygon[j];
+    const p2 = polygon[i];
+    const R = 6371000;
+    const toRad = Math.PI / 180;
+    const x = (point[1] - p1[1]) * toRad * Math.cos(p1[0] * toRad) * R;
+    const y = (point[0] - p1[0]) * toRad * R;
+    const dx = (p2[1] - p1[1]) * toRad * Math.cos(p1[0] * toRad) * R;
+    const dy = (p2[0] - p1[0]) * toRad * R;
+    const lenSq = dx * dx + dy * dy;
+    let dist = 0;
+    if (lenSq === 0) {
+      dist = Math.sqrt(x * x + y * y);
+    } else {
+      const t = Math.max(0, Math.min(1, (x * dx + y * dy) / lenSq));
+      const projX = t * dx;
+      const projY = t * dy;
+      dist = Math.sqrt((x - projX) * (x - projX) + (y - projY) * (y - projY));
+    }
+    if (dist < minDist) minDist = dist;
+  }
+  return minDist === Infinity ? 0 : minDist;
+}
+
 // ==========================================
 // ALMACÉN EN MEMORIA GLOBAL PARA DESARROLLO LOCAL & FALLBACK
 // ==========================================
@@ -573,11 +603,24 @@ export function processTelemetryInMemory({
     }
   }
 
+  const distPotrero = (potreroAsignado && potreroAsignado.vertices) ? distanceToPolygonMeters([curLat, curLon], potreroAsignado.vertices) : 0;
+  const margenAdvertencia = parseFloat(potreroAsignado?.margen_advertencia_metros || 2.0);
+
   let alertType = 'NORMAL';
+  let estadoCerca = 'DENTRO';
+
   if (!dentroHato) {
     alertType = 'ESCAPE_HATO';
+    estadoCerca = 'FUERA';
   } else if (!dentroPotrero) {
     alertType = 'INFRACCION_ROTACION';
+    estadoCerca = 'FUERA';
+  } else if (distPotrero <= margenAdvertencia) {
+    alertType = 'ADVERTENCIA';
+    estadoCerca = 'ADVERTENCIA';
+  } else {
+    alertType = 'NORMAL';
+    estadoCerca = 'DENTRO';
   }
 
   // 5. Sincronizar estado en animal
@@ -593,7 +636,8 @@ export function processTelemetryInMemory({
   animal.satelites_visibles = satelites !== undefined ? satelites : 0;
   animal.ultima_conexion = nowIso;
   animal.estado_alerta = alertType;
-  animal.estado_cerca = alertType === 'NORMAL' ? 'DENTRO' : (alertType === 'ESCAPE_HATO' ? 'FUERA' : 'ADVERTENCIA');
+  animal.estado_cerca = estadoCerca;
+  animal.distancia_potrero = distPotrero;
   animal.collar_id = col.id;
   animal.collar_activo = true;
   if (ip || col.ip) {
@@ -628,12 +672,16 @@ export function processTelemetryInMemory({
     timestamp: nowIso,
     alertType,
     alerta: alertType,
+    estado_cerca: estadoCerca,
     potreroActual: potreroActualNombre,
     potrero_nombre: potreroActualNombre,
-    potreroAsignadoNombre: potreroAsignado?.nombre || 'Potrero Norte 1',
-    hatoNombre: hato?.nombre || 'Hato La Esperanza',
+    potreroAsignadoNombre: potreroAsignado?.nombre || 'Potrero A',
+    hatoNombre: hato?.nombre || 'oficina',
     distanciaHato: 0.0,
     distancia_hato: 0.0,
+    distanciaPotrero: distPotrero,
+    distancia_potrero: distPotrero,
+    margenPotrero: margenAdvertencia,
     dentroHato,
     dentro_hato: dentroHato,
     dentroPotrero,
@@ -919,17 +967,28 @@ async function handleMonitoreoQuery(req, res) {
         p.margen_advertencia_metros AS potrero_margen_advertencia,
         COALESCE(h.id, a.hato_id) AS hato_id,
         COALESCE(h.nombre, h_dir.nombre, 'Sin Hato') AS hato_nombre,
-        (SELECT peso FROM registro_pesajes WHERE animal_id = a.id ORDER BY fecha_pesaje DESC LIMIT 1) AS peso_actual,
-        COALESCE(
-          (SELECT tipo FROM alertas WHERE animal_id = a.id AND estado = 'ACTIVO' LIMIT 1),
-          'NORMAL'
-        ) AS estado_alerta,
+        CASE
+          WHEN c.id IS NULL THEN 'NORMAL'
+          WHEN h.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND NOT ST_Contains(h.perimetro, c.ultima_ubicacion) THEN 'ESCAPE_HATO'
+          WHEN p.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND NOT ST_Contains(p.perimetro, c.ultima_ubicacion) THEN 'INFRACCION_ROTACION'
+          WHEN p.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND ST_Distance(c.ultima_ubicacion::geography, ST_Boundary(p.perimetro)::geography) <= COALESCE(p.margen_advertencia_metros, 2.00) THEN 'ADVERTENCIA'
+          ELSE 'NORMAL'
+        END AS estado_alerta,
         CASE 
           WHEN c.id IS NULL THEN 'SIN_MONITOREO'
           WHEN h.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND NOT ST_Contains(h.perimetro, c.ultima_ubicacion) THEN 'FUERA'
-          WHEN p.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND NOT ST_Contains(p.perimetro, c.ultima_ubicacion) THEN 'ADVERTENCIA'
+          WHEN p.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND NOT ST_Contains(p.perimetro, c.ultima_ubicacion) THEN 'FUERA'
+          WHEN p.id IS NOT NULL AND c.ultima_ubicacion IS NOT NULL AND ST_Distance(c.ultima_ubicacion::geography, ST_Boundary(p.perimetro)::geography) <= COALESCE(p.margen_advertencia_metros, 2.00) THEN 'ADVERTENCIA'
           ELSE 'DENTRO'
-        END AS estado_cerca
+        END AS estado_cerca,
+        CASE 
+          WHEN p.id IS NULL OR c.ultima_ubicacion IS NULL THEN 0.0
+          ELSE ST_Distance(c.ultima_ubicacion::geography, ST_Boundary(p.perimetro)::geography)
+        END AS distancia_potrero,
+        CASE 
+          WHEN h.id IS NULL OR c.ultima_ubicacion IS NULL THEN 0.0
+          ELSE ST_Distance(c.ultima_ubicacion::geography, ST_Boundary(h.perimetro)::geography)
+        END AS distancia_hato
       FROM animales a
       LEFT JOIN collares c ON a.collar_id = c.id
       LEFT JOIN tenants t ON a.tenant_id = t.id

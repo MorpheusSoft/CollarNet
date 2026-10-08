@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { 
   Camera, Video, X, Maximize2, Minimize2, Split, Layout, Download, 
   Battery, MapPin, Radio, Eye, Sun, Moon, Settings, RefreshCw, AlertCircle,
-  Play, StopCircle, Wifi, Cpu, Globe, Move, GripHorizontal
+  Play, StopCircle, Wifi, Cpu, Globe, Move, GripHorizontal, Square
 } from 'lucide-react';
 import { API_BASE } from '../services/apiService';
 
@@ -37,6 +37,16 @@ export default function CollarCameraViewer({
   const [nightMode, setNightMode] = useState(false);
   const [hudVisible, setHudVisible] = useState(true);
   const [isStreamingLocal, setIsStreamingLocal] = useState(false);
+
+  // Estados y referencias para grabación de video en vivo
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const recordIntervalRef = useRef(null);
+  const recordDrawTimerRef = useRef(null);
+  const recordCanvasRef = useRef(null);
+  const imgStreamRef = useRef(null);
 
   // Referencias para video local y canvas
   const videoRef = useRef(null);
@@ -254,6 +264,142 @@ export default function CollarCameraViewer({
     }
   };
 
+  // Formato para el temporizador de grabación MM:SS
+  const formatRecordingTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  // Iniciar Grabación de Video en Vivo
+  const handleStartRecording = () => {
+    try {
+      const canvas = recordCanvasRef.current;
+      if (!canvas) return;
+
+      const video = videoRef.current;
+      const img = imgStreamRef.current;
+
+      // Resolución de captura HD 720p
+      const targetW = 1280;
+      const targetH = 720;
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+
+      // Loop de renderizado continuo (25 FPS)
+      const drawFrame = () => {
+        try {
+          if (sourceType === 'device' && video && video.readyState >= 2) {
+            ctx.drawImage(video, 0, 0, targetW, targetH);
+          } else if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, 0, 0, targetW, targetH);
+          } else {
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, targetW, targetH);
+          }
+
+          // Marca de agua y datos de telemetría en vivo integrados en el video
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+          ctx.fillRect(16, targetH - 46, 440, 32);
+          ctx.font = 'bold 13px monospace';
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillText(`CowIA · Collar ${collarId} (${arete})`, 28, targetH - 26);
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '12px monospace';
+          ctx.fillText(new Date().toLocaleTimeString('es-VE'), 330, targetH - 26);
+        } catch (_) {}
+      };
+
+      drawFrame();
+      recordDrawTimerRef.current = setInterval(drawFrame, 40); // 25 FPS
+
+      // Capturar Stream desde el canvas
+      const stream = canvas.captureStream(25);
+
+      let options = {};
+      if (typeof MediaRecorder !== 'undefined') {
+        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+          options = { mimeType: 'video/webm;codecs=vp9' };
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+          options = { mimeType: 'video/webm;codecs=vp8' };
+        } else if (MediaRecorder.isTypeSupported('video/webm')) {
+          options = { mimeType: 'video/webm' };
+        } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+          options = { mimeType: 'video/mp4' };
+        }
+      }
+
+      recordedChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream, options);
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        try {
+          const mime = mediaRecorder.mimeType || 'video/webm';
+          const blob = new Blob(recordedChunksRef.current, { type: mime });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+          a.download = `Grabacion_Camara_${collarId}_${arete}_${Date.now()}.${ext}`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => window.URL.revokeObjectURL(url), 6000);
+        } catch (e) {
+          console.error('Error al descargar grabación:', e);
+        }
+      };
+
+      mediaRecorder.start(250);
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+      setRecordingSeconds(0);
+
+      recordIntervalRef.current = setInterval(() => {
+        setRecordingSeconds(prev => prev + 1);
+      }, 1000);
+
+    } catch (err) {
+      console.error('Error al iniciar grabación:', err);
+      alert('No se pudo iniciar la grabación de video: ' + err.message);
+      if (recordDrawTimerRef.current) clearInterval(recordDrawTimerRef.current);
+    }
+  };
+
+  // Detener Grabación y Descargar Video
+  const handleStopRecording = () => {
+    if (recordIntervalRef.current) {
+      clearInterval(recordIntervalRef.current);
+      recordIntervalRef.current = null;
+    }
+    if (recordDrawTimerRef.current) {
+      clearInterval(recordDrawTimerRef.current);
+      recordDrawTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  // Limpiar timers de grabación al desmontar
+  useEffect(() => {
+    return () => {
+      if (recordIntervalRef.current) clearInterval(recordIntervalRef.current);
+      if (recordDrawTimerRef.current) clearInterval(recordDrawTimerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
+
   // Si cambia a modo flotante, asegurar que esté dentro de los límites visibles de la pantalla
   useEffect(() => {
     if (mode === 'floating' && typeof window !== 'undefined') {
@@ -432,6 +578,8 @@ export default function CollarCameraViewer({
     <div className={containerClass} style={containerStyle}>
       {/* Canvas oculto para capturas y relay */}
       <canvas ref={canvasRef} className="hidden" />
+      {/* Canvas oculto dedicado para la grabación de video en vivo */}
+      <canvas ref={recordCanvasRef} className="hidden" />
 
       {/* 0. Barra Superior de Arrastre Dedicada (Exclusiva para Modo Flotante / PiP) */}
       {mode === 'floating' && (
@@ -574,6 +722,30 @@ export default function CollarCameraViewer({
             <Download size={14} />
           </button>
 
+          {/* Botón Grabar Video en Vivo */}
+          {isRecording ? (
+            <button
+              type="button"
+              onClick={handleStopRecording}
+              className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1.5 animate-pulse shadow-md shadow-rose-950/70 shrink-0 transition-all active:scale-95"
+              title="Detener y Descargar Grabación de Video"
+            >
+              <Square size={12} className="fill-white" />
+              <span className="font-mono text-[11px] font-bold">REC {formatRecordingTime(recordingSeconds)}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleStartRecording}
+              disabled={streamError}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0 flex items-center gap-1"
+              title="Grabar lo que está viendo la cámara en vivo"
+            >
+              <Video size={14} />
+              <span className="hidden xl:inline text-[10px] font-bold text-slate-300 hover:text-rose-400">Grabar</span>
+            </button>
+          )}
+
           {/* Selector de Modo: Split */}
           <button
             type="button"
@@ -712,7 +884,9 @@ export default function CollarCameraViewer({
         {/* 1. Modo ESP32 Directo (:81/stream - Waveshare Tracker) */}
         {sourceType === 'esp32' && (
           <img
+            ref={imgStreamRef}
             key={streamKey}
+            crossOrigin="anonymous"
             src={esp32StreamUrl}
             alt={`Cámara Waveshare ESP32 ${collarId}`}
             draggable="false"
@@ -732,7 +906,9 @@ export default function CollarCameraViewer({
         {/* 2. Modo Stream Remoto 4G / Wi-Fi */}
         {sourceType === 'remote' && (
           <img
+            ref={imgStreamRef}
             key={streamKey}
+            crossOrigin="anonymous"
             src={remoteStreamUrl}
             alt={`Cámara Collar ${collarId}`}
             draggable="false"
@@ -755,6 +931,14 @@ export default function CollarCameraViewer({
               nightMode ? 'filter brightness-125 contrast-125 hue-rotate-90 saturate-200' : ''
             }`}
           />
+        )}
+
+        {/* Banner Flotante de Grabación en Curso */}
+        {isRecording && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1 rounded-full bg-rose-950/90 border border-rose-500/80 text-rose-200 text-xs font-mono font-black flex items-center gap-2 shadow-2xl backdrop-blur-md animate-pulse">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping inline-block" />
+            <span>GRABANDO {formatRecordingTime(recordingSeconds)}</span>
+          </div>
         )}
 
         {/* Overlay HUD Telemetría Superpuesta */}

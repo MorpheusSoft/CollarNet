@@ -7,8 +7,11 @@ import {
   Layers, 
   ChevronDown,
   Briefcase,
-  Menu
+  Menu,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
+import soundService from '../services/soundService';
 
 export default function Header({ 
   user, 
@@ -22,6 +25,15 @@ export default function Header({
   onSelectHato,
   onToggleMobileMenu
 }) {
+  const [alarmState, setAlarmState] = React.useState(() => ({
+    isPlaying: soundService.getIsPlaying(),
+    isMuted: soundService.getIsMuted(),
+    currentType: soundService.currentType
+  }));
+
+  React.useEffect(() => {
+    return soundService.subscribe(setAlarmState);
+  }, []);
   const getRoleIcon = (rol) => {
     switch (rol) {
       case 'SUPERADMIN': return '👑';
@@ -123,6 +135,35 @@ export default function Header({
       {/* Right: IoT Status, Notifications, User Badge, Logout */}
       <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         
+        {/* 🔊 Botón de Alarma Sonora Web (Intermitente al cruzar margen de potrero) */}
+        <button
+          type="button"
+          onClick={() => soundService.toggleMute()}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold transition-all shrink-0 ${
+            alarmState.isPlaying && !alarmState.isMuted
+              ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md shadow-amber-500/30 animate-pulse'
+              : alarmState.isMuted
+              ? 'bg-slate-900/90 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+              : 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300 hover:bg-emerald-900/40'
+          }`}
+          title={
+            alarmState.isPlaying
+              ? (alarmState.isMuted ? '⚠️ Alarma activa (Silenciada) - Clic para escuchar zumbador' : '🚨 Alarma de potrero sonando intermitente - Clic para silenciar')
+              : (alarmState.isMuted ? 'Alarma sonora web silenciada - Clic para activar' : 'Alarma sonora web armada (Margen 3m) - Clic para silenciar')
+          }
+        >
+          {alarmState.isMuted ? (
+            <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+          ) : (
+            <Volume2 className={`w-3.5 h-3.5 ${alarmState.isPlaying ? 'text-amber-400 animate-bounce' : 'text-emerald-400'}`} />
+          )}
+          <span className="text-[11px] font-medium hidden md:inline">
+            {alarmState.isPlaying
+              ? (alarmState.isMuted ? 'Alarma (Mute)' : '¡Alarma Sonora!')
+              : (alarmState.isMuted ? 'Silenciado' : 'Alarma ON')}
+          </span>
+        </button>
+
         {/* Connection Status Dot */}
         <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900/80 border border-white/10 text-xs shrink-0">
           <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>

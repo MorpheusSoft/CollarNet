@@ -47,8 +47,14 @@ export async function evaluateAnimalPosition(animalId, lat, lon) {
       -- Distancia al límite del Hato (en metros) usando geografía
       CASE 
         WHEN h.id IS NULL THEN 0.0
-        ELSE ST_Distance(ST_SetSRID(ST_Point($2, $1), 4326)::geography, h.perimetro::geography)
+        ELSE ST_Distance(ST_SetSRID(ST_Point($2, $1), 4326)::geography, ST_Boundary(h.perimetro)::geography)
       END AS distancia_hato,
+      -- Distancia al lindero del Potrero (en metros) usando geografía
+      CASE 
+        WHEN p_asig.id IS NULL THEN 0.0
+        ELSE ST_Distance(ST_SetSRID(ST_Point($2, $1), 4326)::geography, ST_Boundary(p_asig.perimetro)::geography)
+      END AS distancia_potrero,
+      COALESCE(p_asig.margen_advertencia_metros, 2.00) AS margen_potrero,
       -- Nombre del potrero donde está físicamente ahora (si está en alguno)
       (
         SELECT p_actual.nombre 
@@ -70,12 +76,25 @@ export async function evaluateAnimalPosition(animalId, lat, lon) {
   }
 
   const result = rows[0];
+  const distPotrero = parseFloat(result.distancia_potrero || '0');
+  const margenPotrero = parseFloat(result.margen_potrero || '2.0');
+  const distHato = parseFloat(result.distancia_hato || '0');
 
   let alertType = 'NORMAL';
+  let estadoCerca = 'DENTRO';
+
   if (!result.dentro_hato) {
     alertType = 'ESCAPE_HATO'; // Peligro crítico fuera del Hato
+    estadoCerca = 'FUERA';
   } else if (!result.dentro_potrero) {
-    alertType = 'INFRACCION_ROTACION'; // Alerta media fuera de su potrero asignado
+    alertType = 'INFRACCION_ROTACION'; // Fuera del potrero asignado pero dentro del hato
+    estadoCerca = 'FUERA';
+  } else if (distPotrero <= margenPotrero) {
+    alertType = 'ADVERTENCIA'; // Dentro del potrero pero en el margen de advertencia (3 metros)
+    estadoCerca = 'ADVERTENCIA';
+  } else {
+    alertType = 'NORMAL';
+    estadoCerca = 'DENTRO';
   }
 
   return {
@@ -87,9 +106,12 @@ export async function evaluateAnimalPosition(animalId, lat, lon) {
     potreroAsignadoId: result.potrero_asignado_id,
     potreroAsignadoNombre: result.potrero_asignado_nombre || 'Sin Asignar',
     dentroPotrero: !!result.dentro_potrero,
-    distanciaHato: parseFloat(result.distancia_hato || '0'),
+    distanciaHato: distHato,
+    distanciaPotrero: distPotrero,
+    margenPotrero,
     potreroActualNombre: result.potrero_actual_nombre || 'Callejón / Tránsito',
-    alertType
+    alertType,
+    estadoCerca
   };
 }
 

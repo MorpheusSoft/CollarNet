@@ -24,9 +24,12 @@ import {
   Building,
   Target,
   GripVertical,
-  GripHorizontal
+  GripHorizontal,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { apiCambiarEstadoPotrero } from '../services/apiService';
+import soundService from '../services/soundService';
 
 const ESRI_SATELLITE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const OSM_STREETS = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -42,6 +45,7 @@ export default function MapMonitoring({
   const mapInstanceRef = useRef(null);
   const tileLayerRef = useRef(null);
   const markersRef = useRef({});
+  const animalsGroupRef = useRef(null);
   const polygonsGroupRef = useRef(null);
   const potreroLayersRef = useRef({});
   const hatoLayersRef = useRef({});
@@ -58,6 +62,17 @@ export default function MapMonitoring({
   const [selectedPotreroId, setSelectedPotreroId] = useState(null);
   const [selectedHatoTabId, setSelectedHatoTabId] = useState(null);
   const [isTogglingPotrero, setIsTogglingPotrero] = useState(false);
+
+  // Estado reactivo de la alarma acústica web
+  const [soundStatus, setSoundStatus] = useState(() => ({
+    isPlaying: soundService.getIsPlaying(),
+    isMuted: soundService.getIsMuted(),
+    currentType: soundService.currentType
+  }));
+
+  useEffect(() => {
+    return soundService.subscribe(setSoundStatus);
+  }, []);
 
   // Tamaños ajustables para el panel lateral (desktop) y mapa (móvil)
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -219,6 +234,19 @@ export default function MapMonitoring({
     centerOnHato(selectedHatoId);
   };
 
+  const handleLocateAnimal = () => {
+    if (!mapInstanceRef.current) return;
+    if (animalsGroupRef.current && animalsGroupRef.current.getLayers().length > 0) {
+      mapInstanceRef.current.fitBounds(animalsGroupRef.current.getBounds(), { padding: [80, 80], maxZoom: 18, animate: true });
+      const layers = animalsGroupRef.current.getLayers();
+      if (layers.length > 0 && layers[0].openPopup) {
+        layers[0].openPopup();
+      }
+    } else if (monitoringData && monitoringData.length > 0) {
+      centerOnAnimal(monitoringData[0]);
+    }
+  };
+
   // 1. Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
@@ -260,6 +288,9 @@ export default function MapMonitoring({
     const polygonsGroup = L.featureGroup().addTo(map);
     polygonsGroupRef.current = polygonsGroup;
 
+    const animalsGroup = L.featureGroup().addTo(map);
+    animalsGroupRef.current = animalsGroup;
+
     // Observar cambios de tamaño del contenedor para reajustar Leaflet automáticamente
     const resizeObserver = new ResizeObserver(() => {
       if (mapInstanceRef.current) {
@@ -272,6 +303,15 @@ export default function MapMonitoring({
 
     return () => {
       resizeObserver.disconnect();
+      if (polygonsGroupRef.current) {
+        polygonsGroupRef.current.clearLayers();
+        polygonsGroupRef.current = null;
+      }
+      if (animalsGroupRef.current) {
+        animalsGroupRef.current.clearLayers();
+        animalsGroupRef.current = null;
+      }
+      markersRef.current = {};
       map.remove();
       mapInstanceRef.current = null;
     };
@@ -488,10 +528,22 @@ export default function MapMonitoring({
   useEffect(() => {
     if (!mapInstanceRef.current || !monitoringData) return;
 
+    // Asegurar que el grupo de animales esté creado y añadido al mapa activo
+    if (!animalsGroupRef.current || !mapInstanceRef.current.hasLayer(animalsGroupRef.current)) {
+      animalsGroupRef.current = L.featureGroup().addTo(mapInstanceRef.current);
+    }
+
+    const currentMap = mapInstanceRef.current;
+    const currentGroup = animalsGroupRef.current;
+    const activeKeys = new Set();
+
     monitoringData.forEach(animal => {
       const lat = parseFloat(animal.latitud ?? animal.lat);
       const lon = parseFloat(animal.longitud ?? animal.lon);
       if (isNaN(lat) || isNaN(lon)) return;
+
+      const collarKey = String(animal.collar_id || animal.id || animal.animal_id || 'COW-001');
+      activeKeys.add(collarKey);
 
       const estado = animal.estado_cerca || 'DENTRO';
       const isEscape = estado === 'FUERA';
@@ -501,7 +553,7 @@ export default function MapMonitoring({
       const emoji = isEscape ? '🚨' : (isWarn ? '⚠️' : '🐮');
 
       const customIcon = L.divIcon({
-        className: 'custom-animal-marker',
+        className: 'custom-animal-marker bg-transparent border-0',
         html: `
           <div class="w-8 h-8 rounded-full ${colorClass} text-white flex items-center justify-center text-sm font-bold shadow-lg ring-4 ring-opacity-40 animate-pulse cursor-pointer">
             ${emoji}
@@ -523,42 +575,55 @@ export default function MapMonitoring({
         </div>
       `;
 
-      if (markersRef.current[animal.collar_id]) {
-        markersRef.current[animal.collar_id].setLatLng([lat, lon]);
-        markersRef.current[animal.collar_id].setIcon(customIcon);
-        if (markersRef.current[animal.collar_id].getTooltip()) {
-          markersRef.current[animal.collar_id].setTooltipContent(tooltipContent);
-        }
+      const popupHtml = `
+        <div style="font-family: sans-serif; font-size: 12px; color: #1e293b; padding: 4px; min-width:210px;">
+          <div style="font-weight: bold; font-size: 14px; color: #0f172a; margin-bottom: 4px;">
+            🐂 Arete: ${animal.arete_visual || 'Sin Arete'} (${animal.raza || 'Ganado'})
+          </div>
+          <div><strong>Collar Activo:</strong> <span style="font-weight:bold; color:#0284c7;">${animal.collar_id}</span></div>
+          <div><strong>Estado Cerca:</strong> <span style="font-weight:bold; color:${isEscape ? '#e11d48' : (isWarn ? '#d97706' : '#059669')}">${estado}</span></div>
+          <div><strong>Batería:</strong> <span style="font-weight:bold; color:${batColor};">🔋 ${bat}%</span> ${isCharging ? '<span style="background:#fef08a; color:#854d0e; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚡ USB</span>' : ''}</div>
+          <div><strong>Enlace:</strong> <span style="font-weight:bold; color:${animal.medio_red === 'WIFI' ? '#0284c7' : '#10b981'};">${animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G Digitel'}</span></div>
+          <div><strong>GPS:</strong> <span style="font-weight:bold; color:#059669;">🛰️ ${animal.satelites_visibles || 0} satélites fijados</span></div>
+          <div><strong>Potrero Actual:</strong> 🌱 ${animal.potrero_nombre || 'No asignado'}</div>
+          <div><strong>Hato:</strong> 🏰 ${animal.hato_nombre || 'Hato Principal'}</div>
+          
+          <button onclick="window.__openCollarCameraFromMap && window.__openCollarCameraFromMap('${animal.collar_id}')" style="margin-top:9px; width:100%; background:#047857; color:#ffffff; border:none; border-radius:8px; padding:6px 10px; font-weight:bold; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow: 0 2px 6px rgba(4,120,87,0.4);">
+            📹 Ver Cámara en Vivo
+          </button>
+        </div>
+      `;
+
+      let existing = markersRef.current[collarKey];
+      if (existing && currentGroup.hasLayer(existing)) {
+        existing.setLatLng([lat, lon]);
+        existing.setIcon(customIcon);
+        if (existing.getTooltip()) existing.setTooltipContent(tooltipContent);
+        if (existing.getPopup()) existing.setPopupContent(popupHtml);
       } else {
-        const marker = L.marker([lat, lon], { icon: customIcon }).addTo(mapInstanceRef.current);
-        
+        if (existing) {
+          try { existing.remove(); } catch (_) {}
+        }
+        const marker = L.marker([lat, lon], { icon: customIcon });
         marker.bindTooltip(tooltipContent, {
           permanent: false,
           sticky: true,
           direction: 'top',
           className: 'map-tooltip-hover'
         });
+        marker.bindPopup(popupHtml);
+        currentGroup.addLayer(marker);
+        markersRef.current[collarKey] = marker;
+      }
+    });
 
-        marker.bindPopup(`
-          <div style="font-family: sans-serif; font-size: 12px; color: #1e293b; padding: 4px; min-width:210px;">
-            <div style="font-weight: bold; font-size: 14px; color: #0f172a; margin-bottom: 4px;">
-              🐂 Arete: ${animal.arete_visual || 'Sin Arete'} (${animal.raza || 'Ganado'})
-            </div>
-            <div><strong>Collar Activo:</strong> <span style="font-weight:bold; color:#0284c7;">${animal.collar_id}</span></div>
-            <div><strong>Estado Cerca:</strong> <span style="font-weight:bold; color:${isEscape ? '#e11d48' : (isWarn ? '#d97706' : '#059669')}">${estado}</span></div>
-            <div><strong>Batería:</strong> <span style="font-weight:bold; color:${batColor};">🔋 ${bat}%</span> ${isCharging ? '<span style="background:#fef08a; color:#854d0e; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚡ USB</span>' : ''}</div>
-            <div><strong>Enlace:</strong> <span style="font-weight:bold; color:${animal.medio_red === 'WIFI' ? '#0284c7' : '#10b981'};">${animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G Digitel'}</span></div>
-            <div><strong>GPS:</strong> <span style="font-weight:bold; color:#059669;">🛰️ ${animal.satelites_visibles || 13} satélites fijados</span></div>
-            <div><strong>Potrero Actual:</strong> 🌱 ${animal.potrero_nombre || 'No asignado'}</div>
-            <div><strong>Hato:</strong> 🏰 ${animal.hato_nombre || 'Hato Principal'}</div>
-            
-            <button onclick="window.__openCollarCameraFromMap && window.__openCollarCameraFromMap('${animal.collar_id}')" style="margin-top:9px; width:100%; background:#047857; color:#ffffff; border:none; border-radius:8px; padding:6px 10px; font-weight:bold; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow: 0 2px 6px rgba(4,120,87,0.4);">
-              📹 Ver Cámara en Vivo
-            </button>
-          </div>
-        `);
-
-        markersRef.current[animal.collar_id] = marker;
+    // Limpiar marcadores obsoletos
+    Object.keys(markersRef.current).forEach(key => {
+      if (!activeKeys.has(key)) {
+        if (markersRef.current[key]) {
+          try { currentGroup.removeLayer(markersRef.current[key]); } catch (_) {}
+        }
+        delete markersRef.current[key];
       }
     });
   }, [monitoringData]);
@@ -566,12 +631,13 @@ export default function MapMonitoring({
   // Center Map on specific Animal
   const centerOnAnimal = (animal) => {
     setSelectedAnimalId(animal.id);
-    const lat = parseFloat(animal.latitud);
-    const lon = parseFloat(animal.longitud);
+    const lat = parseFloat(animal.latitud ?? animal.lat);
+    const lon = parseFloat(animal.longitud ?? animal.lon);
     if (mapInstanceRef.current && !isNaN(lat) && !isNaN(lon)) {
-      mapInstanceRef.current.setView([lat, lon], 17, { animate: true });
-      if (markersRef.current[animal.collar_id]) {
-        markersRef.current[animal.collar_id].openPopup();
+      mapInstanceRef.current.setView([lat, lon], 18, { animate: true });
+      const collarKey = String(animal.collar_id || animal.id || animal.animal_id);
+      if (markersRef.current[collarKey]) {
+        markersRef.current[collarKey].openPopup();
       }
     }
   };
@@ -632,8 +698,32 @@ export default function MapMonitoring({
         {/* Leaflet container */}
         <div ref={mapContainerRef} className="w-full h-full z-10" />
 
+        {/* Banner de desbloqueo de audio sobre el mapa */}
+        {soundStatus.isPlaying && soundStatus.needsUserGesture && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 bg-amber-500 text-slate-950 font-black px-4 py-2 rounded-xl shadow-2xl flex items-center gap-3 border border-amber-300 animate-bounce">
+            <span className="text-sm">⚠️ El navegador bloqueó el audio de la alarma</span>
+            <button
+              type="button"
+              onClick={() => soundService.playTestBeep()}
+              className="bg-slate-950 text-amber-300 hover:text-white px-3 py-1 rounded-lg text-xs font-black shadow transition-all active:scale-95"
+            >
+              🔊 Clic aquí para escuchar
+            </button>
+          </div>
+        )}
+
         {/* Floating Layer Controls (Top Right) */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-[#0E1624]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/10 shadow-xl">
+          <button
+            type="button"
+            onClick={handleLocateAnimal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/20 transition-all active:scale-95"
+            title="Centrar y enfocar en el animal / collar GPS"
+          >
+            <Target className="w-3.5 h-3.5 text-emerald-200" />
+            <span>🐮 Enfocar Ganado</span>
+          </button>
+
           <button
             type="button"
             onClick={handleLocateHato}
@@ -642,6 +732,36 @@ export default function MapMonitoring({
           >
             <Building className="w-3.5 h-3.5 text-amber-200" />
             <span>🏰 Enfocar Hato</span>
+          </button>
+
+          {/* Botón de Alarma Sonora Web */}
+          <button
+            type="button"
+            onClick={() => soundService.toggleMute()}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 ${
+              soundStatus.isPlaying && !soundStatus.isMuted
+                ? 'bg-amber-500 text-slate-950 font-black animate-pulse shadow-amber-500/40'
+                : soundStatus.isMuted
+                ? 'bg-slate-900/90 text-slate-400 border border-white/10 hover:text-white'
+                : 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-900/80'
+            }`}
+            title={
+              soundStatus.isPlaying
+                ? (soundStatus.isMuted ? 'Alarma activa silenciada. Clic para escuchar zumbador' : 'Alarma de potrero sonando intermitente. Clic para silenciar')
+                : (soundStatus.isMuted ? 'Alarma acústica silenciada. Clic para activar' : 'Alarma acústica armada (Margen 3m). Clic para silenciar')
+            }
+          >
+            {soundStatus.isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className={`w-3.5 h-3.5 ${soundStatus.isPlaying ? 'text-slate-950' : 'text-emerald-400'}`} />}
+            <span>{soundStatus.isPlaying ? (soundStatus.isMuted ? 'Alarma (Mute)' : '¡Alarma Sonora!') : (soundStatus.isMuted ? 'Mute' : 'Audio On')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => soundService.playTestBeep()}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-all active:scale-95"
+            title="Reproducir pitido de prueba en altavoces de tu computadora"
+          >
+            <span>🔔 Probar</span>
           </button>
 
           <div className="w-px h-5 bg-white/10 mx-0.5"></div>

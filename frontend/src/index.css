@@ -242,3 +242,10 @@
 .leaflet-tooltip.map-tooltip-hover::after {
   display: none !important;
 }
+
+/* Marcadores de Animales y Collares GPS en Leaflet */
+.leaflet-div-icon.custom-animal-marker {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}

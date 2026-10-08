@@ -30,6 +30,7 @@ import {
   apiFetchPropietarioHatos
 } from './services/apiService';
 import { initSocket } from './services/socketService';
+import soundService from './services/soundService';
 
 export default function App() {
   // Session State
@@ -74,6 +75,13 @@ export default function App() {
   const [cameraMode, setCameraMode] = useState('split'); // 'split' | 'floating' | 'fullscreen'
   const [showApkModal, setShowApkModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Estado reactivo del servicio de alarma acústica web
+  const [soundStatus, setSoundStatus] = useState(() => soundService.getState());
+
+  useEffect(() => {
+    return soundService.subscribe(setSoundStatus);
+  }, []);
 
   // Split-Screen Camera Panel Splitter Resizer (Desktop W / Mobile H)
   const [cameraSplitWidth, setCameraSplitWidth] = useState(() => {
@@ -324,6 +332,44 @@ export default function App() {
     };
   }, []);
 
+  // 🔊 Control de Alarma Sonora Web (Intermitente al cruzar margen de advertencia de 3m del potrero)
+  useEffect(() => {
+    // Si no hay datos, silenciar la alarma
+    if (!monitoringData || monitoringData.length === 0) {
+      soundService.stopAlarm();
+      return;
+    }
+
+    let highestSeverity = null;
+    let triggeringAnimal = null;
+
+    for (const animal of monitoringData) {
+      // Solo evaluar reses que tengan collar asignado
+      if (!animal.collar_id) continue;
+
+      const estado = animal.estado_cerca || 'DENTRO';
+      const alerta = animal.alerta || animal.estado_alerta || 'NORMAL';
+
+      const isEscape = estado === 'FUERA' || alerta === 'ESCAPE_HATO';
+      const isWarning = estado === 'ADVERTENCIA' || alerta === 'INFRACCION_ROTACION' || alerta === 'ADVERTENCIA' || alerta === 'ESCAPE_POTRERO';
+
+      if (isEscape) {
+        highestSeverity = 'FUERA';
+        triggeringAnimal = animal;
+        break; // Máxima severidad encontrada
+      } else if (isWarning && !highestSeverity) {
+        highestSeverity = 'ADVERTENCIA';
+        triggeringAnimal = animal;
+      }
+    }
+
+    if (highestSeverity) {
+      soundService.startAlarm(highestSeverity, { animal: triggeringAnimal });
+    } else {
+      soundService.stopAlarm();
+    }
+  }, [monitoringData, currentView]);
+
   // Handle Login Success
   const handleLoginSuccess = (userData) => {
     setUser(userData);
@@ -337,6 +383,7 @@ export default function App() {
 
   // Handle Logout
   const handleLogout = () => {
+    soundService.stopAlarm();
     localStorage.removeItem('collarnet_user');
     setUser(null);
     setCurrentView('landing');
@@ -661,6 +708,61 @@ export default function App() {
         user={user}
         initialApp={user?.rol === 'SUPERADMIN' ? 'tecnico' : 'campo'}
       />
+
+      {/* 🚨 Banner Flotante de Alerta Acústica con Desbloqueo y Test de Audio */}
+      {soundStatus.isPlaying && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92vw] bg-[#0F172A]/95 backdrop-blur-md border border-amber-500/50 shadow-2xl rounded-2xl p-3 flex items-center justify-between gap-3 animate-in slide-in-from-bottom duration-300">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+              <span className="text-lg animate-pulse">📢</span>
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-black text-amber-300 truncate">
+                {soundStatus.currentType === 'FUERA' ? '¡ESCAPE DE HATO DETECTADO!' : '¡RES EN MARGEN DE ADVERTENCIA (3m)!'}
+              </div>
+              <div className="text-[11px] text-slate-300 truncate">
+                {soundStatus.needsUserGesture 
+                  ? '⚠️ Haz clic para activar el audio en el navegador'
+                  : (soundStatus.isMuted ? 'Alarma silenciada' : 'Zumbador sonando intermitente')}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {soundStatus.needsUserGesture ? (
+              <button
+                type="button"
+                onClick={() => soundService.playTestBeep()}
+                className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/30 transition-all active:scale-95"
+              >
+                🔊 Activar Audio
+              </button>
+            ) : (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => soundService.playTestBeep()}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-all"
+                  title="Reproducir pitido de prueba en los altavoces"
+                >
+                  🔔 Probar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => soundService.toggleMute()}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all active:scale-95 ${
+                    soundStatus.isMuted
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-500/20'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-white/10'
+                  }`}
+                >
+                  {soundStatus.isMuted ? '🔊 Desmutear' : '🔇 Silenciar'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

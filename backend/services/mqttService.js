@@ -125,19 +125,22 @@ export async function processTelemetryPayload(io, collarId, payload) {
 
           const isOperativo = Boolean(activo && animalId && estadoCollar === 'ACTIVO');
 
-          if (animalId && isOperativo && hasValidCoords) {
+          if (animalId && isOperativo && effectiveLat !== null && effectiveLon !== null) {
             checkResult = await evaluateAnimalPosition(animalId, effectiveLat, effectiveLon);
 
-            const insertTelemetryQuery = `
-              INSERT INTO telemetria (animal_id, ubicacion, bateria, senal)
-              VALUES ($1, ST_SetSRID(ST_Point($3, $2), 4326), $4, $5);
-            `;
-            await pool.query(insertTelemetryQuery, [animalId, effectiveLat, effectiveLon, bateria, senal]);
-            await handleAlertLifecycle(animalId, checkResult.alertType, effectiveLat, effectiveLon);
+            if (hasValidCoords) {
+              const insertTelemetryQuery = `
+                INSERT INTO telemetria (animal_id, ubicacion, bateria, senal)
+                VALUES ($1, ST_SetSRID(ST_Point($3, $2), 4326), $4, $5);
+              `;
+              await pool.query(insertTelemetryQuery, [animalId, effectiveLat, effectiveLon, bateria, senal]);
+              await handleAlertLifecycle(animalId, checkResult.alertType, effectiveLat, effectiveLon);
 
-            if (checkResult.alertType !== 'NORMAL') {
-              console.log(`[Alerta Activa] Animal ${animalId} (${areteVisual}) en ${checkResult.alertType}. Enviando orden de sonar al collar ${matchedCollarId}`);
-              sendCommandToCollar(matchedCollarId, 'FIND');
+              if (checkResult.alertType !== 'NORMAL') {
+                console.log(`[Alerta Activa] Animal ${animalId} (${areteVisual}) en ${checkResult.alertType}. Enviando orden de sonar al collar ${matchedCollarId}`);
+                sendCommandToCollar(matchedCollarId, 'FIND');
+                publishCameraCmd(matchedCollarId, { cmd: 'buzzer', duration: 400, freq: 4000 });
+              }
             }
           }
 
@@ -195,10 +198,14 @@ export async function processTelemetryPayload(io, collarId, payload) {
             timestamp: new Date().toISOString(),
             alertType: (isOperativo && checkResult) ? checkResult.alertType : (isOperativo ? 'NORMAL' : 'INACTIVO'),
             alerta: (isOperativo && checkResult) ? checkResult.alertType : (isOperativo ? 'NORMAL' : 'INACTIVO'),
+            estado_cerca: (isOperativo && checkResult) ? (checkResult.estadoCerca || (checkResult.alertType === 'NORMAL' ? 'DENTRO' : (checkResult.alertType === 'ESCAPE_HATO' ? 'FUERA' : 'ADVERTENCIA'))) : (isOperativo ? 'DENTRO' : 'SIN_MONITOREO'),
             potreroActual: checkResult ? checkResult.potreroActualNombre : (isOperativo ? 'Desconocido' : 'EN ALMACÉN / DESACTIVADO'),
             potrero_nombre: checkResult ? checkResult.potreroActualNombre : (isOperativo ? 'Desconocido' : 'EN ALMACÉN / DESACTIVADO'),
             distanciaHato: checkResult ? checkResult.distanciaHato : 0.0,
             distancia_hato: checkResult ? checkResult.distanciaHato : 0.0,
+            distanciaPotrero: checkResult ? checkResult.distanciaPotrero : 0.0,
+            distancia_potrero: checkResult ? checkResult.distanciaPotrero : 0.0,
+            margenPotrero: checkResult ? checkResult.margenPotrero : 3.0,
             dentroHato: checkResult ? checkResult.dentroHato : true,
             dentro_hato: checkResult ? checkResult.dentroHato : true,
             dentroPotrero: checkResult ? checkResult.dentroPotrero : true,
@@ -216,7 +223,7 @@ export async function processTelemetryPayload(io, collarId, payload) {
           handledByDb = true;
         }
       } catch (dbErr) {
-        // Fallback a memoria si DB está desconectada
+        console.error('[MQTT DB Error]:', dbErr.message);
       }
 
       // 2. Si no fue procesado por PostgreSQL, usar el almacén unificado en memoria
@@ -297,7 +304,7 @@ export function publishCameraCmd(collarId, payload) {
  * Lógica para abrir o resolver alertas (infracciones) en la base de datos de forma inteligente.
  */
 async function handleAlertLifecycle(animalId, alertType, lat, lon) {
-  if (alertType !== 'NORMAL') {
+  if (alertType === 'ESCAPE_HATO' || alertType === 'INFRACCION_ROTACION') {
     const activeAlertQuery = `
       SELECT id FROM alertas 
       WHERE animal_id = $1 AND tipo = $2 AND estado = 'ACTIVO';
@@ -314,7 +321,7 @@ async function handleAlertLifecycle(animalId, alertType, lat, lon) {
     }
   } 
   
-  if (alertType === 'NORMAL') {
+  if (alertType === 'NORMAL' || alertType === 'ADVERTENCIA') {
     const resolveAlertsQuery = `
       UPDATE alertas 
       SET estado = 'RESUELTO', fecha_fin = NOW() 
@@ -322,7 +329,7 @@ async function handleAlertLifecycle(animalId, alertType, lat, lon) {
     `;
     const result = await pool.query(resolveAlertsQuery, [animalId]);
     if (result.rowCount > 0) {
-      console.log(`[Alerta] Resuelto: El animal ID ${animalId} ha retornado a zona segura. Cerrando alertas activas.`);
+      console.log(`[Alerta] Resuelto: El animal ID ${animalId} ha retornado al potrero. Cerrando alertas activas.`);
     }
   }
 }

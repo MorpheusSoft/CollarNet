@@ -623,6 +623,10 @@ void loop() {
         }
         
         // --- PROCESAMIENTO DE GEOCERCAS JERÁRQUICAS (HATO Y POTRERO) ---
+        static bool wasOutsidePotrero = false;
+        static bool returningToPotrero = false;
+        static unsigned long reentryTime = 0;
+
         bool insideHato = true;
         bool insidePotrero = true;
         AlertLevel nextAlertLevel = ALERT_NONE;
@@ -654,6 +658,33 @@ void loop() {
 
             bool hasPotrero = (numPotreros > 0 && potrerosList[0].numVertices >= 3 && !potreroAbierto);
 
+            // C. Control de Retorno al Potrero y Rearme del Ciclo de 60s
+            if (hasPotrero) {
+                if (!insidePotrero) {
+                    wasOutsidePotrero = true;
+                    returningToPotrero = false;
+                } else {
+                    // Está dentro del potrero asignado (insidePotrero == true)
+                    if (wasOutsidePotrero) {
+                        // Cruce de afuera hacia adentro: REINGRESO CONFIRMADO
+                        wasOutsidePotrero = false;
+                        returningToPotrero = true;
+                        reentryTime = millis();
+                        Serial.println("[Geocerca] 🟢 Animal regreso al potrero asignado. Alarma silenciada de inmediato y ciclo de 60s rearmado.");
+                    } else if (returningToPotrero) {
+                        // El animal ya se adentró en zona segura (> margen) o pasaron 12s de estabilidad adentro:
+                        if (distToPotreroBorder > potreroThreshold || (millis() - reentryTime > 12000)) {
+                            returningToPotrero = false;
+                            Serial.println("[Geocerca] 🟢 Animal estabilizado dentro del potrero. Margen de advertencia rearmado para salidas.");
+                        }
+                    }
+                }
+            } else {
+                wasOutsidePotrero = false;
+                returningToPotrero = false;
+            }
+
+            // D. Determinación de Nivel de Alerta
             if (!insideHato) {
                 // 1. FUERA DEL HATO (¡ESCAPE MAYOR DE LA FINCA!): ALERTA MÁXIMA CONTINUA + DESCARGA ÚNICA DE 1s
                 nextAlertLevel = ALERT_CRITICAL_HATO;
@@ -664,10 +695,16 @@ void loop() {
                 isHatoAlert = true;
             } else if (hasPotrero && insidePotrero) {
                 // 2. DENTRO DEL POTRERO ASIGNADO (ZONA AUTORIZADA):
-                // Como está dentro de su potrero, NO debe sonar la alerta del Hato,
-                // incluso si el potrero colinda con el lindero exterior.
-                if (distToPotreroBorder <= potreroThreshold) {
-                    // Dentro del margen de advertencia del potrero: PITIDO INTERMITENTE progresivo por cadencia
+                if (returningToPotrero) {
+                    // Acaba de ingresar al potrero: Silencio total como recompensa ("se apaga cuando entre al potrero")
+                    nextAlertLevel = ALERT_NONE;
+                    alertStr = "RETORNO_POTRERO";
+                    currentUbicacion = "Dentro de potrero (Reingreso / Silenciado y Rearmado)";
+                    activeAlertDist = 0.0;
+                    activeMargin = potreroThreshold;
+                    isHatoAlert = false;
+                } else if (distToPotreroBorder <= potreroThreshold) {
+                    // Acercándose al lindero desde adentro hacia afuera: PITIDO INTERMITENTE progresivo por cadencia
                     nextAlertLevel = ALERT_WARNING;
                     alertStr = "PROXIMIDAD_POTRERO";
                     currentUbicacion = "Aproximándose a lindero de potrero (Advertencia Cadencia Progresiva)";
@@ -686,23 +723,13 @@ void loop() {
             } else if (hasPotrero && !insidePotrero) {
                 // 3. FUERA DEL POTRERO ASIGNADO (ESCAPE DE POTRERO / ROTACIÓN):
                 // Salió del potrero pero sigue dentro del Hato.
-                if (distToHatoBorder <= hatoThreshold) {
-                    // Salió del potrero y ahora amenaza el lindero exterior del Hato: PITIDO FIJO CONTINUO
-                    nextAlertLevel = ALERT_WARNING;
-                    alertStr = "PROXIMIDAD_HATO";
-                    currentUbicacion = "Fuera de potrero y cerca de lindero de Hato (Advertencia Fija)";
-                    activeAlertDist = distToHatoBorder;
-                    activeMargin = hatoThreshold;
-                    isHatoAlert = true;
-                } else {
-                    // Fuera del potrero en callejones o potreros internos: PITIDO INTERMITENTE RÁPIDO
-                    nextAlertLevel = ALERT_DANGER;
-                    alertStr = "ESCAPE_POTRERO";
-                    currentUbicacion = "Fuera de Potrero Asignado (Infracción de Rotación)";
-                    activeAlertDist = distToPotreroBorder;
-                    activeMargin = potreroThreshold;
-                    isHatoAlert = false;
-                }
+                // Siempre emite ALERTA DANGER de potrero (pitido intermitente rápido con timeout de 60s)
+                nextAlertLevel = ALERT_DANGER;
+                alertStr = "ESCAPE_POTRERO";
+                currentUbicacion = "Fuera de Potrero Asignado (Infracción de Rotación)";
+                activeAlertDist = distToPotreroBorder;
+                activeMargin = potreroThreshold;
+                isHatoAlert = false;
             } else {
                 // 4. MODO TRASLADO (TALANQUERA ABIERTA) O SIN POTRERO ASIGNADO:
                 if (distToHatoBorder <= hatoThreshold) {
@@ -723,7 +750,7 @@ void loop() {
                 }
             }
             
-            // C. Actualizar nivel de alertas local con modulación de volumen/cadencia y descarga
+            // E. Actualizar nivel de alertas local con modulación de volumen/cadencia y descarga
             updateAlerts(nextAlertLevel, activeAlertDist, activeMargin, isHatoAlert ? 1 : 0);
         }
         // D. Publicar telemetría por MQTT con batería real e IMEI
@@ -776,17 +803,17 @@ void loop() {
         if (!collarActivo) {
             Serial.println("MODO RESERVA / ALMACÉN (Silencio Total - Cero Alertas)");
         } else if (currentAlert == ALERT_NONE) {
-            Serial.println("NORMAL (Silencio / Seguro)");
+            Serial.printf("NORMAL (Silencio / Seguro)%s\n", returningToPotrero ? " [REINGRESO POTRERO - REARMADO]" : "");
         } else if (currentAlert == ALERT_WARNING) {
             if (isHatoAlert) {
-                Serial.printf("ADVERTENCIA HATO (Lindero Finca - Cadencia fija 300ms con VOLUMEN PROGRESIVO | Dist: %.1fm / Margen: %.1fm)\n", activeAlertDist, activeMargin);
+                Serial.printf("ADVERTENCIA HATO (Lindero Finca - Tono Fijo | Dist: %.1fm / Margen: %.1fm)%s\n", activeAlertDist, activeMargin, isAlertTimedOut() ? " [TIMEOUT 60s - MUTED]" : "");
             } else {
-                Serial.printf("ADVERTENCIA POTRERO (Lindero Potrero - Cadencia Progresiva 800ms->100ms | Dist: %.1fm / Margen: %.1fm)\n", activeAlertDist, activeMargin);
+                Serial.printf("ADVERTENCIA POTRERO (Lindero Potrero - Cadencia Progresiva Intermitente | Dist: %.1fm / Margen: %.1fm)%s\n", activeAlertDist, activeMargin, isAlertTimedOut() ? " [TIMEOUT 60s - MUTED]" : "");
             }
         } else if (currentAlert == ALERT_DANGER) {
-            Serial.println("PELIGRO (Escape Potrero - Bips rápidos 80ms 4000Hz con timeout 60s - 100% Acústico)");
+            Serial.printf("PELIGRO (Escape Potrero - Pitido Intermitente Rápido)%s\n", isAlertTimedOut() ? " [TIMEOUT 60s - MUTED]" : "");
         } else if (currentAlert == ALERT_CRITICAL_HATO) {
-            Serial.println("¡¡ESCAPE CRÍTICO DE HATO (DESCARGA ÚNICA 1s en IO23 + Tono continuo 4000Hz con timeout 60s)!!");
+            Serial.printf("¡¡ESCAPE CRÍTICO DE HATO (DESCARGA ÚNICA 1s + Tono Continuo)!!%s\n", isAlertTimedOut() ? " [TIMEOUT 60s - MUTED]" : "");
         }
         Serial.println("------------------------------------------------");
     }

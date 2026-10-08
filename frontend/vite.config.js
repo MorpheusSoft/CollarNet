@@ -15,6 +15,22 @@ export default defineConfig({
       '/socket.io': {
         target: 'http://localhost:3500',
         ws: true
+      },
+      '/apps': {
+        target: 'http://localhost:3500',
+        changeOrigin: true
+      },
+      '/iphone': {
+        target: 'http://localhost:3500',
+        changeOrigin: true
+      },
+      '/descargas': {
+        target: 'http://localhost:3500',
+        changeOrigin: true
+      },
+      '/apk': {
+        target: 'http://localhost:3500',
+        changeOrigin: true
       }
     }
   },

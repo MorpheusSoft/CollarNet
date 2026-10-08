@@ -25,9 +25,63 @@
         ]
       ],
       "creado_en": "2026-09-28T15:10:40.688Z"
+    },
+    {
+      "id": 7,
+      "nombre": "oficina",
+      "tenant_id": 6,
+      "margen_advertencia_metros": 1,
+      "geojson": "{\"type\":\"Polygon\",\"coordinates\":[[[-71.60456133,10.671862454],[-71.603576436,10.672089043],[-71.603349447,10.67102773],[-71.604363749,10.670829439],[-71.60456133,10.671862454]]]}",
+      "vertices": [
+        [
+          10.671862454,
+          -71.60456133
+        ],
+        [
+          10.672089043,
+          -71.603576436
+        ],
+        [
+          10.67102773,
+          -71.603349447
+        ],
+        [
+          10.670829439,
+          -71.604363749
+        ]
+      ],
+      "creado_en": "2026-10-06T10:00:00.000Z"
     }
   ],
   "potreros": [
+    {
+      "id": 10,
+      "hato_id": 7,
+      "nombre": "Potrero A",
+      "capacidad_max_cabezas": 10,
+      "margen_advertencia_metros": 3,
+      "estado": "ABIERTO",
+      "geojson": "{\"type\":\"Polygon\",\"coordinates\":[[[-71.604434904,10.671375364],[-71.604204553,10.671426403],[-71.604142978,10.671271749],[-71.604364845,10.671214099],[-71.604434904,10.671375364]]]}",
+      "vertices": [
+        [
+          10.671375364,
+          -71.604434904
+        ],
+        [
+          10.671426403,
+          -71.604204553
+        ],
+        [
+          10.671271749,
+          -71.604142978
+        ],
+        [
+          10.671214099,
+          -71.604364845
+        ]
+      ],
+      "creado_en": "2026-10-07T14:55:00.000Z"
+    },
     {
       "id": 3,
       "hato_id": 0,
@@ -46,7 +100,7 @@
       "hato_id": 1,
       "nombre": "Potrero A",
       "capacidad_max_cabezas": 10,
-      "margen_advertencia_metros": 10,
+      "margen_advertencia_metros": 3,
       "geojson": "{\"type\":\"Polygon\",\"coordinates\":[[[-71.60335081336778,10.671002526683193],[-71.60407240116257,10.671744370590355],[-71.60433148642407,10.670786458825395],[-71.60335081336778,10.671002526683193]]]}",
       "vertices": [
         [
@@ -166,11 +220,11 @@
       "version_firmware": null,
       "latitud": 10.67133825,
       "longitud": -71.60398331,
-      "potrero_id": 4,
+      "potrero_id": 10,
       "potrero_nombre": "Potrero A",
       "potrero_asignado_nombre": "Potrero A",
-      "hato_id": 1,
-      "hato_nombre": "Hato 28/9 #1",
+      "hato_id": 7,
+      "hato_nombre": "oficina",
       "peso_actual": 485,
       "estado_alerta": "NORMAL",
       "estado_cerca": "DENTRO",
@@ -191,7 +245,7 @@
       "lote_id": null,
       "tenant_id": 1,
       "tenant_nombre": "Hacienda Santa Inés",
-      "hato_nombre": "Hato 28/9 #1",
+      "hato_nombre": "oficina",
       "animal_raza": "Brahman",
       "animal_categoria": "Novillo",
       "ubicacion_almacen": "En Campo (Asignado)",
@@ -209,12 +263,12 @@
       "longitud": -71.60398102,
       "activo": true,
       "creado_en": "2026-09-25T14:00:00.000Z",
-      "ultima_conexion": "2026-09-28T15:11:36.034Z",
+      "ultima_conexion": "2026-10-06T15:04:31.268Z",
       "animal_id": 1,
       "animal_arete": "VACA-001",
       "potrero_nombre": "Potrero A",
       "arete_visual": null
     }
   ],
-  "savedAt": "2026-09-28T15:11:36.035Z"
+  "savedAt": "2026-10-06T15:04:31.432Z"
 }
