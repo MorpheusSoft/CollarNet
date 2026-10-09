@@ -102,9 +102,12 @@ export async function processTelemetryPayload(io, collarId, payload) {
       try {
         const collarQuery = `
           SELECT c.id AS collar_id, a.id AS animal_id, a.arete_visual, c.activo, c.estado, c.imei AS db_imei,
-                 ST_Y(c.ultima_ubicacion) AS last_lat, ST_X(c.ultima_ubicacion) AS last_lon
+                 COALESCE(ST_Y(c.ultima_ubicacion), ST_Y(ST_Centroid(p.perimetro)), ST_Y(ST_Centroid(h.perimetro))) AS last_lat,
+                 COALESCE(ST_X(c.ultima_ubicacion), ST_X(ST_Centroid(p.perimetro)), ST_X(ST_Centroid(h.perimetro))) AS last_lon
           FROM collares c 
           LEFT JOIN animales a ON a.collar_id = c.id 
+          LEFT JOIN potreros p ON a.potrero_id = p.id
+          LEFT JOIN hatos h ON p.hato_id = h.id
           WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar)
           ORDER BY (c.id = $1) DESC;
         `;

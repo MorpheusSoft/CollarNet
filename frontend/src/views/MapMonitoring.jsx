@@ -253,22 +253,25 @@ export default function MapMonitoring({
 
     let initialLat = 10.671340;
     let initialLon = -71.604030;
-    if (geocercas?.hatos && geocercas.hatos.length > 0) {
+
+    // 1. Priorizar coordenadas reales del ganado activo
+    const cattleWithLocation = (monitoringData || []).find(a => !isNaN(parseFloat(a.latitud ?? a.lat)) && !isNaN(parseFloat(a.longitud ?? a.lon)));
+    if (cattleWithLocation) {
+      initialLat = parseFloat(cattleWithLocation.latitud ?? cattleWithLocation.lat);
+      initialLon = parseFloat(cattleWithLocation.longitud ?? cattleWithLocation.lon);
+    } else if (geocercas?.hatos && geocercas.hatos.length > 0) {
+      // 2. O hato seleccionado / hato con ganado asignado
+      const cattleHatoId = (monitoringData || []).find(a => a.hato_id)?.hato_id;
+      const targetHato = (selectedHatoId && selectedHatoId !== 'ALL' && geocercas.hatos.find(h => String(h.id) === String(selectedHatoId)))
+        || (cattleHatoId && geocercas.hatos.find(h => String(h.id) === String(cattleHatoId)))
+        || geocercas.hatos[0];
       try {
-        const geo = typeof geocercas.hatos[0].geojson === 'string' 
-          ? JSON.parse(geocercas.hatos[0].geojson) 
-          : geocercas.hatos[0].geojson;
+        const geo = typeof targetHato.geojson === 'string' ? JSON.parse(targetHato.geojson) : targetHato.geojson;
         if (geo?.coordinates?.[0]?.[0]) {
           initialLat = geo.coordinates[0][0][1];
           initialLon = geo.coordinates[0][0][0];
         }
       } catch (_) {}
-    } else if (monitoringData && monitoringData.length > 0) {
-      const a = monitoringData[0];
-      if (a.latitud && a.longitud) {
-        initialLat = parseFloat(a.latitud);
-        initialLon = parseFloat(a.longitud);
-      }
     }
 
     const map = L.map(mapContainerRef.current, {
@@ -406,8 +409,13 @@ export default function MapMonitoring({
       hasCenteredRef.current = true;
       if (selectedHatoId && selectedHatoId !== 'ALL') {
         setTimeout(() => centerOnHato(selectedHatoId), 300);
-      } else if (geocercas.hatos && geocercas.hatos.length > 0) {
-        setTimeout(() => centerOnHato(geocercas.hatos[0].id), 300);
+      } else {
+        const cattleHatoId = (monitoringData || []).find(a => a.hato_id)?.hato_id;
+        if (cattleHatoId) {
+          setTimeout(() => centerOnHato(cattleHatoId), 300);
+        } else if (geocercas.hatos && geocercas.hatos.length > 0) {
+          setTimeout(() => centerOnHato(geocercas.hatos[0].id), 300);
+        }
       }
     }
 
@@ -538,19 +546,40 @@ export default function MapMonitoring({
     const activeKeys = new Set();
 
     monitoringData.forEach(animal => {
-      const lat = parseFloat(animal.latitud ?? animal.lat);
-      const lon = parseFloat(animal.longitud ?? animal.lon);
+      let lat = parseFloat(animal.latitud ?? animal.lat);
+      let lon = parseFloat(animal.longitud ?? animal.lon);
+
+      // Fallback: si no tiene coordenadas directas, usar el centroide del potrero asignado
+      if (isNaN(lat) || isNaN(lon)) {
+        if (animal.potrero_id && geocercas?.potreros) {
+          const pot = geocercas.potreros.find(p => p.id === animal.potrero_id);
+          if (pot?.geojson) {
+            try {
+              const geo = typeof pot.geojson === 'string' ? JSON.parse(pot.geojson) : pot.geojson;
+              if (geo?.coordinates?.[0]?.length > 0) {
+                const coords = geo.coordinates[0];
+                lat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+                lon = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+              }
+            } catch (_) {}
+          }
+        }
+      }
+
       if (isNaN(lat) || isNaN(lon)) return;
 
       const collarKey = String(animal.collar_id || animal.id || animal.animal_id || 'COW-001');
       activeKeys.add(collarKey);
 
+      const hasGpsFix = ((animal.satelites_visibles ?? 0) > 0 || animal.gps_fijado === true);
       const estado = animal.estado_cerca || 'DENTRO';
       const isEscape = estado === 'FUERA';
       const isWarn = estado === 'ADVERTENCIA';
 
-      const colorClass = isEscape ? 'bg-rose-500 ring-rose-400' : (isWarn ? 'bg-amber-500 ring-amber-400' : 'bg-emerald-500 ring-emerald-400');
-      const emoji = isEscape ? '🚨' : (isWarn ? '⚠️' : '🐮');
+      const colorClass = !hasGpsFix 
+        ? 'bg-amber-600 ring-amber-400' 
+        : (isEscape ? 'bg-rose-500 ring-rose-400' : (isWarn ? 'bg-amber-500 ring-amber-400' : 'bg-emerald-500 ring-emerald-400'));
+      const emoji = !hasGpsFix ? '🛰️' : (isEscape ? '🚨' : (isWarn ? '⚠️' : '🐮'));
 
       const customIcon = L.divIcon({
         className: 'custom-animal-marker bg-transparent border-0',
@@ -571,6 +600,7 @@ export default function MapMonitoring({
         <div style="font-family: inherit; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
           <span>🐮 #${animal.arete_visual || animal.collar_id}</span>
           <span style="color: #94a3b8; font-size: 10px;">(${animal.collar_id})</span>
+          ${!hasGpsFix ? '<span style="color: #fbbf24; font-size: 10px; font-weight: 800;">🛰️ Buscando Fix</span>' : ''}
           <span style="color: #38bdf8; font-size: 10px; margin-left: 2px;">🔋 ${bat}%</span>
         </div>
       `;
@@ -584,7 +614,7 @@ export default function MapMonitoring({
           <div><strong>Estado Cerca:</strong> <span style="font-weight:bold; color:${isEscape ? '#e11d48' : (isWarn ? '#d97706' : '#059669')}">${estado}</span></div>
           <div><strong>Batería:</strong> <span style="font-weight:bold; color:${batColor};">🔋 ${bat}%</span> ${isCharging ? '<span style="background:#fef08a; color:#854d0e; padding:1px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚡ USB</span>' : ''}</div>
           <div><strong>Enlace:</strong> <span style="font-weight:bold; color:${animal.medio_red === 'WIFI' ? '#0284c7' : '#10b981'};">${animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : '📱 4G Digitel'}</span></div>
-          <div><strong>GPS:</strong> <span style="font-weight:bold; color:#059669;">🛰️ ${animal.satelites_visibles || 0} satélites fijados</span></div>
+          <div><strong>GPS:</strong> ${hasGpsFix ? `<span style="font-weight:bold; color:#059669;">🛰️ ${animal.satelites_visibles || 0} satélites fijados</span>` : `<span style="font-weight:bold; color:#f59e0b;">🛰️ Buscando satélites (GPS en interiores - Ref. Potrero)</span>`}</div>
           <div><strong>Potrero Actual:</strong> 🌱 ${animal.potrero_nombre || 'No asignado'}</div>
           <div><strong>Hato:</strong> 🏰 ${animal.hato_nombre || 'Hato Principal'}</div>
           
@@ -631,8 +661,20 @@ export default function MapMonitoring({
   // Center Map on specific Animal
   const centerOnAnimal = (animal) => {
     setSelectedAnimalId(animal.id);
-    const lat = parseFloat(animal.latitud ?? animal.lat);
-    const lon = parseFloat(animal.longitud ?? animal.lon);
+    let lat = parseFloat(animal.latitud ?? animal.lat);
+    let lon = parseFloat(animal.longitud ?? animal.lon);
+
+    // Fallback: Si no tiene coordenadas propias pero tiene potrero asignado
+    if (isNaN(lat) || isNaN(lon)) {
+      if (animal.potrero_id && potreroLayersRef.current[animal.potrero_id]) {
+        const layer = potreroLayersRef.current[animal.potrero_id];
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 17, animate: true });
+        }
+        return;
+      }
+    }
+
     if (mapInstanceRef.current && !isNaN(lat) && !isNaN(lon)) {
       mapInstanceRef.current.setView([lat, lon], 18, { animate: true });
       const collarKey = String(animal.collar_id || animal.id || animal.animal_id);
@@ -1188,7 +1230,7 @@ export default function MapMonitoring({
                       })()}
                       <span className="flex items-center gap-1 text-cyan-300">
                         <Signal className="w-3 h-3" />
-                        {animal.senal_celular ? `${animal.senal_celular}/5 barras` : '4G LTE'}
+                        {animal.medio_red === 'WIFI' ? '📶 Wi-Fi' : (animal.senal_celular ? `${animal.senal_celular}/5 barras` : '4G LTE')}
                       </span>
                       <span className="flex items-center gap-1 text-slate-300">
                         <Clock className="w-3 h-3 text-slate-400" />
@@ -1204,8 +1246,12 @@ export default function MapMonitoring({
 
                     {/* Actions footer */}
                     <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold">
-                        🛰️ {animal.satelites_visibles || 13} Sats Fijados
+                      <span className={`text-[10px] font-mono font-bold ${
+                        (animal.satelites_visibles ?? 0) > 0 ? 'text-emerald-400' : 'text-amber-400'
+                      }`}>
+                        {(animal.satelites_visibles ?? 0) > 0 
+                          ? `🛰️ ${animal.satelites_visibles} Sats Fijados` 
+                          : '🛰️ Buscando GPS'}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <button
