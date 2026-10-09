@@ -249,9 +249,10 @@ export async function processTelemetryPayload(io, collarId, payload) {
 
       // 3. Emitir datos en tiempo real a todos los clientes (Web, iOS, Android, apps técnicas)
       if (broadcastData && io) {
-        io.emit('telemetria_realtime', broadcastData);
-        io.emit('telemetria_actualizada', broadcastData);
-        console.log(`[Live IoT] Collar: ${broadcastData.collarId} | IMEI: ${broadcastData.imei || 'N/A'} | Red: ${broadcastData.medio_red || 'CELULAR'} | GPS: ${broadcastData.gps_encendido ? (broadcastData.gps_fijado ? `FIX (${broadcastData.satelites_visibles} sats)` : `Buscando (${broadcastData.satelites_visibles} sats)`) : 'APAGADO'} | Bat: ${broadcastData.bateria}% (${broadcastData.esta_cargando ? '⚡ USB/Carga' : '🔋 Batería'}) | Res: ${broadcastData.areteVisual} | Pos: [${broadcastData.lat.toFixed(5)}, ${broadcastData.lon.toFixed(5)}] | Alerta: ${broadcastData.alertType}`);
+        const posStr = (broadcastData.lat !== null && broadcastData.lon !== null) 
+          ? `[${broadcastData.lat.toFixed(5)}, ${broadcastData.lon.toFixed(5)}]` 
+          : '[Sin Fix GPS]';
+        console.log(`[Live IoT] Collar: ${broadcastData.collarId} | IMEI: ${broadcastData.imei || 'N/A'} | Red: ${broadcastData.medio_red || 'CELULAR'} | GPS: ${broadcastData.gps_encendido ? (broadcastData.gps_fijado ? `FIX (${broadcastData.satelites_visibles} sats)` : `Buscando (${broadcastData.satelites_visibles} sats)`) : 'APAGADO'} | Bat: ${broadcastData.bateria}% (${broadcastData.esta_cargando ? '⚡ USB/Carga' : '🔋 Batería'}) | Res: ${broadcastData.areteVisual} | Pos: ${posStr} | Alerta: ${broadcastData.alertType}`);
       }
 
     } catch (err) {
