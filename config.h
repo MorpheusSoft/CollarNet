@@ -16,7 +16,7 @@ enum NetPreference {
     NET_PREF_WIFI = 2      // Fuerza exclusivamente Wi-Fi
 };
 
-// Modo por defecto: Fuerza conexión Wi-Fi de alta velocidad para pruebas locales fluidas
+// Modo por defecto: Fuerza conexión Wi-Fi de alta velocidad (SOITCA)
 #define DEFAULT_NET_PREF NET_PREF_WIFI
 
 // Configuración de Pines de Hardware
