@@ -211,7 +211,7 @@
       "senal_celular": 5,
       "esta_cargando": false,
       "voltaje_mv": 4076,
-      "medio_red": "CELULAR",
+      "medio_red": "4G LTE (DIGITEL)",
       "gps_encendido": true,
       "gps_fijado": true,
       "satelites_visibles": 11,
@@ -296,7 +296,7 @@
       "senal_celular": 5,
       "esta_cargando": false,
       "voltaje_mv": 4086,
-      "medio_red": "CELULAR",
+      "medio_red": "4G LTE (DIGITEL)",
       "gps_encendido": true,
       "gps_fijado": true,
       "satelites_visibles": 11,
@@ -308,7 +308,8 @@
       "animal_id": 1,
       "animal_arete": "VACA-001",
       "potrero_nombre": "Potrero A",
-      "arete_visual": null
+      "arete_visual": null,
+      "preferencia_red": "CELULAR"
     },
     {
       "id": "COW-002",

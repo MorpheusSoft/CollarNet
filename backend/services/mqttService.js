@@ -273,7 +273,7 @@ export function publishToCollar(collarId, payload) {
   }
   const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
   const cleanId = String(collarId || '').trim();
-  const targetIds = new Set([cleanId, 'COW-001', '8081421526']);
+  const targetIds = cleanId ? [cleanId] : ['COW-001'];
   targetIds.forEach(id => {
     if (id) {
       const topic = `${prefix}/${id}/config`;
@@ -294,7 +294,7 @@ export function publishCameraCmd(collarId, payload) {
   }
   const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
   const cleanId = String(collarId || '').trim();
-  const targetIds = new Set([cleanId, 'COW-001', '8081421526']);
+  const targetIds = cleanId ? [cleanId] : ['COW-001'];
   targetIds.forEach(id => {
     if (id) {
       const topic = `${prefix}/${id}/cmd`;
