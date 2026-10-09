@@ -63,7 +63,7 @@ String readHardwareIMEI() {
             return imei;
         }
     }
-    return "864643061445526"; // Fallback por defecto verificado en hardware
+    return WiFi.macAddress();
 }
 
 // Función para consultar porcentaje de batería, voltaje y estado de carga vía módem AT+CBC

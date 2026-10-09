@@ -7,7 +7,7 @@
 #define SERIAL_BAUD 115200
 
 // Identificador de Collar
-#define COLLAR_ID "COW-001"
+#define COLLAR_ID "COW-002"
 
 // Modos de Preferencia de Red
 enum NetPreference {

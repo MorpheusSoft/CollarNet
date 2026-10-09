@@ -105,7 +105,8 @@ export async function processTelemetryPayload(io, collarId, payload) {
                  ST_Y(c.ultima_ubicacion) AS last_lat, ST_X(c.ultima_ubicacion) AS last_lon
           FROM collares c 
           LEFT JOIN animales a ON a.collar_id = c.id 
-          WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar);
+          WHERE c.id = $1 OR ($2::varchar IS NOT NULL AND c.imei = $2::varchar)
+          ORDER BY (c.id = $1) DESC;
         `;
         const { rows: collarRows } = await pool.query(collarQuery, [collarId, imei]);
         
