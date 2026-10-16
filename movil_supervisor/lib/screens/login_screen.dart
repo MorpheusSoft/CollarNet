@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. Logo & Identidad CowIA Supervisor
+                // 1. Logo & Identidad Cowai Supervisor
                 Center(
                   child: Container(
                     width: 84,
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 18),
 
                 const Text(
-                  'CowIA Finca',
+                  'Cowai Finca',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 26,
@@ -610,7 +610,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const Text('Presets: ', style: TextStyle(color: FincaTheme.textMuted, fontSize: 11)),
                             ActionChip(
-                              label: const Text('Nube CowIA', style: TextStyle(fontSize: 10, color: FincaTheme.accentGreenLight, fontWeight: FontWeight.bold)),
+                              label: const Text('Nube Cowai', style: TextStyle(fontSize: 10, color: FincaTheme.accentGreenLight, fontWeight: FontWeight.bold)),
                               backgroundColor: FincaTheme.bgCardElevated,
                               padding: EdgeInsets.zero,
                               onPressed: () async {

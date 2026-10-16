@@ -48291,7 +48291,7 @@ $S:12}
 A.arv.prototype={}
 A.Pe.prototype={
 G(a){var s=null,r=A.b([A.aM3(new A.a8y(),t.l),A.aM3(new A.a8z(),t.jE),A.aM3(new A.a8A(),t.dY)],t.Ds)
-return A.b3M(new A.Ej(B.Fu,"CowIA Finca - Gesti\xf3n Ganadera",A.yA(B.Fr,B.aR,new A.vG(s,B.a5,s,s,0,s,new A.b6(A.a1(16),B.bC)),B.IO,new A.wm(A.d_(s,s,B.e,s,s,s,2,s,s,B.o,s,s,B.Lr,s,new A.b6(A.a1(12),B.q),s,s,s,B.Ez,s)),B.b3,!0),B.EG,!1,s),r)}}
+return A.b3M(new A.Ej(B.Fu,"Cowai Finca - Gesti\xf3n Ganadera",A.yA(B.Fr,B.aR,new A.vG(s,B.a5,s,s,0,s,new A.b6(A.a1(16),B.bC)),B.IO,new A.wm(A.d_(s,s,B.e,s,s,s,2,s,s,B.o,s,s,B.Lr,s,new A.b6(A.a1(12),B.q),s,s,s,B.Ez,s)),B.b3,!0),B.EG,!1,s),r)}}
 A.a8y.prototype={
 $1(a){var s=t.H7,r=t.N,q=t.z
 s=new A.oo(new A.Bc(),A.b([],s),A.b([A.Y(["id","1","nombre","Potrero A","estado","ABIERTO","animales",1,"diasOcupacion",0,"diasDescanso",0,"capacidad",10,"calidadPasto","Excelente (2.8k kg/ha)"],r,q),A.Y(["id","2","nombre","Potrero B","estado","ABIERTO","animales",0,"diasOcupacion",0,"diasDescanso",0,"capacidad",10,"calidadPasto","Buena (2.2k kg/ha)"],r,q)],s),A.b([A.Y(["id",1,"areteVisual","VACA-001","collarId","COW-001","raza","Brahman","categoria","Novillo","potreroNombre","Potrero Norte 1","hatoId",1,"hatoNombre","Hato La Esperanza","latitud",10.67134,"longitud",-71.60403,"bateria",95,"ultimoPeso",485,"estadoAlerta","NORMAL","estadoCerca","DENTRO"],r,q)],s),A.b(["COW-001"],t.s),A.b([],s),$.al())
@@ -49807,7 +49807,7 @@ A.YX.prototype={
 al(){this.aI()
 $.a7.p4$.push(new A.azb(this))},
 G(a){var s=this,r=null,q=A.d1(a,!0,t.l),p=t.p
-return A.n2(r,B.b3,A.fI(!0,A.aF(A.b([s.afi(a,q),A.bC(new A.Fp(A.lx(A.aF(A.b([A.an(A.b([s.HC(B.u,B.db,"En Monitoreo",""+q.y),B.a7,s.HC(B.ax,B.rw,"Abiertos / Desc.",""+q.z+" / "+q.Q),B.a7,s.HC(B.w,B.MJ,"GDP Promedio","+"+B.c.dI(q.as*1000)+"g")],p),B.l,B.h,B.f,0,r),B.aV,s.aeU(a,q),B.c8,A.an(A.b([B.a96,A.a5("CowIA Finca v1.0",r,r,r,r,A.bm(r,r,A.R(204,B.u.m()>>>16&255,B.u.m()>>>8&255,B.u.m()&255),r,r,r,r,r,r,r,r,12,r,r,B.v,r,r,!0,r,r,r,r,r,r,r,r),r,r)],p),B.l,B.as,B.f,0,r),B.bh,s.af3(a),B.ii],p),B.I,B.h,B.f),r,B.a0,B.hy,B.iF,B.ah),new A.aza(q),B.e,r),1)],p),B.l,B.h,B.f),B.V,!0),r,r)},
+return A.n2(r,B.b3,A.fI(!0,A.aF(A.b([s.afi(a,q),A.bC(new A.Fp(A.lx(A.aF(A.b([A.an(A.b([s.HC(B.u,B.db,"En Monitoreo",""+q.y),B.a7,s.HC(B.ax,B.rw,"Abiertos / Desc.",""+q.z+" / "+q.Q),B.a7,s.HC(B.w,B.MJ,"GDP Promedio","+"+B.c.dI(q.as*1000)+"g")],p),B.l,B.h,B.f,0,r),B.aV,s.aeU(a,q),B.c8,A.an(A.b([B.a96,A.a5("Cowai Finca v1.0",r,r,r,r,A.bm(r,r,A.R(204,B.u.m()>>>16&255,B.u.m()>>>8&255,B.u.m()&255),r,r,r,r,r,r,r,r,12,r,r,B.v,r,r,!0,r,r,r,r,r,r,r,r),r,r)],p),B.l,B.as,B.f,0,r),B.bh,s.af3(a),B.ii],p),B.I,B.h,B.f),r,B.a0,B.hy,B.iF,B.ah),new A.aza(q),B.e,r),1)],p),B.l,B.h,B.f),B.V,!0),r,r)},
 afi(a,b){var s,r,q,p,o,n,m,l,k=null,j=A.R(38,B.e.m()>>>16&255,B.e.m()>>>8&255,B.e.m()&255),i=A.a1(12)
 i=A.a9(k,B.Ob,B.k,k,k,new A.a8(j,k,A.aT(A.R(102,B.e.m()>>>16&255,B.e.m()>>>8&255,B.e.m()&255),1),i,k,k,B.t),k,k,k,B.cg,k,k,k)
 j=A.a1(10)
@@ -51787,7 +51787,7 @@ g=g==null?null:J.b1(g)
 g=A.fG(g==null?"1":g,null)
 if(g==null)g=1
 f=i.h(0,"downloadUrl")
-if(f==null)f="https://cowai.net/apk/CowIA-Campo.apk"
+if(f==null)f="https://cowai.net/apk/Cowai-Campo.apk"
 e=J.c(i.h(0,"mandatory"),!0)
 i=i.h(0,"releaseNotes")
 if(i==null)i="Mejoras en conectividad y estabilidad."
@@ -52168,7 +52168,7 @@ $S:0}
 A.awG.prototype={
 $0(){var s=this.a
 s.e=B.dA
-s.x=this.b+"\nConmutando autom\xe1ticamente a Servidor CowIA..."},
+s.x=this.b+"\nConmutando autom\xe1ticamente a Servidor Cowai..."},
 $S:0}
 A.awD.prototype={
 $0(){var s,r=this.a
@@ -111850,7 +111850,7 @@ B.PW=new A.mu("\ufffc",null,null,null,!0,!0,B.b5)
 B.PX=new A.Dx(null,null,null,null,null,null,null,null,null,B.rk,B.pB,!1,null,!1,null,null,null,null,null,null,null,null,!1,null,null,null,null,null,null,null,null,null,null,null,!1,null,null)
 B.pl=new A.aG(B.n,1,B.x,-1)
 B.i0=new A.dH(4,B.h4,B.pl)
-B.PY=new A.la(null,null,null,"Servidor CowIA",null,null,null,null,null,null,"192.168.86.30:3500",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.i0,!0,null,null,null,null)
+B.PY=new A.la(null,null,null,"Servidor Cowai",null,null,null,null,null,null,"192.168.86.30:3500",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.i0,!0,null,null,null,null)
 B.acP=new A.la(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
 B.Q_=new A.la(null,null,null,"Tipo de Biol\xf3gico / Vacuna",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.i0,!0,null,null,null,null)
 B.Q0=new A.la(null,null,null,"Seleccionar Potrero a Tratar",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.i0,!0,null,null,null,null)
@@ -113783,7 +113783,7 @@ B.a90=new A.X("\ud83d\udd04 Geocercas sincronizadas con el servidor",null,null,n
 B.a0j=new A.fo(B.a90,B.e,null,null,null,null,null,null,null,null,null,null,null,B.e9,!1,null,null,null,B.y,null)
 B.II=new A.ib(2,null,null,null,null,B.e,null,null,null,null)
 B.a03=new A.cv(16,16,B.II,null)
-B.a8z=new A.X("Verificando actualizaciones de CowIA Campo...",null,null,null,null,null,null,null,null,null)
+B.a8z=new A.X("Verificando actualizaciones de Cowai Campo...",null,null,null,null,null,null,null,null,null)
 B.T2=s([B.a03,B.bx,B.a8z],t.p)
 B.YK=new A.ev(B.ad,B.h,B.f,B.l,null,B.aC,null,0,B.T2,null)
 B.a0k=new A.fo(B.YK,null,null,null,null,null,null,null,null,null,null,null,null,B.e9,!1,null,null,null,B.y,null)
@@ -114355,14 +114355,14 @@ B.a8u=new A.X("\xbfEliminar Potrero?",null,B.eI,null,null,null,null,null,null,nu
 B.a8v=new A.X("Confinamiento de trabajo en manga/cepo. Silencio de potrero activo en patio.",null,B.dq,null,null,null,null,null,null,null)
 B.a8y=new A.X("Manga & Vinculaci\xf3n (3T)",null,null,null,null,null,null,null,null,null)
 B.a3J=new A.k(!0,B.aa,null,null,null,null,26,B.v,null,0.5,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
-B.a8A=new A.X("CowIA Finca",null,B.a3J,B.co,null,null,null,null,null,null)
+B.a8A=new A.X("Cowai Finca",null,B.a3J,B.co,null,null,null,null,null,null)
 B.a3G=new A.k(!0,B.qd,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a8C=new A.X("CANCELAR",null,B.a3G,null,null,null,null,null,null,null)
 B.EF=new A.X("OK",null,B.kO,null,null,null,null,null,null,null)
 B.a8D=new A.X("La creaci\xf3n y trazado de nuevos potreros no est\xe1 habilitada para esta finca o requiere activaci\xf3n en la App del T\xe9cnico.",null,B.io,null,null,null,null,null,null,null)
 B.a8E=new A.X("Buscar Actualizaciones de la App",null,null,null,null,null,null,null,null,null)
 B.a4l=new A.k(!0,B.R,null,null,null,null,13,null,null,null,null,null,1.4,null,null,null,null,null,null,null,null,null,null,null,null,null)
-B.a8F=new A.X('La creaci\xf3n y subdivisi\xf3n de potreros est\xe1 bloqueada para esta hacienda.\n\nPara habilitar el dise\xf1o de pasturas, solicita la activaci\xf3n de la bandera "Permite Crear Potreros" a tu asesor t\xe9cnico o administrador CowIA.',null,B.a4l,null,null,null,null,null,null,null)
+B.a8F=new A.X('La creaci\xf3n y subdivisi\xf3n de potreros est\xe1 bloqueada para esta hacienda.\n\nPara habilitar el dise\xf1o de pasturas, solicita la activaci\xf3n de la bandera "Permite Crear Potreros" a tu asesor t\xe9cnico o administrador Cowai.',null,B.a4l,null,null,null,null,null,null,null)
 B.a8H=new A.X("Escribir Arete Visual / C\xf3digo:",null,B.Eq,null,null,null,null,null,null,null)
 B.a8I=new A.X("A\xfan en camino",null,B.io,null,null,null,null,null,null,null)
 B.a8J=new A.X("El callej\xf3n permanecer\xe1 abierto de forma continua hasta que confirmes la llegada del lote.",null,B.Em,B.co,null,null,null,null,null,null)
@@ -114376,7 +114376,7 @@ B.a8V=new A.X("Manga / Patio de Manejo",null,B.kM,null,null,null,null,null,null,
 B.a2s=new A.k(!0,B.C,null,null,null,null,10,B.v,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a8W=new A.X("ORIGEN (A Cerrar)",null,B.a2s,null,null,null,null,null,null,null)
 B.a8X=new A.X("Cambiar",null,null,null,null,null,null,null,null,null)
-B.a8Y=new A.X("Nube CowIA",null,B.oz,null,null,null,null,null,null,null)
+B.a8Y=new A.X("Nube Cowai",null,B.oz,null,null,null,null,null,null,null)
 B.a9_=new A.X("Gesti\xf3n Ganadera & Monitoreo de Campo",null,B.dp,B.co,null,null,null,null,null,null)
 B.a1v=new A.k(!0,B.u,null,null,null,null,13,B.v,null,0.5,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a92=new A.X("TOQUE 1: IDENTIFICACI\xd3N DEL ANIMAL EN MANGA",null,B.a1v,null,null,null,null,null,null,null)

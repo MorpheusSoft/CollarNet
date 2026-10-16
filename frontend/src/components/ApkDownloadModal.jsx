@@ -23,8 +23,8 @@ export default function ApkDownloadModal({ visible, onHide, user, initialApp = '
   }, [visible, initialApp, user]);
 
   const isTecnico = activeApp === 'tecnico';
-  const apkFileName = isTecnico ? 'CowIA-Tecnico.apk' : 'CowIA-Campo.apk';
-  const appTitle = isTecnico ? 'CowIA Técnico (Taller & IoT)' : 'CowIA Campo (Manga & Finca)';
+  const apkFileName = isTecnico ? 'Cowai-Tecnico.apk' : 'Cowai-Campo.apk';
+  const appTitle = isTecnico ? 'Cowai Técnico (Taller & IoT)' : 'Cowai Campo (Manga & Finca)';
   const appSubtitle = isTecnico 
     ? 'Herramienta de taller, alta de hatos, Bluetooth y diagnóstico de hardware' 
     : 'Gestión de potreros, vinculación rápida en manga en 2 toques, pesaje y rescate';
@@ -92,7 +92,7 @@ export default function ApkDownloadModal({ visible, onHide, user, initialApp = '
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>CowIA Campo</span>
+            <span>Cowai Campo</span>
           </button>
           <button
             type="button"
@@ -104,7 +104,7 @@ export default function ApkDownloadModal({ visible, onHide, user, initialApp = '
             }`}
           >
             <Wrench className="w-3.5 h-3.5" />
-            <span>CowIA Técnico</span>
+            <span>Cowai Técnico</span>
           </button>
         </div>
 
@@ -181,7 +181,7 @@ export default function ApkDownloadModal({ visible, onHide, user, initialApp = '
         <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
           <span className="text-slate-400">¿Deseas probarla sin instalar?</span>
           <a
-            href={isTecnico ? "/iphone/CowIA_Tecnico_PWA_iPhone/" : "/app-campo.html"}
+            href={isTecnico ? "/apps/tecnico" : "/app-campo.html"}
             target="_blank"
             rel="noopener noreferrer"
             className={`font-semibold inline-flex items-center gap-1 hover:underline ${

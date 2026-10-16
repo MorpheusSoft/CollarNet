@@ -1166,7 +1166,7 @@ export default function LivestockTable({
                       className="w-full bg-slate-900 border border-cyan-500/40 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-cyan-400"
                     >
                       <option value="FINCA_CUSTODIA">🏢 Mantener en Custodia del Hato / Finca Adquiriente (Reserva Local)</option>
-                      <option value="ALMACEN_CENTRAL">🏭 Retornar al Almacén Central CowIA (Recuperar Stock Global)</option>
+                      <option value="ALMACEN_CENTRAL">🏭 Retornar al Almacén Central Cowai (Recuperar Stock Global)</option>
                       <option value="TALLER_REVISION">🛠️ Enviar a Taller / Revisión Técnica</option>
                     </select>
                   </div>

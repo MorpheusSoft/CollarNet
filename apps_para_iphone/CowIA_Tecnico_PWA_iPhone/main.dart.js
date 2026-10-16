@@ -31110,7 +31110,7 @@ _.b="L-2026-09"
 _.c="Shenzhen IoT Tech Co."
 _.d=50
 _.e=null
-_.f="Almac\xe9n Central CowIA"
+_.f="Almac\xe9n Central Cowai"
 _.r=b
 _.w="HW-v2.0"
 _.x="1.0.0"
@@ -105464,7 +105464,7 @@ return s},
 $S:659}
 A.Qj.prototype={
 H(a){var s=null,r=A.dJ(a,!0,t.No),q=A.b8f(A.q8(s,B.aF,s,s,s,s,s,s).ok.azs(B.A,B.A))
-return A.tx(B.cX,new A.EW(B.FE,"CowIA Ops \u2014 Suite T\xe9cnica & Despliegue",A.q8(A.aU2(B.cr,!1,s,s,0,A.aZ().$4$color$fontSize$fontWeight$letterSpacing(B.A,20,B.w,0.5)),B.aF,new A.w9(s,B.M,s,s,0,s,new A.bA(A.W(16),B.bE)),B.IW,B.n,B.cr,q,s),!1,s),s,new A.aab(r),s,new A.aac(r),s,s,s)}}
+return A.tx(B.cX,new A.EW(B.FE,"Cowai Ops \u2014 Suite T\xe9cnica & Despliegue",A.q8(A.aU2(B.cr,!1,s,s,0,A.aZ().$4$color$fontSize$fontWeight$letterSpacing(B.A,20,B.w,0.5)),B.aF,new A.w9(s,B.M,s,s,0,s,new A.bA(A.W(16),B.bE)),B.IW,B.n,B.cr,q,s),!1,s),s,new A.aab(r),s,new A.aac(r),s,s,s)}}
 A.aab.prototype={
 $1(a){return this.a.a6N()},
 $S:56}
@@ -108065,7 +108065,7 @@ o.toString
 A.by(o,!1).atN(A.aRR(A.hA(new A.aEw(),null,t.z),B.lb,!1,null),new A.aEx())}else p.N(new A.aEy(p,m))
 case 1:return A.A(q,r)}})
 return A.B($async$t3,r)},
-H(a){var s,r,q=this,p=null,o=A.dJ(a,!0,t.No),n=t.V,m=A.ab(p,B.IC,B.j,p,p,new A.ad(p,p,p,p,A.b([new A.bs(0,B.W,B.n.au(0.35),B.nV,20)],n),B.tR,B.aY),p,80,p,p,p,p,80),l=A.o("CowIA Ops",p,p,p,p,A.aZ().$4$color$fontSize$fontWeight$letterSpacing(B.A,28,B.v,-0.5),p,p,p),k=A.o("Suite T\xe9cnica de Despliegue & Telemetr\xeda",p,p,p,p,A.P().$2$color$fontSize(B.I,13),p,p,p),j=A.W(20),i=q.Q?B.r.au(0.12):B.Y.au(0.12),h=A.W(20),g=A.aX(q.Q?B.r.au(0.4):B.Y.au(0.4),1),f=q.Q,e=A.ab(p,p,B.j,p,p,new A.ad(f?B.r:B.Y,p,p,p,p,p,B.aY),p,8,p,p,p,p,8),d=q.z
+H(a){var s,r,q=this,p=null,o=A.dJ(a,!0,t.No),n=t.V,m=A.ab(p,B.IC,B.j,p,p,new A.ad(p,p,p,p,A.b([new A.bs(0,B.W,B.n.au(0.35),B.nV,20)],n),B.tR,B.aY),p,80,p,p,p,p,80),l=A.o("Cowai Ops",p,p,p,p,A.aZ().$4$color$fontSize$fontWeight$letterSpacing(B.A,28,B.v,-0.5),p,p,p),k=A.o("Suite T\xe9cnica de Despliegue & Telemetr\xeda",p,p,p,p,A.P().$2$color$fontSize(B.I,13),p,p,p),j=A.W(20),i=q.Q?B.r.au(0.12):B.Y.au(0.12),h=A.W(20),g=A.aX(q.Q?B.r.au(0.4):B.Y.au(0.4),1),f=q.Q,e=A.ab(p,p,B.j,p,p,new A.ad(f?B.r:B.Y,p,p,p,p,p,B.aY),p,8,p,p,p,p,8),d=q.z
 d=A.o(d,p,p,p,p,A.P().$3$color$fontSize$fontWeight(f?B.r:B.Y,11,B.aE),p,p,p)
 f=t.p
 h=A.b([m,B.dq,l,B.b0,k,B.aW,A.dk(!1,j,!0,A.ab(p,A.a2(A.b([e,B.ak,d,B.bK,A.cV(q.y?B.ti:B.th,B.I,p,14)],f),B.i,B.f,B.a5,0),B.j,p,p,new A.ad(i,p,g,h,p,p,B.t),p,p,p,B.jm,p,p,p),p,!0,p,p,p,p,p,p,p,p,p,p,new A.aEE(q),p,p,p,p,p,p,p),B.a0_],f)
@@ -108091,7 +108091,7 @@ if(q.y){g=A.P().$2$color$fontSize(B.A,13)
 e=A.P().$2$color$fontSize(B.x,11)
 d=A.P().$2$color$fontSize(B.x,12)
 s=A.cN(p,p,p,B.OZ,p,p,new A.aEG(q),p,p,p,p)
-B.b.M(i,A.b([B.aP,B.mc,B.aP,A.hl(p,B.b6,!1,p,!0,B.z,p,A.hW(),q.f,p,p,p,p,p,2,A.h1(p,new A.dc(4,A.W(10),B.bE),p,B.rq,p,p,p,p,!0,p,p,p,p,p,p,B.M,!0,p,p,p,p,p,p,p,p,p,p,p,p,p,d,"http://192.168.86.30:3500/api",p,p,p,p,p,p,p,e,"URL Servidor API",!0,!0,!1,p,B.OX,p,p,p,p,p,p,s,p,p,p,p,p),B.P,!0,p,!0,p,!1,p,B.b9,p,p,p,p,p,p,p,p,1,p,p,!1,"\u2022",p,p,p,new A.aEH(q),p,!1,p,p,!1,p,!0,p,B.bk,p,p,p,p,p,p,p,p,p,p,p,g,!0,B.ap,p,B.bz,p,p,p,p),B.az,A.zw(A.b([A.o("Presets: ",p,p,p,p,A.P().$2$color$fontSize(B.x,10),p,p,p),A.r8(B.M,A.o("Wi-Fi (86.30)",p,p,p,p,A.P().$3$color$fontSize$fontWeight(B.n,10,B.w),p,p,p),new A.aEI(q),B.Z,p),A.r8(B.M,A.o("Nube CowIA",p,p,p,p,A.P().$2$color$fontSize(B.r,10),p,p,p),new A.aEJ(q),B.Z,p),A.r8(B.M,A.o("Red (0.100)",p,p,p,p,A.P().$2$color$fontSize(B.A,10),p,p,p),new A.aEK(q),B.Z,p)],f),B.F_,4,6)],f))}k=A.ab(p,A.aB(i,B.i,B.f,B.e),B.j,p,p,new A.ad(B.a9,p,j,k,p,p,B.t),p,p,B.rj,B.cU,p,p,p)
+B.b.M(i,A.b([B.aP,B.mc,B.aP,A.hl(p,B.b6,!1,p,!0,B.z,p,A.hW(),q.f,p,p,p,p,p,2,A.h1(p,new A.dc(4,A.W(10),B.bE),p,B.rq,p,p,p,p,!0,p,p,p,p,p,p,B.M,!0,p,p,p,p,p,p,p,p,p,p,p,p,p,d,"http://192.168.86.30:3500/api",p,p,p,p,p,p,p,e,"URL Servidor API",!0,!0,!1,p,B.OX,p,p,p,p,p,p,s,p,p,p,p,p),B.P,!0,p,!0,p,!1,p,B.b9,p,p,p,p,p,p,p,p,1,p,p,!1,"\u2022",p,p,p,new A.aEH(q),p,!1,p,p,!1,p,!0,p,B.bk,p,p,p,p,p,p,p,p,p,p,p,g,!0,B.ap,p,B.bz,p,p,p,p),B.az,A.zw(A.b([A.o("Presets: ",p,p,p,p,A.P().$2$color$fontSize(B.x,10),p,p,p),A.r8(B.M,A.o("Wi-Fi (86.30)",p,p,p,p,A.P().$3$color$fontSize$fontWeight(B.n,10,B.w),p,p,p),new A.aEI(q),B.Z,p),A.r8(B.M,A.o("Nube Cowai",p,p,p,p,A.P().$2$color$fontSize(B.r,10),p,p,p),new A.aEJ(q),B.Z,p),A.r8(B.M,A.o("Red (0.100)",p,p,p,p,A.P().$2$color$fontSize(B.A,10),p,p,p),new A.aEK(q),B.Z,p)],f),B.F_,4,6)],f))}k=A.ab(p,A.aB(i,B.i,B.f,B.e),B.j,p,p,new A.ad(B.a9,p,j,k,p,p,B.t),p,p,B.rj,B.cU,p,p,p)
 j=A.o("USUARIO O CORREO",p,p,p,p,A.aZ().$4$color$fontSize$fontWeight$letterSpacing(B.I,11,B.w,0.8),p,p,p)
 i=A.P().$2$color$fontSize(B.A,14)
 g=A.P().$2$color$fontSize(B.x,13)
@@ -108308,11 +108308,11 @@ case 2:return A.z(o.at(-1),r)}})
 return A.B($async$wx,r)},
 mr(a,b){var s=null
 return new A.aY(B.LA,A.a2(A.b([A.cF(A.o(a,s,s,s,s,A.P().$2$color$fontSize(B.x,11),s,s,s),s,120),A.b3(A.o(b,s,s,s,s,A.P().$3$color$fontSize$fontWeight(B.A,11,B.w),s,s,s),1)],t.p),B.B,B.f,B.e,0),s)},
-a_m(a,b){var s,r,q,p=null,o="Shenzhen IoT Tech Co.",n="Almac\xe9n Central CowIA",m={},l=new A.bB(Date.now(),0,!1),k=b?"L-"+A.bG(l)+"-"+B.c.ih(B.h.k(A.c_(l)),2,"0")+"-"+B.c.ih(B.h.k(A.d7(l)),2,"0"):a.b,j=$.ak(),i=b?o:a.c,h=b?n:a.f,g=b?"50":B.h.k(a.d),f=b?"HW-v2.0":a.w,e=b?"1.0.0":a.x,d=b?"":a.y
+a_m(a,b){var s,r,q,p=null,o="Shenzhen IoT Tech Co.",n="Almac\xe9n Central Cowai",m={},l=new A.bB(Date.now(),0,!1),k=b?"L-"+A.bG(l)+"-"+B.c.ih(B.h.k(A.c_(l)),2,"0")+"-"+B.c.ih(B.h.k(A.d7(l)),2,"0"):a.b,j=$.ak(),i=b?o:a.c,h=b?n:a.f,g=b?"50":B.h.k(a.d),f=b?"HW-v2.0":a.w,e=b?"1.0.0":a.x,d=b?"":a.y
 m.a=b?l:a.r
 m.b=b?p:a.e
 s=t.s
-r=A.b([o,"CowIA Hardware Lab","Nordic Semiconductor","Quectel Wireless"],s)
+r=A.b([o,"Cowai Hardware Lab","Nordic Semiconductor","Quectel Wireless"],s)
 q=A.b([n,"Estante A-01 (Principal)","Estante B-04 (Repuestos)","Taller de Diagn\xf3stico","Dep\xf3sito Finca"],s)
 s=this.c
 s.toString
@@ -108455,7 +108455,7 @@ h=A.aX(B.O,1)
 i=A.dk(!1,j,!0,A.ab(b2,A.a2(A.b([B.NZ,B.ak,A.o(b4.K3(k.a),b2,b2,b2,b2,A.P().$3$color$fontSize$fontWeight(B.A,12,B.w),b2,b2,b2),B.Ec,A.o("Cambiar Fecha",b2,b2,b2,b2,A.P().$3$color$fontSize$fontWeight(B.y,10,B.aE),b2,b2,b2)],s),B.i,B.f,B.e,0),B.j,b2,b2,new A.ad(B.a9,b2,h,i,b2,b2,B.t),b2,b2,b2,B.rq,b2,b2,b2),b2,!0,b2,b2,b2,b2,b2,b2,b2,b2,b2,b2,new A.aFC(k,b7,b8),b2,b2,b2,b2,b2,b2,b2)
 h=b4.IL("2. UBICACI\xd3N F\xcdSICA & ASIGNACI\xd3N",B.tt)
 j=b1.r
-g=b4.wb("UBICACI\xd3N F\xcdSICA / DEP\xd3SITO *",j,"Ej. Almac\xe9n Central CowIA",B.MS)
+g=b4.wb("UBICACI\xd3N F\xcdSICA / DEP\xd3SITO *",j,"Ej. Almac\xe9n Central Cowai",B.MS)
 f=b1.w
 e=A.a7(f).i("a5<1,kf>")
 f=A.V(new A.a5(f,new A.aFD(j,b8),e),e.i("an.E"))
@@ -108556,7 +108556,7 @@ A.aFI.prototype={
 $0(){var s,r,q,p,o,n,m,l=this,k=null,j=B.c.bO(l.b.a.a),i=j.length!==0?j.toUpperCase():"L-2026-09",h=B.c.bO(l.c.a.a)
 h=h.length!==0?h:"Shenzhen IoT Tech Co."
 s=B.c.bO(l.d.a.a)
-s=s.length!==0?s:"Almac\xe9n Central CowIA"
+s=s.length!==0?s:"Almac\xe9n Central Cowai"
 r=A.bU(B.c.bO(l.e.a.a),k)
 if(r==null)r=50
 j=l.r
@@ -108848,7 +108848,7 @@ ab(){return new A.a0h()}}
 A.a0h.prototype={
 an(){this.aF()
 $.aa.ok$.push(new A.aG9(this))},
-H(a){var s=null,r=A.dJ(a,!0,t.No),q=this.ags(r),p=t.p,o=A.a2(A.b([new A.xq("EN STOCK",""+r.as,"Collares listos",B.ng,B.r,s),B.aV,new A.xq("EN REVISI\xd3N",""+r.at,"Diagn\xf3stico",B.MM,B.y,s),B.aV,new A.xq("LOTES",""+r.ax,"Registrados",B.MW,B.n,s)],p),B.i,B.f,B.e,0),n=A.a2(A.b([A.o("M\xd3DULOS DE OPERACI\xd3N & DESPLIEGUE",s,s,s,s,A.aZ().$4$color$fontSize$fontWeight$letterSpacing(B.I,12,B.w,0.8),s,s,s),A.o("CowIA v2.0",s,s,s,s,A.P().$3$color$fontSize$fontWeight(B.x,11,B.aE),s,s,s)],p),B.i,B.a6,B.e,0),m=A.as3(A.b([A.al8(B.n,"Abrir Suite","Osciloscopio IMU, radar GNSS, buzzer y pulso 60s.",B.nd,new A.aG3(a),"1. Banco de Pruebas"),A.al8(B.r,"Dise\xf1ar Hato","Linderos legales con sat\xe9lite y GPS en terreno.",B.tw,new A.aG4(a),"2. Hatos Maestros"),A.al8(B.y,"Escanear QR","Esc\xe1ner QR continuo para cajas de 50+ collares.",B.Mv,new A.aG5(a),"3. Recepci\xf3n Lotes"),A.al8(B.cQ,"Abrir Consola","Carga de firmware binario BLE y consola de comandos AT.",B.nb,new A.aG6(a),"4. Flasheo OTA & Debug")],p),!0,!0,!0)
+H(a){var s=null,r=A.dJ(a,!0,t.No),q=this.ags(r),p=t.p,o=A.a2(A.b([new A.xq("EN STOCK",""+r.as,"Collares listos",B.ng,B.r,s),B.aV,new A.xq("EN REVISI\xd3N",""+r.at,"Diagn\xf3stico",B.MM,B.y,s),B.aV,new A.xq("LOTES",""+r.ax,"Registrados",B.MW,B.n,s)],p),B.i,B.f,B.e,0),n=A.a2(A.b([A.o("M\xd3DULOS DE OPERACI\xd3N & DESPLIEGUE",s,s,s,s,A.aZ().$4$color$fontSize$fontWeight$letterSpacing(B.I,12,B.w,0.8),s,s,s),A.o("Cowai v2.0",s,s,s,s,A.P().$3$color$fontSize$fontWeight(B.x,11,B.aE),s,s,s)],p),B.i,B.a6,B.e,0),m=A.as3(A.b([A.al8(B.n,"Abrir Suite","Osciloscopio IMU, radar GNSS, buzzer y pulso 60s.",B.nd,new A.aG3(a),"1. Banco de Pruebas"),A.al8(B.r,"Dise\xf1ar Hato","Linderos legales con sat\xe9lite y GPS en terreno.",B.tw,new A.aG4(a),"2. Hatos Maestros"),A.al8(B.y,"Escanear QR","Esc\xe1ner QR continuo para cajas de 50+ collares.",B.Mv,new A.aG5(a),"3. Recepci\xf3n Lotes"),A.al8(B.cQ,"Abrir Consola","Carga de firmware binario BLE y consola de comandos AT.",B.nb,new A.aG6(a),"4. Flasheo OTA & Debug")],p),!0,!0,!0)
 q=A.hj(!0,A.m5(A.aB(A.b([q,B.dq,o,B.bf,new A.Pn(new A.aG7(r,a),s),B.E4,n,B.be,new A.x5(new A.as5(2,12,12,0.95,s),m,s,B.aj,!1,s,s,B.fr,!0,s,s,4,B.P,s,s,B.z,B.aS,s),B.fM,B.Y5,B.bf],p),B.B,B.f,B.e),s,B.P,B.mj,s,B.aj),B.Z,!0)
 p=this.d
 o=A.P().$2$fontSize$fontWeight(11,B.w)
@@ -109718,7 +109718,7 @@ break
 case 1:return A.A(q,r)
 case 2:return A.z(o.at(-1),r)}})
 return A.B($async$yz,r)},
-akz(a,b){var s="EN_ALMACEN",r="L-2026-08",q="Shenzhen IoT Tech",p="Almac\xe9n Central CowIA",o="1.2.0",n=null,m=t.wg
+akz(a,b){var s="EN_ALMACEN",r="L-2026-08",q="Shenzhen IoT Tech",p="Almac\xe9n Central Cowai",o="1.2.0",n=null,m=t.wg
 m=A.V(new A.aW(A.b([A.Q5(!0,n,n,n,n,n,s,n,n,n,"COW-2026-0048","864920048192031",n,n,r,n,q,n,n,95,"SN-L2026-08-0048","+584129990048",n,n,5,n,n,p,new A.bB(Date.now(),0,!1).nM(-72e7),o),A.Q5(!0,n,n,n,n,n,s,n,n,n,"COW-2026-0047","864920047192030",n,n,r,n,q,n,n,89,"SN-L2026-08-0047","+584129990047",n,n,4,n,n,p,new A.bB(Date.now(),0,!1).nM(-15e8),o),A.Q5(!0,n,n,n,n,n,"EN_REVISION",n,n,n,"COW-2026-0046","864920046192029",n,n,r,n,q,n,"Falla en antena GNSS reportada",42,"SN-L2026-08-0046","+584129990046",n,n,2,n,n,"Taller de Diagn\xf3stico",new A.bB(Date.now(),0,!1).nM(-108e8),"1.1.0"),A.Q5(!0,"NEL-042","Novillo",n,"Nelore",n,"ACTIVO",n,n,"Hato La Esperanza","collar_test_001","860123456789001",n,n,n,n,n,n,n,94,"SN-TEST-001","+584129990001",n,"Potrero A1 - Pastura Norte",4,n,"Hacienda Santa In\xe9s",n,new A.bB(Date.now(),0,!1).nM(-18e7),o)],t.XT),new A.a7Y(a,b),m),m.i("G.E"))
 return m}}
 A.a81.prototype={
@@ -109941,7 +109941,7 @@ g=g==null?null:J.a9(g)
 g=A.bU(g==null?"1":g,null)
 if(g==null)g=1
 f=i.h(0,"downloadUrl")
-if(f==null)f="https://cowai.net/apk/CowIA-Tecnico.apk"
+if(f==null)f="https://cowai.net/apk/Cowai-Tecnico.apk"
 e=J.d(i.h(0,"mandatory"),!0)
 i=i.h(0,"releaseNotes")
 if(i==null)i="Mejoras continuas de rendimiento y estabilidad."
@@ -110332,7 +110332,7 @@ $S:0}
 A.axT.prototype={
 $0(){var s=this.a
 s.e=B.dD
-s.x=this.b+"\nConmutando autom\xe1ticamente a Servidor CowIA..."},
+s.x=this.b+"\nConmutando autom\xe1ticamente a Servidor Cowai..."},
 $S:0}
 A.axQ.prototype={
 $0(){var s,r=this.a

@@ -13,7 +13,8 @@
 // =============================================================================
 
 /* [Selector de Pieza] */
-part = is_undef(part) ? "assembly" : part; // [assembly:Ensamble Completo 3D, print_all_flat:Todas las piezas planas, bridge:Puente Dorsal Curvo con Hueco, bridge_text:Texto y Emblema COWAI para OrcaSlicer, pod_left_base:Base Izquierda Electronica, pod_left_lid:Tapa Izquierda Solar, pod_right_base:Base Derecha Bateria, pod_right_lid:Tapa Derecha Solar, gaskets_tpu:Juntas Estancas TPU, none:Ninguna]
+part = "assembly"; // [assembly, print_all_flat, bridge, bridge_text, pod_left_base, pod_left_lid, pod_right_base, pod_right_lid, gaskets_tpu, none]
+active_part = is_undef(caller_part) ? part : caller_part;
 
 /* [Colores del Collar] */
 // Color principal de las cápsulas (ASA)
@@ -125,17 +126,27 @@ cradle_tol   = 0.3;      // Holgura para encastre deslizante preciso entre TPU y
 click_x = 16.0;          // Posición longitudinal del diente de click (mm)
 click_l = 10.0;          // Largo del diente en X (mm)
 click_h = 7.0;           // Altura del diente en Z (mm)
-click_depth = 2.2;       // Saliente del diente de traba hacia adentro (mm)
+click_depth = 2.0;       // Saliente óptimo del diente de traba hacia adentro (mm)
 click_z = (cradle_floor + pod_base_h) / 2; // Centrado vertical en la pared interior (~17.2 mm)
+
+// Conducto Pasacables y Sellado Estanco IP67
+conduit_z = 17.0;        // Altura milimétrica del eje pasacables (mm) - centrado en cámara sobre cradle_floor (8.5 mm)
+conduit_d = 8.0;         // Diámetro del orificio pasacables (mm)
+gland_od  = 12.0;        // Diámetro exterior base del cuello elástico de estanqueidad TPU (mm)
+gland_tip_od = 11.4;     // Diámetro en la punta con chaflán guía cónico de embone suave (mm)
+gland_h   = 2.2;         // Longitud saliente del cuello TPU (mm) - 2.2 mm comprime 0.4 mm (22.2%) en cajera de 1.8 mm
+gland_pocket_d = 12.0;   // Diámetro de la cajera exterior en ASA para cuello TPU o junta tórica ISO 8x2 (mm)
+gland_pocket_depth = 1.8;// Profundidad de la cajera exterior en ASA (mm)
+gland_inner_pocket_d = 12.0; // Diámetro de la cajera interior en ASA para sellador pasamuros / potting (mm)
+gland_inner_pocket_depth = 1.8; // Profundidad de la cajera interior en ASA (mm)
 
 // Geometría del Puente Dorsal Ergonómico (Arco Anatómico en plano X-Z)
 bridge_r_inner = 125.0;  // Radio interno de la cruz/cuello de la vaca (125 mm)
 bridge_half_ang = 32.0;  // Ángulo de caída de 32° a cada lado
-bridge_thick_mid = 16.0; // Espesor en la cima central
+bridge_thick_mid = 26.0; // Espesor robusto en cima central (aloja piso 3mm + correa 5.5mm + tabique 4.5mm + cable Ø8mm + techo 5mm)
 bridge_thick_end = pod_total_h; // Espesor en extremos para acople enrasado (35 mm)
-bridge_w_mid = 56.0;     // Cintura estrecha ergonómica en el centro
+bridge_w_mid = 64.0;     // Cintura ergonómica central (ancho 64mm contiene el túnel de 52mm con 6mm de pared TPU a cada lado)
 bridge_w_end = pod_w;    // Expansión a 82 mm en extremos para unión con los pods
-conduit_d = 8.0;         // Conducto pasacables interior continuo
 
 // =============================================================================
 // MÓDULOS DE UTILIDAD
@@ -167,14 +178,35 @@ module snap_wedge() {
 
 // Carcasa exterior escalonada para embone macho en la cuna de TPU
 module pod_stepped_shell() {
-    union() {
-        // Cuerpo principal a tamaño completo (X = cradle_depth a pod_l)
-        translate([cradle_depth, 0, 0])
-            r_box(pod_l - cradle_depth, pod_w, pod_base_h, pod_r);
-        
-        // Lengüeta rebajada que embona en la cuna de TPU (X = 0 a cradle_depth)
-        translate([0, cradle_wall, cradle_floor])
-            r_box(cradle_depth + 0.5, pod_w - 2*cradle_wall, pod_base_h - cradle_floor, max(1, pod_r - cradle_wall));
+    difference() {
+        union() {
+            // Cuerpo principal a tamaño completo (X = cradle_depth a pod_l)
+            translate([cradle_depth, 0, 0])
+                r_box(pod_l - cradle_depth, pod_w, pod_base_h, pod_r);
+            
+            // Lengüeta rebajada que embona en la cuna de TPU (X = 0 a cradle_depth)
+            translate([0, cradle_wall, cradle_floor])
+                r_box(cradle_depth + 0.5, pod_w - 2*cradle_wall, pod_base_h - cradle_floor, max(1, pod_r - cradle_wall));
+        }
+
+        // Chaflán guía delantero tipo calzador en X=0 (abre suavemente el TPU y facilita el click)
+        // Chaflán lateral 1 (Y = cradle_wall)
+        translate([0, cradle_wall, cradle_floor - 1])
+            rotate([0, 0, 30])
+                translate([-8, -10, 0])
+                    cube([16, 10, pod_base_h + 5]);
+
+        // Chaflán lateral 2 (Y = pod_w - cradle_wall)
+        translate([0, pod_w - cradle_wall, cradle_floor - 1])
+            rotate([0, 0, -30])
+                translate([-8, 0, 0])
+                    cube([16, 10, pod_base_h + 5]);
+
+        // Chaflán guía inferior delantero en X=0 (facilita la entrada en el bolsillo de TPU sin invadir el plano de sellado)
+        translate([0, -1, cradle_floor])
+            rotate([0, 45, 0])
+                translate([-2, 0, -2])
+                    cube([2, pod_w + 2, 4]);
     }
 }
 
@@ -268,8 +300,8 @@ module tpu_socket() {
             translate([-back_wall_t - 2, -strap_slot_w/2, tunnel_t])
                 cube([cradle_depth + back_wall_t + 5, strap_slot_w, tunnel_h]);
 
-            // Pasacables de entrada central (Ø8 mm)
-            translate([-back_wall_t - 2, 0, click_z])
+            // Pasacables de entrada central (Ø8 mm a Z = conduit_z = 17.0 mm)
+            translate([-back_wall_t - 2, 0, conduit_z])
                 rotate([0, 90, 0]) cylinder(r=conduit_d/2, h=back_wall_t + 4, $fn=24);
 
             // Muescas ergonómicas para desenganche manual con los dedos
@@ -278,6 +310,17 @@ module tpu_socket() {
             translate([cradle_depth - 3.0, pod_w/2 - cradle_wall - 1.0, click_z - 3.5])
                 cube([5.0, cradle_wall + 2.0, 7.0]);
         }
+
+        // Cuello anular elástico de sellado estanco IP67 (TPU Gasket Boss hacia la cajera de ASA)
+        translate([0, 0, conduit_z])
+            rotate([0, 90, 0]) {
+                difference() {
+                    // Conicidad guía suave (r1 base a r2 punta) para embone guiado sin rebabas
+                    cylinder(r1=gland_od/2, r2=gland_tip_od/2, h=gland_h, $fn=30);
+                    translate([0, 0, -0.5])
+                        cylinder(r=conduit_d/2, h=gland_h + 1.0, $fn=24);
+                }
+            }
 
         // Labio superior elástico tipo funda de celular (sujeta el borde superior del case)
         translate([0, -pod_w/2, pod_base_h - 1.5]) {
@@ -303,10 +346,10 @@ module tpu_socket() {
 // X_2D: Espesor radial hacia afuera (0 a thick)
 // Y_2D: Ancho ergonómico (-w/2 a +w/2)
 module halter_profile_2d(thick, w) {
-    r = min(5.0, thick/3);
+    r = min(4.0, thick/3);
     hull() {
-        translate([r, -w/2 + r]) circle(r=r);
-        translate([r, w/2 - r]) circle(r=r);
+        translate([r, -w/2 + r]) circle(r=r, $fn=24);
+        translate([r, w/2 - r]) circle(r=r, $fn=24);
         translate([thick - r, -w/2 + r]) circle(r=r);
         translate([thick - r, w/2 - r]) circle(r=r);
     }
@@ -391,34 +434,36 @@ module dorsal_bridge_body(n_steps=24) {
                             tpu_socket();
             }
 
-            // Canal interior pasacables estanco continuo (Ø8 mm)
+            // Túnel pasacorreas continuo inferior curvo (52 mm ancho x 5.5 mm alto) - OPCIÓN A
             rotate([90, 0, 0]) {
-                intersection() {
-                    rotate_extrude(angle=360, $fn=90)
-                        translate([bridge_r_inner + 8.0, 0, 0])
-                            circle(r=conduit_d/2, $fn=24);
-                    translate([-bridge_r_inner - 40, 0, -100])
-                        cube([2*(bridge_r_inner + 40), bridge_r_inner + 40, 200]);
-                }
+                rotate([0, 0, 90 - (bridge_half_ang + 1.0)])
+                    rotate_extrude(angle = 2 * (bridge_half_ang + 1.0), $fn=90)
+                        translate([bridge_r_inner + tunnel_t, -strap_slot_w/2])
+                            square([strap_slot_h, strap_slot_w]);
             }
 
-            // Ranuras de ventilación y confort en el intradós (lado del animal)
+            // Canal interior pasacables estanco continuo (Ø8 mm a R = bridge_r_inner + conduit_z = 142 mm)
+            rotate([90, 0, 0]) {
+                rotate([0, 0, 90 - (bridge_half_ang + 1.5)])
+                    rotate_extrude(angle = 2 * (bridge_half_ang + 1.5), $fn=90)
+                        translate([bridge_r_inner + conduit_z, 0])
+                            circle(r=conduit_d/2, $fn=24);
+            }
+
+            // Ranuras de ventilación y confort en el intradós (lado del animal, profundidad 1.2 mm)
             for (dy = [-18, 0, 18]) {
                 translate([0, dy, 0]) {
                     rotate([90, 0, 0]) {
-                        intersection() {
-                            rotate_extrude(angle=360, $fn=90)
+                        rotate([0, 0, 90 - (bridge_half_ang - 2.0)])
+                            rotate_extrude(angle = 2 * (bridge_half_ang - 2.0), $fn=90)
                                 translate([bridge_r_inner, 0, 0])
-                                    scale([1, 0.6]) circle(r=2.5, $fn=20);
-                            translate([-bridge_r_inner - 40, 0, -100])
-                                cube([2*(bridge_r_inner + 40), bridge_r_inner + 40, 200]);
-                        }
+                                    scale([1, 0.6]) circle(r=1.2, $fn=20);
                     }
                 }
             }
 
             // Cajera en bajorrelieve en la cresta central que atraviesa toda la curvatura
-            translate([0, 0, 137.0]) {
+            translate([0, 0, 147.8]) {
                 linear_extrude(height=10.0) {
                     cowai_bridge_badge_2d();
                 }
@@ -430,8 +475,8 @@ module dorsal_bridge_body(n_steps=24) {
 // 1B. OBJETO 3D DEL TEXTO Y EMBLEMA COWAI (Para cargar como objeto/parte en OrcaSlicer)
 module dorsal_bridge_text() {
     color(col_text) {
-        translate([0, 0, 137.0]) {
-            linear_extrude(height=4.2) {
+        translate([0, 0, 147.8]) {
+            linear_extrude(height=3.4) {
                 cowai_bridge_badge_2d();
             }
         }
@@ -468,9 +513,17 @@ module pod_left_base() {
             // Ventanas perimetrales de click para las pestañas de la tapa
             pod_snap_windows();
 
-            // Pasacables hacia el puente dorsal (cara X=0)
-            translate([-5, pod_w/2, 8.0])
-                rotate([0, 90, 0]) cylinder(r=conduit_d/2, h=15, $fn=24);
+            // Pasacables hacia el puente dorsal (cara X=0, Z=conduit_z = 17.0 mm)
+            translate([-5, pod_w/2, conduit_z])
+                rotate([0, 90, 0]) cylinder(r=conduit_d/2, h=16, $fn=24);
+
+            // Cajera exterior para cuello de sellado estanco TPU o junta tórica IP67 (Ø12.0 x 1.8 mm)
+            translate([-0.5, pod_w/2, conduit_z])
+                rotate([0, 90, 0]) cylinder(r=gland_pocket_d/2, h=gland_pocket_depth + 0.5, $fn=30);
+
+            // Cajera interior pasamuros para cordón de sellador / potting anti-capilaridad
+            translate([pod_wall + cradle_wall - gland_inner_pocket_depth, pod_w/2, conduit_z])
+                rotate([0, 90, 0]) cylinder(r=gland_inner_pocket_d/2, h=gland_inner_pocket_depth + 1.0, $fn=30);
 
             // Muescas laterales de retención para click mecánico en cuna de TPU
             translate([click_x - 0.5, cradle_wall - 0.2, click_z - click_h/2 - 0.5]) {
@@ -589,9 +642,17 @@ module pod_right_base() {
             // Ventanas perimetrales de click para las pestañas de la tapa
             pod_snap_windows();
 
-            // Pasacables hacia el puente dorsal (cara X=0)
-            translate([-5, pod_w/2, 8.0])
-                rotate([0, 90, 0]) cylinder(r=conduit_d/2, h=15, $fn=24);
+            // Pasacables hacia el puente dorsal (cara X=0, Z=conduit_z = 17.0 mm)
+            translate([-5, pod_w/2, conduit_z])
+                rotate([0, 90, 0]) cylinder(r=conduit_d/2, h=16, $fn=24);
+
+            // Cajera exterior para cuello de sellado estanco TPU o junta tórica IP67 (Ø12.0 x 1.8 mm)
+            translate([-0.5, pod_w/2, conduit_z])
+                rotate([0, 90, 0]) cylinder(r=gland_pocket_d/2, h=gland_pocket_depth + 0.5, $fn=30);
+
+            // Cajera interior pasamuros para cordón de sellador / potting anti-capilaridad
+            translate([10.0 - gland_inner_pocket_depth, pod_w/2, conduit_z])
+                rotate([0, 90, 0]) cylinder(r=gland_inner_pocket_d/2, h=gland_inner_pocket_depth + 1.0, $fn=30);
 
             // Muescas laterales de retención para click mecánico en cuna de TPU
             translate([click_x - 0.5, cradle_wall - 0.2, click_z - click_h/2 - 0.5]) {
@@ -726,20 +787,52 @@ module full_assembly() {
         }
     }
 
-    // 4. Correa Ganadera (Cincha atravesando los túneles hacia abajo)
+    // 4. Correa Ganadera Continua (Cincha atravesando pods y puente dorsal - Opción A)
     color(col_strap, 0.85) {
-        // Lado derecho
+        // Lado derecho (en pod derecho)
         translate([x_j, 0, z_j])
             rotate([0, ang, 0])
-                translate([-10, -strap_width/2, tunnel_t + 0.5])
+                translate([0, -strap_width/2, tunnel_t + 0.5])
                     cube([pod_l + 30, strap_width, 3.5]);
 
-        // Lado izquierdo
+        // Lado izquierdo (en pod izquierdo)
         mirror([1, 0, 0])
             translate([x_j, 0, z_j])
                 rotate([0, ang, 0])
-                    translate([-10, -strap_width/2, tunnel_t + 0.5])
+                    translate([0, -strap_width/2, tunnel_t + 0.5])
                         cube([pod_l + 30, strap_width, 3.5]);
+
+        // Tramo curvo continuo por el arco dorsal
+        rotate([90, 0, 0]) {
+            rotate([0, 0, 90 - ang])
+                rotate_extrude(angle = 2 * ang, $fn=90)
+                    translate([bridge_r_inner + tunnel_t + 0.5, -strap_width/2])
+                        square([3.5, strap_width]);
+        }
+    }
+
+    // 5. Arnés Pasacables Continuo (Ø7.0 mm sellado estanco de cápsula a cápsula)
+    %color([0.20, 0.20, 0.22], 0.8) {
+        // Tramo interior pod derecho
+        translate([x_j, 0, z_j])
+            rotate([0, ang, 0])
+                translate([-2, 0, conduit_z])
+                    rotate([0, 90, 0]) cylinder(r=3.5, h=16, $fn=24);
+
+        // Tramo interior pod izquierdo
+        mirror([1, 0, 0])
+            translate([x_j, 0, z_j])
+                rotate([0, ang, 0])
+                    translate([-2, 0, conduit_z])
+                        rotate([0, 90, 0]) cylinder(r=3.5, h=16, $fn=24);
+
+        // Tramo curvo continuo por el puente dorsal
+        rotate([90, 0, 0]) {
+            rotate([0, 0, 90 - ang])
+                rotate_extrude(angle = 2 * ang, $fn=90)
+                    translate([bridge_r_inner + conduit_z, 0])
+                        circle(r=3.5, $fn=24);
+        }
     }
 }
 
@@ -771,24 +864,24 @@ module print_all_flat() {
 // =============================================================================
 // SELECTOR DE PARTE
 // =============================================================================
-if (part == "assembly") {
+if (active_part == "assembly") {
     full_assembly();
-} else if (part == "print_all_flat") {
+} else if (active_part == "print_all_flat") {
     print_all_flat();
-} else if (part == "bridge") {
+} else if (active_part == "bridge") {
     // Cuerpo estructural del puente con bajorrelieve (para exportar STL base)
     dorsal_bridge_body();
-} else if (part == "bridge_text" || part == "logo_cowai_inlay") {
+} else if (active_part == "bridge_text" || active_part == "logo_cowai_inlay") {
     // Texto y emblema COWAI independiente con coordenadas alineadas para OrcaSlicer / AMS
     dorsal_bridge_text();
-} else if (part == "pod_left_base") {
+} else if (active_part == "pod_left_base") {
     pod_left_base();
-} else if (part == "pod_left_lid") {
+} else if (active_part == "pod_left_lid") {
     pod_left_lid();
-} else if (part == "pod_right_base") {
+} else if (active_part == "pod_right_base") {
     pod_right_base();
-} else if (part == "pod_right_lid") {
+} else if (active_part == "pod_right_lid") {
     pod_right_lid();
-} else if (part == "gaskets_tpu") {
+} else if (active_part == "gaskets_tpu") {
     gasket_tpu();
 }

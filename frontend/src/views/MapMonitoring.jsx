@@ -282,7 +282,7 @@ export default function MapMonitoring({
 
     const tileLayer = L.tileLayer(ESRI_SATELLITE, {
       maxZoom: 19,
-      attribution: 'Tiles &copy; Esri &mdash; CowIA Smart Agro GIS'
+      attribution: 'Tiles &copy; Esri &mdash; Cowai Smart Agro GIS'
     }).addTo(map);
 
     tileLayerRef.current = tileLayer;

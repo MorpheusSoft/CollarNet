@@ -64,7 +64,7 @@ export default function AuthModal({ visible, onHide, onLoginSuccess }) {
           <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
             <Lock className="w-4 h-4" />
           </div>
-          <span className="font-display font-bold text-lg text-white">Acceso a CowIA</span>
+          <span className="font-display font-bold text-lg text-white">Acceso a Cowai</span>
         </div>
       }
       className="w-[95vw] max-w-[460px] p-0"
@@ -234,7 +234,7 @@ export default function AuthModal({ visible, onHide, onLoginSuccess }) {
             ) : (
               <>
                 <Lock className="w-4 h-4" />
-                <span>Iniciar Sesión en CowIA</span>
+                <span>Iniciar Sesión en Cowai</span>
               </>
             )}
           </button>

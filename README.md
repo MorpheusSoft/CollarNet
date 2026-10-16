@@ -1,4 +1,4 @@
-# 🐄 CollarNet / CowIA
+# 🐄 CollarNet / Cowai
 
 **Ecosistema IoT Integral de Cerca Virtual, Telemetría Satelital y Monitoreo Ganadero en Tiempo Real**
 
@@ -6,7 +6,7 @@
 
 ## 📌 Descripción General
 
-**CollarNet** (marca comercial **CowIA**) es una plataforma ganadera inteligente diseñada para entornos de campo y alta exigencia agropecuaria. Integra hardware IoT con geolocalización GNSS de alta precisión, comunicación celular 4G LTE, cercas virtuales poligonales dinámicas, acelerometría para monitoreo de actividad/rumia y una suite multiplataforma para técnicos y supervisores de finca.
+**CollarNet** (marca comercial **Cowai**) es una plataforma ganadera inteligente diseñada para entornos de campo y alta exigencia agropecuaria. Integra hardware IoT con geolocalización GNSS de alta precisión, comunicación celular 4G LTE, cercas virtuales poligonales dinámicas, acelerometría para monitoreo de actividad/rumia y una suite multiplataforma para técnicos y supervisores de finca.
 
 ---
 
@@ -43,7 +43,7 @@
      ┌────────────┴────────────┬────────────────────────┐
      ▼                         ▼                        ▼
 ┌──────────────┐      ┌──────────────────┐     ┌──────────────────┐
-│  Dashboard   │      │    CowIA Ops     │     │   CowIA Campo    │
+│  Dashboard   │      │    Cowai Ops     │     │   Cowai Campo    │
 │  Web Central │      │  (App Técnico)   │     │ (App Supervisor) │
 │ (React+Vite) │      │ (Android / PWA)  │     │ (Android / PWA)  │
 └──────────────┘      └──────────────────┘     └──────────────────┘
@@ -71,8 +71,8 @@
 
 ### 4. 📱 Aplicaciones Móviles (`movil_ops/` y `movil_supervisor/`)
 * Desarrolladas con **Flutter 3**.
-* **CowIA Ops**: Herramienta de laboratorio y despliegue técnico (alta de hatos, escaneo de collares, diagnóstico GNSS/IMU).
-* **CowIA Campo**: Herramienta de gestión ganadera (subdivisión de potreros, arreo en vivo, báscula Bluetooth y alertas sanitarias).
+* **Cowai Ops**: Herramienta de laboratorio y despliegue técnico (alta de hatos, escaneo de collares, diagnóstico GNSS/IMU).
+* **Cowai Campo**: Herramienta de gestión ganadera (subdivisión de potreros, arreo en vivo, báscula Bluetooth y alertas sanitarias).
 * Distribución disponible como instalador nativo Android (`.apk`) y Progressive Web App (`PWA`) optimizada para Safari en iOS.
 
 ---
@@ -113,4 +113,4 @@ arduino-cli upload -p /dev/ttyACM4 --fqbn esp32:esp32:esp32s3 CollarNet.ino
 
 ## 📄 Licencia
 
-Desarrollado para **CollarNet / CowIA** © 2026. Todos los derechos reservados.
+Desarrollado para **CollarNet / Cowai** © 2026. Todos los derechos reservados.

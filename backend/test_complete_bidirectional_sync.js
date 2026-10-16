@@ -36,7 +36,7 @@ function request(method, path, body = null) {
 async function runTests() {
   console.log('====================================================');
   console.log(' INICIANDO TEST DE SINCRONIZACIÓN BIDIRECCIONAL COMPLETA');
-  console.log(' (Web ⟷ App Usuario CowIA Finca ⟷ App Técnico CowIA)');
+  console.log(' (Web ⟷ App Usuario Cowai Finca ⟷ App Técnico Cowai)');
   console.log('====================================================\n');
 
   let passed = 0;
@@ -186,7 +186,7 @@ async function runTests() {
   const loteTechRes = await request('POST', '/api/collares/lotes', {
     userRole: 'SUPERADMIN',
     codigoLote: 'LOT-TECH-2026',
-    proveedor: 'CowIA Shenzhen',
+    proveedor: 'Cowai Shenzhen',
     modo: 'lista',
     collares: [
       { id: 'COW-TECH-001', imei: '869001001', numeroSim: '+58412001' },

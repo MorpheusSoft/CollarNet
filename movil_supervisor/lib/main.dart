@@ -21,11 +21,11 @@ void main() {
     ),
   );
 
-  runApp(const CowIAFincaApp());
+  runApp(const CowaiFincaApp());
 }
 
-class CowIAFincaApp extends StatelessWidget {
-  const CowIAFincaApp({Key? key}) : super(key: key);
+class CowaiFincaApp extends StatelessWidget {
+  const CowaiFincaApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class CowIAFincaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DrawingProvider()),
       ],
       child: MaterialApp(
-        title: 'CowIA Finca - Gestión Ganadera',
+        title: 'Cowai Finca - Gestión Ganadera',
         debugShowCheckedModeBanner: false,
         themeMode: ThemeMode.dark,
         theme: FincaTheme.themeData,

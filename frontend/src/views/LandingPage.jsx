@@ -114,7 +114,7 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
         </div>
       </section>
 
-      {/* 3. Section 1: Ecosistema CowIA */}
+      {/* 3. Section 1: Ecosistema Cowai */}
       <section id="ecosistema" className="py-24 bg-dark-surface/50 border-t border-dark-border relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -125,7 +125,7 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
               Ecosistema Integral de Ganadería con IA
             </h2>
             <p className="text-slate-400 mt-3 text-base">
-              La plataforma CowIA unifica collares solares IoT, mapas satelitales GIS, app de campo y analítica zootécnica en una sola suite.
+              La plataforma Cowai unifica collares solares IoT, mapas satelitales GIS, app de campo y analítica zootécnica en una sola suite.
             </p>
           </div>
 
@@ -189,7 +189,7 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
             {/* Visual Box */}
             <div className="lg:col-span-5 text-center p-8 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 relative">
               <div className="text-7xl mb-4 animate-bounce duration-1000">🐮⚡</div>
-              <h3 className="font-display font-black text-2xl text-white">Collar Inteligente CowIA V2</h3>
+              <h3 className="font-display font-black text-2xl text-white">Collar Inteligente Cowai V2</h3>
               <span className="inline-block mt-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/30">
                 Firmware Nativo C++ / ESP32 FreeRTOS
               </span>
@@ -324,7 +324,7 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
               Retorno de Inversión (ROI)
             </span>
             <h2 className="font-display font-bold text-3xl sm:text-5xl text-white mt-3">
-              Cerca Tradicional de Alambre vs. CowIA
+              Cerca Tradicional de Alambre vs. Cowai
             </h2>
             <p className="mt-4 text-slate-400 text-base sm:text-lg">
               Compara el ahorro operativo y la flexibilidad productiva de la virtualización de potreros.
@@ -338,7 +338,7 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
                   <th className="p-5 font-display font-bold text-white">Criterio Productivo</th>
                   <th className="p-5 font-display font-bold text-slate-400">Cerca Tradicional de Alambre</th>
                   <th className="p-5 font-display font-bold text-emerald-400 bg-emerald-950/20 border-l border-r border-emerald-500/20">
-                    Plataforma CowIA
+                    Plataforma Cowai
                   </th>
                 </tr>
               </thead>
@@ -575,7 +575,7 @@ export default function LandingPage({ user, onLoginSuccess, onGoToDashboard }) {
           </div>
 
           <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span>© 2026 CowIA - Ganadería Inteligente con IA. Todos los derechos reservados.</span>
+            <span>© 2026 Cowai - Ganadería Inteligente con IA. Todos los derechos reservados.</span>
             <span className="text-emerald-400 font-semibold">Tecnología Ganadera de Vanguardia</span>
           </div>
         </div>

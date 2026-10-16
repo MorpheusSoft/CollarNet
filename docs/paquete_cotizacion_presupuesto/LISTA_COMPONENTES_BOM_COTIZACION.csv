@@ -1,0 +1,33 @@
+"Item","Designador","Cantidad","Componente / Valor","Fabricante (Manufacturer)","Numero de Parte (MPN)","Codigo LCSC / JLCPCB","Encapsulado (Package)","Descripcion Tecnica","Costo Est. Unitario (USD)"
+1,"U1",1,"ESP32-S3-WROOM-1-N16R8","Espressif Systems","ESP32-S3-WROOM-1-N16R8","C2913202","MODULE-ESP32-S3","MCU Dual Core 240MHz, 16MB Flash, 8MB PSRAM Octal, USB Nativo CDC/JTAG, Wi-Fi/BLE",2.80
+2,"U2",1,"SIM7670SA-MNGV",1,"SIMCom Wireless","SIM7670SA-MNGV","C2892994","LGA-68 / LCC (24x24mm)","Modem Celular 4G LTE Cat-1 + Receptor GNSS Multi-constelacion Integrado (GPS/GLO/GAL)",9.20
+3,"U3",1,"SC7A20TR",1,"Silan Microelectronics","SC7A20TR","C392477","LGA-12 / LGA-16","Acelerometro Digital 3 Ejes I2C (Consumo ultrabajo 6 uA para deteccion reposo)",0.35
+4,"U4",1,"CN3791",1,"Consonance","CN3791","C154992","SSOP-10","Cargador de Bateria Li-Ion con Seguimiento MPPT para Panel Solar 6V",0.55
+5,"U5",1,"SY8089AAAC",1,"Silergy","SY8089AAAC","C78988","SOT-23-5","Regulador Reductor Sincrono Buck 3.3V / 2.0A Alta Eficiencia",0.22
+6,"U6",1,"DW01A-G",1,"Fortune Semiconductor","DW01A-G","C351410","SOT-23-6","Controlador de Proteccion Bateria Li-Ion 1S (Sobrecarga >4.28V y Sobredescarga <2.4V)",0.06
+7,"U7",1,"FS8205A",1,"Fortune Semiconductor","FS8205A","C32254","TSSOP-8","MOSFET Dual Canal N 20V 4A (Rds < 25mOhm) para Conmutacion de BMS 1S",0.08
+8,"U8",1,"EL817S1(C)",1,"Everlight Electronics","EL817S1(C)","C4999","SOP-4","Optoacoplador Fototransistor Aislamiento Galvanico 5000Vrms entre Logica y Choque",0.06
+9,"U9",1,"74LVC1G123DCK",1,"Nexperia","74LVC1G123DCK","C128362","VSSOP-8","Temporizador Monoestable Hardware Seguro Watchdog 1000ms (Corta estimulo a 1s)",0.14
+10,"F1",1,"PPTC 3.0A 6V",1,"Bourns / Polytronics","SMD1812P300TF","C1045","SMD-1812","Fusible Reseteable Termico de Proteccion Bateria contra Cortocircuito en Arnes",0.12
+11,"Q1,Q2",2,"AO3400A","Alpha & Omega Semi","AO3400A","C20917","SOT-23","MOSFET Canal N 30V 5.7A (Driver Buzzer 95dB y Control PWRKEY Modem)",0.08
+12,"Q3",1,"AO3401A","Alpha & Omega Semi","AO3401A","C15127","SOT-23","MOSFET Canal P 30V 4.2A para Lazo de Conmutacion Solar MPPT CN3791",0.05
+13,"D1,D2,D3,D5",4,"SS34","Yangzhou Yangjie","SS34","C8678","SMA (DO-214AC)","Diodo Schottky 40V 3A (Aislamiento Paneles Solares, VBUS y Freewheeling MPPT)",0.16
+14,"D4",1,"1N4148W","Changjiang Electronics","1N4148W","C81598","SOD-123","Diodo de Conmutacion Rapido Supresor Flyback para Buzzer Piezoeléctrico",0.02
+15,"L1",1,"2.2uH 3.0A","Sunlord Electronics","SPH4020H2R2MT","C167733","SMD-0420 (4x4mm)","Inductor de Potencia Blindado para Regulador Buck SY8089",0.15
+16,"L2",1,"10uH 2.5A","Sunlord Electronics","SWPA4030S100MT","C38117","SMD-0430 (4x4mm)","Inductor de Potencia Blindado para Cargador Solar MPPT CN3791",0.15
+17,"C1,C2",2,"220uF 6.3V","AVX / Kyocera","TAJD227M006RNJ","C7187","Case-D (7343)","Condensador Tantalio Solido Baja ESR para Picos de Corriente Modem LTE 2A",0.45
+18,"C3,C4,C5,C6",4,"22uF 10V X5R","Samsung Electro-Mechanics","CL21A226MPCLRNC","C45783","SMD-0805","Condensador Ceramico Multicapa Filtro Entrada y Salida Buck",0.12
+19,"C7",1,"0.1uF 1000V CBB21","Faratronic","C212E104K40C000","C2839151","SMD-1812 / PTH","Condensador de Polipropileno Metalizado para Descarga CDI Cerca Virtual (0.05J)",0.30
+20,"TH1",1,"TYN1225RG / BT151","STMicroelectronics / WeEn","TYN1225RG","C14486","TO-252 (DPAK)","Tiristor SCR 1200V 25A Alta Tension para Disparo Seguro de Pulso de Descarga",0.35
+21,"MOD_HV",1,"Modulo Elevador Pulso 3.7V-1000V","Custom Potted / Alibaba","MOD-PULSE-1KV","N/A (Submodulo)","Encapsulado Epoxi","Micro-modulo sellado generador de pulso disuasorio (Bobina + Oscilador)",1.10
+22,"J1",1,"TYPE-C-16PIN-2.0","Korean HRO","TYPE-C-31-M-12","C2765186","SMD-TYPE-C","Conector USB Tipo C Hembra 16 Pines (Carga y Flasheo Nativo D+/D-)",0.15
+23,"J2",1,"NANO-SIM-6P","Attend Technology","115U-A000","C2838382","SMD-PUSH-PULL","Porta Nano-SIM Push-Pull Ultra Bajo Perfil para Chip 4G Digitel",0.18
+24,"J3,J4",2,"U.FL-R-SMT-1(10)","Hirose Electric","U.FL-R-SMT-1(10)","C88373","SMD-IPEX-1","Conector Coaxial Miniatura RF 50 Ohms (J3: Antena GPS / J4: Antena 4G LTE)",0.14
+25,"BZ1",1,"Buzzer Piezo 95dB 4kHz","PUI Audio / CUI","SMT-1240-T-R","C253457","PTH-D12.4mm","Transductor Acustico Piezoelectrico Pasivo 95 dB a 10cm (Alerta y Peligro)",0.45
+26,"BAT1",1,"Celda Li-Ion 21700 5000mAh","Samsung / LG / BAK","INR21700-50E / M50LT","N/A (Bateria)","21700 Cilindrica","Celda Li-Ion Grado A 3.7V 5000mAh con Termistor NTC (Capsula Derecha)",3.80
+27,"ANT_GPS",1,"Antena Parche GNSS 25x25mm","C&T RF Antennas","GPS-PATCH-2525","N/A (Accesorio)","Parche 25x25x4mm","Antena Ceramica GNSS con Cable Coaxial IPEX orientada al cielo en Capsula Izq",1.50
+28,"ANT_LTE",1,"Antena Celular 4G LTE FPC","C&T RF Antennas","FPC-LTE-BAND","N/A (Accesorio)","FPC Adhesiva","Antena Flexible 4G LTE multibanda con Cable Coaxial IPEX adherida a pared caja",0.80
+29,"SOLAR_PANEL",2,"Panel Solar Epoxi 55x60mm","Ryder / Sunpower","RY9-414","N/A (Accesorio)","55x60x2.2mm","Paneles Solares Monocristalinos 6.0V 120mA en Tapas Izquierda y Derecha",2.40
+30,"EL1,EL2",2,"Electrodos Acero Inox M4","Ferreteria Industrial Inox 316","PERNO-M4-SEMIESFERA","N/A (Mecanico)","M4 Rosca x 12mm","Bornes de Contacto Semiesfericos de Acero Inoxidable Marino para Cuello",0.50
+31,"PCB1",1,"PCB Logica y RF (Izquierda)","JLCPCB Fab","PCB-COWAI-LOGIC-V2","JLCPCB-PCB","60.0 x 32.0 mm","Placa 2 Capas FR4, 1.6mm, Cobre 1oz, Acabado ENIG Oro, Mascara Verde",0.45
+32,"PCB2",1,"PCB Potencia y Descarga (Derecha)","JLCPCB Fab","PCB-COWAI-POWER-V2","JLCPCB-PCB","32.0 x 26.0 mm","Placa 2 Capas FR4, 1.6mm, Cobre 1oz, Acabado ENIG Oro, Ranura Aislamiento 1.5mm",0.35

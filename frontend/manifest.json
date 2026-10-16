@@ -1,6 +1,6 @@
 {
-  "name": "CowIA Campo",
-  "short_name": "CowIA",
+  "name": "Cowai Campo",
+  "short_name": "Cowai",
   "description": "App Móvil de Campo para Manga, Pesaje y Rastreo de Ganado con Cercas Virtuales e IA",
   "start_url": "/app-campo.html",
   "display": "standalone",

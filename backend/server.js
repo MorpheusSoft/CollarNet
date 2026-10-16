@@ -76,9 +76,12 @@ if (fs.existsSync(apkDistPath)) {
 app.use('/apk', express.static(rootDir, { setHeaders: apkHeaders }));
 
 // Aliases de compatibilidad para nombres de APK
-app.get('/apk/CowIA-Tecnico-Release.apk', (req, res) => res.redirect('/apk/CowIA-Tecnico.apk'));
-app.get('/apk/CowIA-Finca-Release.apk', (req, res) => res.redirect('/apk/CowIA-Campo.apk'));
-
+app.get('/apk/CowIA-Tecnico.apk', (req, res) => res.redirect('/apk/Cowai-Tecnico.apk'));
+app.get('/apk/CowIA-Campo.apk', (req, res) => res.redirect('/apk/Cowai-Campo.apk'));
+app.get('/apk/CowIA-Tecnico-Release.apk', (req, res) => res.redirect('/apk/Cowai-Tecnico.apk'));
+app.get('/apk/CowIA-Finca-Release.apk', (req, res) => res.redirect('/apk/Cowai-Campo.apk'));
+app.get('/apk/Cowai-Tecnico-Release.apk', (req, res) => res.redirect('/apk/Cowai-Tecnico.apk'));
+app.get('/apk/Cowai-Finca-Release.apk', (req, res) => res.redirect('/apk/Cowai-Campo.apk'));
 
 // Servir versiones web / PWA para iPhone y alias directos
 const iphoneAppsPath = path.join(__dirname, '../apps_para_iphone');
@@ -100,7 +103,7 @@ app.get('/descargas', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-      <title>Portal de Aplicaciones - CowIA & CollarNet</title>
+      <title>Portal de Aplicaciones - Cowai & CollarNet</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -203,42 +206,42 @@ app.get('/descargas', (req, res) => {
     <body>
       <div class="container">
         <div class="header">
-          <div class="logo">🐄 CowIA / CollarNet</div>
+          <div class="logo">🐄 Cowai / CollarNet</div>
           <div class="subtitle">Ecosistema Móvil y Portal de Despliegue en Campo</div>
           <div class="ip-badge">🟢 Servidor: http://${host}</div>
         </div>
 
         <div class="section-title">📱 Aplicaciones Móviles Nativas & PWAs</div>
 
-        <!-- Card CowIA Finca -->
+        <!-- Card Cowai Finca -->
         <div class="card">
           <div class="card-header">
             <div class="icon-box icon-finca">🤠</div>
             <div>
-              <div class="card-title">CowIA Finca</div>
+              <div class="card-title">Cowai Finca</div>
               <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">SUPERVISOR DE HATO & MANGA</div>
             </div>
           </div>
           <p class="card-desc">Subdivisión de potreros, modo arreo en vivo, pesaje ágil con báscula Bluetooth, brújula de rescate offline y alertas de celo/sanidad.</p>
           <div class="btn-group">
-            <a class="btn btn-apk-finca" href="/apk/CowIA-Campo.apk" download>🤖 Descargar APK (Android)</a>
+            <a class="btn btn-apk-finca" href="/apk/Cowai-Campo.apk" download>🤖 Descargar APK (Android)</a>
             <a class="btn btn-ios" href="/iphone/CowIA_Finca_PWA_iPhone/" target="_blank">🍏 Abrir en iPhone / Safari</a>
           </div>
           <div class="ios-tip">💡 <b>En iPhone:</b> Abre el enlace en Safari, toca <b>Compartir</b> (<span style="font-size: 1rem;">􀈂</span>) y selecciona <b>"Añadir a pantalla de inicio"</b>.</div>
         </div>
 
-        <!-- Card CowIA Ops -->
+        <!-- Card Cowai Ops -->
         <div class="card">
           <div class="card-header">
             <div class="icon-box icon-ops">🛠️</div>
             <div>
-              <div class="card-title">CowIA Ops</div>
+              <div class="card-title">Cowai Ops</div>
               <div style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">TÉCNICO & LABORATORIO</div>
             </div>
           </div>
           <p class="card-desc">Alta de hatos perimetrales maestros, suite de pruebas de hardware (GNSS/IMU/Shock), escaneo masivo de lotes y flasheo OTA.</p>
           <div class="btn-group">
-            <a class="btn btn-apk-ops" href="/apk/CowIA-Tecnico.apk" download>🤖 Descargar APK (Android)</a>
+            <a class="btn btn-apk-ops" href="/apk/Cowai-Tecnico.apk" download>🤖 Descargar APK (Android)</a>
             <a class="btn btn-ios" href="/iphone/CowIA_Tecnico_PWA_iPhone/" target="_blank">🍏 Abrir en iPhone / Safari</a>
           </div>
           <div class="ios-tip">💡 <b>En iPhone:</b> Abre en Safari y selecciona <b>"Añadir a pantalla de inicio"</b> para usarla a pantalla completa.</div>
@@ -251,7 +254,7 @@ app.get('/descargas', (req, res) => {
           <div class="card-header">
             <div class="icon-box icon-web">🌐</div>
             <div>
-              <div class="card-title">Plataforma Web CowIA</div>
+              <div class="card-title">Plataforma Web Cowai</div>
               <div style="font-size: 0.75rem; color: #818cf8; font-weight: 600;">PANEL DE CONTROL CENTRAL</div>
             </div>
           </div>
@@ -260,7 +263,7 @@ app.get('/descargas', (req, res) => {
         </div>
 
         <div class="footer">
-          CowIA IoT & Virtual Fencing System &copy; 2026<br>
+          Cowai IoT & Virtual Fencing System &copy; 2026<br>
           Desarrollado para entornos de campo y alta exigencia ganadera
         </div>
       </div>
@@ -292,7 +295,7 @@ app.get('*', (req, res, next) => {
 app.get('/api/status', (req, res) => {
   res.json({ 
     status: 'ONLINE', 
-    service: 'CowIA IoT & Virtual Fences Platform', 
+    service: 'Cowai IoT & Virtual Fences Platform', 
     timestamp: new Date().toISOString() 
   });
 });
@@ -361,7 +364,7 @@ async function start() {
       } catch (_) {}
 
       console.log(`=========================================`);
-      console.log(` Servidor CollarNet / CowIA Iniciado`);
+      console.log(` Servidor CollarNet / Cowai Iniciado`);
       console.log(` Escuchando en: http://0.0.0.0:${PORT}`);
       console.log(` Acceso Local: http://localhost:${PORT}`);
       console.log(` Acceso Red Wi-Fi: http://${localIp}:${PORT}`);

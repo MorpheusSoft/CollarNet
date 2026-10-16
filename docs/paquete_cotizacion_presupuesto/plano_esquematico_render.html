@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Plano Esquemático - CollarNet CowAI V2</title>
+<style>
+  @page {
+    size: A3 landscape;
+    margin: 10mm;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 15px;
+    width: 1580px;
+    margin: 0 auto;
+  }
+  .blueprint-border {
+    border: 3px solid #0f172a;
+    padding: 15px;
+    position: relative;
+    background: #fdfdfd;
+  }
+  .inner-border {
+    border: 1px solid #334155;
+    padding: 12px;
+  }
+  .header-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .logo-box {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #047857;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: #475569;
+    font-weight: normal;
+  }
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .schematic-box {
+    border: 2px solid #1e293b;
+    border-radius: 8px;
+    padding: 12px;
+    background: #ffffff;
+  }
+  .schematic-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .sub-block {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+    background: #f8fafc;
+  }
+  .sub-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #0369a1;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  table.pin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    font-family: monospace;
+  }
+  table.pin-table th {
+    background: #e2e8f0;
+    text-align: left;
+    padding: 3px 6px;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+  }
+  table.pin-table td {
+    padding: 3px 6px;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+  }
+  .highlight-row {
+    background: #f0fdf4;
+    font-weight: bold;
+  }
+  .warning-row {
+    background: #fef2f2;
+    color: #b91c1c;
+    font-weight: bold;
+  }
+  .footer-title-block {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    border: 2px solid #0f172a;
+    margin-top: 10px;
+    font-size: 10px;
+    font-family: monospace;
+  }
+  .footer-cell {
+    border-right: 1px solid #0f172a;
+    padding: 6px 10px;
+  }
+  .footer-cell:last-child {
+    border-right: none;
+  }
+  .footer-label {
+    font-size: 8px;
+    color: #64748b;
+    text-transform: uppercase;
+    display: block;
+  }
+  .footer-value {
+    font-size: 11px;
+    font-weight: bold;
+    color: #0f172a;
+  }
+  .harness-banner {
+    background: #ecfdf5;
+    border: 1.5px dashed #059669;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="blueprint-border">
+  <div class="inner-border">
+
+    <!-- Encabezado del Plano -->
+    <div class="header-title">
+      <div>
+        <div class="logo-box">COWAI / COLLARNET V2</div>
+        <div class="logo-sub">SISTEMA GANADERO DE CERCA VIRTUAL Y TELEMETRÍA IOT - PLANO DE ESQUEMÁTICO GENERAL</div>
+      </div>
+      <div style="text-align: right; font-family: monospace; font-size: 11px;">
+        <div><strong>DOCUMENTO DE COTIZACIÓN INDUSTRIAL</strong></div>
+        <div style="color: #64748b;">FORMATO NORMALIZADO JLCPCB / LCSC / EASYEDA</div>
+      </div>
+    </div>
+
+    <!-- Banner del Arnés de Interconexión Dorsal -->
+    <div class="harness-banner">
+      <strong style="color: #047857; text-transform: uppercase;">Arnés Inter-Cápsulas (Puente Dorsal Anatómico Ø8.0 mm):</strong>
+      <span style="font-family: monospace; margin-left: 10px;">
+        [1] VBAT_PWR (3.4V-4.2V / AWG24) &bull;
+        [2] GND_SYS (0.0V / AWG24) &bull;
+        [3] BUZZER_PWM (LEDC 4000Hz / AWG26) &bull;
+        [4] IMPULSE_TRIG (3.3V Pulso 1s / AWG26) &bull;
+        [5] SOLAR_DER_IN (5.5V-6.5V / AWG26)
+      </span>
+      <span style="float: right; color: #047857; font-weight: bold;">(CERO ALTA TENSIÓN EN EL LOMO DEL ANIMAL)</span>
+    </div>
+
+    <!-- Rejilla Principal de Esquemáticos: Placa Izquierda y Placa Derecha -->
+    <div class="main-grid">
+
+      <!-- ============================================== -->
+      <!-- PLACA 1: LÓGICA Y TELECOMUNICACIONES (IZQUIERDA)-->
+      <!-- ============================================== -->
+      <div class="schematic-box">
+        <div class="schematic-header">
+          <span>PLACA 1: LÓGICA Y RADIOFRECUENCIA (CÁPSULA IZQUIERDA)</span>
+          <span>DIM: 60.0 &times; 32.0 mm (2 CAPAS FR4)</span>
+        </div>
+
+        <!-- Bloque MCU ESP32-S3 -->
+        <div class="sub-block">
+          <div class="sub-title">1. Microcontrolador: Espressif ESP32-S3-WROOM-1-N8 (U1)</div>
+          <table class="pin-table">
+            <tr><th>Pin Módulo</th><th>Señal Net</th><th>Destino / Conexión</th><th>Función Técnica</th></tr>
+            <tr><td>Pin 2 (3V3)</td><td>+3V3_SYS</td><td>Salida Buck SY8089 (U5)</td><td>Alimentación 3.3V filtrada (10µF + 100nF)</td></tr>
+            <tr class="highlight-row"><td>IO 17 (TX1)</td><td>MODEM_TXD</td><td>SIM7670SA Pin RXD (U2)</td><td>UART1 Transmisión comandos AT (115200 bps)</td></tr>
+            <tr class="highlight-row"><td>IO 18 (RX1)</td><td>MODEM_RXD</td><td>SIM7670SA Pin TXD (U2)</td><td>UART1 Recepción datos y tramas GNSS</td></tr>
+            <tr><td>IO 21</td><td>MODEM_PWRKEY</td><td>Gate NPN hacia Módem Pin PWRKEY</td><td>Control de encendido y reinicio del módem</td></tr>
+            <tr class="highlight-row"><td>IO 4</td><td>IMPULSE_TRIG</td><td>Hacia Arnés Dorsal [Hilo 4]</td><td>Disparo de estímulo de cerca virtual (1s máx)</td></tr>
+            <tr class="highlight-row"><td>IO 5</td><td>BUZZER_PWM</td><td>Hacia Arnés Dorsal [Hilo 3]</td><td>Modulación acústica LEDC (4000 Hz dinámico)</td></tr>
+            <tr><td>IO 8, IO 9</td><td>I2C_SDA, SCL</td><td>Acelerómetro SC7A20 (U3)</td><td>Bus I2C (Pull-Up 4.7k) para detección de reposo</td></tr>
+            <tr><td>IO 19, IO 20</td><td>USB_D_N, D_P</td><td>Conector USB-C (J1)</td><td>USB 2.0 nativo (Flasheo y depuración sin CH340)</td></tr>
+            <tr><td>IO 2</td><td>STATUS_LED</td><td>LED SMD Azul + R 1k</td><td>Indicador visual de estado y baliza nocturna</td></tr>
+          </table>
+        </div>
+
+        <!-- Bloque Módem 4G LTE y GNSS -->
+        <div class="sub-block">
+          <div class="sub-title">2. Módem Celular & Satelital: SIMCom SIM7670SA-MNGV (U2)</div>
+          <table class="pin-table">
+            <tr><th>Pin Módulo</th><th>Señal Net</th><th>Destino / Componente</th><th>Función Técnica</th></tr>
+            <tr class="highlight-row"><td>VBAT (Pines)</td><td>VBAT_PWR</td><td>Batería Li-Ion + 2x Tantalio 220µF</td><td>Alimentación directa 3.4V-4.2V (picos 2A LTE)</td></tr>
+            <tr><td>MAIN_ANT</td><td>RF_LTE_50R</td><td>Conector IPEX u.FL (J4)</td><td>Pista RF 50Ω hacia antena FPC celular adhesiva</td></tr>
+            <tr class="highlight-row"><td>GNSS_ANT</td><td>RF_GPS_50R</td><td>Conector IPEX u.FL (J3)</td><td>Línea 50Ω hacia parche cerámico GNSS al cielo</td></tr>
+            <tr><td>SIM_VDD,CLK,DATA</td><td>SIM_BUS</td><td>Ranura Nano-SIM 6P (J2)</td><td>Lectura de chip SIM Digitel 4G LTE</td></tr>
+          </table>
+        </div>
+
+        <!-- Bloque MPPT y Buck -->
+        <div class="sub-block">
+          <div class="sub-title">3. Energía: Cargador MPPT CN3791 (U4) + Buck 3.3V SY8089 (U5)</div>
+          <table class="pin-table">
+            <tr><th>Componente</th><th>Configuración</th><th>Conexión Net</th><th>Especificación Técnica</th></tr>
+            <tr><td>CN3791 (SOP-8)</td><td>MPPT 6.0V</td><td>Paneles Solares (Izq + Der)</td><td>Carga Li-Ion a 1.2A con seguimiento solar máx</td></tr>
+            <tr><td>2x SS34 (SMA)</td><td>Diodos Schottky</td><td>Panel Izq y Panel Der</td><td>Aislamiento entre paneles (evita descarga mutua)</td></tr>
+            <tr class="highlight-row"><td>SY8089 (SOT-23-5)</td><td>Buck Síncrono</td><td>L1: 2.2µH / Cout: 2x 22µF</td><td>Conversión 3.7V a 3.3V / 2.0A (eficiencia >92%)</td></tr>
+            <tr><td>SC7A20 (LGA-16)</td><td>Acelerómetro I2C</td><td>ESP32 SDA=IO8, SCL=IO9</td><td>Consumo ultrabajo: 6µA en monitoreo de movimiento</td></tr>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- PLACA 2: POTENCIA, AUDIO Y DESCARGA (DERECHA) -->
+      <!-- ============================================== -->
+      <div class="schematic-box">
+        <div class="schematic-header">
+          <span>PLACA 2: POTENCIA, BOCINA Y DESCARGA (CÁPSULA DERECHA)</span>
+          <span>DIM: 32.0 &times; 26.0 mm (2 CAPAS FR4)</span>
+        </div>
+
+        <!-- Bloque Batería y BMS -->
+        <div class="sub-block">
+          <div class="sub-title">1. Batería Primaria y Protección BMS 1S (DW01A + FS8205A)</div>
+          <table class="pin-table">
+            <tr><th>Componente</th><th>Designador</th><th>Conexión</th><th>Función de Protección</th></tr>
+            <tr class="highlight-row"><td>Celda Li-Ion 21700</td><td>BAT1</td><td>3.7V Nominal / 5000 mAh</td><td>Almacenamiento primario para autonomía de campo</td></tr>
+            <tr><td>DW01A (SOT-23-6)</td><td>U6</td><td>Sensor Batería</td><td>Corte por sobrecarga (>4.28V) y sobredescarga (<2.4V)</td></tr>
+            <tr><td>FS8205A (TSSOP-8)</td><td>U7</td><td>MOSFET Dual Canal N</td><td>Interruptor de paso de potencia de ultra baja Rds(on)</td></tr>
+            <tr><td>Polyswitch PPTC</td><td>F1</td><td>Fusible 3.0A Reseteable</td><td>Protección térmica contra corto accidental en arnés</td></tr>
+          </table>
+        </div>
+
+        <!-- Bloque Alerta Acústica -->
+        <div class="sub-block">
+          <div class="sub-title">2. Etapa Acústica: Zumbador Piezoeléctrico 95dB (4000 Hz)</div>
+          <table class="pin-table">
+            <tr><th>Componente</th><th>Designador</th><th>Señal Conectada</th><th>Operación Acústica</th></tr>
+            <tr class="highlight-row"><td>Buzzer Ø12.4mm</td><td>BZ1</td><td>Alimentado de VBAT_PWR</td><td>Emite 95 dB a 10 cm con cámara resonante lateral</td></tr>
+            <tr><td>AO3400A (SOT-23)</td><td>Q1</td><td>Gate a BUZZER_PWM [Hilo 3]</td><td>Conmutación PWM rápida a 4000 Hz desde ESP32 IO5</td></tr>
+            <tr><td>1N4148W (SOD-123)</td><td>D4</td><td>Antiparalelo con BZ1</td><td>Diodo flyback supresor de picos inductivos piezo</td></tr>
+          </table>
+        </div>
+
+        <!-- Bloque Descarga Eléctrica Disuasoria -->
+        <div class="sub-block">
+          <div class="sub-title">3. Estímulo Eléctrico Seguro: Circuito CDI + Watchdog 1s (Cerca Virtual)</div>
+          <table class="pin-table">
+            <tr><th>Componente</th><th>Designador</th><th>Función en Circuito</th><th>Parámetro de Seguridad Animal</th></tr>
+            <tr class="highlight-row"><td>Optoacoplador EL817C</td><td>U8</td><td>Aislamiento galvánico 5kV</td><td>La alta tensión NUNCA tiene contacto con el ESP32</td></tr>
+            <tr class="warning-row"><td>74LVC1G123 (SC-70)</td><td>U9</td><td>Watchdog Hardware 1000ms</td><td>Corta el pulso a 1s exacto si el software se congela</td></tr>
+            <tr><td>Bobina Flyback Ferrita</td><td>TX1</td><td>Elevador de tensión DC</td><td>Eleva de 3.7V a 800V-1000V con limitación de corriente</td></tr>
+            <tr class="highlight-row"><td>Condensador CDI 0.1µF</td><td>C7</td><td>Polipropileno 1000V CBB21</td><td>Almacena 0.05 a 0.10 Joules (inofensivo para la piel)</td></tr>
+            <tr><td>Tiristor SCR MCR100-6</td><td>TH1</td><td>Disparo de descarga</td><td>Conmuta la energía del condensador hacia electrodos</td></tr>
+            <tr><td>Resistencia 220Ω / 2W</td><td>R_LIMIT</td><td>En serie con salida HV</td><td>Limita corriente de pico para evitar cualquier quemadura</td></tr>
+            <tr class="highlight-row"><td>2x Electrodos Inox M4</td><td>EL1, EL2</td><td>Salida inferior hacia cuello</td><td>Pernos redondeados inox 316 marina con junta O-ring</td></tr>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Cajetín Técnico de Ingeniería (Title Block) -->
+    <div class="footer-title-block">
+      <div class="footer-cell">
+        <span class="footer-label">PROYECTO</span>
+        <span class="footer-value">COLLARNET / COWAI V2 - COLLAR INTELIGENTE GANADERO HALTER</span>
+      </div>
+      <div class="footer-cell">
+        <span class="footer-label">DISEÑADOR / AUTOR</span>
+        <span class="footer-value">Lindbergh Zambrano / CowAI</span>
+      </div>
+      <div class="footer-cell">
+        <span class="footer-label">FECHA / REVISIÓN</span>
+        <span class="footer-value">14-OCT-2026 | REV 2.1 (2-PCBs)</span>
+      </div>
+      <div class="footer-cell">
+        <span class="footer-label">ESTÁNDAR FABRICACIÓN</span>
+        <span class="footer-value">JLCPCB SMT / LCSC BOM COMPATIBLE</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

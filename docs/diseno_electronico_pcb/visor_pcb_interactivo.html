@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Visor Interactivo PCB - CollarNet CowAI V2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .gold-pad { fill: #d4af37; stroke: #b89728; }
+    .silk-text { font-family: monospace; font-weight: bold; fill: #ffffff; }
+    .component-box { cursor: pointer; transition: all 0.2s; }
+    .component-box:hover { filter: brightness(1.25); stroke: #38bdf8; stroke-width: 2px; }
+    .board-bg { fill: #0f381e; stroke: #0a2414; stroke-width: 4px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
+  <div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- Encabezado -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-4 gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+          <h1 class="text-2xl font-bold tracking-tight text-white">Visor Interactivo de PCB: CollarNet CowAI V2</h1>
+        </div>
+        <p class="text-sm text-slate-400 mt-1">Inspección de Cara Superior (TOP) e Inferior (BOTTOM) para Fabricación en JLCPCB</p>
+      </div>
+
+      <!-- Selector de Vistas -->
+      <div class="flex flex-wrap gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+        <button onclick="setView('top')" id="btn-top" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition shadow">
+          Cara Superior (TOP)
+        </button>
+        <button onclick="setView('bottom')" id="btn-bottom" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+          Cara Inferior (BOTTOM)
+        </button>
+        <button onclick="setView('sidebyside')" id="btn-sidebyside" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+          Ambas Caras
+        </button>
+        <button onclick="setView('renders')" id="btn-renders" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+          Renders 3D Reales
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenedor de Visualización SVG de Placas -->
+    <div id="svg-container" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl overflow-x-auto">
+      <div class="flex justify-between items-center mb-4 text-xs text-slate-400">
+        <span id="view-title" class="font-mono text-emerald-400 font-semibold uppercase tracking-wider">VISTA ACTIVA: CARA SUPERIOR (COMPONENTES PRINCIPALES)</span>
+        <span>Haz clic sobre cualquier chip para ver sus datos técnicos</span>
+      </div>
+
+      <svg id="pcb-svg" viewBox="0 0 1000 480" class="w-full h-auto max-h-[550px] mx-auto select-none">
+        <!-- Definiciones de Gradientes y Patrones -->
+        <defs>
+          <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e2e8f0"/>
+            <stop offset="50%" stop-color="#cbd5e1"/>
+            <stop offset="100%" stop-color="#94a3b8"/>
+          </linearGradient>
+          <linearGradient id="icGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#262626"/>
+            <stop offset="100%" stop-color="#171717"/>
+          </linearGradient>
+          <linearGradient id="tantalumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#d97706"/>
+            <stop offset="100%" stop-color="#b45309"/>
+          </linearGradient>
+        </defs>
+
+        <!-- ========================================== -->
+        <!-- PLACA LÓGICA & RF (IZQUIERDA: 60 x 32 mm) -->
+        <!-- ========================================== -->
+        <g id="logic-board" transform="translate(40, 50)">
+          <!-- Sustrato PCB Verde FR4 -->
+          <rect width="550" height="340" rx="16" class="board-bg" />
+          
+          <!-- Agujeros de Montaje M2.5 con Ring Dorado -->
+          <circle cx="28" cy="28" r="14" class="gold-pad" />
+          <circle cx="28" cy="28" r="8" fill="#020617" />
+          <circle cx="522" cy="28" r="14" class="gold-pad" />
+          <circle cx="522" cy="28" r="8" fill="#020617" />
+          <circle cx="522" cy="312" r="14" class="gold-pad" />
+          <circle cx="522" cy="312" r="8" fill="#020617" />
+          <circle cx="28" cy="312" r="14" class="gold-pad" />
+          <circle cx="28" cy="312" r="8" fill="#020617" />
+
+          <!-- Serigrafía Identificativa -->
+          <text x="50" y="325" class="silk-text text-sm">COWAI LOGIC & RF V2</text>
+          <text x="320" y="325" class="silk-text text-xs" fill="#94a3b8">DIM: 60.0 x 32.0 mm (FR4 2L)</text>
+
+          <!-- COMPONENTES CARA SUPERIOR (TOP) -->
+          <g id="logic-top-components">
+            <!-- ESP32-S3-WROOM-1 -->
+            <g class="component-box" onclick="showInfo('ESP32-S3-WROOM-1', 'U1', 'Espressif Dual Core 240MHz, 8MB Flash, USB Nativo', 'C2913200', 'Procesador principal, algoritmo de geocercas ray-casting, LittleFS y MQTT')">
+              <rect x="65" y="45" width="160" height="235" rx="6" fill="url(#shieldGrad)" stroke="#64748b" stroke-width="1.5" />
+              <!-- Antena PCB integrada -->
+              <rect x="65" y="240" width="160" height="40" fill="#451a03" rx="2" />
+              <text x="145" y="265" text-anchor="middle" font-size="11" class="silk-text" fill="#fde68a">PCB ANT (WIFI/BLE)</text>
+              <text x="145" y="145" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f172a">ESP32-S3</text>
+              <text x="145" y="165" text-anchor="middle" font-size="10" fill="#334155">WROOM-1-N8</text>
+            </g>
+
+            <!-- SIMCom SIM7670SA Módem 4G LTE + GNSS -->
+            <g class="component-box" onclick="showInfo('SIM7670SA-MNGV', 'U2', 'SIMCom 4G LTE Cat-1 + Receptor Satelital GNSS', 'C2892994', 'Telemetría celular con chip Digitel y posicionamiento satelital GPS+GLONASS+Galileo')">
+              <rect x="250" y="45" width="210" height="210" rx="8" fill="url(#shieldGrad)" stroke="#64748b" stroke-width="1.5" />
+              <text x="355" y="135" text-anchor="middle" font-size="18" font-weight="bold" fill="#0f172a">SIM7670SA</text>
+              <text x="355" y="158" text-anchor="middle" font-size="11" fill="#334155">LTE Cat-1 & GNSS</text>
+              <text x="355" y="180" text-anchor="middle" font-size="9" fill="#475569">AT+CGNSSINFO Ready</text>
+            </g>
+
+            <!-- Conector USB-C Borde Izquierdo -->
+            <g class="component-box" onclick="showInfo('Conector USB-C 16P', 'J1', 'USB 2.0 Nativo (D+/D-) para carga y flasheo', 'C2765186', 'Conexión directa al ESP32-S3 para servicio en taller sin chip serial intermedio')">
+              <rect x="-8" y="115" width="55" height="110" rx="6" fill="#cbd5e1" stroke="#475569" stroke-width="2" />
+              <rect x="6" y="130" width="30" height="80" rx="4" fill="#1e293b" />
+              <text x="18" y="175" font-size="9" class="silk-text" fill="#94a3b8" transform="rotate(-90 18,175)">USB-C</text>
+            </g>
+
+            <!-- Conectores IPEX (LTE y GNSS) -->
+            <g class="component-box" onclick="showInfo('Conector u.FL/IPEX GNSS', 'J3', 'Puerto coaxial para antena de parche cerámico GPS', 'C14877', 'Conexión a la antena activa superior orientada al cielo')">
+              <circle cx="490" cy="80" r="16" class="gold-pad" />
+              <circle cx="490" cy="80" r="8" fill="#1e293b" />
+              <text x="490" y="110" text-anchor="middle" font-size="10" class="silk-text">GNSS</text>
+            </g>
+            <g class="component-box" onclick="showInfo('Conector u.FL/IPEX LTE', 'J4', 'Puerto coaxial para antena FPC 4G celular', 'C14877', 'Conexión a la antena flexible de telefonía')">
+              <circle cx="490" cy="200" r="16" class="gold-pad" />
+              <circle cx="490" cy="200" r="8" fill="#1e293b" />
+              <text x="490" y="230" text-anchor="middle" font-size="10" class="silk-text">4G LTE</text>
+            </g>
+
+            <!-- Condensadores Tantalio 220uF -->
+            <g class="component-box" onclick="showInfo('Condensadores Tantalio 2x 220uF', 'C1, C2', 'Baja ESR (Case D) para ráfagas LTE 2A', 'C7187', 'Evitan caídas de voltaje durante la transmisión de datos móviles')">
+              <rect x="235" y="265" width="55" height="32" rx="4" fill="url(#tantalumGrad)" stroke="#78350f" />
+              <rect x="300" y="265" width="55" height="32" rx="4" fill="url(#tantalumGrad)" stroke="#78350f" />
+              <text x="295" y="285" text-anchor="middle" font-size="9" class="silk-text">220µF</text>
+            </g>
+
+            <!-- Chips de Energía y Sensores -->
+            <g class="component-box" onclick="showInfo('Cargador Solar MPPT CN3791', 'U4', 'Controlador de carga Li-Ion para paneles 6V', 'C141124', 'Maximiza la cosecha solar de ambos paneles durante el día')">
+              <rect x="375" y="265" width="40" height="30" rx="3" fill="url(#icGrad)" stroke="#404040" />
+              <text x="395" y="284" text-anchor="middle" font-size="8" class="silk-text">MPPT</text>
+            </g>
+            <g class="component-box" onclick="showInfo('Regulador Buck SY8089 (3.3V 2A)', 'U5', 'Conversor reductor de alta eficiencia síncrono', 'C143798', 'Alimenta al ESP32-S3 y sensores a 3.3V con mínimo calentamiento')">
+              <rect x="425" y="265" width="30" height="25" rx="3" fill="url(#icGrad)" stroke="#404040" />
+              <text x="440" y="282" text-anchor="middle" font-size="8" class="silk-text">3V3</text>
+            </g>
+            <g class="component-box" onclick="showInfo('Acelerómetro SC7A20 (I2C)', 'U3', 'Sensor 3 ejes ultra bajo consumo (6 uA)', 'C392477', 'Detecta pasos del animal y activa el modo reposo para ahorrar batería')">
+              <rect x="465" y="265" width="25" height="25" rx="3" fill="url(#icGrad)" stroke="#404040" />
+              <text x="477" y="282" text-anchor="middle" font-size="7" class="silk-text">IMU</text>
+            </g>
+          </g>
+
+          <!-- COMPONENTES CARA INFERIOR (BOTTOM) -->
+          <g id="logic-bottom-components" class="hidden">
+            <!-- Ranura Nano-SIM -->
+            <g class="component-box" onclick="showInfo('Porta Nano-SIM Push-Pull', 'J2', 'Zócalo de 6 pines bajo perfil', 'C2838382', 'Alojamiento para tarjeta SIM 4G LTE Digitel')">
+              <rect x="250" y="80" width="130" height="150" rx="6" fill="#cbd5e1" stroke="#475569" stroke-width="2" />
+              <rect x="265" y="100" width="100" height="110" rx="4" fill="#0f172a" />
+              <text x="315" y="160" text-anchor="middle" font-size="14" class="silk-text">NANO SIM</text>
+            </g>
+
+            <!-- Conector Arnés Puente Dorsal (5 Pines) -->
+            <g class="component-box" onclick="showInfo('Terminales Arnés Puente Dorsal', 'TB1', '5 Hilos de baja tensión hacia Cápsula Derecha', 'AWG24/26', 'Líneas: 1:VBAT, 2:GND, 3:BUZZER_PWM, 4:IMPULSE_TRIG, 5:SOLAR_DER')">
+              <rect x="80" y="80" width="120" height="60" rx="4" fill="#1e293b" stroke="#d4af37" stroke-width="2" />
+              <circle cx="100" cy="110" r="8" class="gold-pad" />
+              <circle cx="120" cy="110" r="8" class="gold-pad" />
+              <circle cx="140" cy="110" r="8" class="gold-pad" />
+              <circle cx="160" cy="110" r="8" class="gold-pad" />
+              <circle cx="180" cy="110" r="8" class="gold-pad" />
+              <text x="140" y="135" text-anchor="middle" font-size="8" class="silk-text">ARNÉS DORSAL 5P</text>
+            </g>
+
+            <text x="275" y="290" text-anchor="middle" font-size="13" class="silk-text" fill="#94a3b8">CARA INFERIOR (CERO COMPONENTES ALTOS)</text>
+          </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- PLACA DE POTENCIA (DERECHA: 32 x 26 mm)   -->
+        <!-- ========================================== -->
+        <g id="power-board" transform="translate(640, 70)">
+          <!-- Sustrato PCB Verde FR4 -->
+          <rect width="320" height="290" rx="14" class="board-bg" />
+
+          <!-- Agujeros de Montaje M2.5 -->
+          <circle cx="26" cy="26" r="14" class="gold-pad" />
+          <circle cx="26" cy="26" r="8" fill="#020617" />
+          <circle cx="26" cy="264" r="14" class="gold-pad" />
+          <circle cx="26" cy="264" r="8" fill="#020617" />
+
+          <text x="35" y="275" class="silk-text text-xs">POWER & SHOCK V2</text>
+
+          <!-- COMPONENTES CARA SUPERIOR (TOP) -->
+          <g id="power-top-components">
+            <!-- Buzzer Piezoeléctrico 95dB -->
+            <g class="component-box" onclick="showInfo('Zumbador Piezoeléctrico 95dB (4kHz)', 'BZ1', 'Transductor pasivo de alta potencia acústica', 'C2904128', 'Emite tonos de advertencia y peligro controlados por PWM en IO5')">
+              <circle cx="220" cy="140" r="75" fill="#18181b" stroke="#3f3f46" stroke-width="3" />
+              <circle cx="220" cy="140" r="20" fill="#09090b" />
+              <text x="220" y="145" text-anchor="middle" font-size="12" class="silk-text">BUZZER 95dB</text>
+              <text x="220" y="165" text-anchor="middle" font-size="9" fill="#a1a1aa">4000 Hz</text>
+            </g>
+
+            <!-- Mini Bobina Flyback HV -->
+            <g class="component-box" onclick="showInfo('Mini Bobina Flyback Elevadora', 'TX1', 'Transformador de pulso de ferrita 3.7V a 1000V', 'C962811', 'Genera la alta tensión para la descarga disuasoria')">
+              <rect x="45" y="45" width="80" height="80" rx="6" fill="#78350f" stroke="#b45309" stroke-width="2" />
+              <text x="85" y="90" text-anchor="middle" font-size="11" class="silk-text">BOBINA HV</text>
+            </g>
+
+            <!-- Condensador de Descarga Rojo CDI 1000V -->
+            <g class="component-box" onclick="showInfo('Condensador CDI 0.1uF 1000V', 'C7', 'Condensador de polipropileno de alto voltaje', 'C2839151', 'Almacena 0.05J de energía controlada e inofensiva para la piel')">
+              <rect x="45" y="140" width="80" height="40" rx="4" fill="#b91c1c" stroke="#dc2626" />
+              <text x="85" y="165" text-anchor="middle" font-size="10" class="silk-text">0.1µF 1kV</text>
+            </g>
+
+            <!-- Tiristor SCR + Optoacoplador -->
+            <g class="component-box" onclick="showInfo('Optoacoplador y Tiristor SCR', 'U8, TH1', 'Aislamiento 5kV + Disparo de pulso MCR100', 'C4999 / C14486', 'Garantiza aislamiento galvánico absoluto entre el pulso y el ESP32')">
+              <rect x="45" y="195" width="40" height="35" rx="3" fill="url(#icGrad)" stroke="#404040" />
+              <rect x="95" y="195" width="30" height="35" rx="3" fill="url(#icGrad)" stroke="#404040" />
+              <text x="65" y="217" text-anchor="middle" font-size="8" class="silk-text">OPTO</text>
+              <text x="110" y="217" text-anchor="middle" font-size="8" class="silk-text">SCR</text>
+            </g>
+          </g>
+
+          <!-- COMPONENTES CARA INFERIOR (BOTTOM) -->
+          <g id="power-bottom-components" class="hidden">
+            <!-- 2 Electrodos Inox para Cuello -->
+            <g class="component-box" onclick="showInfo('Electrodos Inoxidables 316 (M4)', 'EL1, EL2', 'Bornes redondeados en contacto con la piel de la res', 'Perno M4 Inox', 'Transmiten el estímulo reflejo en la tabla del cuello con junta estanca O-ring')">
+              <circle cx="110" cy="140" r="28" fill="#94a3b8" stroke="#f8fafc" stroke-width="4" />
+              <circle cx="110" cy="140" r="14" fill="#cbd5e1" />
+              <text x="110" y="185" text-anchor="middle" font-size="11" class="silk-text">ELECTRODO 1</text>
+
+              <circle cx="220" cy="140" r="28" fill="#94a3b8" stroke="#f8fafc" stroke-width="4" />
+              <circle cx="220" cy="140" r="14" fill="#cbd5e1" />
+              <text x="220" y="185" text-anchor="middle" font-size="11" class="silk-text">ELECTRODO 2</text>
+            </g>
+
+            <text x="160" y="240" text-anchor="middle" font-size="11" class="silk-text" fill="#94a3b8">HACIA EL CUELLO DEL ANIMAL</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Contenedor de Renders 3D Reales (Oculto por defecto) -->
+    <div id="renders-container" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <h3 class="text-sm font-semibold text-emerald-400 mb-2">Cara Superior (TOP) - Vista Isométrica 3D</h3>
+          <img src="render_pcb_cara_superior_top.png" alt="Render Cara Superior" class="rounded-xl w-full h-auto bg-slate-950 border border-slate-800">
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <h3 class="text-sm font-semibold text-sky-400 mb-2">Cara Inferior (BOTTOM) - Vista Isométrica 3D</h3>
+          <img src="render_pcb_cara_inferior_bottom.png" alt="Render Cara Inferior" class="rounded-xl w-full h-auto bg-slate-950 border border-slate-800">
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <h3 class="text-sm font-semibold text-slate-300 mb-2">Ambas Caras Desplegadas (Ensamble Completo)</h3>
+        <img src="render_pcb_ambas_caras.png" alt="Render Ambas Caras" class="rounded-xl w-full h-auto bg-slate-950 border border-slate-800">
+      </div>
+    </div>
+
+    <!-- Panel de Detalles del Componente Seleccionado -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span id="info-tag" class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">U1</span>
+          <h3 id="info-name" class="text-lg font-bold text-white">ESP32-S3-WROOM-1-N8</h3>
+        </div>
+        <p id="info-desc" class="text-sm text-slate-300">Microcontrolador Dual Core 240MHz con 8MB Flash y USB nativo.</p>
+        <p id="info-func" class="text-xs text-slate-400">Ejecuta el firmware de geocercas, la máquina de estados de alertas y la pila MQTT.</p>
+      </div>
+
+      <div class="flex items-center gap-3 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 min-w-[220px]">
+        <div>
+          <span class="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Código JLCPCB / LCSC</span>
+          <span id="info-lcsc" class="text-base font-mono font-bold text-emerald-400">C2913200</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Guía Rápida para EasyEDA -->
+    <footer class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 text-xs text-slate-400 flex flex-col md:flex-row justify-between items-center gap-3">
+      <span>💡 <strong>Cómo verlo en EasyEDA:</strong> Presiona <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300 font-mono">Alt + D</kbd> para activar la vista fotorrealista en 3D.</span>
+      <span class="text-slate-500 font-mono">Archivos guardados en: /docs/diseno_electronico_pcb/</span>
+    </footer>
+
+  </div>
+
+  <script>
+    let currentView = 'top';
+
+    function setView(view) {
+      currentView = view;
+      const topLogic = document.getElementById('logic-top-components');
+      const bottomLogic = document.getElementById('logic-bottom-components');
+      const topPower = document.getElementById('power-top-components');
+      const bottomPower = document.getElementById('power-bottom-components');
+      const title = document.getElementById('view-title');
+      const svgContainer = document.getElementById('svg-container');
+      const rendersContainer = document.getElementById('renders-container');
+
+      // Actualizar botones
+      ['top', 'bottom', 'sidebyside', 'renders'].forEach(v => {
+        const btn = document.getElementById('btn-' + v);
+        if (v === view) {
+          btn.className = "px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white transition shadow";
+        } else {
+          btn.className = "px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+        }
+      });
+
+      if (view === 'renders') {
+        svgContainer.classList.add('hidden');
+        rendersContainer.classList.remove('hidden');
+        return;
+      } else {
+        svgContainer.classList.remove('hidden');
+        rendersContainer.classList.add('hidden');
+      }
+
+      if (view === 'top') {
+        topLogic.classList.remove('hidden');
+        bottomLogic.classList.add('hidden');
+        topPower.classList.remove('hidden');
+        bottomPower.classList.add('hidden');
+        title.innerText = "VISTA ACTIVA: CARA SUPERIOR (TOP) - CHIPS Y COMPONENTES SMD";
+      } else if (view === 'bottom') {
+        topLogic.classList.add('hidden');
+        bottomLogic.classList.remove('hidden');
+        topPower.classList.add('hidden');
+        bottomPower.classList.remove('hidden');
+        title.innerText = "VISTA ACTIVA: CARA INFERIOR (BOTTOM) - NANO-SIM, PADS DE ARNÉS Y ELECTRODOS";
+      } else if (view === 'sidebyside') {
+        topLogic.classList.remove('hidden');
+        bottomLogic.classList.remove('hidden');
+        topPower.classList.remove('hidden');
+        bottomPower.classList.remove('hidden');
+        title.innerText = "VISTA ACTIVA: AMBAS CARAS (MODO TRANSPARENCIA / ENSAMBLE COMPLETO)";
+      }
+    }
+
+    function showInfo(name, tag, desc, lcsc, func) {
+      document.getElementById('info-name').innerText = name;
+      document.getElementById('info-tag').innerText = tag;
+      document.getElementById('info-desc').innerText = desc;
+      document.getElementById('info-lcsc').innerText = lcsc;
+      document.getElementById('info-func').innerText = func;
+    }
+  </script>
+</body>
+</html>

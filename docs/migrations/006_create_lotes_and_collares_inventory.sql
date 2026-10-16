@@ -1,5 +1,5 @@
 -- ====================================================================
--- Migración 006: Módulo de Inventario de Collares y Lotes - CowIA
+-- Migración 006: Módulo de Inventario de Collares y Lotes - Cowai
 -- ====================================================================
 
 -- 1. Tabla de Lotes de Hardware

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COWAI CollarNet V2 | Visualizador 3D Interactivo e Inspector Dimensional CAD</title>
+  
+  <!-- Estilos de Alta Fidelidad CAD Industrial -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Three.js y OrbitControls Locales Autónomos -->
+  <script src="libs/three.min.js"></script>
+  <script src="libs/OrbitControls.js"></script>
+
+  <!-- Mallas 3D Geométricas Empaquetadas (Carga Instantánea Offline) -->
+  <script src="modelos_geometrias.js"></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       1. ENCABEZADO SUPERIOR (HEADER)
+       ========================================================================= -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">C</div>
+      <div class="brand-text">
+        <h1>COWAI CollarNet <span class="badge-v2">V2.0 HALTER</span></h1>
+        <p>Visualizador CAD 3D Interactivo • Arquitectura y Espacio de Dispositivos</p>
+      </div>
+    </div>
+
+    <!-- Indicadores de Ingeniería -->
+    <div class="header-tags">
+      <span class="tag-pill active">● 100% Cero Tornillos (Snap-Fit)</span>
+      <span class="tag-pill active">● Hermetismo IP67 Triple Sello</span>
+      <span class="tag-pill active">● Túnel Continuo 52 mm (Opción A)</span>
+      <span class="tag-pill">Eje Cables Z=17 mm</span>
+    </div>
+
+    <!-- Botones de Acción Rápida -->
+    <div class="header-actions">
+      <button class="btn-icon" id="btn-theme-toggle" title="Cambiar a Modo Claro / Oscuro">☀️</button>
+      <button class="btn-icon" id="btn-screenshot" title="Capturar Imagen HD para Presentaciones">📸</button>
+      <button class="btn-icon" id="btn-help" title="Guía de Presentación para el Equipo">❓</button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       2. CONTENEDOR PRINCIPAL DEL CANVAS 3D
+       ========================================================================= -->
+  <div id="canvas-container"></div>
+
+  <!-- =========================================================================
+       3. PANEL LATERAL IZQUIERDO: CONTROLES DE VISTA Y ÁRBOL DE PIEZAS
+       ========================================================================= -->
+  <aside class="sidebar-panel panel-left">
+    <div class="panel-header">
+      <span class="panel-title">🛠️ Herramientas de Inspección</span>
+      <button class="solo-btn" id="btn-reset-vis" title="Restablecer visibilidad de todas las piezas">Mostrar Todo</button>
+    </div>
+
+    <div class="panel-body">
+
+      <!-- Grupo 1: Despiece Interactivo (Exploded View) -->
+      <div class="control-group">
+        <div class="control-label">
+          <span>💥 Vista Explotada (Despiece)</span>
+          <span class="control-value" id="explode-value">0%</span>
+        </div>
+        <input type="range" id="explode-slider" min="0" max="1" step="0.01" value="0">
+        <button class="solo-btn" id="btn-play-explode" style="padding: 6px; font-size: 11px;">▶ Animar Despiece</button>
+      </div>
+
+      <!-- Grupo 2: Rayos X y Transparencia -->
+      <div class="control-group">
+        <div class="control-label">
+          <span>🩻 Rayos X (Transparencia Carcasas)</span>
+          <span class="control-value" id="xray-value">100%</span>
+        </div>
+        <input type="range" id="xray-slider" min="0.15" max="1" step="0.05" value="1.0">
+      </div>
+
+      <!-- Grupo 3: Alternancias (Cotas y Alámbrico) -->
+      <div class="control-group">
+        <div class="toggle-row">
+          <span>📏 Cotas y Medidas 3D en Escena</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-dimensions" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>🕸️ Modo Alámbrico (Mallas STL)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-wireframe">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Grupo 4: Plano de Corte Dinámico (Section Slicer) -->
+      <div class="control-group">
+        <div class="toggle-row">
+          <span>✂️ Plano de Corte Dinámico (Slicer)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-slicing">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div id="slice-controls" style="display: none; flex-direction: column; gap: 10px;">
+          <div class="segmented-btn-group">
+            <button class="segmented-btn slice-axis-btn" data-axis="x">Eje X (Long.)</button>
+            <button class="segmented-btn slice-axis-btn active" data-axis="y">Eje Y (Transv.)</button>
+            <button class="segmented-btn slice-axis-btn" data-axis="z">Eje Z (Alt.)</button>
+          </div>
+          <div class="control-label">
+            <span>Posición de Corte</span>
+            <span class="control-value" id="slice-value">0 mm</span>
+          </div>
+          <input type="range" id="slice-slider" min="-150" max="150" step="1" value="0">
+          <button class="solo-btn" id="btn-slice-invert" style="padding: 5px;">🔄 Invertir Dirección de Corte</button>
+        </div>
+      </div>
+
+      <!-- Grupo 5: Árbol de Componentes -->
+      <div class="tree-category">
+        <div class="category-title">Estructura y Puente Dorsal</div>
+
+        <div class="tree-item" data-part="puente">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#262930;"></span>
+            <span>Puente Dorsal TPU</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="cincha">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#ff6d00;"></span>
+            <span>Cincha Ganadera (Opción A)</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="arnes">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#37474f;"></span>
+            <span>Arnés Pasacables (Z=17 mm)</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tree-category">
+        <div class="category-title">Cápsula Derecha (Energía)</div>
+
+        <div class="tree-item" data-part="pod_right_base">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#dae2ec;"></span>
+            <span>Cápsula Base ASA</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="bateria">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#1e88e5;"></span>
+            <span>Pack Batería 21700-3P</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="mppt">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#c62828;"></span>
+            <span>Cargador Solar MPPT</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="buzzer">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#212121;"></span>
+            <span>Zumbador Piezoeléctrico</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="pod_right_lid">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#b0bec5;"></span>
+            <span>Tapa Solar ASA</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tree-category">
+        <div class="category-title">Cápsula Izquierda (Electrónica)</div>
+
+        <div class="tree-item" data-part="pod_left_base">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#dae2ec;"></span>
+            <span>Cápsula Base ASA</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="lilygo">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#0d47a1;"></span>
+            <span>Placa LilyGO T-A7670X</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="antena">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#b0bec5;"></span>
+            <span>Antena GNSS Patch</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="pod_left_lid">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#b0bec5;"></span>
+            <span>Tapa Solar ASA</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       4. PANEL LATERAL DERECHO: INSPECTOR DIMENSIONAL Y ESPACIO DE DISPOSITIVOS
+       ========================================================================= -->
+  <aside class="sidebar-panel panel-right">
+    <div class="tabs-header">
+      <button class="tab-btn active" data-tab="fit">📦 Espacio Dispositivos</button>
+      <button class="tab-btn" data-tab="specs">📐 Ficha Técnica</button>
+      <button class="tab-btn" data-tab="inspector">🔍 Inspector</button>
+    </div>
+
+    <div class="panel-body">
+
+      <!-- PESTAÑA 1: ESPACIO DE DISPOSITIVOS Y ANÁLISIS DE HOLGURAS (FIT & CLEARANCE) -->
+      <div class="tab-content active" id="tab-fit">
+        
+        <!-- Banner Arquitectura IP67 -->
+        <div class="ip67-banner">
+          <div class="ip67-title">💧 Arquitectura de Sellado IP67 Pasacables</div>
+          <div class="ip67-desc">
+            • <strong>Barrera 1</strong>: Cuello TPU Ø12x2.2 mm comprimido 0.4 mm (22.2% ISO 3601) en cajera ASA Ø12x1.8 mm.<br>
+            • <strong>Barrera 2</strong>: Bolsillo envolvente de 35 mm con tolerancia ceñida de 0.3 mm.<br>
+            • <strong>Barrera 3</strong>: Cajera interior de Ø12x1.8 mm para sellador náutico Sikaflex 221 (anti-capilaridad).
+          </div>
+        </div>
+
+        <!-- Tarjeta 1: Batería 21700-3P -->
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">
+              <span class="part-color-dot" style="background:#1e88e5;"></span>
+              Pack Batería 21700-3P (Li-ion)
+            </div>
+            <span class="fit-badge ok">✅ Holgura Óptima</span>
+          </div>
+          <table class="dim-table">
+            <thead>
+              <tr><th>Eje</th><th>Pack Batería</th><th>Cavidad Caja</th><th>Holgura Libre</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Long. (X)</td><td>72.0 mm</td><td>76.0 mm</td><td class="clearance-val">+4.0 mm</td></tr>
+              <tr><td>Ancho (Y)</td><td>65.4 mm</td><td>70.0 mm</td><td class="clearance-val">+4.6 mm</td></tr>
+              <tr><td>Alto (Z)</td><td>21.2 mm</td><td>24.0 mm</td><td class="clearance-val">+2.8 mm</td></tr>
+            </tbody>
+          </table>
+          <div class="fit-card-notes">
+            Permite colocar espuma EVA de 1.5 mm para amortiguación de impactos en el animal y deja paso libre a los cables 18AWG hacia el MPPT.
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: LilyGO T-A7670X -->
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">
+              <span class="part-color-dot" style="background:#0d47a1;"></span>
+              Placa MCU LilyGO T-A7670X-S3
+            </div>
+            <span class="fit-badge ok">✅ Espacio Holgado</span>
+          </div>
+          <table class="dim-table">
+            <thead>
+              <tr><th>Eje</th><th>Placa PCB</th><th>Cavidad Caja</th><th>Holgura Libre</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Long. (X)</td><td>75.0 mm</td><td>85.0 mm</td><td class="clearance-val">+10.0 mm</td></tr>
+              <tr><td>Ancho (Y)</td><td>44.0 mm</td><td>74.0 mm</td><td class="clearance-val">+30.0 mm</td></tr>
+              <tr><td>Alto (Z)</td><td>4.8 mm</td><td>15.5 mm</td><td class="clearance-val">+6.2 mm</td></tr>
+            </tbody>
+          </table>
+          <div class="fit-card-notes">
+            Montada sobre 4 postes de fijación de 4.5 mm de altura. El margen de 30 mm lateral acomoda holgadamente el conector USB-C y los cables de antena.
+          </div>
+        </div>
+
+        <!-- Tarjeta 3: Antena GNSS Patch -->
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">
+              <span class="part-color-dot" style="background:#b0bec5;"></span>
+              Antena GNSS Cerámica (GPS)
+            </div>
+            <span class="fit-badge ok">✅ Anti-Vibración</span>
+          </div>
+          <table class="dim-table">
+            <thead>
+              <tr><th>Eje</th><th>Módulo Antena</th><th>Cuna Receptora</th><th>Holgura Libre</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Long. (X)</td><td>25.0 mm</td><td>26.0 mm</td><td class="clearance-val">+1.0 mm</td></tr>
+              <tr><td>Ancho (Y)</td><td>25.0 mm</td><td>26.0 mm</td><td class="clearance-val">+1.0 mm</td></tr>
+              <tr><td>Alto (Z)</td><td>5.15 mm</td><td>10.0 mm</td><td class="clearance-val">+4.85 mm</td></tr>
+            </tbody>
+          </table>
+          <div class="fit-card-notes">
+            Cuna sobreelevada dedicada que asegura la orientación cenital hacia el cielo mientras la resina o adhesivo sella la posición.
+          </div>
+        </div>
+
+        <!-- Tarjeta 4: Túnel de Cincha Ganadera (Opción A) -->
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">
+              <span class="part-color-dot" style="background:#ff6d00;"></span>
+              Túnel Cincha (Opción A Continua)
+            </div>
+            <span class="fit-badge ok">✅ Continuo 100%</span>
+          </div>
+          <table class="dim-table">
+            <thead>
+              <tr><th>Parámetro</th><th>Cincha Ganadera</th><th>Túnel Collar</th><th>Holgura Libre</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Ancho</td><td>38 / 50 mm</td><td>52.0 mm</td><td class="clearance-val">+2.0 mm (con 50)</td></tr>
+              <tr><td>Alto</td><td>3.0 mm</td><td>5.5 mm</td><td class="clearance-val">+2.5 mm libre</td></tr>
+              <tr><td>Aislamiento</td><td>Separación cable</td><td>4.5 mm TPU</td><td class="clearance-val">Tabique Macizo</td></tr>
+            </tbody>
+          </table>
+          <div class="fit-card-notes">
+            La cincha pasa por todo el puente dorsal y las dos cápsulas sin cortes. El cableado va elevado en Z=17 mm, completamente aislado de la cincha.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PESTAÑA 2: FICHA TÉCNICA DIMENSIONAL COMPLETA -->
+      <div class="tab-content" id="tab-specs">
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">📐 Dimensiones Exteriores Globales</div>
+          </div>
+          <table class="dim-table">
+            <tbody>
+              <tr><td>Envergadura Total Ensamble</td><td><strong>404.5 mm</strong></td></tr>
+              <tr><td>Ancho Total Exterior</td><td><strong>83.6 mm</strong></td></tr>
+              <tr><td>Altura Máxima en Cresta</td><td><strong>151.2 mm</strong></td></tr>
+              <tr><td>Cápsula Unitaria (L x W x H)</td><td><strong>126.0 x 82.0 x 35.0 mm</strong></td></tr>
+              <tr><td>Base Cápsula (H)</td><td><strong>26.0 mm</strong></td></tr>
+              <tr><td>Tapa Cápsula (H)</td><td><strong>9.0 mm</strong></td></tr>
+              <tr><td>Espesor Pared ASA</td><td><strong>2.5 mm</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">🌉 Geometría del Puente Dorsal TPU</div>
+          </div>
+          <table class="dim-table">
+            <tbody>
+              <tr><td>Radio Interior Anatómico</td><td><strong>R = 125.0 mm</strong></td></tr>
+              <tr><td>Ángulo de Caída</td><td><strong>± 32.0° (Arco 64°)</strong></td></tr>
+              <tr><td>Espesor en Cresta Central</td><td><strong>26.0 mm</strong></td></tr>
+              <tr><td>Ancho de Cintura Central</td><td><strong>64.0 mm</strong></td></tr>
+              <tr><td>Profundidad de Cunas Envolventes</td><td><strong>35.0 mm</strong></td></tr>
+              <tr><td>Espesor Pared Protectora TPU</td><td><strong>2.8 mm</strong></td></tr>
+              <tr><td>Tolerancia Encastre ASA-TPU</td><td><strong>0.3 mm</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">🔌 Túneles, Cables y Sellos IP67</div>
+          </div>
+          <table class="dim-table">
+            <tbody>
+              <tr><td>Túnel Pasacorreas Continuo</td><td><strong>52.0 mm (W) x 5.5 mm (H)</strong></td></tr>
+              <tr><td>Conducto Pasacables</td><td><strong>Ø 8.0 mm</strong></td></tr>
+              <tr><td>Altura Eje Pasacables</td><td><strong>Z = 17.0 mm (R = 142.0 mm)</strong></td></tr>
+              <tr><td>Tabique Sólido de Aislamiento</td><td><strong>4.5 mm (TPU Macizo)</strong></td></tr>
+              <tr><td>Cuello de Sellado TPU</td><td><strong>Ø 12.0 mm x 2.2 mm alto</strong></td></tr>
+              <tr><td>Cajera Exterior en ASA</td><td><strong>Ø 12.0 mm x 1.8 mm prof.</strong></td></tr>
+              <tr><td>Compresión Axial Elástica</td><td><strong>0.4 mm (22.2% ISO 3601)</strong></td></tr>
+              <tr><td>Cajera Interior para Potting</td><td><strong>Ø 12.0 mm x 1.8 mm</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 3: INSPECTOR INTERACTIVO (CLIC EN 3D) -->
+      <div class="tab-content" id="tab-inspector">
+        <div id="inspector-content">
+          <p style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 30px 10px;">
+            Haz clic en cualquier pieza o dispositivo del modelo 3D para inspeccionar sus medidas y holguras al detalle.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       5. BARRA FLOTANTE DE VISTAS DE CÁMARA (BOTTOM TOOLBAR)
+       ========================================================================= -->
+  <nav class="camera-toolbar">
+    <button class="view-btn active" data-view="iso">🌐 Ensamble</button>
+    <button class="view-btn" data-view="top">🔝 Planta</button>
+    <button class="view-btn" data-view="front">👁️ Frontal</button>
+    <button class="view-btn" data-view="side">📐 Perfil</button>
+    <button class="view-btn" data-view="pod_right">🔋 Pod Batería</button>
+    <button class="view-btn" data-view="pod_left">💻 Pod LilyGO</button>
+    <button class="view-btn" data-view="bridge">🌉 Puente & Sello</button>
+  </nav>
+
+  <!-- =========================================================================
+       6. MODAL DE PRESENTACIÓN PARA EL EQUIPO DE TRABAJO
+       ========================================================================= -->
+  <div class="modal-overlay" id="help-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>💡 Guía de Presentación del Diseño COWAI V2</h2>
+        <button class="btn-icon" id="btn-close-help">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Este visualizador interactivo 3D fue concebido para que puedas explicar a tus compañeros de equipo la arquitectura integral del collar ganadero <strong>sin necesidad de instalar software CAD ni programas externos</strong>.
+        </p>
+        <p><strong>Puntos Clave para Explicar a tu Equipo:</strong></p>
+        <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+          <li><strong>1. Vista Explotada (Despiece en Vivo)</strong>: Usa el deslizador de la izquierda o haz clic en "▶ Animar" para mostrar cómo encaja cada parte (tapas, juntas tóricas, electrónica y batería flotando).</li>
+          <li><strong>2. Plano de Corte Dinámico</strong>: Activa el interruptor "✂️ Plano de Corte" y mueve el deslizador para cortar el collar por la mitad y enseñarles el túnel continuo de 52 mm y el tabique macizo de 4.5 mm.</li>
+          <li><strong>3. Espacio y Holguras Garantizadas</strong>: Consulta la pestaña derecha "Espacio Dispositivos" para demostrar que el pack 21700-3P tiene +4.0 mm de holgura y la placa LilyGO +10 mm de margen para cableado seguro.</li>
+          <li><strong>4. Hermetismo IP67</strong>: Explica la triple barrera: compresión axial del cuello de TPU al 22.2%, el laberinto de 35 mm y la alberca interior de Sikaflex 221.</li>
+        </ul>
+      </div>
+      <button class="modal-close-btn" onclick="document.getElementById('help-modal').style.display='none'">Entendido</button>
+    </div>
+  </div>
+
+  <!-- Lógica Principal de la Aplicación -->
+  <script src="app.js"></script>
+
+</body>
+</html>

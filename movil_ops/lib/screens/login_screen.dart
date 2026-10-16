@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 1. Logo / Ícono CowIA
+                // 1. Logo / Ícono Cowai
                 Container(
                   width: 80,
                   height: 80,
@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // 2. Títulos
                 Text(
-                  'CowIA Ops',
+                  'Cowai Ops',
                   style: GoogleFonts.outfit(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
@@ -363,7 +363,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     },
                                   ),
                                   ActionChip(
-                                    label: Text('Nube CowIA', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.emeraldGreen)),
+                                    label: Text('Nube Cowai', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.emeraldGreen)),
                                     backgroundColor: AppTheme.surface,
                                     padding: EdgeInsets.zero,
                                     onPressed: () async {

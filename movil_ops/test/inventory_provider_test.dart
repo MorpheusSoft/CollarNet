@@ -46,7 +46,7 @@ void main() {
 
       provider.configureBatch(
         batchNumber: 'L-2026-10',
-        proveedor: 'Fabrica Central CowIA',
+        proveedor: 'Fabrica Central Cowai',
         targetCount: 150,
         ubicacionAlmacen: 'Estante B-04 (Depósito)',
         fechaRecepcion: receptionDate,
@@ -57,7 +57,7 @@ void main() {
       );
 
       expect(provider.batchNumber, equals('L-2026-10'));
-      expect(provider.proveedor, equals('Fabrica Central CowIA'));
+      expect(provider.proveedor, equals('Fabrica Central Cowai'));
       expect(provider.targetCount, equals(150));
       expect(provider.ubicacionAlmacen, equals('Estante B-04 (Depósito)'));
       expect(provider.fechaRecepcion, equals(receptionDate));

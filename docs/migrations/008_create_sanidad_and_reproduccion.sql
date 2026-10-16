@@ -1,6 +1,6 @@
 -- ==========================================================
 -- Migración 008: Módulos de Sanidad, Vacunación y Reproducción
--- Plataforma CowIA (2026)
+-- Plataforma Cowai (2026)
 -- ==========================================================
 
 -- 1. Catálogo de Medicamentos y Vacunas

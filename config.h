@@ -19,12 +19,14 @@ enum NetPreference {
 // Modo por defecto: Fuerza conexión Wi-Fi de alta velocidad (SOITCA)
 #define DEFAULT_NET_PREF NET_PREF_WIFI
 
-// Configuración de Pines de Hardware
-#define STATUS_LED_PIN 2     // LED de estado
-#define BUZZER_PIN 5         // Zumbador piezoeléctrico en IO5 (4000 Hz)
-#define IMPULSE_PIN -1       // Pin de disparo de pulso (-1 si no está conectado o en ESP32-S3 donde no existe GPIO 23)
+// Configuración de Pines de Hardware (Arquitectura Halter V2 / Custom PCB)
+#define STATUS_LED_PIN 2     // LED SMD de estado
+#define BUZZER_PIN 5         // Zumbador piezoeléctrico en IO5 (4000 Hz, Cápsula Derecha)
+#define IMPULSE_PIN 4        // Pin de disparo de pulso disuasorio (Cerca Virtual, Cápsula Derecha)
 #define IMPULSE_LED_PIN IMPULSE_PIN // Alias de compatibilidad
-#define MODEM_POWER_PIN 21   // Pin de alimentación del módulo SIM7670G en Waveshare
+#define MODEM_POWER_PIN 21   // Pin PWRKEY de control de encendido del módem SIM7670
+#define I2C_SDA_PIN 8        // Bus I2C datos acelerómetro SC7A20
+#define I2C_SCL_PIN 9        // Bus I2C reloj acelerómetro SC7A20
 
 // Configuración del Módem Celular SIM7670G 4G LTE
 #define MODEM_RX_PIN 17      // Pin RX ESP32-S3 <- TX SIM7670G
@@ -43,7 +45,7 @@ enum NetPreference {
 #define WIFI_CONNECT_TIMEOUT 15000 // Tiempo de espera máximo para conectar al Wi-Fi (15s)
 #define WIFI_RECONNECT_INTERVAL 10000 // Intervalo de intento de reconexión (10s)
 
-// Configuración del Broker MQTT Oficial CowIA (cowai.net)
+// Configuración del Broker MQTT Oficial Cowai (cowai.net)
 #define MQTT_SERVER "broker.hivemq.com"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC_PREFIX "collarnet/lzambrano"

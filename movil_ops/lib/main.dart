@@ -21,11 +21,11 @@ void main() {
     ),
   );
 
-  runApp(const CowIAOpsApp());
+  runApp(const CowaiOpsApp());
 }
 
-class CowIAOpsApp extends StatelessWidget {
-  const CowIAOpsApp({super.key});
+class CowaiOpsApp extends StatelessWidget {
+  const CowaiOpsApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +36,13 @@ class CowIAOpsApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DrawingProvider()),
         ChangeNotifierProvider(create: (_) => InventoryProvider()),
       ],
-      child: const CowIAOpsMaterialApp(),
+      child: const CowaiOpsMaterialApp(),
     );
   }
 }
 
-class CowIAOpsMaterialApp extends StatelessWidget {
-  const CowIAOpsMaterialApp({super.key});
+class CowaiOpsMaterialApp extends StatelessWidget {
+  const CowaiOpsMaterialApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +53,7 @@ class CowIAOpsMaterialApp extends StatelessWidget {
       onPointerDown: (_) => ops.recordActivity(),
       onPointerMove: (_) => ops.recordActivity(),
       child: MaterialApp(
-        title: 'CowIA Ops — Suite Técnica & Despliegue',
+        title: 'Cowai Ops — Suite Técnica & Despliegue',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         home: const AuthGate(),

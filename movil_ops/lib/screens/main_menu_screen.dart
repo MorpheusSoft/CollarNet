@@ -105,7 +105,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     ),
                   ),
                   Text(
-                    'CowIA v2.0',
+                    'Cowai v2.0',
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

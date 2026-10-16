@@ -374,7 +374,7 @@ class _HatoDrawerState extends State<HatoDrawer> {
           ],
         ),
         content: const Text(
-          'La creación y subdivisión de potreros está bloqueada para esta hacienda.\n\nPara habilitar el diseño de pasturas, solicita la activación de la bandera "Permite Crear Potreros" a tu asesor técnico o administrador CowIA.',
+          'La creación y subdivisión de potreros está bloqueada para esta hacienda.\n\nPara habilitar el diseño de pasturas, solicita la activación de la bandera "Permite Crear Potreros" a tu asesor técnico o administrador Cowai.',
           style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
         ),
         actions: [

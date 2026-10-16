@@ -3,6 +3,7 @@
 // Piezas pequeñas de validación mecánica que imprimen en 15-35 minutos
 // =============================================================================
 
+caller_part = "none"; // Desactivar el ensamble general de collar_halter_v2
 include <collar_halter_v2.scad>
 
 $fn = 36;
@@ -34,47 +35,110 @@ module probeta_cuello_capsula() {
 }
 
 // -----------------------------------------------------------------------------
-// 3. PROBETA C: TEST DE CLICK PERIMETRAL & SELLO IP67 (BASE)
-// Medidas: 38 x 68 x 28 mm | Filamento: ~10g PLA/ASA | Tiempo: ~15-18 min
-// Valida: Ventanas de click laterales y canal en U para la junta estanca
+// 3. PROBETA C: MINI-CAJA AUTÓNOMA CLICK IP67 (BASE)
+// Medidas: 44 x 82 x 20 mm | Paredes 100% cerradas | Suelo liso
+// Valida: 2 Ventanas de click laterales centradas y canal perimetral en U
 // -----------------------------------------------------------------------------
+click_box_l = 44.0;
+click_box_w = pod_w; // 82.0 mm (ancho real)
+click_box_h = 20.0;
+
 module probeta_click_ip67_base() {
     color(col_body) {
-        intersection() {
-            pod_right_base();
-            // Rebanada de 38 mm en la zona central con 2 ventanas de click
-            translate([45, -5, -2])
-                cube([38, pod_w + 10, pod_base_h + 5]);
+        difference() {
+            // Cuerpo exterior redondeado idéntico a las cápsulas reales
+            r_box(click_box_l, click_box_w, click_box_h, pod_r);
+
+            // Cavidad interior limpia con piso cerrado de 2.5 mm y paredes robustas
+            translate([pod_wall + u_w + 1.0, pod_wall + u_w + 1.0, 2.5])
+                r_box(click_box_l - 2*(pod_wall + u_w + 1.0), click_box_w - 2*(pod_wall + u_w + 1.0), click_box_h + 5, max(1, pod_r - pod_wall - u_w - 1.0));
+
+            // Canal continuo en U para la junta estanca en todo el borde superior
+            translate([pod_wall, pod_wall, click_box_h - u_d]) {
+                difference() {
+                    r_box(click_box_l - 2*pod_wall, click_box_w - 2*pod_wall, u_d + 1, max(1, pod_r - pod_wall));
+                    translate([u_w, u_w, -0.5])
+                        r_box(click_box_l - 2*(pod_wall + u_w), click_box_w - 2*(pod_wall + u_w), u_d + 2, max(1, pod_r - pod_wall - u_w));
+                }
+            }
+
+            // Ventana de click lateral 1 (en pared Y = 0)
+            translate([click_box_l/2 - clip_w/2, -0.5, click_box_h - clip_arm_h])
+                cube([clip_w, pod_wall + 1.0, 3.2]);
+
+            // Ventana de click lateral 2 (en pared Y = click_box_w)
+            translate([click_box_l/2 - clip_w/2, click_box_w - pod_wall - 0.5, click_box_h - clip_arm_h])
+                cube([clip_w, pod_wall + 1.0, 3.2]);
+
+            // Muesca ergonómica para abrir con destornillador plano o moneda
+            translate([click_box_l - 6.0, -0.5, click_box_h - 1.2])
+                cube([5.0, 2.0, 2.0]);
         }
     }
 }
 
 // -----------------------------------------------------------------------------
-// 4. PROBETA D: TEST DE CLICK PERIMETRAL & SELLO IP67 (TAPA)
-// Medidas: 38 x 68 x 8 mm | Filamento: ~6g PLA/ASA | Tiempo: ~12-14 min
-// Valida: Pestañas cantilever flexibles (snap-fit), lengüeta de compresión
+// 4. PROBETA D: MINI-TAPA AUTÓNOMA SNAP-FIT (TAPA)
+// Medidas: 44 x 82 x 7 mm
+// Valida: 2 Pestañas elásticas completas (Snap-Hooks) y lengüeta de compresión
 // -----------------------------------------------------------------------------
 module probeta_click_ip67_tapa() {
     color(col_body) {
-        intersection() {
-            pod_right_lid();
-            // Misma rebanada de 38 mm con las pestañas de traba
-            translate([45, -5, -5])
-                cube([38, pod_w + 10, lid_h + 10]);
+        union() {
+            difference() {
+                // Tapa exterior lisa con esquinas suaves
+                hull() {
+                    r_box(click_box_l, click_box_w, lid_h - 1.5, pod_r);
+                    translate([1.5, 1.5, lid_h - 1.5])
+                        r_box(click_box_l - 3, click_box_w - 3, 1.5, max(1, pod_r - 1.5));
+                }
+                // Vaciado interior
+                translate([pod_wall + u_w + 1.0, pod_wall + u_w + 1.0, -1])
+                    r_box(click_box_l - 2*(pod_wall + u_w + 1.0), click_box_w - 2*(pod_wall + u_w + 1.0), lid_h - 2.5, max(1, pod_r - pod_wall - u_w - 1.0));
+            }
+
+            // Lengüeta perimetral de compresión que baja al canal en U (sello IP67)
+            translate([pod_wall + (u_w - tongue_w)/2, pod_wall + (u_w - tongue_w)/2, -tongue_h]) {
+                difference() {
+                    r_box(click_box_l - 2*(pod_wall + (u_w - tongue_w)/2), click_box_w - 2*(pod_wall + (u_w - tongue_w)/2), tongue_h + 0.1, max(1, pod_r - pod_wall));
+                    translate([tongue_w, tongue_w, -0.5])
+                        r_box(click_box_l - 2*(pod_wall + (u_w - tongue_w)/2 + tongue_w), click_box_w - 2*(pod_wall + (u_w - tongue_w)/2 + tongue_w), tongue_h + 1.2, max(1, pod_r - pod_wall - tongue_w));
+                }
+            }
+
+            // Pestaña elástica cantilever 1 (en pared lateral Y = 0)
+            translate([click_box_l/2 - clip_w/2 + 0.2, 0.4, -clip_arm_h]) {
+                cube([clip_w - 0.4, clip_t, clip_arm_h]);
+                hull() {
+                    translate([0, 0, 0.2]) cube([clip_w - 0.4, 0.2, 0.5]);
+                    translate([0, -hook_d, 2.0]) cube([clip_w - 0.4, 0.2, 0.8]);
+                }
+            }
+
+            // Pestaña elástica cantilever 2 (en pared lateral Y = click_box_w)
+            translate([click_box_l/2 - clip_w/2 + 0.2, click_box_w - clip_t - 0.4, -clip_arm_h]) {
+                cube([clip_w - 0.4, clip_t, clip_arm_h]);
+                hull() {
+                    translate([0, clip_t - 0.2, 0.2]) cube([clip_w - 0.4, 0.2, 0.5]);
+                    translate([0, clip_t + hook_d - 0.2, 2.0]) cube([clip_w - 0.4, 0.2, 0.8]);
+                }
+            }
         }
     }
 }
 
 // -----------------------------------------------------------------------------
 // 5. PROBETA E: MINI JUNTA ESTANCA TPU
-// Filamento: ~1.5g TPU | Tiempo: ~4 min
+// Junta tórica rectangular cerrada para la mini-caja
 // -----------------------------------------------------------------------------
 module probeta_junta_ip67() {
     color([0.1, 0.9, 0.3]) {
-        intersection() {
-            gasket_tpu();
-            translate([45, -5, -2])
-                cube([38, pod_w + 10, 10]);
+        translate([pod_wall + (u_w - gasket_w)/2, pod_wall + (u_w - gasket_w)/2, 0]) {
+            difference() {
+                r_box(click_box_l - 2*(pod_wall + (u_w - gasket_w)/2), click_box_w - 2*(pod_wall + (u_w - gasket_w)/2), gasket_d, max(1, pod_r - pod_wall));
+                translate([gasket_w, gasket_w, -0.5])
+                    r_box(click_box_l - 2*(pod_wall + (u_w - gasket_w)/2 + gasket_w), click_box_w - 2*(pod_wall + (u_w - gasket_w)/2 + gasket_w), gasket_d + 1.0, max(1, pod_r - pod_wall - gasket_w));
+            }
         }
     }
 }
@@ -87,10 +151,30 @@ module demo_acople_tpu() {
     // Cuello entrando desplazado 25 mm en X
     translate([25, -pod_w/2, 0])
         probeta_cuello_capsula();
-    // Cincha ganadera
+    // Cincha ganadera continua inferior (52 mm túnel, cinta 38-50 mm)
     color(col_strap)
         translate([-12, -strap_width/2, tunnel_t + 0.3])
             cube([75, strap_width, 3.2]);
+    // Arnés Pasacables continuo superior (Ø7.0 mm a Z = conduit_z = 17.0 mm)
+    %color([0.20, 0.20, 0.22], 0.8)
+        translate([-12, 0, conduit_z])
+            rotate([0, 90, 0])
+                cylinder(r=3.5, h=75, $fn=24);
+}
+
+// -----------------------------------------------------------------------------
+// 6. PROBETA F: SEGMENTO DE PUENTE DORSAL TPU (TÚNEL CORREA + CONDUCTO PASACABLES)
+// Medidas: 45 mm arco central | Filamento: ~18g TPU 95A | Tiempo: ~25-30 min
+// Valida: Túnel pasacorreas continuo 52x5.5mm, conducto pasacables Ø8mm a Z=17mm
+// -----------------------------------------------------------------------------
+module probeta_puente_segmento() {
+    color(col_bridge) {
+        intersection() {
+            dorsal_bridge_body();
+            translate([-25, -pod_w/2 - 2, 110])
+                cube([50, pod_w + 4, 45]);
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -109,7 +193,7 @@ module demo_click_ip67() {
 }
 
 // Selector
-probeta = "demo_acople"; // [demo_acople, demo_click, bolsillo_tpu, cuello_capsula, click_base, click_tapa, junta]
+probeta = "demo_acople"; // [demo_acople, demo_click, bolsillo_tpu, cuello_capsula, click_base, click_tapa, junta, puente_segmento]
 
 if (probeta == "demo_acople") {
     demo_acople_tpu();
@@ -125,4 +209,6 @@ if (probeta == "demo_acople") {
     probeta_click_ip67_tapa();
 } else if (probeta == "junta") {
     probeta_junta_ip67();
+} else if (probeta == "puente_segmento") {
+    probeta_puente_segmento();
 }

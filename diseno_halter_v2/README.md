@@ -23,12 +23,14 @@ A diferencia de las cajas tradicionales que cuelgan bajo el cuello del animal, e
 
 | Componente | Especificación / Modelo | Ubicación |
 | :--- | :--- | :--- |
-| **Batería** | Pack 21700-3P Li-Ion (73 × 67 × 23.5 mm, ~15.000 mAh, 3.7V) | Cápsula Derecha |
+| **Batería Li-Ion** | Celda Li-Ion 21700 (3.7V / 5000 mAh) con protección BMS 1S (DW01A + FS8205) | Cápsula Derecha |
 | **Paneles Solares (2x)** | Monocristalinos Epoxi `RY9-414` de 55 × 60 × 2.2 mm | Tapa Izquierda y Tapa Derecha |
-| **Placa Principal** | LILYGO T-A7670X-S3 (ESP32-S3 + 4G LTE + GPS) | Cápsula Izquierda |
-| **Antena GNSS** | Parche cerámico activo 25.5 × 25.5 × 8.2 mm | Cuna sobreelevada Cápsula Izquierda |
-| **Cargador Solar** | Módulo MPPT CN3791 (o TP4056 con protección) | Compartimento Cápsula Derecha |
-| **Alerta Acústica** | Zumbador piezoeléctrico Ø12.4 × 8.0 mm (95 dB) | Cámara acústica Cápsula Derecha |
+| **Placa Lógica y RF** | PCB a Medida CowAI V2 (ESP32-S3 + SIM7670SA 4G LTE/GNSS + SC7A20) | Cápsula Izquierda |
+| **Antena GNSS** | Parche cerámico activo/pasivo 25.5 × 25.5 × 8.2 mm (apuntando al cielo) | Cuna sobreelevada Cápsula Izquierda |
+| **Cargador Solar MPPT** | Circuito integrado MPPT CN3791 para paneles de 6V | Integrado en PCB Cápsula Izquierda |
+| **Alerta Acústica** | Zumbador piezoeléctrico pasivo Ø12.4 × 8.0 mm (95 dB @ 4000 Hz) | Cámara acústica Cápsula Derecha |
+| **Estímulo Cerca Virtual** | Generador de pulso capacitivo CDI (800V-1000V / 0.05-0.1J) + Watchdog 1s | Cápsula Derecha |
+| **Electrodos de Cuello** | 2x Pernos redondeados de acero inoxidable M4 (calidad marina 316) con O-rings | Base inferior Cápsula Derecha |
 | **Visor de Estado** | Barra difusora vertical acrílico / PETG translúcido | Hombro frontal Cápsula Izquierda |
 | **Cincha Ganadera** | Paso universal de **52 mm** (admite correa de 38 mm a 50 mm) | Túnel continuo bajo ambas cápsulas |
 
@@ -96,34 +98,35 @@ Todos los archivos han sido generados y validados paramétricamente desde `colla
 
 ---
 
-## 6. Esquema Eléctrico de Conexión
-
 ```
-   [Panel Solar Izq 55x60]                [Panel Solar Der 55x60]
-            │ (+)                                  │ (+)
-      [Diodo SS34]                           [Diodo SS34]
-            │                                      │
-            └─────────────────┬────────────────────┘
-                              │ (+)
-                              ▼
-                     [Cargador Solar MPPT]
-                        (Entrada Solar)
-                              │
-                     [Salida Batería BAT]
-                              │
-                              ├──► [Pack 21700-3P (3.7V / 15.000 mAh)]
-                              │
-                  (Paso por Canal del Puente Ø8.0 mm)
-                              │
-                              ▼
-                 [LILYGO T-A7670X-S3 (BAT / VBUS)]
-                              ├──► [Antena GPS Cerámica]
-                              ├──► [LED de Estado IO2]
-                              └──► [Buzzer Piezoeléctrico IO5]
+        [CÁPSULA IZQUIERDA: Lógica & RF]                 [CÁPSULA DERECHA: Potencia & Estímulo]
+ ┌──────────────────────────────────────────────┐       ┌──────────────────────────────────────┐
+ │ • ESP32-S3-WROOM-1 (MCU LittleFS)            │       │ • Celda Li-Ion 21700 (3.7V / 5000mAh)│
+ │ • SIM7670SA Módem (4G LTE Cat-1 + GNSS)      │       │ • Protección BMS 1S (DW01A + FS8205) │
+ │ • Antena Parche GNSS Cerámica (al cielo)     │       │ • Buzzer Piezoeléctrico 95dB (4000Hz)│
+ │ • Antena FPC 4G LTE Adhesiva                 │       │ • Driver MOSFET AO3400A              │
+ │ • Acelerómetro SC7A20 I2C (6µA Reposo)       │       │ • Generador de Pulso CDI (800V-1000V)│
+ │ • Cargador Solar MPPT CN3791 (Panel 6V)      │       │ • Optoacoplador EL817C + Watchdog 1s │
+ │ • Regulador Buck DC-DC SY8089 (3.3V / 2A)    │       │ • 2x Electrodos Inox M4 para cuello  │
+ └──────────────────────┬───────────────────────┘       └──────────────────┬───────────────────┘
+                        │                                                  │
+                        └────────────[ CANAL PUENTE DORSAL Ø8mm ]──────────┘
+                                      Arnés de 5 Hilos de Baja Tensión:
+                                      1. VBAT (+) [3.4V - 4.2V]
+                                      2. GND (-)  [0V Masa Común]
+                                      3. BUZZER_CTRL (PWM 4000Hz desde IO5)
+                                      4. IMPULSE_TRIG (Pulso 1s desde IO4)
+                                      5. SOLAR_DER_IN (Panel Solar Derecho)
 ```
 
-> [!TIP]
-> Los diodos Schottky (1N5819 o SS34) en el polo positivo de cada panel solar impiden que un panel sombreado absorba energía del panel iluminado, maximizando la eficiencia de carga en el campo.
+> [!NOTE]
+> La documentación detallada para fabricar las placas en EasyEDA / KiCad y pedir el ensamblaje automatizado SMT en JLCPCB se encuentra en:
+> 👉 [`docs/diseno_electronico_pcb/`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/)
+> - `01_ARQUITECTURA_Y_DISTRIBUCION.md`: Fundamentos y aislamiento galvánico.
+> - `02_ESQUEMATICO_CAPSULA_IZQUIERDA_LOGICA.md`: Esquemático completo de la placa lógica.
+> - `03_ESQUEMATICO_CAPSULA_DERECHA_POTENCIA.md`: Esquemático de descarga eléctrica y audio.
+> - `04_LISTA_MATERIALES_BOM_LCSC.csv`: Lista de compra y fabricación con números LCSC.
+> - `05_GUIA_DISENO_EASYEDA_JLC.md`: Guía paso a paso para mandar a fabricar las placas.
 
 ---
 

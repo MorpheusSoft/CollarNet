@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * SIMULADOR Y GATEWAY DE TELEMETRÍA DE COLLAR IOT (CowIA / CollarNet)
+ * SIMULADOR Y GATEWAY DE TELEMETRÍA DE COLLAR IOT (Cowai / CollarNet)
  * ==================================================================
  * Este script permite simular la telemetría satelital (GPS + Batería + Señal)
  * para un collar físico o virtual (ej: COLLAR_01) conectado al sistema.

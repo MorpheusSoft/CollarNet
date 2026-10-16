@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 /**
- * Servicio de Notificaciones Multicanal CowIA (Telegram, WhatsApp, Email)
+ * Servicio de Notificaciones Multicanal Cowai (Telegram, WhatsApp, Email)
  */
 export async function sendTelegramMessage(botToken, chatId, text, coordinates = null) {
   if (!botToken || !chatId) {
@@ -40,7 +40,7 @@ export async function dispatchAlertNotification({
   tenantId,
   alertaId = null,
   tipo = 'ALERTA_GENERAL',
-  titulo = 'Aviso del Sistema CowIA',
+  titulo = 'Aviso del Sistema Cowai',
   mensaje = '',
   coordinates = null
 }) {

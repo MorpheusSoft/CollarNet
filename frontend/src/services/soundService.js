@@ -1,6 +1,6 @@
 /**
  * soundService.js
- * Servicio de alarma acústica de alta penetración para la plataforma CowIA / CollarNet.
+ * Servicio de alarma acústica de alta penetración para la plataforma Cowai / CollarNet.
  * Emite sonido intermitente (buzzer piezoeléctrico de 2.2 - 2.6 kHz) cuando un animal
  * cruza el margen de advertencia (3 metros) o sale de su potrero asignado.
  * 
