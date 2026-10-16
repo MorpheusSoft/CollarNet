@@ -80,7 +80,7 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
       _esp32Ip = '';
     }
 
-    // 2. Determinar fuente inicial: por defecto Servidor Cowai (4G Nube).
+    // 2. Determinar fuente inicial: por defecto Servidor COWAI (4G Nube).
     // Solo conmutar a Wi-Fi directo si el collar reporta explícitamente medio_red WIFI con IP local.
     final net = (widget.animal['medio_red'] ?? widget.animal['net'] ?? '').toString().toUpperCase();
     if (net == 'WIFI' && _esp32Ip.isNotEmpty) {
@@ -217,7 +217,7 @@ class _CollarCameraViewerWidgetState extends State<CollarCameraViewerWidget> {
     debugPrint('[CameraViewer] $reason. Intentando enlace con Servidor...');
     setState(() {
       _streamSource = CameraStreamSource.server;
-      _errorMessage = '$reason\nConmutando automáticamente a Servidor Cowai...';
+      _errorMessage = '$reason\nConmutando automáticamente a Servidor COWAI...';
     });
     _startServerPolling();
   }

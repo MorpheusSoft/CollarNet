@@ -28,10 +28,10 @@ class AppVersionMetadata {
 
   factory AppVersionMetadata.fromJson(Map<String, dynamic> json) {
     return AppVersionMetadata(
-      appName: json['appName'] ?? 'Cowai Técnico',
+      appName: json['appName'] ?? 'COWAI Técnico',
       version: json['version'] ?? '1.0.0',
       versionCode: int.tryParse(json['versionCode']?.toString() ?? '1') ?? 1,
-      downloadUrl: json['downloadUrl'] ?? 'https://cowai.net/apk/Cowai-Tecnico.apk',
+      downloadUrl: json['downloadUrl'] ?? 'https://cowai.net/apk/COWAI-Tecnico.apk',
       mandatory: json['mandatory'] == true,
       releaseNotes: json['releaseNotes'] ?? 'Mejoras continuas de rendimiento y estabilidad.',
     );
@@ -229,7 +229,7 @@ class _UpdateModalDialogState extends State<_UpdateModalDialog> {
       OtaUpdate()
           .execute(
             widget.remote.downloadUrl,
-            destinationFilename: 'Cowai-Tecnico-Update.apk',
+            destinationFilename: 'COWAI-Tecnico-Update.apk',
           )
           .listen(
         (OtaEvent event) {

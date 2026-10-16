@@ -88,7 +88,7 @@ Este archivo registra el avance y el detalle técnico de cada una de las fases d
     *   Configuración en firmware de red celular SIM 4G LTE Digitel (`SIM7670G`, APN `gprsweb.digitel.ve`) como conexión exclusiva y por defecto (`DEFAULT_NET_PREF = NET_PREF_CELLULAR`).
     *   Desactivación permanente de la radio Wi-Fi en el collar (`WiFi.mode(WIFI_OFF)`) para optimizar el consumo de batería y garantizar la cobertura total en potreros.
     *   Flasheo directo del firmware actualizado vía puerto serial USB `/dev/ttyACM4` al chip ESP32-S3 a 921600 baudios.
-    *   Actualización de aplicaciones cliente móviles (`Cowai Ops` técnico y `Cowai Campo` supervisor) para conectar por defecto al VPS de producción en la nube (`https://cowai.net`).
+    *   Actualización de aplicaciones cliente móviles (`COWAI Ops` técnico y `COWAI Campo` supervisor) para conectar por defecto al VPS de producción en la nube (`https://cowai.net`).
     *   Soporte completo de PWAs para Safari en iOS y empaquetado de APKs de Android v1.0.4.
 *   **Método de Verificación**:
     *   Monitoreo serial confirmando conexión directa: `[Celular] ¡Conexión de datos 4G LTE DIGITEL establecida con éxito!`, `[MQTT] ¡Conectado con éxito al broker!`.

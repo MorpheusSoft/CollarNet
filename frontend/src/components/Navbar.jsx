@@ -16,7 +16,7 @@ export default function Navbar({ user, onOpenLogin, onGoToDashboard, onOpenApkDo
             </div>
             <div className="flex flex-col">
               <span className="font-display font-black text-2xl tracking-tight text-white">
-                Cow<span className="text-emerald-400">ai</span>
+                COW<span className="text-emerald-400">AI</span>
               </span>
               <span className="text-[10px] tracking-widest text-emerald-400 uppercase font-semibold -mt-1">
                 Ganadería Inteligente con IA

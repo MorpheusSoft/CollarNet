@@ -23,8 +23,8 @@ export default function ApkDownloadModal({ visible, onHide, user, initialApp = '
   }, [visible, initialApp, user]);
 
   const isTecnico = activeApp === 'tecnico';
-  const apkFileName = isTecnico ? 'Cowai-Tecnico.apk' : 'Cowai-Campo.apk';
-  const appTitle = isTecnico ? 'Cowai Técnico (Taller & IoT)' : 'Cowai Campo (Manga & Finca)';
+  const apkFileName = isTecnico ? 'COWAI-Tecnico.apk' : 'COWAI-Campo.apk';
+  const appTitle = isTecnico ? 'COWAI Técnico (Taller & IoT)' : 'COWAI Campo (Manga & Finca)';
   const appSubtitle = isTecnico 
     ? 'Herramienta de taller, alta de hatos, Bluetooth y diagnóstico de hardware' 
     : 'Gestión de potreros, vinculación rápida en manga en 2 toques, pesaje y rescate';
@@ -92,7 +92,7 @@ export default function ApkDownloadModal({ visible, onHide, user, initialApp = '
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Cowai Campo</span>
+            <span>COWAI Campo</span>
           </button>
           <button
             type="button"
@@ -104,7 +104,7 @@ export default function ApkDownloadModal({ visible, onHide, user, initialApp = '
             }`}
           >
             <Wrench className="w-3.5 h-3.5" />
-            <span>Cowai Técnico</span>
+            <span>COWAI Técnico</span>
           </button>
         </div>
 

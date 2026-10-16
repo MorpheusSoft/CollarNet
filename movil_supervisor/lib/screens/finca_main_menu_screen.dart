@@ -73,7 +73,7 @@ class _FincaMainMenuScreenState extends State<FincaMainMenuScreen> {
                             ),
                           ),
                           Text(
-                            'Cowai Finca v1.0',
+                            'COWAI Finca v1.0',
                             style: TextStyle(
                               fontSize: 12,
                               color: FincaTheme.accentGreenLight.withOpacity(0.8),
@@ -108,7 +108,7 @@ class _FincaMainMenuScreenState extends State<FincaMainMenuScreen> {
       ),
       child: Row(
         children: [
-          // Logo / Icono Cowai Finca
+          // Logo / Icono COWAI Finca
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -603,7 +603,7 @@ class _FincaMainMenuScreenState extends State<FincaMainMenuScreen> {
                 controller: controller,
                 style: const TextStyle(color: FincaTheme.textLight),
                 decoration: const InputDecoration(
-                  labelText: 'Servidor Cowai',
+                  labelText: 'Servidor COWAI',
                   hintText: '192.168.86.30:3500',
                   border: OutlineInputBorder(),
                 ),

@@ -10,8 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agrogis_flutter/main.dart';
 
 void main() {
-  testWidgets('Cowai Finca App smoke test', (WidgetTester tester) async {
+  testWidgets('COWAI Finca App smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const CowaiFincaApp());
+    await tester.pumpWidget(const COWAIFincaApp());
   });
 }

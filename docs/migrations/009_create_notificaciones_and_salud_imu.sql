@@ -1,6 +1,6 @@
 -- ==========================================================
 -- Migración 009: Módulos de Notificaciones Multicanal y Salud/Rumia IMU
--- Plataforma Cowai (2026)
+-- Plataforma COWAI (2026)
 -- ==========================================================
 
 -- 1. Configuración de Canales de Notificación por Tenant

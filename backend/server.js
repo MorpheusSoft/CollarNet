@@ -82,6 +82,8 @@ app.get('/apk/CowIA-Tecnico-Release.apk', (req, res) => res.redirect('/apk/Cowai
 app.get('/apk/CowIA-Finca-Release.apk', (req, res) => res.redirect('/apk/Cowai-Campo.apk'));
 app.get('/apk/Cowai-Tecnico-Release.apk', (req, res) => res.redirect('/apk/Cowai-Tecnico.apk'));
 app.get('/apk/Cowai-Finca-Release.apk', (req, res) => res.redirect('/apk/Cowai-Campo.apk'));
+app.get('/apk/COWAI-Tecnico.apk', (req, res) => res.redirect('/apk/Cowai-Tecnico.apk'));
+app.get('/apk/COWAI-Campo.apk', (req, res) => res.redirect('/apk/Cowai-Campo.apk'));
 
 // Servir versiones web / PWA para iPhone y alias directos
 const iphoneAppsPath = path.join(__dirname, '../apps_para_iphone');
@@ -103,7 +105,7 @@ app.get('/descargas', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-      <title>Portal de Aplicaciones - Cowai & CollarNet</title>
+      <title>Portal de Aplicaciones - COWAI & CollarNet</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -206,19 +208,19 @@ app.get('/descargas', (req, res) => {
     <body>
       <div class="container">
         <div class="header">
-          <div class="logo">🐄 Cowai / CollarNet</div>
+          <div class="logo">🐄 COWAI / CollarNet</div>
           <div class="subtitle">Ecosistema Móvil y Portal de Despliegue en Campo</div>
           <div class="ip-badge">🟢 Servidor: http://${host}</div>
         </div>
 
         <div class="section-title">📱 Aplicaciones Móviles Nativas & PWAs</div>
 
-        <!-- Card Cowai Finca -->
+        <!-- Card COWAI Finca -->
         <div class="card">
           <div class="card-header">
             <div class="icon-box icon-finca">🤠</div>
             <div>
-              <div class="card-title">Cowai Finca</div>
+              <div class="card-title">COWAI Finca</div>
               <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">SUPERVISOR DE HATO & MANGA</div>
             </div>
           </div>
@@ -230,12 +232,12 @@ app.get('/descargas', (req, res) => {
           <div class="ios-tip">💡 <b>En iPhone:</b> Abre el enlace en Safari, toca <b>Compartir</b> (<span style="font-size: 1rem;">􀈂</span>) y selecciona <b>"Añadir a pantalla de inicio"</b>.</div>
         </div>
 
-        <!-- Card Cowai Ops -->
+        <!-- Card COWAI Ops -->
         <div class="card">
           <div class="card-header">
             <div class="icon-box icon-ops">🛠️</div>
             <div>
-              <div class="card-title">Cowai Ops</div>
+              <div class="card-title">COWAI Ops</div>
               <div style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">TÉCNICO & LABORATORIO</div>
             </div>
           </div>
@@ -254,7 +256,7 @@ app.get('/descargas', (req, res) => {
           <div class="card-header">
             <div class="icon-box icon-web">🌐</div>
             <div>
-              <div class="card-title">Plataforma Web Cowai</div>
+              <div class="card-title">Plataforma Web COWAI</div>
               <div style="font-size: 0.75rem; color: #818cf8; font-weight: 600;">PANEL DE CONTROL CENTRAL</div>
             </div>
           </div>
@@ -263,7 +265,7 @@ app.get('/descargas', (req, res) => {
         </div>
 
         <div class="footer">
-          Cowai IoT & Virtual Fencing System &copy; 2026<br>
+          COWAI IoT & Virtual Fencing System &copy; 2026<br>
           Desarrollado para entornos de campo y alta exigencia ganadera
         </div>
       </div>
@@ -295,7 +297,7 @@ app.get('*', (req, res, next) => {
 app.get('/api/status', (req, res) => {
   res.json({ 
     status: 'ONLINE', 
-    service: 'Cowai IoT & Virtual Fences Platform', 
+    service: 'COWAI IoT & Virtual Fences Platform', 
     timestamp: new Date().toISOString() 
   });
 });
@@ -364,7 +366,7 @@ async function start() {
       } catch (_) {}
 
       console.log(`=========================================`);
-      console.log(` Servidor CollarNet / Cowai Iniciado`);
+      console.log(` Servidor CollarNet / COWAI Iniciado`);
       console.log(` Escuchando en: http://0.0.0.0:${PORT}`);
       console.log(` Acceso Local: http://localhost:${PORT}`);
       console.log(` Acceso Red Wi-Fi: http://${localIp}:${PORT}`);

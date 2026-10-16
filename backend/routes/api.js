@@ -2552,7 +2552,7 @@ router.get('/collares/lotes', async (req, res) => {
 router.post('/collares/individual', async (req, res) => {
   const userRole = req.headers['x-user-role'] || req.body.userRole || 'SUPERADMIN';
   if (userRole !== 'SUPERADMIN') {
-    return res.status(403).json({ error: 'Solo el SUPERADMIN puede registrar nuevos collares en la plataforma Cowai.' });
+    return res.status(403).json({ error: 'Solo el SUPERADMIN puede registrar nuevos collares en la plataforma COWAI.' });
   }
 
   const {
@@ -2605,7 +2605,7 @@ router.post('/collares/individual', async (req, res) => {
       estadoInicial,
       cleanLoteId,
       cleanTenantId,
-      ubicacionAlmacen || 'Almacén Central Cowai',
+      ubicacionAlmacen || 'Almacén Central COWAI',
       motivoEstado || 'Registro individual inicial',
       versionFirmware || '1.0.0'
     ]);
@@ -2622,7 +2622,7 @@ router.post('/collares/individual', async (req, res) => {
       estadoInicial,
       cleanTenantId,
       usuarioId ? parseInt(usuarioId, 10) : null,
-      'Alta individual en inventario Cowai'
+      'Alta individual en inventario COWAI'
     ]);
 
     await client.query('COMMIT');
@@ -2649,8 +2649,8 @@ router.post('/collares/individual', async (req, res) => {
       lote_codigo: loteObj ? loteObj.codigo_lote : null,
       lote_proveedor: loteObj ? loteObj.proveedor : null,
       tenant_id: cleanTenantId,
-      tenant_nombre: tenantObj ? tenantObj.nombre : 'Almacén Central Cowai',
-      ubicacion_almacen: ubicacionAlmacen || 'Almacén Central Cowai',
+      tenant_nombre: tenantObj ? tenantObj.nombre : 'Almacén Central COWAI',
+      ubicacion_almacen: ubicacionAlmacen || 'Almacén Central COWAI',
       motivo_estado: motivoEstado || 'Registro individual',
       version_firmware: versionFirmware || '1.0.0',
       nivel_bateria: 100,
@@ -2680,7 +2680,7 @@ router.post('/collares/individual', async (req, res) => {
 router.post('/collares/lotes', async (req, res) => {
   const userRole = req.headers['x-user-role'] || req.body.userRole || 'SUPERADMIN';
   if (userRole !== 'SUPERADMIN') {
-    return res.status(403).json({ error: 'Solo el SUPERADMIN puede registrar lotes de collares en Cowai.' });
+    return res.status(403).json({ error: 'Solo el SUPERADMIN puede registrar lotes de collares en COWAI.' });
   }
 
   const {
@@ -2717,7 +2717,7 @@ router.post('/collares/lotes', async (req, res) => {
     let collaresToInsert = [];
     const cleanTenantId = tenantId ? parseInt(tenantId, 10) : null;
     const estadoInicial = cleanTenantId ? 'DESACTIVADO' : 'EN_ALMACEN';
-    const ubicacion = ubicacionAlmacen || 'Almacén Central Cowai';
+    const ubicacion = ubicacionAlmacen || 'Almacén Central COWAI';
     const fw = versionFirmwareInicial || '1.0.0';
 
     const rawItems = items || req.body.collares;
@@ -2899,8 +2899,8 @@ router.post('/collares/lotes', async (req, res) => {
         lote_codigo: loteCodigoClean,
         lote_proveedor: String(proveedor).trim(),
         tenant_id: cleanTenantId,
-        tenant_nombre: tenantObj ? tenantObj.nombre : 'Almacén Central Cowai',
-        ubicacion_almacen: ubicacionAlmacen || 'Almacén Central Cowai',
+        tenant_nombre: tenantObj ? tenantObj.nombre : 'Almacén Central COWAI',
+        ubicacion_almacen: ubicacionAlmacen || 'Almacén Central COWAI',
         motivo_estado: `Recepción en Lote #${loteCodigoClean}`,
         nivel_bateria: 100,
         senal_celular: 5,
@@ -2964,7 +2964,7 @@ router.patch('/collares/:id/traslado', async (req, res) => {
 
     const nuevoTenantId = tenantId && tenantId !== 'CENTRAL' ? parseInt(tenantId, 10) : null;
     const nuevoEstado = nuevoTenantId ? (collarActual.estado === 'ACTIVO' ? 'ACTIVO' : 'DESACTIVADO') : 'EN_ALMACEN';
-    const nuevaUbicacion = ubicacionAlmacen || (nuevoTenantId ? 'En Adquiriente/Finca' : 'Almacén Central Cowai');
+    const nuevaUbicacion = ubicacionAlmacen || (nuevoTenantId ? 'En Adquiriente/Finca' : 'Almacén Central COWAI');
 
     const updateSQL = `
       UPDATE collares 
@@ -3015,8 +3015,8 @@ router.patch('/collares/:id/traslado', async (req, res) => {
       const nuevoTenantId = tenantId && tenantId !== 'CENTRAL' ? parseInt(tenantId, 10) : null;
       const tenantObj = memTenants.find(t => String(t.id) === String(nuevoTenantId));
       prev.tenant_id = nuevoTenantId;
-      prev.tenant_nombre = tenantObj ? tenantObj.nombre : 'Almacén Central Cowai';
-      prev.ubicacion_almacen = ubicacionAlmacen || (nuevoTenantId ? 'En Adquiriente/Finca' : 'Almacén Central Cowai');
+      prev.tenant_nombre = tenantObj ? tenantObj.nombre : 'Almacén Central COWAI';
+      prev.ubicacion_almacen = ubicacionAlmacen || (nuevoTenantId ? 'En Adquiriente/Finca' : 'Almacén Central COWAI');
       prev.motivo_estado = motivo || 'Traslado de asignación';
 
       memHistorial.unshift({
@@ -3071,7 +3071,7 @@ router.patch('/collares/:id/estado', async (req, res) => {
       }
       if (['EN_ALMACEN', 'EN_TRANSITO', 'DE_BAJA'].includes(nuevoEstado)) {
         await client.query('ROLLBACK');
-        return res.status(403).json({ error: 'Los administradores de finca no pueden dar de baja ni transferir al almacén central. Debes solicitarlo al Administrador Cowai.' });
+        return res.status(403).json({ error: 'Los administradores de finca no pueden dar de baja ni transferir al almacén central. Debes solicitarlo al Administrador COWAI.' });
       }
     }
 
@@ -5990,7 +5990,7 @@ router.post('/notificaciones/probar-canal', async (req, res) => {
       if (!botToken || !chatId) {
         return res.status(400).json({ error: 'Debes ingresar el Token del Bot y el Chat ID de Telegram.' });
       }
-      const testMsg = '🔔 *PRUEBA DE CONEXIÓN COWAI*\n\n¡Tu Bot de Telegram está conectado exitosamente con la plataforma Cowai! Recibirás alertas perimetrales y de salud aquí.';
+      const testMsg = '🔔 *PRUEBA DE CONEXIÓN COWAI*\n\n¡Tu Bot de Telegram está conectado exitosamente con la plataforma COWAI! Recibirás alertas perimetrales y de salud aquí.';
       await sendTelegramMessage(botToken, chatId, testMsg, { lat: 8.5833, lng: -70.3333 });
       
       await pool.query(`
@@ -6013,7 +6013,7 @@ router.post('/notificaciones/probar-canal', async (req, res) => {
     if (canal === 'EMAIL') {
       await pool.query(`
         INSERT INTO bitacora_notificaciones (canal, destinatario, titulo, mensaje, estado, tenant_id)
-        VALUES ('EMAIL', $1, 'Prueba de Correo Cowai', 'Prueba de envío de alertas por correo electrónico', 'ENVIADO', $2);
+        VALUES ('EMAIL', $1, 'Prueba de Correo COWAI', 'Prueba de envío de alertas por correo electrónico', 'ENVIADO', $2);
       `, [email || 'admin@ganaderia.com', tenantId ? parseInt(tenantId, 10) : 1]);
 
       return res.json({ success: true, message: `Correo de prueba despachado a ${email}.` });
@@ -6954,7 +6954,7 @@ router.get('/finca/resumen/:hatoId', async (req, res) => {
 
 /**
  * GET /api/app/version
- * Retorna la última versión disponible para actualización OTA de las aplicaciones móviles Cowai.
+ * Retorna la última versión disponible para actualización OTA de las aplicaciones móviles COWAI.
  * Soporta query ?app=cowia-tecnico (default) o ?app=cowia-finca
  */
 router.get('/app/version', (req, res) => {
@@ -6965,21 +6965,21 @@ router.get('/app/version', (req, res) => {
 
   if (appParam.includes('finca') || appParam.includes('supervisor') || appParam.includes('campo')) {
     return res.json({
-      appName: 'Cowai Campo',
+      appName: 'COWAI Campo',
       version: '1.0.3',
       versionCode: 4,
-      downloadUrl: `${serverBase}/apk/Cowai-Campo.apk`,
+      downloadUrl: `${serverBase}/apk/COWAI-Campo.apk`,
       mandatory: false,
       releaseNotes: 'Sincronización directa en red local (Hato La Esperanza, Potreros, Collares) y soporte offline.'
     });
   }
 
-  // Default: Cowai Técnico (movil_ops)
+  // Default: COWAI Técnico (movil_ops)
   return res.json({
-    appName: 'Cowai Técnico',
+    appName: 'COWAI Técnico',
     version: '1.0.4',
     versionCode: 5,
-    downloadUrl: `${serverBase}/apk/Cowai-Tecnico.apk`,
+    downloadUrl: `${serverBase}/apk/COWAI-Tecnico.apk`,
     mandatory: false,
     releaseNotes: 'Conexión local y soporte en tiempo real para inventario, hatos y telemetría.'
   });

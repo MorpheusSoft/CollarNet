@@ -45,7 +45,7 @@ enum NetPreference {
 #define WIFI_CONNECT_TIMEOUT 15000 // Tiempo de espera máximo para conectar al Wi-Fi (15s)
 #define WIFI_RECONNECT_INTERVAL 10000 // Intervalo de intento de reconexión (10s)
 
-// Configuración del Broker MQTT Oficial Cowai (cowai.net)
+// Configuración del Broker MQTT Oficial COWAI (cowai.net)
 #define MQTT_SERVER "broker.hivemq.com"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC_PREFIX "collarnet/lzambrano"

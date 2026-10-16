@@ -275,7 +275,7 @@ class _LotesScreenState extends State<LotesScreen> with SingleTickerProviderStat
 
     final batchCtrl = TextEditingController(text: suggestedBatch);
     final provCtrl = TextEditingController(text: isNewBatch ? 'Shenzhen IoT Tech Co.' : inventory.proveedor);
-    final ubicacionCtrl = TextEditingController(text: isNewBatch ? 'Almacén Central Cowai' : inventory.ubicacionAlmacen);
+    final ubicacionCtrl = TextEditingController(text: isNewBatch ? 'Almacén Central COWAI' : inventory.ubicacionAlmacen);
     final targetCtrl = TextEditingController(text: isNewBatch ? '50' : inventory.targetCount.toString());
     final hwCtrl = TextEditingController(text: isNewBatch ? 'HW-v2.0' : inventory.versionHardware);
     final fwCtrl = TextEditingController(text: isNewBatch ? '1.0.0' : inventory.versionFirmware);
@@ -286,13 +286,13 @@ class _LotesScreenState extends State<LotesScreen> with SingleTickerProviderStat
 
     final providerPresets = [
       'Shenzhen IoT Tech Co.',
-      'Cowai Hardware Lab',
+      'COWAI Hardware Lab',
       'Nordic Semiconductor',
       'Quectel Wireless',
     ];
 
     final ubicacionPresets = [
-      'Almacén Central Cowai',
+      'Almacén Central COWAI',
       'Estante A-01 (Principal)',
       'Estante B-04 (Repuestos)',
       'Taller de Diagnóstico',
@@ -444,7 +444,7 @@ class _LotesScreenState extends State<LotesScreen> with SingleTickerProviderStat
                   _buildSectionHeader('2. UBICACIÓN FÍSICA & ASIGNACIÓN', Icons.place_rounded),
                   const SizedBox(height: 8),
 
-                  _buildDialogField('UBICACIÓN FÍSICA / DEPÓSITO *', ubicacionCtrl, 'Ej. Almacén Central Cowai', Icons.location_on_outlined),
+                  _buildDialogField('UBICACIÓN FÍSICA / DEPÓSITO *', ubicacionCtrl, 'Ej. Almacén Central COWAI', Icons.location_on_outlined),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 6,
@@ -579,7 +579,7 @@ class _LotesScreenState extends State<LotesScreen> with SingleTickerProviderStat
                         onPressed: () {
                           final code = batchCtrl.text.trim().isNotEmpty ? batchCtrl.text.trim().toUpperCase() : 'L-2026-09';
                           final prov = provCtrl.text.trim().isNotEmpty ? provCtrl.text.trim() : 'Shenzhen IoT Tech Co.';
-                          final ubicacion = ubicacionCtrl.text.trim().isNotEmpty ? ubicacionCtrl.text.trim() : 'Almacén Central Cowai';
+                          final ubicacion = ubicacionCtrl.text.trim().isNotEmpty ? ubicacionCtrl.text.trim() : 'Almacén Central COWAI';
                           final target = int.tryParse(targetCtrl.text.trim()) ?? 50;
 
                           if (isNewBatch) {

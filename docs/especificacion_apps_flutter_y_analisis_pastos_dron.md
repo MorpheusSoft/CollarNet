@@ -1,4 +1,4 @@
-# 📱 Especificación Integral: Apps Móviles Flutter y Módulo de Pasturas con Dron (Cowai 2026)
+# 📱 Especificación Integral: Apps Móviles Flutter y Módulo de Pasturas con Dron (COWAI 2026)
 
 Este documento define la arquitectura funcional, operativa y técnica de las **dos aplicaciones móviles nativas desarrolladas en Flutter**, así como el diseño e integración del nuevo módulo de **Teledetección y Aforo de Pastos con Dron (UAV)** para optimización del pastoreo rotacional.
 
@@ -32,9 +32,9 @@ Para evitar interfaces sobrecargadas y mitigar riesgos de seguridad operacional,
 
 ---
 
-## 🛠️ 2. APP 1: "Cowai Ops" (Técnica, Laboratorio y Despliegue)
+## 🛠️ 2. APP 1: "COWAI Ops" (Técnica, Laboratorio y Despliegue)
 
-> **Destinatarios**: Ingenieros de soporte, técnicos de laboratorio, cuadrillas de instalación en campo y administradores de plataforma Cowai.  
+> **Destinatarios**: Ingenieros de soporte, técnicos de laboratorio, cuadrillas de instalación en campo y administradores de plataforma COWAI.  
 > **Modo de Enlace**: Comunicación directa local (**BLE / USB-OTG**) con el collar + API REST / WebSockets hacia la nube.
 
 ### 2.1. Onboarding de Adquirientes y Creación de Hatos Maestros
@@ -81,7 +81,7 @@ Permite certificar que un collar esté en perfectas condiciones antes de entrega
 
 ---
 
-## 🤠 3. APP 2: "Cowai Finca" (Productor, Administrador y Corral)
+## 🤠 3. APP 2: "COWAI Finca" (Productor, Administrador y Corral)
 
 > **Destinatarios**: Administradores de hacienda, mayordomos, veterinarios, pesadores y vaqueros.  
 > **Modo de Enlace**: Offline-First nativo con sincronización automática en la nube vía REST y WebSockets.  
@@ -156,7 +156,7 @@ Meter animales a un potrero antes de tiempo degrada las reservas de la raíz y m
        │   Cámara Multiespectral (NDVI / NDRE - Opcional)       │
        └─────────────────────────┬──────────────────────────────┘
                                  │
-                                 ▼ Carga en Cowai
+                                 ▼ Carga en COWAI
        ┌────────────────────────────────────────────────────────┐
        │             PROCESAMIENTO ESPACIAL POSTGIS             │
        │   1. Mapeo del Ortomosaico contra polígono de potrero. │
@@ -211,7 +211,7 @@ El motor calcula la fecha óptima de entrada mediante el siguiente modelo:
 
 ---
 
-### 4.4. Cómo lo Visualiza el Productor en "Cowai Finca"
+### 4.4. Cómo lo Visualiza el Productor en "COWAI Finca"
 
 1. **Capa Satelital con Semáforo de Potreros**:
    * Al activar el filtro *"Capa de Pastos (Dron)"*, cada potrero se ilumina en un color intuitivo:
@@ -288,8 +288,8 @@ CREATE TABLE IF NOT EXISTS evaluaciones_potrero_dron (
 | Fase | Componente | Alcance Clave |
 | :--- | :--- | :--- |
 | **Fase 1** | **Backend Espacial** | Migración SQL (`potreros.estado`, tablas de dron) y endpoints REST para abrir/cerrar potreros y modo arreo. |
-| **Fase 2** | **Cowai Ops (Flutter)** | Módulo de creación de Hatos, test de hardware BLE/GPS/IMU y gestión de inventario masivo. |
-| **Fase 3** | **Cowai Finca (Flutter)** | Módulo de manga/pesaje Bluetooth, dibujo de potreros (`ST_Within`), apertura/cierre y brújula de rescate. |
+| **Fase 2** | **COWAI Ops (Flutter)** | Módulo de creación de Hatos, test de hardware BLE/GPS/IMU y gestión de inventario masivo. |
+| **Fase 3** | **COWAI Finca (Flutter)** | Módulo de manga/pesaje Bluetooth, dibujo de potreros (`ST_Within`), apertura/cierre y brújula de rescate. |
 | **Fase 4** | **Pipeline Dron (IA / GIS)** | Procesador de ortomosaicos GeoTIFF/RGB, cálculo de índice VARI/NDVI y visualización del semáforo en el mapa. |
 
 ---

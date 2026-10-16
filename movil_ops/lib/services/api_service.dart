@@ -9,7 +9,7 @@ import '../models/potrero.dart';
 import 'gis_service.dart';
 
 class ApiService {
-  // Servidor backend CollarNet oficial Cowai por defecto
+  // Servidor backend CollarNet oficial COWAI por defecto
   static const String defaultBaseUrl = 'https://cowai.net/api';
 
   static Future<String> getBaseUrl() async {
@@ -634,7 +634,7 @@ class ApiService {
       const LoteHardware(
         id: 2,
         codigoLote: 'L-2026-09',
-        proveedor: 'Cowai Hardware Lab',
+        proveedor: 'COWAI Hardware Lab',
         cantidadTotal: 100,
         versionHardware: 'HW-v2.1',
         versionFirmwareInicial: '1.2.0',
@@ -691,7 +691,7 @@ class ApiService {
       'versionHardware': versionHardware ?? 'HW-v2.0',
       'versionFirmwareInicial': versionFirmwareInicial ?? '1.0.0',
       'tenantId': tenantId,
-      'ubicacionAlmacen': ubicacionAlmacen ?? 'Almacén Central Cowai',
+      'ubicacionAlmacen': ubicacionAlmacen ?? 'Almacén Central COWAI',
       'notas': notas,
       'modo': 'lista',
       'items': collares.map((c) => {
@@ -785,7 +785,7 @@ class ApiService {
         estado: 'EN_ALMACEN',
         loteCodigo: 'L-2026-08',
         loteProveedor: 'Shenzhen IoT Tech',
-        ubicacionAlmacen: 'Almacén Central Cowai',
+        ubicacionAlmacen: 'Almacén Central COWAI',
         nivelBateria: 95,
         senalCelular: 5,
         versionFirmware: '1.2.0',
@@ -799,7 +799,7 @@ class ApiService {
         estado: 'EN_ALMACEN',
         loteCodigo: 'L-2026-08',
         loteProveedor: 'Shenzhen IoT Tech',
-        ubicacionAlmacen: 'Almacén Central Cowai',
+        ubicacionAlmacen: 'Almacén Central COWAI',
         nivelBateria: 89,
         senalCelular: 4,
         versionFirmware: '1.2.0',

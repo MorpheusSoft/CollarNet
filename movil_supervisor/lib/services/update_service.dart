@@ -27,10 +27,10 @@ class AppVersionMetadata {
 
   factory AppVersionMetadata.fromJson(Map<String, dynamic> json) {
     return AppVersionMetadata(
-      appName: json['appName'] ?? 'Cowai Campo',
+      appName: json['appName'] ?? 'COWAI Campo',
       version: json['version'] ?? '1.0.0',
       versionCode: int.tryParse(json['versionCode']?.toString() ?? '1') ?? 1,
-      downloadUrl: json['downloadUrl'] ?? 'https://cowai.net/apk/Cowai-Campo.apk',
+      downloadUrl: json['downloadUrl'] ?? 'https://cowai.net/apk/COWAI-Campo.apk',
       mandatory: json['mandatory'] == true,
       releaseNotes: json['releaseNotes'] ?? 'Mejoras en conectividad y estabilidad.',
     );
@@ -93,7 +93,7 @@ class UpdateService {
                 child: CircularProgressIndicator(strokeWidth: 2, color: FincaTheme.primaryGreen),
               ),
               SizedBox(width: 12),
-              Text('Verificando actualizaciones de Cowai Campo...'),
+              Text('Verificando actualizaciones de COWAI Campo...'),
             ],
           ),
           duration: Duration(seconds: 2),
@@ -228,7 +228,7 @@ class _UpdateModalDialogState extends State<_UpdateModalDialog> {
       OtaUpdate()
           .execute(
             widget.remote.downloadUrl,
-            destinationFilename: 'Cowai-Campo-Update.apk',
+            destinationFilename: 'COWAI-Campo-Update.apk',
           )
           .listen(
         (OtaEvent event) {

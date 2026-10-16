@@ -1,6 +1,6 @@
-# 📖 Diccionario de Datos - Plataforma Cowai (2026)
+# 📖 Diccionario de Datos - Plataforma COWAI (2026)
 
-Este documento detalla la estructura, las relaciones y el modelo conceptual de la base de datos relacional y geográfica de **Cowai** (*Cowai - Ganadería Inteligente, Cercas Virtuales y Analítica IA*). La plataforma opera sobre **PostgreSQL 15+** con la extensión espacial **PostGIS** bajo el sistema de referencia espacial **WGS 84 (SRID 4326)** para el procesamiento geográfico en tiempo real de cercas virtuales autónomas y telemetría de collares IoT.
+Este documento detalla la estructura, las relaciones y el modelo conceptual de la base de datos relacional y geográfica de **COWAI** (*COWAI - Ganadería Inteligente, Cercas Virtuales y Analítica IA*). La plataforma opera sobre **PostgreSQL 15+** con la extensión espacial **PostGIS** bajo el sistema de referencia espacial **WGS 84 (SRID 4326)** para el procesamiento geográfico en tiempo real de cercas virtuales autónomas y telemetría de collares IoT.
 
 ---
 
@@ -59,7 +59,7 @@ El modelo de datos se divide en cinco (5) pilares:
 ---
 
 ### 🏢 1. Tabla: `tenants` (Organizaciones / Fincas Adquirentes)
-Aislamiento multi-empresa para el modelo SaaS de Cowai.
+Aislamiento multi-empresa para el modelo SaaS de COWAI.
 
 | Campo | Tipo de Dato | Restricciones | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -152,7 +152,7 @@ Control de compras de lotes industriales de collares (ej. lote de 200 collares).
 | `cantidad_total` | `INTEGER` | `NOT NULL` | Total de unidades recibidas en el lote. |
 | `version_hardware` | `VARCHAR(30)` | `DEFAULT 'HW-v2.1'` | Versión de placa electrónica / PCB. |
 | `version_firmware_inicial` | `VARCHAR(30)` | `DEFAULT '1.0.0'` | Versión de firmware flasheada de fábrica. |
-| `tenant_id` | `INTEGER` | `FK` references `tenants(id)` | Adquirente inicial (NULL = Stock Almacén Central Cowai). |
+| `tenant_id` | `INTEGER` | `FK` references `tenants(id)` | Adquirente inicial (NULL = Stock Almacén Central COWAI). |
 | `notas` | `TEXT` | `NULL` | Observaciones técnicas o logísticas de la importación. |
 | `creado_en` | `TIMESTAMP` | `DEFAULT CURRENT_TIMESTAMP` | Fecha de registro del lote. |
 

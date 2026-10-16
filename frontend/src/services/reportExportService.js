@@ -8,14 +8,14 @@ import * as XLSX from 'xlsx';
 export function exportFichaAnimalPDF(animal, genealogia = null, pesajes = [], eventosSanitarios = []) {
   const doc = new jsPDF();
 
-  // Membrete Superior Cowai
+  // Membrete Superior COWAI
   doc.setFillColor(11, 18, 28);
   doc.rect(0, 0, 210, 35, 'F');
 
   doc.setTextColor(16, 185, 129);
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('Cowai', 15, 18);
+  doc.text('COWAI', 15, 18);
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
@@ -102,7 +102,7 @@ export function exportFichaAnimalPDF(animal, genealogia = null, pesajes = [], ev
     doc.setPage(i);
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
-    doc.text(`Documento emitido automáticamente por Cowai • Página ${i} de ${pageCount} • Trazabilidad Ganadera Certificada`, 15, 290);
+    doc.text(`Documento emitido automáticamente por COWAI • Página ${i} de ${pageCount} • Trazabilidad Ganadera Certificada`, 15, 290);
   }
 
   doc.save(`Ficha_Zootecnica_${animal.arete_visual || animal.areteVisual || 'RES'}.pdf`);
@@ -111,7 +111,7 @@ export function exportFichaAnimalPDF(animal, genealogia = null, pesajes = [], ev
 /**
  * 📊 2. Exportar Inventario Ganadero Completo a Excel (.xlsx)
  */
-export function exportInventarioGanaderoExcel(animalesList = [], nombreFinca = 'Cowai_Ganado') {
+export function exportInventarioGanaderoExcel(animalesList = [], nombreFinca = 'COWAI_Ganado') {
   const data = animalesList.map((a, idx) => ({
     'N°': idx + 1,
     'Arete Visual': a.arete_visual || a.areteVisual || '',
@@ -163,7 +163,7 @@ export function exportInventarioCollaresExcel(collaresList = []) {
     'Estado Ciclo': c.estado,
     'Lote Origen': c.lote_codigo || c.lote_id || 'Directo',
     'Res Asignada': c.arete_visual || 'En Almacén',
-    'Finca / Tenant': c.tenant_nombre || 'Cowai Central',
+    'Finca / Tenant': c.tenant_nombre || 'COWAI Central',
     'Nivel Batería (%)': c.nivel_bateria ?? 100,
     'Señal Celular': `${c.senal_celular ?? 4}/5`,
     'Línea SIM': c.numero_sim || 'N/A',
@@ -191,5 +191,5 @@ export function exportInventarioCollaresExcel(collaresList = []) {
     { wch: 22 }  // Conexion
   ];
 
-  XLSX.writeFile(workbook, `Flota_Collares_IoT_Cowai_${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(workbook, `Flota_Collares_IoT_COWAI_${new Date().toISOString().split('T')[0]}.xlsx`);
 }

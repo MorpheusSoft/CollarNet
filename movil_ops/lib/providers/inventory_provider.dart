@@ -20,7 +20,7 @@ class InventoryProvider extends ChangeNotifier {
   int? _selectedTenantId;
   int? get selectedTenantId => _selectedTenantId;
 
-  String _ubicacionAlmacen = 'Almacén Central Cowai';
+  String _ubicacionAlmacen = 'Almacén Central COWAI';
   String get ubicacionAlmacen => _ubicacionAlmacen;
 
   DateTime _fechaRecepcion = DateTime.now();

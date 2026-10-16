@@ -1,20 +1,20 @@
-# 🧭 Guía Integral de Desarrollo y Roadmap de Funcionalidades: Cowai (2026)
+# 🧭 Guía Integral de Desarrollo y Roadmap de Funcionalidades: COWAI (2026)
 
-Este documento consolida el estado actual de la plataforma **Cowai** (*Cowai - Ganadería Inteligente, Cercas Virtuales y Analítica IA*), la matriz de avance técnico, los principios arquitectónicos del dominio ganadero y la hoja de ruta para los próximos sprints de desarrollo.
+Este documento consolida el estado actual de la plataforma **COWAI** (*COWAI - Ganadería Inteligente, Cercas Virtuales y Analítica IA*), la matriz de avance técnico, los principios arquitectónicos del dominio ganadero y la hoja de ruta para los próximos sprints de desarrollo.
 
 ---
 
 ## 📊 1. Estado Global de Avance del Proyecto (~85%)
 
 ```
-Progreso General del Software Cowai:
+Progreso General del Software COWAI:
 [█████████████████░░░] 85% Completado
 ```
 
 ### ✅ Funcionalidades Completadas al 100%
 
-#### 🏷️ Rebranding y Marca Cowai
-* Transición de identidad visual de CollarNet a **Cowai** en Frontend, Backend, PWA, Mapas y Documentación.
+#### 🏷️ Rebranding y Marca COWAI
+* Transición de identidad visual de CollarNet a **COWAI** en Frontend, Backend, PWA, Mapas y Documentación.
 * Diseño UI/UX oscuro premium (*Glassmorphism*, paleta esmeralda/cian/ámbar, tipografías *Outfit* e *Inter*).
 
 #### 📦 Inventario y Ciclo de Vida de Collares IoT

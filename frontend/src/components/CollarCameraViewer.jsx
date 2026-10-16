@@ -304,7 +304,7 @@ export default function CollarCameraViewer({
           ctx.fillRect(16, targetH - 46, 440, 32);
           ctx.font = 'bold 13px monospace';
           ctx.fillStyle = '#38bdf8';
-          ctx.fillText(`Cowai · Collar ${collarId} (${arete})`, 28, targetH - 26);
+          ctx.fillText(`COWAI · Collar ${collarId} (${arete})`, 28, targetH - 26);
           ctx.fillStyle = '#94a3b8';
           ctx.font = '12px monospace';
           ctx.fillText(new Date().toLocaleTimeString('es-VE'), 330, targetH - 26);
@@ -998,7 +998,7 @@ export default function CollarCameraViewer({
               </div>
 
               <div className="px-2.5 py-1.5 rounded-lg bg-black/70 backdrop-blur-md border border-white/15 text-slate-300 text-[10px] text-right">
-                <div className="text-cyan-400 font-bold">Cowai CollarNet Vision</div>
+                <div className="text-cyan-400 font-bold">COWAI CollarNet Vision</div>
                 <div className="text-slate-400 text-[9px]">{new Date().toLocaleTimeString()}</div>
               </div>
             </div>

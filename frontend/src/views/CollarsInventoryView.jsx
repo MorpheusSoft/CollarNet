@@ -90,13 +90,13 @@ export default function CollarsInventoryView({ user }) {
     versionFirmware: '1.0.0',
     loteId: '',
     tenantId: '',
-    ubicacionAlmacen: 'Almacén Central Cowai',
-    motivoEstado: 'Alta individual en Cowai'
+    ubicacionAlmacen: 'Almacén Central COWAI',
+    motivoEstado: 'Alta individual en COWAI'
   });
 
   const [loteSecuencialForm, setLoteSecuencialForm] = useState({
     codigoLote: `LOT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`,
-    proveedor: 'Cowai Hardware Labs Inc.',
+    proveedor: 'COWAI Hardware Labs Inc.',
     fechaRecepcion: new Date().toISOString().split('T')[0],
     cantidadTotal: 200,
     prefijoId: 'COW-2026-',
@@ -107,7 +107,7 @@ export default function CollarsInventoryView({ user }) {
     versionHardware: 'HW-v2.1',
     versionFirmwareInicial: '1.0.0',
     tenantId: '',
-    ubicacionAlmacen: 'Almacén Central Cowai',
+    ubicacionAlmacen: 'Almacén Central COWAI',
     notas: 'Lote de collares IoT con GPS satelital y batería solar LiPo'
   });
 
@@ -119,7 +119,7 @@ export default function CollarsInventoryView({ user }) {
     versionHardware: 'HW-v2.1',
     versionFirmwareInicial: '1.0.0',
     tenantId: '',
-    ubicacionAlmacen: 'Almacén Central Cowai',
+    ubicacionAlmacen: 'Almacén Central COWAI',
     notas: ''
   });
 
@@ -131,7 +131,7 @@ export default function CollarsInventoryView({ user }) {
   const [transferForm, setTransferForm] = useState({
     tenantId: '',
     ubicacionAlmacen: '',
-    motivo: 'Traslado asignado por Administrador Cowai'
+    motivo: 'Traslado asignado por Administrador COWAI'
   });
 
   const [actionLoading, setActionLoading] = useState(false);
@@ -203,8 +203,8 @@ export default function CollarsInventoryView({ user }) {
         versionFirmware: '1.0.0',
         loteId: '',
         tenantId: '',
-        ubicacionAlmacen: 'Almacén Central Cowai',
-        motivoEstado: 'Alta individual en Cowai'
+        ubicacionAlmacen: 'Almacén Central COWAI',
+        motivoEstado: 'Alta individual en COWAI'
       });
       loadData(true);
     } catch (err) {
@@ -388,7 +388,7 @@ export default function CollarsInventoryView({ user }) {
         </div>
       )}
 
-      {/* Header del Módulo Cowai */}
+      {/* Header del Módulo COWAI */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-dark-surface/60 border border-dark-border/80 backdrop-blur-md rounded-2xl p-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
         <div className="flex items-start gap-4">
@@ -401,7 +401,7 @@ export default function CollarsInventoryView({ user }) {
                 Inventario de Collares IoT
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Cowai Hardware
+                COWAI Hardware
               </span>
             </div>
             <p className="text-sm text-slate-400 mt-1">
@@ -588,7 +588,7 @@ export default function CollarsInventoryView({ user }) {
                 className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer max-w-[160px]"
               >
                 <option value="TODOS">Todas las Fincas</option>
-                <option value="CENTRAL">🏛️ Almacén Central Cowai</option>
+                <option value="CENTRAL">🏛️ Almacén Central COWAI</option>
                 {tenants.map(t => (
                   <option key={t.id} value={t.id}>{t.nombre}</option>
                 ))}
@@ -632,7 +632,7 @@ export default function CollarsInventoryView({ user }) {
                 <tr>
                   <td colSpan="8" className="py-12 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-400 mb-2" />
-                    <p>Cargando inventario de collares Cowai...</p>
+                    <p>Cargando inventario de collares COWAI...</p>
                   </td>
                 </tr>
               ) : collares.length === 0 ? (
@@ -686,7 +686,7 @@ export default function CollarsInventoryView({ user }) {
                               {c.lote_codigo}
                             </div>
                             <div className="text-[11px] text-slate-400 truncate max-w-[130px]">
-                              {c.lote_proveedor || 'Cowai Standard'}
+                              {c.lote_proveedor || 'COWAI Standard'}
                             </div>
                           </div>
                         ) : (
@@ -704,7 +704,7 @@ export default function CollarsInventoryView({ user }) {
                         ) : (
                           <div className="flex items-center gap-1.5 text-xs text-cyan-400">
                             <Package className="w-3.5 h-3.5 shrink-0" />
-                            <span>Almacén Central Cowai</span>
+                            <span>Almacén Central COWAI</span>
                           </div>
                         )}
                         {c.ubicacion_almacen && (
@@ -855,7 +855,7 @@ export default function CollarsInventoryView({ user }) {
                   <Plus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white font-display">Registrar Collares en Cowai</h3>
+                  <h3 className="text-lg font-bold text-white font-display">Registrar Collares en COWAI</h3>
                   <p className="text-xs text-slate-400">Recepción de hardware, asignación de lotes e ingreso al stock.</p>
                 </div>
               </div>
@@ -911,7 +911,7 @@ export default function CollarsInventoryView({ user }) {
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 text-xs text-emerald-300 flex items-start gap-2.5">
                     <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <p>
-                      <strong>Generador Ultrarrápido de Lote:</strong> Inserta cientos de collares correlativos en la base de datos de Cowai en menos de 1 segundo con números SIM e IMEI simulados o de serie.
+                      <strong>Generador Ultrarrápido de Lote:</strong> Inserta cientos de collares correlativos en la base de datos de COWAI en menos de 1 segundo con números SIM e IMEI simulados o de serie.
                     </p>
                   </div>
 
@@ -1000,7 +1000,7 @@ export default function CollarsInventoryView({ user }) {
                         onChange={(e) => setLoteSecuencialForm({ ...loteSecuencialForm, tenantId: e.target.value })}
                         className="w-full px-3 py-2 bg-dark-elevated border border-dark-border rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
                       >
-                        <option value="">🏛️ Almacén Central Cowai (Sin Asignar)</option>
+                        <option value="">🏛️ Almacén Central COWAI (Sin Asignar)</option>
                         {tenants.map(t => (
                           <option key={t.id} value={t.id}>{t.nombre}</option>
                         ))}
@@ -1115,7 +1115,7 @@ export default function CollarsInventoryView({ user }) {
                         onChange={(e) => setIndividualForm({ ...individualForm, tenantId: e.target.value })}
                         className="w-full px-3 py-2 bg-dark-elevated border border-dark-border rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
                       >
-                        <option value="">🏛️ Almacén Central Cowai</option>
+                        <option value="">🏛️ Almacén Central COWAI</option>
                         {tenants.map(t => (
                           <option key={t.id} value={t.id}>{t.nombre}</option>
                         ))}
@@ -1316,7 +1316,7 @@ export default function CollarsInventoryView({ user }) {
                   onChange={(e) => setTransferForm({ ...transferForm, tenantId: e.target.value })}
                   className="w-full px-3 py-2.5 bg-dark-elevated border border-dark-border rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
                 >
-                  <option value="CENTRAL">🏛️ Almacén Central Cowai (Desasignar de Finca)</option>
+                  <option value="CENTRAL">🏛️ Almacén Central COWAI (Desasignar de Finca)</option>
                   {tenants.map(t => (
                     <option key={t.id} value={t.id}>{t.nombre}</option>
                   ))}

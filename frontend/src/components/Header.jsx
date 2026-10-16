@@ -69,7 +69,7 @@ export default function Header({
             <Radio className="w-4 h-4" />
           </div>
           <span className="font-display font-black text-lg text-white hidden sm:inline tracking-tight">
-            Cow<span className="text-emerald-400">ai</span>
+            COW<span className="text-emerald-400">AI</span>
           </span>
         </div>
 
