@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240mm" height="380mm" viewBox="0 0 1240 380">
+  <defs>
+    <style>
+      .guide { stroke: #e02424; stroke-width: 0.5; stroke-dasharray: 4,4; fill: none; }
+      .baseline { stroke: #2563eb; stroke-width: 0.8; stroke-dasharray: 6,3; fill: none; }
+      .box { stroke: #94a3b8; stroke-width: 0.8; fill: none; }
+      .crosshair { stroke: #ef4444; stroke-width: 1.2; }
+      .text-label { font-family: 'Ubuntu', sans-serif; font-weight: bold; fill: #1e293b; text-anchor: middle; }
+      .dim-label { font-family: sans-serif; font-size: 10px; fill: #64748b; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1240" height="380" fill="#f8fafc"/>
+
+  <!-- Dimension Bar Top (1.20 Metros) -->
+  <line x1="10.0" y1="30" x2="1210.0" y2="30" stroke="#0f172a" stroke-width="1.5"/>
+  <line x1="10.0" y1="20" x2="10.0" y2="40" stroke="#0f172a" stroke-width="1.5"/>
+  <line x1="1210.0" y1="20" x2="1210.0" y2="40" stroke="#0f172a" stroke-width="1.5"/>
+  <text x="610.0" y="24" class="text-label" font-size="14">ANCHO TOTAL: 1.20 METROS (1200 mm)</text>
+
+  <!-- Horizontal Center Line / Baseline -->
+  <line x1="0" y1="190.0" x2="1240" y2="190.0" class="baseline"/>
+  <text x="50" y="184.0" font-family="sans-serif" font-size="9" fill="#2563eb">EJE CENTRAL HORIZONTAL</text>
+
+  <!-- Bottom Baseline -->
+  <line x1="0" y1="281.4" x2="1240" y2="281.4" class="guide"/>
+  <text x="50" y="295.4" font-family="sans-serif" font-size="9" fill="#e02424">LÍNEA BASE DE APOYO INFERIOR</text>
+
+  <!-- 1. CABEZA DE VACA (Isotipo) -->
+  <rect x="10.0" y="23.099999999999994" width="363.1" height="333.8" class="box" stroke-dasharray="2,2"/>
+  <text x="191.55" y="18.0" class="dim-label">ISOTIPO VACA (363 × 334 mm - 4 Cuadrantes)</text>
+  
+  <!-- Division de cuadrantes Vaca -->
+  <line x1="191.55" y1="23.099999999999994" x2="191.55" y2="356.9" stroke="#10b981" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="10.0" y1="190.0" x2="373.1" y2="190.0" stroke="#10b981" stroke-width="1" stroke-dasharray="3,3"/>
+  
+  <!-- Orificios Keyhole Vaca (Cruz roja para taladrar/marcar en pared) -->
+  <!-- TL: -60, 95 -->
+  <g transform="translate(131.55, 95.0)">
+    <line x1="-8" y1="0" x2="8" y2="0" class="crosshair"/>
+    <line x1="0" y1="-8" x2="0" y2="8" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+    <text x="12" y="4" font-family="sans-serif" font-size="8" fill="#ef4444">Tornillo TL</text>
+  </g>
+  <!-- TR: +60, 95 -->
+  <g transform="translate(251.55, 95.0)">
+    <line x1="-8" y1="0" x2="8" y2="0" class="crosshair"/>
+    <line x1="0" y1="-8" x2="0" y2="8" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+    <text x="12" y="4" font-family="sans-serif" font-size="8" fill="#ef4444">Tornillo TR</text>
+  </g>
+  <!-- BL: -60, -60 -->
+  <g transform="translate(131.55, 250.0)">
+    <line x1="-8" y1="0" x2="8" y2="0" class="crosshair"/>
+    <line x1="0" y1="-8" x2="0" y2="8" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+    <text x="12" y="4" font-family="sans-serif" font-size="8" fill="#ef4444">Tornillo BL</text>
+  </g>
+  <!-- BR: +60, -60 -->
+  <g transform="translate(251.55, 250.0)">
+    <line x1="-8" y1="0" x2="8" y2="0" class="crosshair"/>
+    <line x1="0" y1="-8" x2="0" y2="8" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+    <text x="12" y="4" font-family="sans-serif" font-size="8" fill="#ef4444">Tornillo BR</text>
+  </g>
+
+  <!-- 2. LETRA C -->
+  <rect x="408.1" y="98.6" width="142.8" height="182.8" class="box"/>
+  <text x="479.5" y="235.0" class="text-label" font-size="120" opacity="0.15">C</text>
+  <text x="479.5" y="90.0" class="dim-label">LETRA C (Blanco)</text>
+  <g transform="translate(479.5, 150.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+  <g transform="translate(479.5, 230.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+
+  <!-- 3. LETRA O -->
+  <rect x="562.9000000000001" y="98.6" width="172.1" height="182.8" class="box"/>
+  <text x="648.95" y="235.0" class="text-label" font-size="120" opacity="0.15">O</text>
+  <text x="648.95" y="90.0" class="dim-label">LETRA O (Blanco)</text>
+  <g transform="translate(648.95, 145.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+  <g transform="translate(648.95, 235.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+
+  <!-- 4. LETRA W -->
+  <rect x="747.0000000000001" y="102.4" width="226.2" height="175.2" class="box"/>
+  <text x="860.1000000000001" y="235.0" class="text-label" font-size="120" opacity="0.15">W</text>
+  <text x="860.1000000000001" y="90.0" class="dim-label">LETRA W (Blanco)</text>
+  <g transform="translate(815.1000000000001, 160.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+  <g transform="translate(905.1000000000001, 160.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+
+  <!-- 5. LETRA A -->
+  <rect x="993.2" y="102.4" width="172.7" height="175.2" class="box"/>
+  <text x="1079.55" y="235.0" class="text-label" font-size="120" opacity="0.15" fill="#10b981">A</text>
+  <text x="1079.55" y="90.0" class="dim-label">LETRA A (Menta)</text>
+  <g transform="translate(1079.55, 150.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+  <g transform="translate(1044.55, 235.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+  <g transform="translate(1114.55, 235.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+
+  <!-- 6. LETRA I -->
+  <rect x="1175.5" y="102.4" width="34.5" height="175.2" class="box"/>
+  <text x="1192.75" y="235.0" class="text-label" font-size="120" opacity="0.15" fill="#10b981">I</text>
+  <text x="1192.75" y="90.0" class="dim-label">LETRA I</text>
+  <g transform="translate(1192.75, 150.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+  <g transform="translate(1192.75, 230.0)">
+    <line x1="-6" y1="0" x2="6" y2="0" class="crosshair"/><line x1="0" y1="-6" x2="0" y2="6" class="crosshair"/>
+    <circle r="4.5" fill="none" stroke="#ef4444" stroke-width="1"/>
+  </g>
+
+  <!-- Legend & Instructions Bottom -->
+  <g transform="translate(10, 350)">
+    <rect width="1220" height="25" fill="#e2e8f0" rx="3"/>
+    <text x="610" y="16" font-family="sans-serif" font-size="10" fill="#334155" text-anchor="middle">
+      GUÍA DE INSTALACIÓN 1:1 • Las cruces rojas (+) marcan los centros para taladrar tornillos • La línea azul es el eje central de nivelación • Compatible con cinta de doble cara 3M VHB
+    </text>
+  </g>
+</svg>
