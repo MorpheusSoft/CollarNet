@@ -7,9 +7,18 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Variables de entorno y contraseñas
+# Variables de entorno, claves SSH y credenciales de VPS
 .env
+.env.*
+!.env.example
 backend/.env
+backend/.env.*
+!backend/.env.example
+*.pem
+*.key
+*id_rsa*
+*vps_credentials*
+*vps_secret*
 
 # Archivos binarios y compilados de Arduino/Linux/Android
 *.elf

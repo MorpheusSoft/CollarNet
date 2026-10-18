@@ -8,7 +8,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-Pegaso#26}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_dev}
       POSTGRES_DB: ${DB_NAME:-collarnet}
     ports:
       - "5432:5432"
@@ -49,7 +49,7 @@ services:
       PORT: 3500
       TRACKER_TCP_PORT: 7700
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-Pegaso#26}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres_dev}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-collarnet}

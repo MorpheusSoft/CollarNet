@@ -39,7 +39,7 @@ class _HardwareTestScreenState extends State<HardwareTestScreen> with SingleTick
     'AT+CSQ -> +CSQ: 24,99 (Excelente)',
     'AT+CGATT? -> +CGATT: 1 (LTE-M Conectado)',
     'AT+QNWINFO -> "CAT-M1","73404","LTE BAND 4",-88',
-    'MQTT CONNECT -> 86.48.23.195:1883 [OK]',
+    'MQTT CONNECT -> broker.hivemq.com:1883 [OK]',
   ];
 
   @override

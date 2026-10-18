@@ -1,13 +1,21 @@
 import pg from 'pg';
 import mqtt from 'mqtt';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config();
 
 const { Pool } = pg;
 
 const pool = new Pool({
-  host: process.env.DB_HOST || '86.48.23.195',
+  host: process.env.DB_HOST || '127.0.0.1',
   port: parseInt(process.env.DB_PORT || '5432', 10),
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'Pegaso#26',
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'collarnet'
 });
 

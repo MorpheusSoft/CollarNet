@@ -9,7 +9,7 @@ Este documento describe el procedimiento operativo estándar (SOP) para aprovisi
 Antes de llevar los dispositivos al campo, se debe realizar la preparación técnica del hardware:
 
 ### 1. Programación del Firmware Base
-- Se flashea el código C++ (`CollarNet.ino`) en la placa ESP32 con la dirección del servidor MQTT (`mqtt://86.48.23.195:1883`) y el prefijo de tópico.
+- Se flashea el código C++ (`CollarNet.ino`) en la placa ESP32 con la dirección del servidor MQTT (`mqtt://TU_SERVIDOR_MQTT:1883`) y el prefijo de tópico.
 
 ### 2. Instalación de la Tarjeta SIM Celular
 - Insertar la tarjeta SIM con plan de datos M2M activo en el módem celular (SIM800L / SIM7000).
