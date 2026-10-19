@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor CAD 3D — Baquelita Prototipo (Solo ESP32 + SIM + MPU6050 + GPS)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #090d16;
+      color: #f1f5f9;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      user-select: none;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.86);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="relative w-full h-full select-none">
+
+  <!-- FULLSCREEN 3D CANVAS -->
+  <canvas id="cadCanvas" class="cursor-grab active:cursor-grabbing"></canvas>
+
+  <!-- TOP HEADER BAR -->
+  <header class="glass-panel absolute top-3 left-3 right-3 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 z-10 shadow-xl">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-sm">
+        3D
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm md:text-base font-bold text-white tracking-tight">
+            Baquelita Prototipo para Soldar a Mano (Solo 4 Módulos)
+          </h1>
+          <span class="hidden sm:inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-semibold">
+            107.0 × 70.0 × 1.6 mm · Huecos Cuadrados 3×3 mm (DX=98, DY=61)
+          </span>
+        </div>
+        <p class="text-xs text-slate-400">
+          Únicamente: 1. ESP-32 · 2. SIM800L EVB · 3. ITG/MPU6050 · 4. GY-GPS6MV2 (NEO-6M)
+        </p>
+      </div>
+    </div>
+
+    <!-- Substrate View Mode -->
+    <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-700/70">
+      <button id="modeWithModules" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-500 text-slate-950 shadow transition">
+        🧩 Baquelita + 4 Módulos
+      </button>
+      <button id="modeOnlyBoard" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
+        🖨️ Solo Baquelita PETG (Para Imprimir)
+      </button>
+    </div>
+
+    <!-- Camera Presets -->
+    <div class="flex items-center gap-1.5">
+      <button data-cam="iso" class="cam-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition">
+        Isométrica
+      </button>
+      <button data-cam="top" class="cam-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+        Cara Superior
+      </button>
+      <button data-cam="bottom" class="cam-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition">
+        🔥 Cara Inferior (Nombres de Pines + Soldadura)
+      </button>
+      <button id="btnResetCam" title="Centrar Vista" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+        🎯 Centrar
+      </button>
+    </div>
+  </header>
+
+  <!-- LEFT PANEL: THE 4 MODULES + BAQUELITA -->
+  <aside class="glass-panel absolute top-20 left-3 bottom-16 w-72 rounded-xl p-3 flex flex-col gap-2.5 z-10 shadow-xl overflow-hidden">
+    <div class="flex items-center justify-between border-b border-slate-700/70 pb-2">
+      <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
+        Componentes (4 Módulos)
+      </span>
+      <button id="btnAllComp" class="text-xs text-sky-400 hover:underline font-medium">
+        Ver todo
+      </button>
+    </div>
+
+    <!-- Component Cards List -->
+    <div id="compList" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-1">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Pinout Legend / Bus Filter -->
+    <div class="border-t border-slate-700/70 pt-2.5 space-y-1.5">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Pistas a Soldar a Mano</span>
+        <button id="btnToggleTracks" class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium">
+          Pistas: ON
+        </button>
+      </div>
+      <div class="grid grid-cols-2 gap-1 text-xs">
+        <button data-bus="all" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800/90 border border-sky-500/40 text-white font-medium">
+          <span class="w-2 h-2 rounded-full bg-white"></span>Todas
+        </button>
+        <button data-bus="pwr5v" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-red-500"></span>VIN (5V)
+        </button>
+        <button data-bus="pwr3v3" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-orange-400"></span>3.3V (Reg. U1)
+        </button>
+        <button data-bus="uart_gps" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-yellow-400"></span>UART2 (GPS)
+        </button>
+        <button data-bus="uart_sim" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-purple-400"></span>UART (SIM800L)
+        </button>
+        <button data-bus="i2c" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-sky-400"></span>I2C (MPU6050)
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- RIGHT PANEL: SOLDERING GUIDE & PINOUT INSPECTOR -->
+  <aside class="glass-panel absolute top-20 right-3 w-80 rounded-xl p-3.5 flex flex-col gap-2.5 z-10 shadow-xl max-h-[calc(100%-6.5rem)] overflow-y-auto custom-scroll">
+    <div class="flex items-center justify-between">
+      <span id="detailBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+        Prototipo Soldado a Mano
+      </span>
+      <span id="detailDims" class="text-xs font-mono text-slate-400">107.0 × 70.0 × 1.6 mm</span>
+    </div>
+
+    <h2 id="detailTitle" class="text-base font-bold text-white leading-snug">
+      Baquelita 107.0 × 70.0 × 1.6 mm
+    </h2>
+
+    <p id="detailDesc" class="text-xs text-slate-300 leading-relaxed">
+      Diseñada exactamente según la tabla de cotas de la carcasa: 107.0 × 70.0 × 1.6 mm, 4 huecos cuadrados en las esquinas de 3.0 × 3.0 mm a 3.0 mm del borde (centros a 4.5 mm: DX = 98.0 mm, DY = 61.0 mm), nombres de pines grabados abajo y espigas guía de Ø 1.9 mm arriba.
+    </p>
+
+    <div class="border-t border-slate-700/70 pt-2.5">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+        Pines a Soldar por Debajo
+      </div>
+      <div id="detailPins" class="space-y-1.5 text-xs font-mono">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <div class="mt-1 p-2.5 rounded-lg bg-amber-950/60 border border-amber-500/40 text-xs text-amber-200 leading-relaxed space-y-1">
+      <div class="font-bold text-amber-300">🔥 Estaño Recomendado para PETG:</div>
+      <div>1. <b>Ideal:</b> Estaño de Baja Fusión <b>Sn42/Bi58</b> (Bismuto, funde a <b>138 °C</b>).</div>
+      <div>2. <b>Estándar:</b> Estaño con Plomo <b>63/37</b> o <b>60/40</b> fino (<b>0.5 mm</b>) con Flux (funde a <b>183 °C</b> en 1 seg). <i>¡No usar estaño sin plomo!</i></div>
+    </div>
+  </aside>
+
+  <!-- BOTTOM CONTROL DOCK: SLIDERS & OPTIONS -->
+  <footer class="glass-panel absolute bottom-3 left-3 right-3 rounded-xl px-4 py-2 flex flex-wrap items-center justify-between gap-4 z-10 shadow-xl">
+    <!-- Exploded View Slider -->
+    <div class="flex items-center gap-3 flex-1 min-w-[220px]">
+      <label for="sliderExplode" class="text-xs font-semibold text-amber-300 whitespace-nowrap">
+        🔧 Despiece 3D (Separar Módulos y Zócalos):
+      </label>
+      <input id="sliderExplode" type="range" min="0" max="100" value="0" class="w-full accent-amber-400 cursor-pointer h-1.5" />
+      <span id="valExplode" class="text-xs font-mono text-slate-300 w-9 text-right">0%</span>
+    </div>
+
+    <!-- X-Ray Board Opacity Slider -->
+    <div class="flex items-center gap-3 flex-1 min-w-[200px]">
+      <label for="sliderXray" class="text-xs font-semibold text-sky-300 whitespace-nowrap">
+        🔍 Rayos X (Ver pistas a través):
+      </label>
+      <input id="sliderXray" type="range" min="0" max="85" value="0" class="w-full accent-sky-400 cursor-pointer h-1.5" />
+      <span id="valXray" class="text-xs font-mono text-slate-300 w-9 text-right">0%</span>
+    </div>
+
+    <!-- Labels & AutoRotate -->
+    <div class="flex items-center gap-2">
+      <button id="btnLabels" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700 transition">
+        🏷️ Etiquetas: ON
+      </button>
+      <button id="btnRotate" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition">
+        🔄 Giro Auto: OFF
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // DATA: STRICTLY THE 4 MODULES + THE PETG BAQUELITA
+    // =========================================================================
+    const LOGICAL_COMPONENTS = {
+      all: {
+        name: '0. Placa Completa (4 Módulos)',
+        short: 'ESP32 + SIM800L + MPU6050 + GPS',
+        badge: 'Cotas Oficiales Carcasa',
+        dims: '107.0 × 70.0 × 1.6 mm',
+        color: '#10b981',
+        desc: 'Placa baquelita impresa en PETG (107.0 × 70.0 × 1.6 mm) con 4 huecos cuadrados en las esquinas de 3.0 × 3.0 mm (margen 3.0 mm, centros a 4.5 mm: DX=98.0 mm, DY=61.0 mm). Nombres de pines grabados abajo y espigas guía de Ø 1.9 mm arriba.',
+        pins: [
+          '🔴 VIN (5V): Une VIN (ESP32) ↔ 5V (SIM800L) ↔ VCC (GPS)',
+          '🟠 3V3 (Regulador U1 ESP32): Une 3V3 (ESP32) ↔ VCC (MPU6050) ↔ VDD (SIM800L)',
+          '🟢 GND: Tierra común entre ESP32, SIM800L, MPU6050 y GPS',
+          '🟡 UART2 GPS: RX2 (GPIO 16) ← TX GPS | TX2 (GPIO 17) → RX GPS',
+          '🟣 UART SIM: D26 (TX) → SIM_RXD | D27 (RX) ← SIM_TXD | D14 → RST',
+          '🔵 I2C IMU: D21 (SDA) ↔ SDA MPU6050 | D22 (SCL) ↔ SCL MPU6050'
+        ]
+      },
+      substrate: {
+        name: '1. Baquelita PETG (107 × 70 × 1.6 mm)',
+        short: '4 Huecos 3×3mm + Nombres abajo',
+        badge: 'Bambu Lab P1S (PETG)',
+        dims: '107.0 × 70.0 × 1.6 mm',
+        color: '#10b981',
+        desc: 'Cumple al 100% la tabla de cotas: 107.0 mm × 70.0 mm × 1.6 mm, 4 orificios cuadrados de 3.0 × 3.0 mm en las esquinas (DX = 98.0 mm, DY = 61.0 mm), nombres de los 49 pines grabados en la cara inferior y espigas guía de Ø 1.9 mm arriba.',
+        pins: [
+          '📐 4 Huecos Cuadrados 3×3 mm: Margen 3.0 mm, Centros DX=98 mm × DY=61 mm',
+          '🔤 Nombres en Cara Inferior: Grabados 0.4 mm al derecho al voltear la placa',
+          '📍 Espigas Guía Ø 1.9 mm: Entran con holgura en las aperturas de los módulos'
+        ]
+      },
+      esp32: {
+        name: '2. ESP-32 DevKit V1 (30p USB-C)',
+        short: 'Abajo Derecha (Horizontal)',
+        badge: 'MCU + Regulador U1 3.3V',
+        dims: '51.5 × 28 mm (2×15 pines)',
+        color: '#38bdf8',
+        desc: 'Ubicado abajo a la derecha con el USB-C hacia la izquierda. Su regulador interno U1 (AMS1117-3.3) entrega los 3.3V por el pin 3V3 (abajo a la izquierda).',
+        pins: [
+          '🔌 Fila Sup. Pin 1 (Izq): VIN (5V) | Pin 2: GND',
+          '⚡ Fila Inf. Pin 1 (Izq): 3V3 (Salida regulada) | Pin 2: GND',
+          '🟣 Fila Sup. Pines 5, 6, 7: D14 (RST), D27 (RX), D26 (TX) → SIM800L',
+          '🟡 Fila Inf. Pines 6, 7: RX2 (GPIO 16), TX2 (GPIO 17) → GPS NEO-6M',
+          '🔵 Fila Inf. Pines 11, 14: D21 (SDA), D22 (SCL) → MPU6050'
+        ]
+      },
+      sim800: {
+        name: '3. SIM800L EVB v2.0 (Azul)',
+        short: 'Arriba Izquierda (7 pines a la derecha)',
+        badge: 'Módem GSM/GPRS',
+        dims: '39 × 27.5 mm (7 pines)',
+        color: '#a855f7',
+        desc: 'Ubicado arriba a la izquierda sobre 4 torretas M2.5 y un header hembra de 7 pines en su borde derecho.',
+        pins: [
+          '🔴 Pin 1 (5V): Unido a VIN del ESP32',
+          '🟢 Pin 2 y 6 (GND): Unidos a GND del ESP32',
+          '🟠 Pin 3 (VDD): Unido a 3V3 del ESP32 (referencia lógica 3.3V)',
+          '🟣 Pin 4 (SIM_TXD) → Pin D27 del ESP32',
+          '🟣 Pin 5 (SIM_RXD) ← Pin D26 del ESP32 | Pin 7 (RST) ← Pin D14'
+        ]
+      },
+      gps: {
+        name: '4. GY-GPS6MV2 (NEO-6M Azul)',
+        short: 'Arriba Derecha (4 pines a la izquierda)',
+        badge: 'Módulo GPS Satelital',
+        dims: '36 × 24 mm (4 pines)',
+        color: '#eab308',
+        desc: 'Ubicado arriba a la derecha sobre 4 torretas M2.5 y un header hembra de 4 pines en su borde izquierdo (VCC, RX, TX, GND).',
+        pins: [
+          '🔴 Pin 1 (VCC): Unido a VIN (5V)',
+          '🟡 Pin 2 (RX) ← Pin TX2 (GPIO 17) del ESP32',
+          '🟡 Pin 3 (TX) → Pin RX2 (GPIO 16) del ESP32',
+          '🟢 Pin 4 (GND): Unido a GND común'
+        ]
+      },
+      mpu: {
+        name: '5. ITG/MPU6050 (GY-521 Azul)',
+        short: 'Abajo Izquierda (8 pines arriba)',
+        badge: 'Acelerómetro + Giroscopio I2C',
+        dims: '21 × 16 mm (8 pines)',
+        color: '#06b6d4',
+        desc: 'Ubicado abajo a la izquierda con su header de 8 pines en el borde superior y 2 torretas de fijación en las esquinas inferiores.',
+        pins: [
+          '🟠 Pin 1 (VCC) ← Pin 3V3 del ESP32',
+          '🟢 Pin 2 (GND) ← GND común',
+          '🔵 Pin 3 (SCL) ← Pin D22 (GPIO 22) del ESP32',
+          '🔵 Pin 4 (SDA) ← Pin D21 (GPIO 21) del ESP32'
+        ]
+      }
+    };
+
+    // =========================================================================
+    // UI INITIALIZATION
+    // =========================================================================
+    let selectedComp = 'all';
+    let selectedBus = 'all';
+    let hideModules = false; // When true, shows ONLY the printable PETG baquelita + solder channels
+    let showTracks = true;
+    let showLabels = true;
+    let autoRotate = false;
+    let explodeVal = 0;
+    let xrayVal = 0;
+
+    const compListEl = document.getElementById('compList');
+
+    function renderCompList() {
+      compListEl.innerHTML = '';
+      Object.entries(LOGICAL_COMPONENTS).forEach(([key, item]) => {
+        const active = (key === selectedComp);
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left p-2 rounded-lg border transition flex items-start gap-2.5 ${
+          active
+            ? 'bg-slate-800/95 border-emerald-400/70 shadow-sm'
+            : 'bg-slate-900/50 border-slate-800/80 hover:bg-slate-800/60 hover:border-slate-700'
+        }`;
+        btn.innerHTML = `
+          <span class="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style="background:${item.color}"></span>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-semibold ${active ? 'text-emerald-300' : 'text-slate-200'} truncate">${item.name}</div>
+            <div class="text-xs text-slate-400 truncate">${item.short}</div>
+          </div>
+        `;
+        btn.addEventListener('click', () => selectComponent(key));
+        compListEl.appendChild(btn);
+      });
+    }
+
+    function selectComponent(key) {
+      selectedComp = key;
+      renderCompList();
+      const info = LOGICAL_COMPONENTS[key] || LOGICAL_COMPONENTS.all;
+      document.getElementById('detailBadge').textContent = info.badge;
+      document.getElementById('detailDims').textContent = info.dims;
+      document.getElementById('detailTitle').textContent = info.name;
+      document.getElementById('detailDesc').textContent = info.desc;
+      document.getElementById('detailPins').innerHTML = info.pins
+        .map(p => `<div class="p-1.5 rounded bg-slate-900/70 border border-slate-800 text-slate-200">${p}</div>`)
+        .join('');
+    }
+
+    document.getElementById('btnAllComp').addEventListener('click', () => selectComponent('all'));
+
+    // Mode Switcher: With 4 Modules vs Only PETG Baquelita
+    const btnWithMod = document.getElementById('modeWithModules');
+    const btnOnlyBrd = document.getElementById('modeOnlyBoard');
+
+    btnWithMod.addEventListener('click', () => {
+      hideModules = false;
+      btnWithMod.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-500 text-slate-950 shadow transition';
+      btnOnlyBrd.className = 'px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition';
+    });
+
+    btnOnlyBrd.addEventListener('click', () => {
+      hideModules = true;
+      btnOnlyBrd.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-400 text-slate-950 shadow transition';
+      btnWithMod.className = 'px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition';
+      selectComponent('substrate');
+    });
+
+    // Bus Filter Buttons
+    document.querySelectorAll('.bus-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedBus = btn.dataset.bus;
+        document.querySelectorAll('.bus-btn').forEach(b => {
+          const isAct = b.dataset.bus === selectedBus;
+          b.className = `bus-btn flex items-center gap-1.5 px-2 py-1 rounded border text-xs ${
+            isAct
+              ? 'bg-slate-800/90 border-sky-500/50 text-white font-semibold'
+              : 'bg-slate-900/60 border-transparent hover:border-slate-700 text-slate-300'
+          }`;
+        });
+      });
+    });
+
+    // Sliders & Toggles
+    const sliderExplode = document.getElementById('sliderExplode');
+    const valExplode = document.getElementById('valExplode');
+    sliderExplode.addEventListener('input', e => {
+      explodeVal = parseFloat(e.target.value) / 100;
+      valExplode.textContent = `${e.target.value}%`;
+    });
+
+    const sliderXray = document.getElementById('sliderXray');
+    const valXray = document.getElementById('valXray');
+    sliderXray.addEventListener('input', e => {
+      xrayVal = parseFloat(e.target.value) / 100;
+      valXray.textContent = `${e.target.value}%`;
+    });
+
+    const btnToggleTracks = document.getElementById('btnToggleTracks');
+    btnToggleTracks.addEventListener('click', () => {
+      showTracks = !showTracks;
+      btnToggleTracks.textContent = showTracks ? 'Pistas: ON' : 'Pistas: OFF';
+      btnToggleTracks.className = showTracks
+        ? 'text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium'
+        : 'text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-medium';
+    });
+
+    const btnLabels = document.getElementById('btnLabels');
+    btnLabels.addEventListener('click', () => {
+      showLabels = !showLabels;
+      btnLabels.textContent = showLabels ? '🏷️ Etiquetas: ON' : '🏷️ Etiquetas: OFF';
+    });
+
+    const btnRotate = document.getElementById('btnRotate');
+    btnRotate.addEventListener('click', () => {
+      autoRotate = !autoRotate;
+      btnRotate.textContent = autoRotate ? '🔄 Giro Auto: ON' : '🔄 Giro Auto: OFF';
+      btnRotate.className = autoRotate
+        ? 'px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 transition'
+        : 'px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition';
+    });
+
+    // =========================================================================
+    // 3D ENGINE & SCENE BUILDER
+    // =========================================================================
+    const canvas = document.getElementById('cadCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Camera parameters
+    let camPitch = 0.68;
+    let camYaw = -0.38;
+    let camZoom = 4.7;
+    let camPanX = 0;
+    let camPanY = 12;
+
+    let targetPitch = camPitch;
+    let targetYaw = camYaw;
+    let targetZoom = camZoom;
+    let targetPanX = camPanX;
+    let targetPanY = camPanY;
+
+    let isDragging = false;
+    let dragMode = 'orbit';
+    let prevX = 0;
+    let prevY = 0;
+    let downX = 0;
+    let downY = 0;
+
+    document.querySelectorAll('.cam-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const preset = btn.dataset.cam;
+        autoRotate = false;
+        btnRotate.textContent = '🔄 Giro Auto: OFF';
+        if (preset === 'iso') {
+          targetPitch = 0.68; targetYaw = -0.38; targetZoom = 4.7;
+        } else if (preset === 'top') {
+          targetPitch = 1.53; targetYaw = 0.0; targetZoom = 5.0;
+        } else if (preset === 'bottom') {
+          targetPitch = -1.45; targetYaw = 0.0; targetZoom = 5.1;
+        }
+      });
+    });
+
+    document.getElementById('btnResetCam').addEventListener('click', () => {
+      targetPitch = 0.68;
+      targetYaw = -0.38;
+      targetZoom = 4.7;
+      targetPanX = 0;
+      targetPanY = 12;
+    });
+
+    function project(x, y, z) {
+      const cy = Math.cos(camYaw), sy = Math.sin(camYaw);
+      const x1 = x * cy - z * sy;
+      const z1 = z * cy + x * sy;
+
+      const cp = Math.cos(camPitch), sp = Math.sin(camPitch);
+      const y2 = y * cp - z1 * sp;
+      const z2 = z1 * cp + y * sp;
+
+      const fov = 660;
+      const dist = 260;
+      const s = (fov / Math.max(40, dist + z2)) * (camZoom / 4.0);
+
+      return {
+        x: width / 2 + camPanX + x1 * s,
+        y: height / 2 + camPanY - y2 * s,
+        z: z2,
+        s
+      };
+    }
+
+    function adjustHex(hex, factor) {
+      hex = hex.replace('#', '');
+      const r = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(0, 2), 16) * (1 + factor))));
+      const g = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(2, 4), 16) * (1 + factor))));
+      const b = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(4, 6), 16) * (1 + factor))));
+      return `rgb(${r},${g},${b})`;
+    }
+
+    let primitives = [];
+
+    function getCompAlpha(compId, baseAlpha = 1.0) {
+      if (compId === 'substrate' && xrayVal > 0) {
+        return Math.max(0.14, 1 - xrayVal);
+      }
+      if (selectedComp !== 'all' && selectedComp !== compId) {
+        return 0.22 * baseAlpha;
+      }
+      return baseAlpha;
+    }
+
+    function addBox3D(cx, cy, cz, w, h, d, color, compId, opts = {}) {
+      const hw = w / 2, hh = h / 2, hd = d / 2;
+      const verts = [
+        [cx - hw, cy - hh, cz - hd],
+        [cx + hw, cy - hh, cz - hd],
+        [cx + hw, cy + hh, cz - hd],
+        [cx - hw, cy + hh, cz - hd],
+        [cx - hw, cy - hh, cz + hd],
+        [cx + hw, cy - hh, cz + hd],
+        [cx + hw, cy + hh, cz + hd],
+        [cx - hw, cy + hh, cz + hd]
+      ];
+      const pv = verts.map(v => project(v[0], v[1], v[2]));
+
+      const faces = [
+        { idx: [3, 2, 6, 7], lum: 0.16, top: true },
+        { idx: [0, 1, 5, 4], lum: -0.26, top: false },
+        { idx: [4, 5, 6, 7], lum: -0.02, top: false },
+        { idx: [0, 1, 2, 3], lum: -0.15, top: false },
+        { idx: [1, 2, 6, 5], lum: -0.08, top: false },
+        { idx: [0, 3, 7, 4], lum: -0.11, top: false }
+      ];
+
+      const alpha = getCompAlpha(compId, opts.alpha || 1.0);
+      const isFocused = (selectedComp === compId);
+
+      faces.forEach(f => {
+        const pts = f.idx.map(i => pv[i]);
+        const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) * 0.25 + (opts.zBias || 0);
+        primitives.push({
+          type: 'poly',
+          pts,
+          z: avgZ,
+          fill: adjustHex(color, f.lum),
+          stroke: isFocused
+            ? '#fbbf24'
+            : (opts.stroke || adjustHex(color, f.lum - 0.18)),
+          lineWidth: isFocused ? 1.4 : (opts.lineWidth || 0.65),
+          alpha,
+          compId,
+          label: f.top ? opts.label : null,
+          subLabel: f.top ? opts.subLabel : null
+        });
+      });
+    }
+
+    function addCyl3D(cx, cy, cz, r, h, color, compId, opts = {}) {
+      const segs = opts.segs || 14;
+      const topPts = [];
+      const botPts = [];
+      for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        const px = cx + Math.cos(a) * r;
+        const pz = cz + Math.sin(a) * r;
+        topPts.push(project(px, cy + h / 2, pz));
+        botPts.push(project(px, cy - h / 2, pz));
+      }
+
+      const alpha = getCompAlpha(compId, opts.alpha || 1.0);
+      const isFocused = (selectedComp === compId);
+
+      for (let i = 0; i < segs; i++) {
+        const nxt = (i + 1) % segs;
+        const pts = [botPts[i], botPts[nxt], topPts[nxt], topPts[i]];
+        const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) * 0.25;
+        const lum = Math.sin((i / segs) * Math.PI * 2) * 0.15 - 0.06;
+        primitives.push({
+          type: 'poly',
+          pts,
+          z: avgZ,
+          fill: adjustHex(color, lum),
+          stroke: isFocused ? '#fbbf24' : adjustHex(color, lum - 0.12),
+          lineWidth: isFocused ? 1.1 : 0.4,
+          alpha,
+          compId
+        });
+      }
+
+      const avgTopZ = topPts.reduce((s, p) => s + p.z, 0) / segs;
+      primitives.push({
+        type: 'poly',
+        pts: topPts,
+        z: avgTopZ - 0.15,
+        fill: adjustHex(color, 0.16),
+        stroke: isFocused ? '#fbbf24' : (opts.stroke || adjustHex(color, -0.18)),
+        lineWidth: isFocused ? 1.4 : 0.7,
+        alpha,
+        compId,
+        label: opts.label,
+        subLabel: opts.subLabel
+      });
+    }
+
+    function addPath3D(pts3D, color, widthPx, busType, compId, zBias = -0.6) {
+      if (selectedBus !== 'all' && selectedBus !== busType) {
+        return;
+      }
+      const pts = pts3D.map(p => project(p[0], p[1], p[2]));
+      const avgZ = pts.reduce((s, p) => s + p.z, 0) / pts.length + zBias;
+      const isBusActive = (selectedBus === busType);
+      primitives.push({
+        type: 'path',
+        pts,
+        z: avgZ,
+        stroke: color,
+        lineWidth: isBusActive ? widthPx * 1.45 : widthPx,
+        alpha: selectedComp !== 'all' && selectedComp !== compId && selectedBus === 'all' ? 0.32 : 0.95,
+        compId
+      });
+    }
+
+    // =========================================================================
+    // BUILD SCENE: BAQUELITA PETG + ONLY THE 4 MODULES (ESP32, SIM, GPS, MPU)
+    // =========================================================================
+    function buildLogicalBoardScene() {
+      primitives = [];
+      const ex = explodeVal * 26;
+
+      const bW = 107;
+      const bD = 70;
+      const bH = 1.6;
+
+      // Coordinates of the 4 modules inside 107 x 70 mm
+      const simX = -27.0, simZ = -17.0, simPinX = simX + 17.5;
+      const gpsX =  26.0, gpsZ = -17.5, gpsPinX = gpsX - 15.5;
+      const mpuX = -26.0, mpuZ =  19.0, mpuPinZ = mpuZ - 6.0;
+      const espX =  21.0, espZ =  17.5, espTopRowZ = espZ - 11.2, espBotRowZ = espZ + 11.2;
+
+      // -----------------------------------------------------------------------
+      // 1. BAQUELITA IMPRESA EN 3D (PETG GRIS + CUNAS PETG VERDE)
+      //    Solid 107.0 x 70.0 x 1.6 mm plate with bottom engraved pin labels!
+      // -----------------------------------------------------------------------
+      addBox3D(0, 0.0, 0, bW, 1.6, bD, '#64748b', 'substrate', {
+        stroke: '#475569',
+        label: hideModules ? 'Baquelita PETG Gris (107×70×1.6mm)' : null
+      });
+
+      // Green PETG Raised Pin Guide Collars on the Baquelita
+      addBox3D(simPinX, 1.6, simZ + 1.0, 4.2, 1.6, 19.5, '#16a34a', 'substrate', {
+        label: hideModules ? '7 Huecos SIM800L' : null
+      });
+      addBox3D(gpsPinX, 1.6, gpsZ, 4.2, 1.6, 11.8, '#16a34a', 'substrate', {
+        label: hideModules ? '4 Huecos GPS' : null
+      });
+      addBox3D(mpuX, 1.6, mpuPinZ, 21.8, 1.6, 4.2, '#16a34a', 'substrate', {
+        label: hideModules ? '8 Huecos MPU6050' : null
+      });
+      addBox3D(espX - 1.0, 1.6, espTopRowZ, 39.8, 1.6, 4.2, '#16a34a', 'substrate', {
+        label: hideModules ? '15 Huecos ESP32 (Sup)' : null
+      });
+      addBox3D(espX - 1.0, 1.6, espBotRowZ, 39.8, 1.6, 4.2, '#16a34a', 'substrate', {
+        label: hideModules ? '15 Huecos ESP32 (Inf)' : null
+      });
+
+      // 14 Soportes Mixtos en Diagonal (2 Ganchos Snap-Fit en esquinas opuestas + 2 Palitos de Soporte lisos en las otras dos esquinas opuestas)
+      [
+        // SIM800L EVB (2 Ganchos en diagonal + 2 Palitos en diagonal)
+        [simPinX - 1.5,  simZ - 9.8,  'pin'],
+        [simPinX - 34.5, simZ + 14.2, 'pin'],
+        [simPinX - 34.5, simZ - 9.8,  'hook'],
+        [simPinX - 1.5,  simZ + 14.2, 'hook'],
+        // GY-GPS6MV2 (2 Ganchos en diagonal + 2 Palitos en diagonal)
+        [gpsPinX + 4.5,  gpsZ - 9.5,  'hook'],
+        [gpsPinX + 33.5, gpsZ + 9.5,  'hook'],
+        [gpsPinX + 33.5, gpsZ - 9.5,  'pin'],
+        [gpsPinX + 4.5,  gpsZ + 9.5,  'pin'],
+        // ITG/MPU6050 (1 Gancho Izq + 1 Palito Der)
+        [mpuX - 7.75, mpuPinZ + 4.0,  'hook'],
+        [mpuX + 7.75, mpuPinZ + 4.0,  'pin'],
+        // ESP32 (2 Ganchos en diagonal + 2 Palitos en diagonal)
+        [espX - 23.2, espZ - 11.4,    'hook'],
+        [espX + 21.2, espZ + 11.4,    'hook'],
+        [espX + 21.2, espZ - 11.4,    'pin'],
+        [espX - 23.2, espZ + 11.4,    'pin']
+      ].forEach(([tx, tz, pType], idx) => {
+        // 1. Base shoulder Ø 3.65 mm
+        addCyl3D(tx, 1.8, tz, 1.82, 2.0, '#16a34a', 'substrate', { segs: 10 });
+        if (pType === 'hook') {
+          // Gancho Snap-Fit Bifurcado (2 esquinas opuestas)
+          addCyl3D(tx, 3.62, tz, 0.96, 1.65, '#22c55e', 'substrate', { segs: 10 });
+          addBox3D(tx, 5.25, tz - 0.78, 2.55, 1.55, 0.85, '#4ade80', 'substrate', { stroke: '#15803d' });
+          addBox3D(tx, 5.25, tz + 0.78, 2.55, 1.55, 0.85, '#4ade80', 'substrate', { stroke: '#15803d' });
+          addBox3D(tx, 6.70, tz - 0.62, 1.65, 1.35, 0.62, '#86efac', 'substrate', {
+            stroke: '#16a34a',
+            label: (idx === 3 && hideModules) ? 'Gancho Snap-Fit (Diagonal)' : null
+          });
+          addBox3D(tx, 6.70, tz + 0.62, 1.65, 1.35, 0.62, '#86efac', 'substrate', { stroke: '#16a34a' });
+        } else {
+          // Palito de Soporte Liso Original (las otras 2 esquinas opuestas)
+          addCyl3D(tx, 4.05, tz, 0.95, 2.5, '#4ade80', 'substrate', { segs: 10 });
+        }
+      });
+
+      // 4 Corner Square Holes (3.0 x 3.0 mm at DX = 98.0 mm -> ±49.0, DY = 61.0 mm -> ±30.5)
+      [[-49.0, -30.5], [49.0, -30.5], [49.0, 30.5], [-49.0, 30.5]].forEach(([mx, mz]) => {
+        addBox3D(mx, 0.0, mz, 3.15, 1.7, 3.15, '#090d16', 'substrate', { stroke: '#38bdf8' });
+      });
+
+      // Render the 49 Pin Through-Holes protruding on the bottom soldering face
+      for (let i = -3; i <= 3; i++) {
+        const pz = simZ + 1.0 + i * 2.54;
+        addBox3D(simPinX, -1.6, pz, 0.8, 2.2, 0.8, '#e2e8f0', 'sim800');
+      }
+      for (let i = -1.5; i <= 1.5; i += 1.0) {
+        const pz = gpsZ + i * 2.54;
+        addBox3D(gpsPinX, -1.6, pz, 0.8, 2.2, 0.8, '#e2e8f0', 'gps');
+      }
+      for (let i = 0; i < 8; i++) {
+        const px = (mpuX - 8.89) + i * 2.54;
+        addBox3D(px, -1.6, mpuPinZ, 0.8, 2.2, 0.8, '#e2e8f0', 'mpu');
+      }
+      for (let i = 0; i < 15; i++) {
+        const px = (espX - 18.78) + i * 2.54;
+        addBox3D(px, -1.6, espTopRowZ, 0.8, 2.2, 0.8, '#e2e8f0', 'esp32');
+        addBox3D(px, -1.6, espBotRowZ, 0.8, 2.2, 0.8, '#e2e8f0', 'esp32');
+      }
+
+      // Queue 3D Pin Silkscreen Labels on BOTH Top (Y = 0.2) and Bottom (Y = -1.8) Faces,
+      // positioned outside the pin holes and outside the component footprint so they never overlap holes or hide under modules!
+      const pinFaceY = (camPitch >= -0.05) ? 0.25 : -1.85;
+      const pinSilk = [];
+      const simNames = ['5V', 'GND', 'VDD', 'TXD', 'RXD', 'GND', 'RST'];
+      for (let i = 0; i < 7; i++) {
+        const pz = simZ + (i - 3) * 2.54;
+        pinSilk.push({ pt: project(simPinX + 3.4, pinFaceY, pz), text: simNames[i], color: '#86efac', align: 'left' });
+      }
+      const gpsNames = ['VCC', 'RX', 'TX', 'GND'];
+      for (let i = 0; i < 4; i++) {
+        const pz = gpsZ + (i - 1.5) * 2.54;
+        pinSilk.push({ pt: project(gpsPinX - 2.4, pinFaceY, pz), text: gpsNames[i], color: '#fde047', align: 'right' });
+      }
+      const mpuNames = ['INT', 'AD0', 'XCL', 'XDA', 'SDA', 'SCL', 'GND', 'VCC'];
+      for (let i = 0; i < 8; i++) {
+        const px = (mpuX - 8.89) + i * 2.54;
+        pinSilk.push({ pt: project(px, pinFaceY, mpuPinZ - 2.4), text: mpuNames[i], color: '#67e8f9', vertical: true, align: 'left' });
+      }
+      const espTopNames = ['VIN', 'GND', 'D13', 'D12', 'D14', 'D27', 'D26', 'D25', 'D33', 'D32', 'D35', 'D34', 'VN', 'VP', 'EN'];
+      const espBotNames = ['3V3', 'GND', 'D15', 'D2', 'D4', 'RX2', 'TX2', 'D5', 'D18', 'D19', 'D21', 'RX0', 'TX0', 'D22', 'D23'];
+      for (let i = 0; i < 15; i++) {
+        const px = (espX - 18.78) + i * 2.54;
+        pinSilk.push({ pt: project(px, pinFaceY, espTopRowZ - 2.3), text: espTopNames[i], color: '#fca5a5', vertical: true, align: 'left' });
+        pinSilk.push({ pt: project(px, pinFaceY, espBotRowZ + 2.3), text: espBotNames[i], color: '#fdba74', vertical: true, align: 'right' });
+      }
+      window._currentPinSilk = pinSilk;
+
+      // If user did NOT click "Solo Baquelita PETG", render the 4 modules on top!
+      if (!hideModules) {
+        // ---------------------------------------------------------------------
+        // MODULE 1: SIM800L EVB v2.0 (Top-Left)
+        // ---------------------------------------------------------------------
+        const simHdrY = 3.8 + ex * 0.35;
+        const simY = 7.2 + ex * 1.15;
+
+        addBox3D(simPinX, simHdrY, simZ + 1.0, 2.5, 4.5, 18.0, '#0f172a', 'sim800');
+        addBox3D(simX, simY, simZ, 39.0, 1.5, 27.5, '#1e40af', 'sim800', { stroke: '#60a5fa' });
+        addBox3D(simX - 2.5, simY + 1.8, simZ + 2.0, 16.0, 2.3, 17.5, '#d1d5db', 'sim800', {
+          stroke: '#94a3b8',
+          label: '1. SIM800L EVB',
+          subLabel: '7 Pines (Der)'
+        });
+        addBox3D(simX - 2.5, simY + 3.0, simZ - 4.2, 15.2, 0.2, 3.8, '#dc2626', 'sim800');
+        addBox3D(simX - 14.5, simY + 1.8, simZ - 1.5, 4.5, 2.2, 7.2, '#f59e0b', 'sim800');
+        addBox3D(simX + 8.5, simY + 1.6, simZ - 10.2, 5.2, 1.8, 3.5, '#0f172a', 'sim800');
+        addCyl3D(simX - 5.5, simY + 1.3, simZ - 10.5, 1.5, 1.2, '#facc15', 'sim800', { segs: 10 });
+
+        // ---------------------------------------------------------------------
+        // MODULE 2: GY-GPS6MV2 (NEO-6M, Top-Right)
+        // ---------------------------------------------------------------------
+        const gpsHdrY = 3.8 + ex * 0.35;
+        const gpsY = 7.2 + ex * 1.15;
+
+        addBox3D(gpsPinX, gpsHdrY, gpsZ, 2.5, 4.5, 11.0, '#0f172a', 'gps');
+        addBox3D(gpsX, gpsY, gpsZ, 35.0, 1.5, 24.0, '#1e3a8a', 'gps', { stroke: '#60a5fa' });
+        addBox3D(gpsX + 1.5, gpsY + 1.8, gpsZ - 0.5, 13.0, 2.2, 16.0, '#e2e8f0', 'gps', {
+          stroke: '#94a3b8',
+          label: '2. GY-GPS6MV2',
+          subLabel: '4 Pines (Izq)'
+        });
+        addCyl3D(gpsX - 8.5, gpsY + 1.4, gpsZ + 7.5, 2.8, 1.4, '#cbd5e1', 'gps', { segs: 12 });
+        addCyl3D(gpsX + 13.5, gpsY + 1.3, gpsZ, 1.5, 1.2, '#facc15', 'gps', { segs: 10 });
+
+        // ---------------------------------------------------------------------
+        // MODULE 3: ITG/MPU6050 (Bottom-Left)
+        // ---------------------------------------------------------------------
+        const mpuHdrY = 3.8 + ex * 0.35;
+        const mpuY = 7.0 + ex * 1.15;
+
+        addBox3D(mpuX, mpuHdrY, mpuPinZ, 20.5, 4.5, 2.5, '#0f172a', 'mpu');
+        addBox3D(mpuX, mpuY, mpuZ, 21.5, 1.5, 16.0, '#1d4ed8', 'mpu', {
+          stroke: '#60a5fa',
+          label: '3. ITG/MPU6050',
+          subLabel: '8 Pines (Arriba)'
+        });
+        addBox3D(mpuX, mpuY + 1.1, mpuZ, 4.2, 0.9, 4.2, '#0f172a', 'mpu');
+        addBox3D(mpuX, mpuY + 1.1, mpuZ + 4.8, 3.2, 1.1, 1.8, '#f59e0b', 'mpu');
+
+        // ---------------------------------------------------------------------
+        // MODULE 4: ESP-32 DEVKIT V1 (30 Pines USB-C, Bottom-Right Horizontal)
+        // ---------------------------------------------------------------------
+        const espHdrY = 3.8 + ex * 0.35;
+        const espY = 7.5 + ex * 1.15;
+
+        addBox3D(espX - 1.0, espHdrY, espTopRowZ, 38.5, 4.5, 2.5, '#0f172a', 'esp32');
+        addBox3D(espX - 1.0, espHdrY, espBotRowZ, 38.5, 4.5, 2.5, '#0f172a', 'esp32');
+        addBox3D(espX, espY, espZ, 51.5, 1.6, 28.0, '#161920', 'esp32', { stroke: '#475569' });
+        addBox3D(espX - 24.0, espY + 2.1, espZ, 7.2, 3.2, 8.8, '#cbd5e1', 'esp32', {
+          stroke: '#64748b',
+          label: 'USB-C'
+        });
+        addBox3D(espX - 14.0, espY + 1.6, espZ - 5.2, 4.0, 1.8, 6.2, '#0f172a', 'esp32', {
+          stroke: '#fbbf24',
+          label: 'Reg. U1 (3.3V)'
+        });
+        addBox3D(espX - 8.5, espY + 1.5, espZ - 5.0, 2.4, 1.6, 4.0, '#f59e0b', 'esp32');
+        addBox3D(espX - 14.0, espY + 1.4, espZ + 4.2, 5.0, 1.1, 5.0, '#0f172a', 'esp32');
+        addBox3D(espX + 7.5, espY + 2.0, espZ, 18.5, 2.6, 17.5, '#d1d5db', 'esp32', {
+          stroke: '#94a3b8',
+          label: '4. ESP-32 (30 Pines)',
+          subLabel: 'Horizontal'
+        });
+        addBox3D(espX + 21.0, espY + 1.0, espZ, 6.5, 0.5, 17.5, '#0b0e14', 'esp32');
+      }
+
+      // -----------------------------------------------------------------------
+      // 7. HAND-SOLDERED WIRE TRACKS INSIDE THE BOTTOM PETG CHANNELS
+      // -----------------------------------------------------------------------
+      if (showTracks) {
+        const ty = -1.5;
+        const espPinX = idx => (espX - 18.78) + idx * 2.54;
+
+        // [1. RED: 5V / VIN Track] ESP32 VIN (Top[0]) <-> SIM800L 5V <-> GPS VCC
+        addPath3D([
+          [espPinX(0), ty, espTopRowZ],
+          [espPinX(0), ty, -6.6],
+          [simPinX, ty, simZ - 6.6]
+        ], '#ef4444', 3.2, 'pwr5v', 'esp32');
+
+        addPath3D([
+          [espPinX(0), ty, -6.6],
+          [gpsPinX, ty, -6.6],
+          [gpsPinX, ty, gpsZ - 3.8]
+        ], '#ef4444', 2.8, 'pwr5v', 'gps');
+
+        // [2. ORANGE: 3.3V Regulated Track from ESP32 U1] ESP32 3V3 (Bot[0]) <-> MPU6050 VCC + SIM800L VDD
+        addPath3D([
+          [espPinX(0), ty, espBotRowZ],
+          [espPinX(0), ty, 32.5],
+          [-16.2, ty, 32.5],
+          [-16.2, ty, mpuPinZ]
+        ], '#fb923c', 2.8, 'pwr3v3', 'mpu');
+
+        addPath3D([
+          [-16.2, ty, mpuPinZ],
+          [-6.5, ty, mpuPinZ],
+          [-6.5, ty, simZ - 1.5],
+          [simPinX, ty, simZ - 1.5]
+        ], '#fb923c', 2.5, 'pwr3v3', 'sim800');
+
+        // [3. YELLOW: UART2 GPS] ESP32 RX2 (Bot[5]) & TX2 (Bot[6]) <-> GPS TX & RX
+        addPath3D([
+          [espPinX(5), ty, espBotRowZ],
+          [espPinX(5), ty, 0.0],
+          [gpsPinX, ty, 0.0],
+          [gpsPinX, ty, gpsZ + 1.27]
+        ], '#facc15', 2.5, 'uart_gps', 'gps');
+
+        addPath3D([
+          [espPinX(6), ty, espBotRowZ],
+          [espPinX(6), ty, -2.0],
+          [gpsPinX + 2.0, ty, -2.0],
+          [gpsPinX, ty, gpsZ - 1.27]
+        ], '#eab308', 2.5, 'uart_gps', 'gps');
+
+        // [4. PURPLE: UART1 + RST to SIM800L EVB] ESP32 D14(Top[4]), D27(Top[5]), D26(Top[6]) <-> SIM800L
+        addPath3D([
+          [espPinX(5), ty, espTopRowZ],
+          [espPinX(5), ty, simZ + 1.0],
+          [simPinX, ty, simZ + 1.0]
+        ], '#c084fc', 2.5, 'uart_sim', 'sim800');
+
+        addPath3D([
+          [espPinX(6), ty, espTopRowZ],
+          [espPinX(6), ty, simZ + 3.5],
+          [simPinX, ty, simZ + 3.5]
+        ], '#a855f7', 2.5, 'uart_sim', 'sim800');
+
+        addPath3D([
+          [espPinX(4), ty, espTopRowZ],
+          [espPinX(4), ty, simZ + 8.6],
+          [simPinX, ty, simZ + 8.6]
+        ], '#9333ea', 2.2, 'uart_sim', 'sim800');
+
+        // [5. SKY BLUE: I2C Bus to ITG/MPU6050] ESP32 D21 SDA (Bot[10]) & D22 SCL (Bot[13]) <-> MPU6050
+        addPath3D([
+          [espPinX(10), ty, espBotRowZ],
+          [espPinX(10), ty, 33.8],
+          [-23.8, ty, 33.8],
+          [-23.8, ty, mpuPinZ]
+        ], '#38bdf8', 2.5, 'i2c', 'mpu');
+
+        addPath3D([
+          [espPinX(13), ty, espBotRowZ],
+          [espPinX(13), ty, 35.0],
+          [-21.3, ty, 35.0],
+          [-21.3, ty, mpuPinZ]
+        ], '#0ea5e9', 2.5, 'i2c', 'mpu');
+
+        // [6. EMERALD: Common GND Track]
+        addPath3D([
+          [espPinX(1), ty, espTopRowZ],
+          [espPinX(1), ty, espBotRowZ],
+          [-18.7, ty, mpuPinZ]
+        ], '#10b981', 2.8, 'all', 'substrate');
+
+        addPath3D([
+          [espPinX(1), ty, espTopRowZ],
+          [simPinX, ty, simZ - 4.0],
+          [gpsPinX, ty, gpsZ + 3.8]
+        ], '#10b981', 2.6, 'all', 'substrate');
+      }
+    }
+
+    // =========================================================================
+    // RENDER LOOP & INTERACTION PICKING
+    // =========================================================================
+    let screenBounds = {};
+
+    function renderLoop() {
+      if (autoRotate && !isDragging) {
+        targetYaw += 0.0045;
+      }
+      if (!isDragging) {
+        camPitch += (targetPitch - camPitch) * 0.14;
+        camYaw += (targetYaw - camYaw) * 0.14;
+        camZoom += (targetZoom - camZoom) * 0.14;
+        camPanX += (targetPanX - camPanX) * 0.14;
+        camPanY += (targetPanY - camPanY) * 0.14;
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      const grad = ctx.createRadialGradient(width / 2 + camPanX, height / 2 + camPanY, 30, width / 2, height / 2, Math.max(width, height) * 0.7);
+      grad.addColorStop(0, '#131c2e');
+      grad.addColorStop(1, '#070a12');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.05)';
+      ctx.lineWidth = 1;
+      const step = 36;
+      for (let x = 0; x < width; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+      }
+      for (let y = 0; y < height; y += step) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+      }
+      ctx.restore();
+
+      buildLogicalBoardScene();
+
+      primitives.sort((a, b) => b.z - a.z);
+
+      screenBounds = {};
+      const labelsToDraw = [];
+
+      primitives.forEach(item => {
+        ctx.save();
+        ctx.globalAlpha = item.alpha !== undefined ? item.alpha : 1.0;
+
+        if (item.type === 'poly') {
+          ctx.beginPath();
+          ctx.moveTo(item.pts[0].x, item.pts[0].y);
+          for (let i = 1; i < item.pts.length; i++) {
+            ctx.lineTo(item.pts[i].x, item.pts[i].y);
+          }
+          ctx.closePath();
+          ctx.fillStyle = item.fill;
+          ctx.fill();
+          if (item.stroke) {
+            ctx.strokeStyle = item.stroke;
+            ctx.lineWidth = item.lineWidth || 0.6;
+            ctx.stroke();
+          }
+
+          if (item.compId) {
+            if (!screenBounds[item.compId]) {
+              screenBounds[item.compId] = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+            }
+            const b = screenBounds[item.compId];
+            item.pts.forEach(p => {
+              if (p.x < b.minX) b.minX = p.x;
+              if (p.y < b.minY) b.minY = p.y;
+              if (p.x > b.maxX) b.maxX = p.x;
+              if (p.y > b.maxY) b.maxY = p.y;
+            });
+          }
+
+          if (showLabels && item.label && item.alpha > 0.3) {
+            const cx = item.pts.reduce((s, p) => s + p.x, 0) / item.pts.length;
+            const cy = item.pts.reduce((s, p) => s + p.y, 0) / item.pts.length;
+            labelsToDraw.push({
+              x: cx,
+              y: cy,
+              z: item.z,
+              text: item.label,
+              sub: item.subLabel,
+              compId: item.compId
+            });
+          }
+        } else if (item.type === 'path') {
+          ctx.beginPath();
+          ctx.moveTo(item.pts[0].x, item.pts[0].y);
+          for (let i = 1; i < item.pts.length; i++) {
+            ctx.lineTo(item.pts[i].x, item.pts[i].y);
+          }
+          ctx.strokeStyle = item.stroke;
+          ctx.lineWidth = item.lineWidth;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
+
+      if (showLabels) {
+        const topEdge = project(0, 1.5, -39.5);
+        const botEdge = project(0, 1.5, 39.5);
+        const leftEdge = project(-61.0, 1.5, 0);
+
+        ctx.save();
+        ctx.font = '700 11px system-ui, sans-serif';
+        ctx.fillStyle = '#4ade80';
+        ctx.textAlign = 'center';
+        ctx.fillText('⬆️ PUENTE (10.8 cm)', topEdge.x, topEdge.y);
+        ctx.fillText('⬇️ CORREA', botEdge.x, botEdge.y);
+        ctx.fillText('⬅️ CABEZA / PUENTE', leftEdge.x, leftEdge.y);
+        ctx.restore();
+
+        // Draw individual pin names on BOTH Top (when placing components) and Bottom (when soldering) faces!
+        if (window._currentPinSilk) {
+          ctx.save();
+          ctx.font = '700 8.5px monospace';
+          ctx.textBaseline = 'middle';
+          window._currentPinSilk.forEach(ps => {
+            ctx.save();
+            ctx.translate(ps.pt.x, ps.pt.y);
+            if (ps.vertical) {
+              ctx.rotate(-Math.PI / 2);
+            }
+            const tw = ctx.measureText(ps.text).width + 4;
+            const align = ps.align || 'center';
+            ctx.textAlign = align;
+            const rx = align === 'left' ? -2 : (align === 'right' ? -tw + 2 : -tw / 2);
+            ctx.fillStyle = 'rgba(9, 13, 22, 0.88)';
+            ctx.fillRect(rx, -4.5, tw, 9);
+            ctx.fillStyle = ps.color;
+            ctx.fillText(ps.text, 0, 0.5);
+            ctx.restore();
+          });
+          ctx.restore();
+        }
+      }
+
+      labelsToDraw.forEach(lbl => {
+        const isSel = (selectedComp === lbl.compId);
+        ctx.save();
+        ctx.font = '600 11px system-ui, sans-serif';
+        const w1 = ctx.measureText(lbl.text).width;
+        let w2 = 0;
+        if (lbl.sub) {
+          ctx.font = '500 9.5px system-ui, sans-serif';
+          w2 = ctx.measureText(lbl.sub).width;
+        }
+        const boxW = Math.max(w1, w2) + 12;
+        const boxH = lbl.sub ? 28 : 18;
+
+        ctx.fillStyle = isSel ? 'rgba(16, 185, 129, 0.95)' : 'rgba(15, 23, 42, 0.86)';
+        ctx.strokeStyle = isSel ? '#a7f3d0' : 'rgba(148, 163, 184, 0.35)';
+        ctx.lineWidth = isSel ? 1.3 : 0.8;
+
+        const rx = lbl.x - boxW / 2;
+        const ry = lbl.y - boxH / 2;
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, boxW, boxH, 5);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '600 11px system-ui, sans-serif';
+        ctx.fillStyle = isSel ? '#052e16' : '#f8fafc';
+        ctx.fillText(lbl.text, lbl.x, lbl.sub ? ry + 9.5 : lbl.y);
+
+        if (lbl.sub) {
+          ctx.font = '500 9.5px system-ui, sans-serif';
+          ctx.fillStyle = isSel ? '#064e3b' : '#94a3b8';
+          ctx.fillText(lbl.sub, lbl.x, ry + 20.5);
+        }
+        ctx.restore();
+      });
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    // Pointer Interaction
+    canvas.addEventListener('pointerdown', e => {
+      isDragging = true;
+      dragMode = (e.button === 2 || e.shiftKey) ? 'pan' : 'orbit';
+      prevX = e.clientX;
+      prevY = e.clientY;
+      downX = e.clientX;
+      downY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    canvas.addEventListener('pointermove', e => {
+      if (!isDragging) return;
+      const dx = e.clientX - prevX;
+      const dy = e.clientY - prevY;
+      prevX = e.clientX;
+      prevY = e.clientY;
+
+      if (dragMode === 'pan') {
+        camPanX += dx;
+        camPanY += dy;
+        targetPanX = camPanX;
+        targetPanY = camPanY;
+      } else {
+        camYaw += dx * 0.0085;
+        camPitch = Math.max(-Math.PI / 2 + 0.04, Math.min(Math.PI / 2 - 0.04, camPitch + dy * 0.0085));
+        targetYaw = camYaw;
+        targetPitch = camPitch;
+      }
+    });
+
+    canvas.addEventListener('pointerup', e => {
+      isDragging = false;
+      const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+      if (moved < 5) {
+        const order = ['esp32', 'sim800', 'gps', 'mpu', 'substrate'];
+        for (const id of order) {
+          const b = screenBounds[id];
+          if (b && e.clientX >= b.minX && e.clientX <= b.maxX && e.clientY >= b.minY && e.clientY <= b.maxY) {
+            selectComponent(id);
+            break;
+          }
+        }
+      }
+    });
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      targetZoom = Math.max(2.2, Math.min(11.0, targetZoom - e.deltaY * 0.004));
+    }, { passive: false });
+
+    // Initialize UI & Start
+    selectComponent('all');
+    renderLoop();
+  </script>
+</body>
+</html>
