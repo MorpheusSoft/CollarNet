@@ -371,7 +371,7 @@ async function start() {
       console.log(` Acceso Local: http://localhost:${PORT}`);
       console.log(` Acceso Red Wi-Fi: http://${localIp}:${PORT}`);
       console.log(` Portal Descargas Móvil: http://${localIp}:${PORT}/descargas`);
-      console.log(` Prefijo MQTT: ${process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano'}`);
+      console.log(` Prefijo MQTT: ${process.env.MQTT_TOPIC_PREFIX || 'collarnet/dev_local'}`);
       console.log(`=========================================`);
     });
 

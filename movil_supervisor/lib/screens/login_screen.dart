@@ -575,7 +575,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: 'IP / Host Servidor',
                             labelStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 12),
-                            hintText: 'www.cowai.net',
+                            hintText: '127.0.0.1:3500',
                             hintStyle: const TextStyle(color: FincaTheme.textMuted, fontSize: 12),
                             prefixIcon: const Icon(Icons.dns_rounded, color: FincaTheme.accentGreenLight, size: 18),
                             suffixIcon: IconButton(
@@ -610,12 +610,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const Text('Presets: ', style: TextStyle(color: FincaTheme.textMuted, fontSize: 11)),
                             ActionChip(
-                              label: const Text('Nube COWAI', style: TextStyle(fontSize: 10, color: FincaTheme.accentGreenLight, fontWeight: FontWeight.bold)),
+                              label: const Text('Localhost', style: TextStyle(fontSize: 10, color: FincaTheme.accentGreenLight, fontWeight: FontWeight.bold)),
                               backgroundColor: FincaTheme.bgCardElevated,
                               padding: EdgeInsets.zero,
                               onPressed: () async {
-                                _serverIpCtrl.text = 'www.cowai.net';
-                                await context.read<FincaStateProvider>().updateServerIp('www.cowai.net');
+                                _serverIpCtrl.text = '127.0.0.1:3500';
+                                await context.read<FincaStateProvider>().updateServerIp('127.0.0.1:3500');
                                 _testServerConnection();
                               },
                             ),

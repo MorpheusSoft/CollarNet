@@ -8,7 +8,7 @@ import '../models/potrero.dart';
 import 'gis_service.dart';
 
 class ApiService {
-  static String defaultHost = 'https://cowai.net';
+  static String defaultHost = 'http://127.0.0.1:3500';
 
   static Future<String> getBaseUrl() async {
     try {
@@ -18,19 +18,13 @@ class ApiService {
       if (kIsWeb) {
         final origin = Uri.base.origin;
         if (origin.startsWith('http://') || origin.startsWith('https://')) {
-          if (savedIp == null || savedIp.contains('192.168.') || savedIp.isEmpty) {
-            final webApiUrl = '$origin/api';
-            await prefs.setString('finca_server_ip', webApiUrl);
-            return webApiUrl;
-          }
+          final webApiUrl = '$origin/api';
+          await prefs.setString('finca_server_ip', webApiUrl);
+          return webApiUrl;
         }
       }
 
-      if (savedIp == null ||
-          savedIp.isEmpty ||
-          savedIp.contains('192.168.') ||
-          savedIp.contains('10.0.2.2') ||
-          savedIp.contains('localhost')) {
+      if (savedIp == null || savedIp.isEmpty || savedIp.contains('cowai.net')) {
         savedIp = defaultHost;
         await prefs.setString('finca_server_ip', defaultHost);
       }
@@ -38,7 +32,7 @@ class ApiService {
       if (clean.startsWith('http://') || clean.startsWith('https://')) {
         return clean.endsWith('/api') ? clean : (clean.endsWith('/') ? '${clean}api' : '$clean/api');
       }
-      return clean.contains('cowai.net') ? 'https://$clean/api' : 'http://$clean/api';
+      return 'http://$clean/api';
     } catch (_) {
       return '$defaultHost/api';
     }

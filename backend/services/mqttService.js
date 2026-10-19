@@ -13,7 +13,7 @@ let mqttClient = null;
  */
 export function initMQTT(io) {
   const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://broker.hivemq.com:1883';
-  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/dev_local';
   const subscribeTopics = [
     `${prefix}/+/telemetria`,
     `${prefix}/+/camera`,
@@ -42,7 +42,7 @@ export function initMQTT(io) {
 
   mqttClient.on('message', async (topic, message) => {
     try {
-      // Extraer collarId del tópico (ej: collarnet/lzambrano/COW-001/telemetria -> COW-001)
+      // Extraer collarId del tópico (ej: collarnet/dev_local/COW-001/telemetria -> COW-001)
       const topicParts = topic.split('/');
       const collarId = topicParts[topicParts.length - 2] || 'COW-001';
       const actionType = topicParts[topicParts.length - 1];
@@ -71,7 +71,7 @@ export function initMQTT(io) {
  */
 export function publishTelemetry(collarId, payload) {
   if (!mqttClient || !mqttClient.connected) return false;
-  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/dev_local';
   const topic = `${prefix}/${collarId}/telemetria`;
   mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
   return true;
@@ -271,7 +271,7 @@ export function publishToCollar(collarId, payload) {
     console.error('[MQTT] Cliente no inicializado o desconectado. Imposible publicar.');
     return false;
   }
-  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/dev_local';
   const cleanId = String(collarId || '').trim();
   const targetIds = cleanId ? [cleanId] : ['COW-001'];
   targetIds.forEach(id => {
@@ -292,7 +292,7 @@ export function publishCameraCmd(collarId, payload) {
     console.warn('[MQTT] Cliente desconectado. No se pudo enviar comando al collar.');
     return false;
   }
-  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+  const prefix = process.env.MQTT_TOPIC_PREFIX || 'collarnet/dev_local';
   const cleanId = String(collarId || '').trim();
   const targetIds = cleanId ? [cleanId] : ['COW-001'];
   targetIds.forEach(id => {

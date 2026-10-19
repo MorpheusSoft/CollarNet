@@ -1178,7 +1178,7 @@ router.post('/geocercas/sincronizar', async (req, res) => {
     if (success) {
       res.json({
         message: `Geocercas sincronizadas y enviadas al collar ${collarId}`,
-        topic: `${process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano'}/${collarId}/config`,
+        topic: `${process.env.MQTT_TOPIC_PREFIX || 'collarnet/dev_local'}/${collarId}/config`,
         payload
       });
     } else {
