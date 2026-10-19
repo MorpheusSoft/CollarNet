@@ -1,0 +1,6 @@
+# Protección de Diseño de Producción COWAI Halter V2
+# Solo el administrador principal (@MorpheusSoft) tiene autoridad sobre el diseño 3D y despliegue VPS
+/diseno_halter_v2/ @MorpheusSoft
+/logo_3d_cow_ai/ @MorpheusSoft
+/deploy_vps_qa.sh @MorpheusSoft
+/docker-compose.yml @MorpheusSoft

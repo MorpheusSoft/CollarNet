@@ -1,0 +1,20 @@
+name: Proteccion Inmutable Puente Dorsal COWAI V2
+
+on:
+  push:
+    branches: [ main, santiago, david, renier ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify-bridge-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verificar integridad criptografica SHA-256 del Puente Dorsal Definitivo
+        run: |
+          echo "Verificando que el diseño definitivo del Puente Dorsal COWAI no haya sido alterado..."
+          sha256sum -c diseno_halter_v2/BRIDGE_PRODUCTION_LOCK.sha256
+          echo "✅ Integridad del Puente Dorsal verificada al 100%."
