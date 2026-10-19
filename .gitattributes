@@ -1,0 +1,10 @@
+# Bloqueo inmutable del diseño definitivo del Puente Dorsal COWAI V2
+# Durante cualquier merge hacia main, Git conserva siempre la versión de main (merge=ours)
+diseno_halter_v2/puente_dorsal_cowai.stl merge=ours
+diseno_halter_v2/puente_texto_cowai.stl merge=ours
+diseno_halter_v2/puente_dorsal_cowai.3mf merge=ours
+diseno_halter_v2/collar_halter_v2.scad merge=ours
+diseno_halter_v2/capsula_izquierda_base_lilygo.stl merge=ours
+diseno_halter_v2/capsula_derecha_base_bateria_21700.stl merge=ours
+diseno_halter_v2/BRIDGE_PRODUCTION_LOCK.sha256 merge=ours
+diseno_halter_v2/** merge=ours

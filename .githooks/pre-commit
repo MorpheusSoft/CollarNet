@@ -1,0 +1,18 @@
+#!/bin/bash
+# Hook de protección inmutable del Puente Dorsal COWAI V2
+set -e
+
+if [ -f "diseno_halter_v2/BRIDGE_PRODUCTION_LOCK.sha256" ]; then
+    if ! sha256sum --status -c diseno_halter_v2/BRIDGE_PRODUCTION_LOCK.sha256 2>/dev/null; then
+        echo "❌ [BLOQUEADO] El diseño del Puente Dorsal (diseno_halter_v2/) está CONGELADO como definitivo de producción."
+        echo "   Ninguna rama ni commit tiene permitido modificar los archivos del puente."
+        echo "   Restaurando automáticamente los archivos protegidos..."
+        git checkout HEAD -- diseno_halter_v2/puente_dorsal_cowai.stl \
+                             diseno_halter_v2/puente_texto_cowai.stl \
+                             diseno_halter_v2/puente_dorsal_cowai.3mf \
+                             diseno_halter_v2/collar_halter_v2.scad \
+                             diseno_halter_v2/capsula_izquierda_base_lilygo.stl \
+                             diseno_halter_v2/capsula_derecha_base_bateria_21700.stl 2>/dev/null || true
+        exit 1
+    fi
+fi
