@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COWAI CollarNet V2 | Visualizador 3D Interactivo e Inspector Dimensional CAD</title>
+  <title>COWAI CollarNet V2 (Rev 2.1) | Visualizador 3D Interactivo e Inspector Dimensional CAD</title>
   
   <!-- Estilos de Alta Fidelidad CAD Industrial -->
   <link rel="stylesheet" href="styles.css">
@@ -24,8 +24,8 @@
     <div class="brand">
       <div class="brand-logo">C</div>
       <div class="brand-text">
-        <h1>COWAI CollarNet <span class="badge-v2">V2.0 HALTER</span></h1>
-        <p>Visualizador CAD 3D Interactivo • Arquitectura y Espacio de Dispositivos</p>
+        <h1>COWAI CollarNet <span class="badge-v2">V2.1 HALTER • 2-PCB SMT</span></h1>
+        <p>Visualizador CAD 3D Interactivo • Arquitectura Dual-PCB, Cerca Virtual CDI y Espacio de Dispositivos</p>
       </div>
     </div>
 
@@ -33,8 +33,8 @@
     <div class="header-tags">
       <span class="tag-pill active">● 100% Cero Tornillos (Snap-Fit)</span>
       <span class="tag-pill active">● Hermetismo IP67 Triple Sello</span>
-      <span class="tag-pill active">● Túnel Continuo 52 mm (Opción A)</span>
-      <span class="tag-pill">Eje Cables Z=17 mm</span>
+      <span class="tag-pill active">● Dual-PCB Custom (Lógica RF + Potencia CDI)</span>
+      <span class="tag-pill">Arnés 5P Baja Tensión (Z=17 mm)</span>
     </div>
 
     <!-- Botones de Acción Rápida -->
@@ -123,14 +123,25 @@
         </div>
       </div>
 
-      <!-- Grupo 5: Árbol de Componentes -->
+      <!-- Grupo 5: Árbol de Componentes Actualizados -->
       <div class="tree-category">
         <div class="category-title">Estructura y Puente Dorsal</div>
 
         <div class="tree-item" data-part="puente">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#262930;"></span>
-            <span>Puente Dorsal TPU</span>
+            <span>Puente Dorsal TPU 95A</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="texto_cowai">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#f8fafc;"></span>
+            <span>Emblema 3D COWAI (Inlay)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -152,7 +163,7 @@
         <div class="tree-item" data-part="arnes">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#37474f;"></span>
-            <span>Arnés Pasacables (Z=17 mm)</span>
+            <span>Arnés 5 Hilos Baja Tensión</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -162,12 +173,12 @@
       </div>
 
       <div class="tree-category">
-        <div class="category-title">Cápsula Derecha (Energía)</div>
+        <div class="category-title">Cápsula Derecha (Potencia & Estímulo CDI)</div>
 
         <div class="tree-item" data-part="pod_right_base">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#dae2ec;"></span>
-            <span>Cápsula Base ASA</span>
+            <span>Cápsula Base Derecha (ASA)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -178,7 +189,7 @@
         <div class="tree-item" data-part="bateria">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#1e88e5;"></span>
-            <span>Pack Batería 21700-3P</span>
+            <span>Batería Li-Ion 21700 + BMS 1S</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -188,8 +199,8 @@
 
         <div class="tree-item" data-part="mppt">
           <div class="tree-item-info">
-            <span class="part-color-dot" style="background:#c62828;"></span>
-            <span>Cargador Solar MPPT</span>
+            <span class="part-color-dot" style="background:#166534;"></span>
+            <span>PCB Potencia & Pulso CDI (1kV)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -200,7 +211,29 @@
         <div class="tree-item" data-part="buzzer">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#212121;"></span>
-            <span>Zumbador Piezoeléctrico</span>
+            <span>Zumbador Acústico 95dB (4kHz)</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="electrodos">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#94a3b8;"></span>
+            <span>2x Electrodos Cuello Inox M4</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="junta_right">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#00e676;"></span>
+            <span>Junta Tórica IP67 Der (TPU 85A)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -211,7 +244,18 @@
         <div class="tree-item" data-part="pod_right_lid">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#b0bec5;"></span>
-            <span>Tapa Solar ASA</span>
+            <span>Tapa Solar Derecha (ASA)</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="solar_right">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#0d2149;"></span>
+            <span>Panel Solar 2 RY9-414 (60x55)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -221,12 +265,12 @@
       </div>
 
       <div class="tree-category">
-        <div class="category-title">Cápsula Izquierda (Electrónica)</div>
+        <div class="category-title">Cápsula Izquierda (Lógica, RF 4G & MPPT)</div>
 
         <div class="tree-item" data-part="pod_left_base">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#dae2ec;"></span>
-            <span>Cápsula Base ASA</span>
+            <span>Cápsula Base Izquierda (ASA)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -236,8 +280,8 @@
 
         <div class="tree-item" data-part="lilygo">
           <div class="tree-item-info">
-            <span class="part-color-dot" style="background:#0d47a1;"></span>
-            <span>Placa LilyGO T-A7670X</span>
+            <span class="part-color-dot" style="background:#0f5132;"></span>
+            <span>PCB Lógica & RF V2 (60x32 mm)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -248,7 +292,29 @@
         <div class="tree-item" data-part="antena">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#b0bec5;"></span>
-            <span>Antena GNSS Patch</span>
+            <span>Antena GNSS Cerámica (Cielo)</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="antena_lte">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#d97706;"></span>
+            <span>Antena 4G LTE FPC Adhesiva</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="junta_left">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#00e676;"></span>
+            <span>Junta Tórica IP67 Izq (TPU 85A)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -259,7 +325,29 @@
         <div class="tree-item" data-part="pod_left_lid">
           <div class="tree-item-info">
             <span class="part-color-dot" style="background:#b0bec5;"></span>
-            <span>Tapa Solar ASA</span>
+            <span>Tapa Solar Izquierda (ASA)</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="led_status">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#00e676;"></span>
+            <span>Barra Difusora LED Estado</span>
+          </div>
+          <div class="tree-item-actions">
+            <button class="solo-btn">Solo</button>
+            <button class="vis-btn visible">👁</button>
+          </div>
+        </div>
+
+        <div class="tree-item" data-part="solar_left">
+          <div class="tree-item-info">
+            <span class="part-color-dot" style="background:#0d2149;"></span>
+            <span>Panel Solar 1 RY9-414 (60x55)</span>
           </div>
           <div class="tree-item-actions">
             <button class="solo-btn">Solo</button>
@@ -276,8 +364,8 @@
        ========================================================================= -->
   <aside class="sidebar-panel panel-right">
     <div class="tabs-header">
-      <button class="tab-btn active" data-tab="fit">📦 Espacio Dispositivos</button>
-      <button class="tab-btn" data-tab="specs">📐 Ficha Técnica</button>
+      <button class="tab-btn active" data-tab="fit">📦 Dispositivos</button>
+      <button class="tab-btn" data-tab="specs">📐 Ficha & PCBs</button>
       <button class="tab-btn" data-tab="inspector">🔍 Inspector</button>
     </div>
 
@@ -286,28 +374,75 @@
       <!-- PESTAÑA 1: ESPACIO DE DISPOSITIVOS Y ANÁLISIS DE HOLGURAS (FIT & CLEARANCE) -->
       <div class="tab-content active" id="tab-fit">
         
-        <!-- Banner Arquitectura IP67 -->
+        <!-- Banner Arquitectura Dual-PCB + IP67 -->
         <div class="ip67-banner">
-          <div class="ip67-title">💧 Arquitectura de Sellado IP67 Pasacables</div>
+          <div class="ip67-title">⚡ Arquitectura Dual-PCB (EMC/EMI) + Triple Sello IP67</div>
           <div class="ip67-desc">
-            • <strong>Barrera 1</strong>: Cuello TPU Ø12x2.2 mm comprimido 0.4 mm (22.2% ISO 3601) en cajera ASA Ø12x1.8 mm.<br>
-            • <strong>Barrera 2</strong>: Bolsillo envolvente de 35 mm con tolerancia ceñida de 0.3 mm.<br>
-            • <strong>Barrera 3</strong>: Cajera interior de Ø12x1.8 mm para sellador náutico Sikaflex 221 (anti-capilaridad).
+            • <strong>Aislamiento Galvánico 5 kV</strong>: La alta tensión del pulso CDI (800–1000V) se genera exclusivamente en la Cápsula Derecha y jamás cruza el lomo ni interfiere con el módem 4G/GNSS.<br>
+            • <strong>Triple Barrera IP67</strong>: Cuello TPU Ø12×2.2 mm comprimido 22.2% (ISO 3601), laberinto en U con junta tórica TPU 85A y cajera interior para Sikaflex 221.
           </div>
         </div>
 
-        <!-- Tarjeta 1: Batería 21700-3P -->
-        <div class="fit-card">
+        <!-- Tarjeta 1: Placa PCB Lógica & RF Custom V2 (Cápsula Izquierda) -->
+        <div class="fit-card" onclick="selectComponent('lilygo')" style="cursor:pointer;">
+          <div class="fit-card-header">
+            <div class="fit-card-title">
+              <span class="part-color-dot" style="background:#0f5132;"></span>
+              PCB 1: Lógica, RF 4G/GNSS & MPPT
+            </div>
+            <span class="fit-badge ok">✅ SMT 60×32 mm</span>
+          </div>
+          <table class="dim-table">
+            <thead>
+              <tr><th>Eje</th><th>Placa PCBA</th><th>Cavidad Caja</th><th>Holgura Libre</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Long. (X)</td><td>60.0 mm</td><td>70.0 mm</td><td class="clearance-val">+10.0 mm</td></tr>
+              <tr><td>Ancho (Y)</td><td>32.0 mm</td><td>70.8 mm</td><td class="clearance-val">+38.8 mm</td></tr>
+              <tr><td>Alto (Z)</td><td>6.2 mm</td><td>15.5 mm</td><td class="clearance-val">+9.3 mm</td></tr>
+            </tbody>
+          </table>
+          <div class="fit-card-notes">
+            <strong>Integra:</strong> MCU <code>ESP32-S3-WROOM-1-N16R8</code>, Módem <code>SIM7670SA</code> (4G LTE Cat-1 + GNSS), Cargador Solar <code>MPPT CN3791</code> (6V 1.2A), Buck <code>SY8089</code> (3.3V/2A), Acelerómetro <code>SC7A20</code> (6 µA), 2× Tantalio 220µF, USB-C, Porta Nano-SIM (Bottom) y 2× IPEX 50Ω.
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: Placa PCB Potencia, Audio y Descarga CDI (Cápsula Derecha) -->
+        <div class="fit-card" onclick="selectComponent('mppt')" style="cursor:pointer;">
+          <div class="fit-card-header">
+            <div class="fit-card-title">
+              <span class="part-color-dot" style="background:#166534;"></span>
+              PCB 2: Potencia, Audio & Pulso CDI
+            </div>
+            <span class="fit-badge ok">✅ Aislada 5 kV</span>
+          </div>
+          <table class="dim-table">
+            <thead>
+              <tr><th>Eje</th><th>Placa PCBA</th><th>Bahía Caja</th><th>Holgura Libre</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Long. (X)</td><td>26.0 mm</td><td>28.0 mm</td><td class="clearance-val">+2.0 mm</td></tr>
+              <tr><td>Ancho (Y)</td><td>32.0 mm</td><td>34.0 mm</td><td class="clearance-val">+2.0 mm</td></tr>
+              <tr><td>Alto (Z)</td><td>9.1 mm</td><td>15.5 mm</td><td class="clearance-val">+6.4 mm</td></tr>
+            </tbody>
+          </table>
+          <div class="fit-card-notes">
+            <strong>Integra:</strong> BMS 1S (<code>DW01A+FS8205A+PPTC 3A</code>), Driver Buzzer (<code>AO3400A</code>), Optoacoplador <code>EL817C</code> (5kV), Watchdog Hardware 1000ms (<code>74LVC1G123</code>), Bobina Flyback HV (800–1000V), Condensador CDI <code>0.1µF 1000V</code> (0.05J), Tiristor SCR <code>TYN1225RG</code> y ranura fresada de 1.5 mm.
+          </div>
+        </div>
+
+        <!-- Tarjeta 3: Batería Li-Ion 21700 + BMS -->
+        <div class="fit-card" onclick="selectComponent('bateria')" style="cursor:pointer;">
           <div class="fit-card-header">
             <div class="fit-card-title">
               <span class="part-color-dot" style="background:#1e88e5;"></span>
-              Pack Batería 21700-3P (Li-ion)
+              Batería Li-Ion 21700 (3.7V / BMS 1S)
             </div>
             <span class="fit-badge ok">✅ Holgura Óptima</span>
           </div>
           <table class="dim-table">
             <thead>
-              <tr><th>Eje</th><th>Pack Batería</th><th>Cavidad Caja</th><th>Holgura Libre</th></tr>
+              <tr><th>Eje</th><th>Pack / Celda</th><th>Cavidad Caja</th><th>Holgura Libre</th></tr>
             </thead>
             <tbody>
               <tr><td>Long. (X)</td><td>72.0 mm</td><td>76.0 mm</td><td class="clearance-val">+4.0 mm</td></tr>
@@ -316,134 +451,136 @@
             </tbody>
           </table>
           <div class="fit-card-notes">
-            Permite colocar espuma EVA de 1.5 mm para amortiguación de impactos en el animal y deja paso libre a los cables 18AWG hacia el MPPT.
+            Admite desde 1 celda 21700 Grado A (5.000 mAh) hasta pack 1S3P (15.000 mAh) con espuma EVA de 1.5 mm anti-impacto y protección contra sobrecarga/descarga.
           </div>
         </div>
 
-        <!-- Tarjeta 2: LilyGO T-A7670X -->
-        <div class="fit-card">
+        <!-- Tarjeta 4: Electrodos Inox 316 M4 y Zumbador 95dB -->
+        <div class="fit-card" onclick="selectComponent('electrodos')" style="cursor:pointer;">
           <div class="fit-card-header">
             <div class="fit-card-title">
-              <span class="part-color-dot" style="background:#0d47a1;"></span>
-              Placa MCU LilyGO T-A7670X-S3
+              <span class="part-color-dot" style="background:#94a3b8;"></span>
+              2× Electrodos Inox 316 M4 & Buzzer 95dB
             </div>
-            <span class="fit-badge ok">✅ Espacio Holgado</span>
+            <span class="fit-badge ok">✅ Sello O-Ring</span>
           </div>
           <table class="dim-table">
             <thead>
-              <tr><th>Eje</th><th>Placa PCB</th><th>Cavidad Caja</th><th>Holgura Libre</th></tr>
+              <tr><th>Dispositivo</th><th>Medida Real</th><th>Alojamiento</th><th>Holgura / Sello</th></tr>
             </thead>
             <tbody>
-              <tr><td>Long. (X)</td><td>75.0 mm</td><td>85.0 mm</td><td class="clearance-val">+10.0 mm</td></tr>
-              <tr><td>Ancho (Y)</td><td>44.0 mm</td><td>74.0 mm</td><td class="clearance-val">+30.0 mm</td></tr>
-              <tr><td>Alto (Z)</td><td>4.8 mm</td><td>15.5 mm</td><td class="clearance-val">+6.2 mm</td></tr>
+              <tr><td>Electrodos (2×)</td><td>M4 × 21.5 mm</td><td>Pasamuros Ø4.2</td><td class="clearance-val">O-Ring EPDM Ø7.2</td></tr>
+              <tr><td>Buzzer 4000Hz</td><td>Ø12.4 × 8.0 mm</td><td>Cámara Ø12.8</td><td class="clearance-val">Cono Acústico 95dB</td></tr>
             </tbody>
           </table>
           <div class="fit-card-notes">
-            Montada sobre 4 postes de fijación de 4.5 mm de altura. El margen de 30 mm lateral acomoda holgadamente el conector USB-C y los cables de antena.
+            Los 2 pernos semiesféricos de acero inoxidable marino 316 salen por la base inferior en Y=72 mm (fuera del túnel de cincha de 52 mm) para contacto directo con el cuello.
           </div>
         </div>
 
-        <!-- Tarjeta 3: Antena GNSS Patch -->
-        <div class="fit-card">
+        <!-- Tarjeta 5: Antenas GNSS Cerámica y 4G LTE FPC -->
+        <div class="fit-card" onclick="selectComponent('antena')" style="cursor:pointer;">
           <div class="fit-card-header">
             <div class="fit-card-title">
               <span class="part-color-dot" style="background:#b0bec5;"></span>
-              Antena GNSS Cerámica (GPS)
+              Antena GNSS Patch + Antena 4G LTE FPC
             </div>
-            <span class="fit-badge ok">✅ Anti-Vibración</span>
+            <span class="fit-badge ok">✅ Doble Enlace RF</span>
           </div>
           <table class="dim-table">
             <thead>
-              <tr><th>Eje</th><th>Módulo Antena</th><th>Cuna Receptora</th><th>Holgura Libre</th></tr>
+              <tr><th>Antena</th><th>Dimensión</th><th>Alojamiento</th><th>Holgura Libre</th></tr>
             </thead>
             <tbody>
-              <tr><td>Long. (X)</td><td>25.0 mm</td><td>26.0 mm</td><td class="clearance-val">+1.0 mm</td></tr>
-              <tr><td>Ancho (Y)</td><td>25.0 mm</td><td>26.0 mm</td><td class="clearance-val">+1.0 mm</td></tr>
-              <tr><td>Alto (Z)</td><td>5.15 mm</td><td>10.0 mm</td><td class="clearance-val">+4.85 mm</td></tr>
+              <tr><td>GNSS Cerámica</td><td>25.5 × 25.5 × 5.2</td><td>Cuna 26 × 26 × 10</td><td class="clearance-val">+0.5 mm (Cenital)</td></tr>
+              <tr><td>4G LTE FPC</td><td>40.0 × 13.0 × 1.2</td><td>Pared Interior</td><td class="clearance-val">Adhesiva 3M + IPEX</td></tr>
             </tbody>
           </table>
           <div class="fit-card-notes">
-            Cuna sobreelevada dedicada que asegura la orientación cenital hacia el cielo mientras la resina o adhesivo sella la posición.
+            Ambas conectadas por cable coaxial de 50 Ω a los conectores u.FL/IPEX (<code>J3</code> y <code>J4</code>) del módem SIM7670SA.
           </div>
         </div>
 
-        <!-- Tarjeta 4: Túnel de Cincha Ganadera (Opción A) -->
-        <div class="fit-card">
+        <!-- Tarjeta 6: Paneles Solares RY9-414, Cincha y Arnés 5P -->
+        <div class="fit-card" onclick="selectComponent('arnes')" style="cursor:pointer;">
           <div class="fit-card-header">
             <div class="fit-card-title">
               <span class="part-color-dot" style="background:#ff6d00;"></span>
-              Túnel Cincha (Opción A Continua)
+              Paneles RY9-414 (×2), Cincha & Arnés 5P
             </div>
-            <span class="fit-badge ok">✅ Continuo 100%</span>
+            <span class="fit-badge ok">✅ 100% Continuo</span>
           </div>
           <table class="dim-table">
             <thead>
-              <tr><th>Parámetro</th><th>Cincha Ganadera</th><th>Túnel Collar</th><th>Holgura Libre</th></tr>
+              <tr><th>Elemento</th><th>Medida</th><th>Alojamiento</th><th>Holgura / Aislamiento</th></tr>
             </thead>
             <tbody>
-              <tr><td>Ancho</td><td>38 / 50 mm</td><td>52.0 mm</td><td class="clearance-val">+2.0 mm (con 50)</td></tr>
-              <tr><td>Alto</td><td>3.0 mm</td><td>5.5 mm</td><td class="clearance-val">+2.5 mm libre</td></tr>
-              <tr><td>Aislamiento</td><td>Separación cable</td><td>4.5 mm TPU</td><td class="clearance-val">Tabique Macizo</td></tr>
+              <tr><td>2× Paneles 6V</td><td>60.0 × 55.0 × 2.2</td><td>61.0 × 56.0 × 2.2</td><td class="clearance-val">Flush-Mount Enrasado</td></tr>
+              <tr><td>Arnés 5 Hilos</td><td>Ø7.0 mm (AWG24/26)</td><td>Conducto Ø8.0 mm</td><td class="clearance-val">Z=17 mm (&lt;5V Baja T.)</td></tr>
+              <tr><td>Cincha Collar</td><td>38 / 50 × 3.0 mm</td><td>Túnel 52 × 5.5 mm</td><td class="clearance-val">Tabique 4.5 mm TPU</td></tr>
             </tbody>
           </table>
           <div class="fit-card-notes">
-            La cincha pasa por todo el puente dorsal y las dos cápsulas sin cortes. El cableado va elevado en Z=17 mm, completamente aislado de la cincha.
+            Los dos paneles solares alimentan al cargador MPPT CN3791 mediante diodos Schottky SS34 independientes (si un lado queda en sombra, el otro sigue cargando).
           </div>
         </div>
 
       </div>
 
-      <!-- PESTAÑA 2: FICHA TÉCNICA DIMENSIONAL COMPLETA -->
+      <!-- PESTAÑA 2: FICHA TÉCNICA DIMENSIONAL Y ESPECIFICACIONES DE PCBs -->
       <div class="tab-content" id="tab-specs">
         <div class="fit-card">
           <div class="fit-card-header">
-            <div class="fit-card-title">📐 Dimensiones Exteriores Globales</div>
+            <div class="fit-card-title">🔌 Arnés Dorsal de 5 Hilos (Conducto Ø8.0 mm en Z=17 mm)</div>
+          </div>
+          <table class="dim-table">
+            <thead>
+              <tr><th>Hilo</th><th>Red (Net)</th><th>Tensión</th><th>Función entre Cápsulas</th></tr>
+            </thead>
+            <tbody>
+              <tr class="highlight"><td>1</td><td>VBAT_PWR</td><td>3.4–4.2V</td><td>Alimentación desde Batería 21700 + BMS</td></tr>
+              <tr><td>2</td><td>GND_SYS</td><td>0.0V</td><td>Masa común de baja tensión del sistema</td></tr>
+              <tr><td>3</td><td>BUZZER_PWM</td><td>3.3V PWM</td><td>Audio LEDC 4000 Hz desde ESP32 GPIO 5</td></tr>
+              <tr class="highlight"><td>4</td><td>IMPULSE_TRIG</td><td>3.3V (1s)</td><td>Disparo desde GPIO 4 hacia Optoacoplador</td></tr>
+              <tr><td>5</td><td>SOLAR_DER_IN</td><td>5.5–6.5V</td><td>Panel Solar Derecho hacia MPPT CN3791</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">🖥️ Especificaciones de Fabricación PCBA (JLCPCB / LCSC Rev 2.1)</div>
+          </div>
+          <table class="dim-table">
+            <tbody>
+              <tr><td>PCB 1 (Cápsula Izquierda)</td><td><strong>60.0 × 32.0 × 1.6 mm (FR4 2L ENIG)</strong></td></tr>
+              <tr><td>PCB 2 (Cápsula Derecha)</td><td><strong>26.0 × 32.0 × 1.6 mm (FR4 2L ENIG)</strong></td></tr>
+              <tr><td>MCU Principal (U1)</td><td><strong>ESP32-S3-WROOM-1-N16R8 (C2913202)</strong></td></tr>
+              <tr><td>Módem 4G + GNSS (U2)</td><td><strong>SIMCom SIM7670SA-MNGV (C2892994)</strong></td></tr>
+              <tr><td>Acelerómetro 6µA (U3)</td><td><strong>Silan SC7A20TR I2C (C392477)</strong></td></tr>
+              <tr><td>Cargador Solar MPPT (U4)</td><td><strong>Consonance CN3791 6V (C154992)</strong></td></tr>
+              <tr><td>Regulador Buck 3.3V (U5)</td><td><strong>Silergy SY8089AAAC 2A (C78988)</strong></td></tr>
+              <tr><td>BMS Protección 1S (U6, U7)</td><td><strong>DW01A + FS8205A + PPTC 3A</strong></td></tr>
+              <tr><td>Aislamiento y Watchdog</td><td><strong>EL817C (5kV) + 74LVC1G123 (1000ms)</strong></td></tr>
+              <tr><td>Descarga Cerca Virtual CDI</td><td><strong>800–1000V / 0.05J (CBB21 0.1µF 1kV + SCR)</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="fit-card">
+          <div class="fit-card-header">
+            <div class="fit-card-title">📐 Dimensiones Mecánicas Globales (CAD)</div>
           </div>
           <table class="dim-table">
             <tbody>
               <tr><td>Envergadura Total Ensamble</td><td><strong>404.5 mm</strong></td></tr>
               <tr><td>Ancho Total Exterior</td><td><strong>83.6 mm</strong></td></tr>
               <tr><td>Altura Máxima en Cresta</td><td><strong>151.2 mm</strong></td></tr>
-              <tr><td>Cápsula Unitaria (L x W x H)</td><td><strong>126.0 x 82.0 x 35.0 mm</strong></td></tr>
-              <tr><td>Base Cápsula (H)</td><td><strong>26.0 mm</strong></td></tr>
-              <tr><td>Tapa Cápsula (H)</td><td><strong>9.0 mm</strong></td></tr>
-              <tr><td>Espesor Pared ASA</td><td><strong>2.5 mm</strong></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="fit-card">
-          <div class="fit-card-header">
-            <div class="fit-card-title">🌉 Geometría del Puente Dorsal TPU</div>
-          </div>
-          <table class="dim-table">
-            <tbody>
-              <tr><td>Radio Interior Anatómico</td><td><strong>R = 125.0 mm</strong></td></tr>
-              <tr><td>Ángulo de Caída</td><td><strong>± 32.0° (Arco 64°)</strong></td></tr>
-              <tr><td>Espesor en Cresta Central</td><td><strong>26.0 mm</strong></td></tr>
-              <tr><td>Ancho de Cintura Central</td><td><strong>64.0 mm</strong></td></tr>
-              <tr><td>Profundidad de Cunas Envolventes</td><td><strong>35.0 mm</strong></td></tr>
-              <tr><td>Espesor Pared Protectora TPU</td><td><strong>2.8 mm</strong></td></tr>
-              <tr><td>Tolerancia Encastre ASA-TPU</td><td><strong>0.3 mm</strong></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="fit-card">
-          <div class="fit-card-header">
-            <div class="fit-card-title">🔌 Túneles, Cables y Sellos IP67</div>
-          </div>
-          <table class="dim-table">
-            <tbody>
-              <tr><td>Túnel Pasacorreas Continuo</td><td><strong>52.0 mm (W) x 5.5 mm (H)</strong></td></tr>
-              <tr><td>Conducto Pasacables</td><td><strong>Ø 8.0 mm</strong></td></tr>
-              <tr><td>Altura Eje Pasacables</td><td><strong>Z = 17.0 mm (R = 142.0 mm)</strong></td></tr>
-              <tr><td>Tabique Sólido de Aislamiento</td><td><strong>4.5 mm (TPU Macizo)</strong></td></tr>
-              <tr><td>Cuello de Sellado TPU</td><td><strong>Ø 12.0 mm x 2.2 mm alto</strong></td></tr>
-              <tr><td>Cajera Exterior en ASA</td><td><strong>Ø 12.0 mm x 1.8 mm prof.</strong></td></tr>
-              <tr><td>Compresión Axial Elástica</td><td><strong>0.4 mm (22.2% ISO 3601)</strong></td></tr>
-              <tr><td>Cajera Interior para Potting</td><td><strong>Ø 12.0 mm x 1.8 mm</strong></td></tr>
+              <tr><td>Cápsula Unitaria (L × W × H)</td><td><strong>126.0 × 82.0 × 35.0 mm</strong></td></tr>
+              <tr><td>Radio Anatómico Puente TPU</td><td><strong>R = 125.0 mm (±32° caída)</strong></td></tr>
+              <tr><td>Profundidad Cunas Snap-Fit</td><td><strong>35.0 mm (Pared TPU 2.8 mm)</strong></td></tr>
+              <tr><td>Túnel Pasacorreas Continuo</td><td><strong>52.0 × 5.5 mm (Tabique 4.5 mm)</strong></td></tr>
+              <tr><td>Compresión Cuello IP67 TPU</td><td><strong>0.4 mm (22.2% ISO 3601)</strong></td></tr>
             </tbody>
           </table>
         </div>
@@ -453,7 +590,7 @@
       <div class="tab-content" id="tab-inspector">
         <div id="inspector-content">
           <p style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 30px 10px;">
-            Haz clic en cualquier pieza o dispositivo del modelo 3D para inspeccionar sus medidas y holguras al detalle.
+            Haz clic en cualquier pieza o dispositivo del modelo 3D (o en la lista izquierda) para inspeccionar sus medidas, componentes SMT, código LCSC y holguras al detalle.
           </p>
         </div>
       </div>
@@ -469,9 +606,9 @@
     <button class="view-btn" data-view="top">🔝 Planta</button>
     <button class="view-btn" data-view="front">👁️ Frontal</button>
     <button class="view-btn" data-view="side">📐 Perfil</button>
-    <button class="view-btn" data-view="pod_right">🔋 Pod Batería</button>
-    <button class="view-btn" data-view="pod_left">💻 Pod LilyGO</button>
-    <button class="view-btn" data-view="bridge">🌉 Puente & Sello</button>
+    <button class="view-btn" data-view="pod_right">⚡ Pod Potencia & CDI</button>
+    <button class="view-btn" data-view="pod_left">📡 Pod Lógica & RF</button>
+    <button class="view-btn" data-view="bridge">🌉 Puente & Arnés 5P</button>
   </nav>
 
   <!-- =========================================================================
@@ -480,19 +617,19 @@
   <div class="modal-overlay" id="help-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>💡 Guía de Presentación del Diseño COWAI V2</h2>
+        <h2>💡 Guía de Presentación del Diseño COWAI V2 (Rev 2.1)</h2>
         <button class="btn-icon" id="btn-close-help">✕</button>
       </div>
       <div class="modal-body">
         <p>
-          Este visualizador interactivo 3D fue concebido para que puedas explicar a tus compañeros de equipo la arquitectura integral del collar ganadero <strong>sin necesidad de instalar software CAD ni programas externos</strong>.
+          Este visualizador interactivo 3D muestra la arquitectura actualizada del collar inteligente <strong>COWAI CollarNet V2 (Rev 2.1)</strong> con sus dos placas PCBA de fabricación industrial SMT y sistema de cerca virtual seguro.
         </p>
-        <p><strong>Puntos Clave para Explicar a tu Equipo:</strong></p>
+        <p><strong>Actualizaciones Clave de los Dispositivos:</strong></p>
         <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-          <li><strong>1. Vista Explotada (Despiece en Vivo)</strong>: Usa el deslizador de la izquierda o haz clic en "▶ Animar" para mostrar cómo encaja cada parte (tapas, juntas tóricas, electrónica y batería flotando).</li>
-          <li><strong>2. Plano de Corte Dinámico</strong>: Activa el interruptor "✂️ Plano de Corte" y mueve el deslizador para cortar el collar por la mitad y enseñarles el túnel continuo de 52 mm y el tabique macizo de 4.5 mm.</li>
-          <li><strong>3. Espacio y Holguras Garantizadas</strong>: Consulta la pestaña derecha "Espacio Dispositivos" para demostrar que el pack 21700-3P tiene +4.0 mm de holgura y la placa LilyGO +10 mm de margen para cableado seguro.</li>
-          <li><strong>4. Hermetismo IP67</strong>: Explica la triple barrera: compresión axial del cuello de TPU al 22.2%, el laberinto de 35 mm y la alberca interior de Sikaflex 221.</li>
+          <li><strong>1. Cápsula Izquierda (Lógica, RF 4G/GNSS y Carga Solar MPPT)</strong>: Aloja la <strong>PCB 1 (60×32 mm)</strong> con <code>ESP32-S3-WROOM-1-N16R8</code>, módem <code>SIM7670SA</code>, acelerómetro <code>SC7A20</code> (6 µA), cargador solar <code>MPPT CN3791</code>, regulador Buck <code>SY8089</code>, antena GNSS cerámica cenital, antena 4G LTE FPC adhesiva y barra difusora LED de estado.</li>
+          <li><strong>2. Cápsula Derecha (Potencia, Audio 95dB y Estímulo CDI)</strong>: Aloja la <strong>Batería Li-Ion 21700</strong>, la <strong>PCB 2 (26×32 mm)</strong> con protección BMS 1S (<code>DW01A+FS8205A</code>), zumbador de 95 dB (4000 Hz), generador de pulso capacitivo CDI (800–1000V / 0.05J) aislado galvánicamente a 5 kV (<code>EL817C</code>) con Watchdog hardware de 1 segundo (<code>74LVC1G123</code>), y los <strong>2 electrodos inferiores de acero inoxidable 316 M4</strong>.</li>
+          <li><strong>3. Arnés Dorsal de 5 Hilos de Baja Tensión (&lt;5V)</strong>: Atraviesa el conducto estanco Ø8 mm en Z=17 mm llevando únicamente señales seguras (<code>VBAT</code>, <code>GND</code>, <code>BUZZER_PWM</code>, <code>IMPULSE_TRIG</code>, <code>SOLAR_DER_IN</code>), manteniendo cero alta tensión en el lomo del animal.</li>
+          <li><strong>4. Vista Explotada y Rayos X</strong>: Usa los deslizadores del panel izquierdo para despiezar las tapas, juntas tóricas, paneles solares, PCBs y electrodos M4 en tiempo real.</li>
         </ul>
       </div>
       <button class="modal-close-btn" onclick="document.getElementById('help-modal').style.display='none'">Entendido</button>
