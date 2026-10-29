@@ -19,10 +19,10 @@ enum NetPreference {
 // Modo por defecto: Fuerza conexión Wi-Fi de alta velocidad (SOITCA)
 #define DEFAULT_NET_PREF NET_PREF_WIFI
 
-// Configuración de Pines de Hardware (Arquitectura Halter V2 / Custom PCB)
-#define STATUS_LED_PIN 2     // LED SMD de estado
-#define BUZZER_PIN 5         // Zumbador piezoeléctrico en IO5 (4000 Hz, Cápsula Derecha)
-#define IMPULSE_PIN 4        // Pin de disparo de pulso disuasorio (Cerca Virtual, Cápsula Derecha)
+// Configuración de Pines de Hardware (Arquitectura Opción 2 Monolítica All-in-One)
+#define STATUS_LED_PIN 2     // LED SMD de estado (Azul)
+#define BUZZER_PIN 5         // Zumbador piezoeléctrico en IO5 (4000 Hz, 95 dB)
+#define IMPULSE_PIN 4        // Disparo de pulso disuasorio hacia optoacoplador EL817C (Cerca Virtual)
 #define IMPULSE_LED_PIN IMPULSE_PIN // Alias de compatibilidad
 #define MODEM_POWER_PIN 21   // Pin PWRKEY de control de encendido del módem SIM7670
 #define I2C_SDA_PIN 8        // Bus I2C datos acelerómetro SC7A20

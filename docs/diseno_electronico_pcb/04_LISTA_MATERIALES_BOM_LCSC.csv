@@ -21,12 +21,14 @@
 20,"TH1","TYN1225RG","TO-252 / DPAK","C14486","STMicroelectronics","Tiristor SCR 1200V 25A Alta Tensión Disparo Descarga",1,0.35
 21,"MOD_HV","Módulo Elevador HV","Submódulo","MOD-1KV","Alibaba / Custom","Mini Módulo Potted Pulso 3.7V a 1000V (Bobina + Oscilador)",1,1.10
 22,"J1","TYPE-C-16PIN-2.0","SMD-TYPE-C","C2765186","Korean HRO","Conector USB-C Hembra (Carga y Flasheo Nativo D+/D-)",1,0.15
-23,"J2","NANO-SIM-6P","SMD-PUSH-PULL","C2838382","Attend Technology","Porta Nano-SIM Push-Pull Ultra Bajo Perfil",1,0.18
+23,"J2","NANO-SIM-6P","SMD-PUSH-PULL","C2838382","Attend Technology","Porta Nano-SIM Push-Pull Ultra Bajo Perfil (Cara Bottom)",1,0.18
 24,"J3,J4","U.FL-R-SMT-1(10)","SMD-IPEX-1","C88373","Hirose Electric","Conector Coaxial RF 50R para Antenas LTE y GPS",2,0.14
-25,"BZ1","Buzzer Piezo 95dB 4kHz","PTH-D12.4mm","C253457","PUI Audio / CUI","Transductor Acústico Piezoeléctrico Pasivo (4000 Hz)",1,0.45
-26,"BAT1","Celda 21700 5000mAh","21700 Cylindrical","N/A (Batería)","Samsung / LG / BAK","Celda Li-Ion Grado A 3.7V 5000mAh (Cápsula Derecha)",1,3.80
-27,"ANT_GPS","Antena Parche GNSS","25x25x4mm","N/A (Accesorio)","C&T Antennas","Antena Cerámica GNSS con Cable IPEX al cielo",1,1.50
-28,"ANT_LTE","Antena 4G LTE FPC","FPC Adhesiva","N/A (Accesorio)","C&T Antennas","Antena Flexible 4G LTE con Cable IPEX en caja",1,0.80
-29,"SOLAR_PANEL","Panel Solar 55x60mm","Epoxi 55x60","N/A (Accesorio)","Ryder / Sunpower","2x Paneles Solares Monocristalinos 6V 120mA",2,2.40
-30,"EL1,EL2","Electrodos Acero Inox M4","Perno M4 Semiesférico","Mecánico M4","Ferretería Inox 316","Bornes de contacto semiesféricos para cuello",2,0.50
-31,"PCB1,PCB2","Placas PCB 2 Capas FR4","Panel Fabricado","JLCPCB Service","JLCPCB","Fabricación de Placas Lógica y Potencia con SMT",2,0.80
+25,"J5","JST-PH-2P","SMD-2P","C131337","JST","Conector Entrada Paneles Solares de Tapa",1,0.08
+26,"BZ1","Buzzer Piezo 95dB 4kHz","PTH-D12.4mm","C253457","PUI Audio / CUI","Transductor Acústico Piezoeléctrico Pasivo (4000 Hz)",1,0.45
+27,"BT_CLIP","Clips Portapilas 21700/18650","Clips Keystone","C71136","Keystone Electronics","Clips Metálicos de Retención de Batería en Cara Bottom",1,0.40
+28,"BAT1","Celda 21700 5000mAh","21700 Cylindrical","N/A (Batería)","Samsung / LG / BAK","Celda Li-Ion Grado A 3.7V 5000mAh",1,3.80
+29,"ANT_GPS","Antena Parche GNSS","25x25x4mm","N/A (Accesorio)","C&T Antennas","Antena Cerámica GNSS con Cable IPEX al cielo",1,1.50
+30,"ANT_LTE","Antena 4G LTE FPC","FPC Adhesiva","N/A (Accesorio)","C&T Antennas","Antena Flexible 4G LTE con Cable IPEX en caja",1,0.80
+31,"SOLAR_PANEL","Panel Solar 55x60mm","Epoxi 55x60","N/A (Accesorio)","Ryder / Sunpower","2x Paneles Solares Monocristalinos 6V 120mA",2,2.40
+32,"EL1,EL2","Electrodos Acero Inox M4","Perno M4 Semiesférico","Mecánico M4","Ferretería Inox 316","Bornes de contacto semiesféricos para cuello",2,0.50
+33,"PCB_AIO","Placa Monolítica Todo-en-Uno","110.60x33.10mm","JLCPCB Service","JLCPCB","Fabricación de Placa Monolítica 2 Capas con SMT Double-Sided",1,0.65

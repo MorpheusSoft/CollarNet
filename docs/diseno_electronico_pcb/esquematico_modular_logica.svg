@@ -1,0 +1,510 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2800 1800" width="2800" height="1800" style="background-color: #fbfcfd; font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;">
+<defs>
+
+        <pattern id="gridMinor" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="0.8" fill="#d1d5db" opacity="0.6"/>
+        </pattern>
+        <pattern id="gridMajor" width="100" height="100" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="1.5" fill="#9ca3af" opacity="0.8"/>
+        </pattern>
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#0284c7"/>
+        </marker>
+        <marker id="arrowRed" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#dc2626"/>
+        </marker>
+        <marker id="arrowPurple" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#7c3aed"/>
+        </marker>
+        <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+          <feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.12"/>
+        </filter>
+        
+</defs>
+<rect width="2800" height="1800" fill="#fbfcfd"/>
+<rect width="2800" height="1800" fill="url(#gridMinor)"/>
+<rect width="2800" height="1800" fill="url(#gridMajor)"/>
+<rect x="35" y="35" width="2730" height="1730" fill="none" stroke="#1e293b" stroke-width="3"/>
+<rect x="45" y="45" width="2710" height="1710" fill="none" stroke="#64748b" stroke-width="1.2"/>
+
+    <g transform="translate(2005, 1645)">
+      <rect width="750" height="110" fill="#ffffff" stroke="#1e293b" stroke-width="2" filter="url(#shadow)"/>
+      <line x1="0" y1="36" x2="750" y2="36" stroke="#1e293b" stroke-width="1.5"/>
+      <line x1="0" y1="72" x2="750" y2="72" stroke="#1e293b" stroke-width="1.5"/>
+      <line x1="450" y1="0" x2="450" y2="72" stroke="#1e293b" stroke-width="1.5"/>
+      <line x1="600" y1="0" x2="600" y2="72" stroke="#1e293b" stroke-width="1.5"/>
+      <line x1="250" y1="72" x2="250" y2="110" stroke="#1e293b" stroke-width="1.5"/>
+      <line x1="500" y1="72" x2="500" y2="110" stroke="#1e293b" stroke-width="1.5"/>
+      
+      <text x="15" y="24" font-size="14" font-weight="bold" fill="#0369a1">COW-AI TECHNOLOGIES S.A.</text>
+      <text x="15" y="58" font-size="13" font-weight="bold" fill="#0f172a">ESQUEMÁTICO ELECTRÓNICO CÁPSULA IZQUIERDA (LÓGICA Y TELEMETRÍA 60.0 x 32.0 mm)</text>
+      
+      <text x="465" y="22" font-size="9" fill="#64748b">PROYECTO:</text>
+      <text x="465" y="54" font-size="11" font-weight="bold" fill="#0f172a">COLLARNET V2</text>
+      
+      <text x="615" y="22" font-size="9" fill="#64748b">REVISIÓN:</text>
+      <text x="615" y="54" font-size="13" font-weight="bold" fill="#dc2626">2.2</text>
+      
+      <text x="15" y="94" font-size="10" fill="#475569">FECHA: 2026-10-27 | DISEÑADOR: ING. HARDWARE COW-AI</text>
+      <text x="265" y="94" font-size="10" fill="#475569">NORMA: IPC-2221 / IEC 60664-1 (5kV)</text>
+      <text x="515" y="94" font-size="11" font-weight="bold" fill="#0369a1">PLANO 3 DE 6</text>
+    </g>
+    
+
+    <g transform="translate(60, 55)">
+      <rect width="1800" height="55" rx="8" fill="#0f172a" stroke="#0284c7" stroke-width="2"/>
+      <rect x="0" y="0" width="10" height="55" fill="#0284c7" rx="3"/>
+      <text x="25" y="35" font-size="20" font-weight="bold" fill="#38bdf8" letter-spacing="1">COLLARNET V2 — ESQUEMÁTICO DETALLADO: PLACA LÓGICA Y RF (CÁPSULA IZQUIERDA)</text>
+      <text x="1350" y="35" font-size="13" font-weight="bold" fill="#94a3b8">DIMENSIONES PCB: 60.00 × 32.00 mm | ARNES DORSAL J5</text>
+    </g>
+    
+
+    <g transform="translate(60,130)">
+      <rect width="850" height="750" rx="12" fill="#f0f9ff" stroke="#0284c7" stroke-width="2" stroke-dasharray="8,6" opacity="0.95" filter="url(#shadow)"/>
+      <rect x="0" y="0" width="850" height="36" rx="12" fill="#0284c7"/>
+      <rect x="0" y="24" width="850" height="12" fill="#0284c7"/>
+      <text x="16" y="24" font-size="14" font-weight="bold" fill="#ffffff" letter-spacing="0.5">BLOQUE 1: ALIMENTACIÓN, MPPT SOLAR (CN3791) Y BUCK 3.3V (SY8089)</text>
+    </g>
+
+    <g transform="translate(90, 200)">
+      <rect width="120" height="110" rx="6" fill="#ffffff" stroke="#0284c7" stroke-width="2"/>
+      <rect x="0" y="0" width="120" height="24" rx="6" fill="#0284c7"/>
+      <text x="60" y="16" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">J1: USB-C 16P</text>
+      <text x="10" y="44" font-size="10" font-weight="bold" fill="#dc2626">VBUS (5V)</text>
+      <text x="10" y="64" font-size="9" fill="#0284c7">D- / D+ (USB)</text>
+      <text x="10" y="84" font-size="9" fill="#475569">CC1/CC2 (5.1k)</text>
+      <text x="10" y="102" font-size="9" font-weight="bold" fill="#004080">GND</text>
+    </g>
+    
+
+    <g transform="translate(150,310)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+
+    <g transform="translate(90, 340)">
+      <rect width="120" height="85" rx="6" fill="#ffffff" stroke="#eab308" stroke-width="2"/>
+      <rect x="0" y="0" width="120" height="24" rx="6" fill="#eab308"/>
+      <text x="60" y="16" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">J2: PANELES</text>
+      <text x="10" y="44" font-size="9" font-weight="bold" fill="#0f172a">Panel Izq (6V)</text>
+      <text x="10" y="62" font-size="9" font-weight="bold" fill="#0f172a">Panel Der (Arnés)</text>
+      <text x="10" y="78" font-size="9" fill="#004080">GND Retorno</text>
+    </g>
+    
+
+    <g transform="translate(150,425)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+<path d="M 210,375 L 240,375" fill="none" stroke="#004080" stroke-width="2" />
+
+        <g transform="translate(240,375)">
+          <line x1="0" y1="0" x2="12" y2="0" stroke="#0f172a" stroke-width="2"/>
+          <polygon points="12,-10 24,0 12,10" fill="#0f172a" stroke="#0f172a" stroke-width="1.5"/>
+          <path d="M 20,-12 L 24,-12 L 24,12 L 28,12" fill="none" stroke="#0f172a" stroke-width="2.2"/>
+          <line x1="24" y1="0" x2="36" y2="0" stroke="#0f172a" stroke-width="2"/>
+          <text x="18" y="-16" font-size="11" font-weight="bold" fill="#0369a1" text-anchor="middle">D1</text>
+          <text x="18" y="24" font-size="10" fill="#475569" text-anchor="middle">SS34</text>
+        </g>
+<path d="M 210,395 L 240,395" fill="none" stroke="#004080" stroke-width="2" />
+
+        <g transform="translate(240,395)">
+          <line x1="0" y1="0" x2="12" y2="0" stroke="#0f172a" stroke-width="2"/>
+          <polygon points="12,-10 24,0 12,10" fill="#0f172a" stroke="#0f172a" stroke-width="1.5"/>
+          <path d="M 20,-12 L 24,-12 L 24,12 L 28,12" fill="none" stroke="#0f172a" stroke-width="2.2"/>
+          <line x1="24" y1="0" x2="36" y2="0" stroke="#0f172a" stroke-width="2"/>
+          <text x="18" y="-16" font-size="11" font-weight="bold" fill="#0369a1" text-anchor="middle">D2</text>
+          <text x="18" y="24" font-size="10" fill="#475569" text-anchor="middle">SS34</text>
+        </g>
+<path d="M 276,375 L 300,375 L 300,385" fill="none" stroke="#004080" stroke-width="2" />
+<path d="M 276,395 L 300,395 L 300,385" fill="none" stroke="#004080" stroke-width="2" />
+<circle cx="300" cy="385" r="4" fill="#004080"/>
+
+    <g transform="translate(360, 200)">
+      <rect width="180" height="230" rx="6" fill="#ffffff" stroke="#0284c7" stroke-width="2"/>
+      <rect x="0" y="0" width="180" height="26" rx="6" fill="#0284c7"/>
+      <text x="90" y="18" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">U4: CN3791 (SSOP-10)</text>
+      <text x="90" y="38" font-size="9" fill="#64748b" text-anchor="middle">Cargador Solar MPPT 6V</text>
+      
+      <text x="10" y="65" font-size="10" fill="#0f172a">1: VG (C_vg a VCC)</text>
+      <text x="10" y="95" font-size="10" fill="#004080">2: GND</text>
+      <text x="10" y="125" font-size="10" fill="#0f172a">3: CHRG_N</text>
+      <text x="10" y="155" font-size="10" fill="#0f172a">4: DONE_N</text>
+      <text x="10" y="185" font-size="10" fill="#0f172a">5: COM</text>
+      
+      <text x="170" y="65" font-size="10" fill="#dc2626" text-anchor="end">10: DRV (P-FET)</text>
+      <text x="170" y="95" font-size="10" fill="#dc2626" text-anchor="end">9: VCC (6V Solar)</text>
+      <text x="170" y="125" font-size="10" fill="#0f172a" text-anchor="end">8: CSP</text>
+      <text x="170" y="155" font-size="10" fill="#0f172a" text-anchor="end">7: BAT</text>
+      <text x="170" y="185" font-size="10" fill="#0284c7" text-anchor="end">6: MPPT</text>
+    </g>
+    
+
+    <g transform="translate(580,230)">
+      <line x1="0" y1="20" x2="16" y2="20" stroke="#0f172a" stroke-width="2"/>
+      <line x1="16" y1="6" x2="16" y2="34" stroke="#0f172a" stroke-width="2.5"/>
+      <line x1="22" y1="6" x2="22" y2="12" stroke="#0f172a" stroke-width="2.5"/>
+      <line x1="22" y1="17" x2="22" y2="23" stroke="#0f172a" stroke-width="2.5"/>
+      <line x1="22" y1="28" x2="22" y2="34" stroke="#0f172a" stroke-width="2.5"/>
+      <line x1="22" y1="9" x2="36" y2="9" stroke="#0f172a" stroke-width="2"/>
+      <line x1="36" y1="9" x2="36" y2="0" stroke="#0f172a" stroke-width="2"/>
+      <line x1="22" y1="31" x2="36" y2="31" stroke="#0f172a" stroke-width="2"/>
+      <line x1="36" y1="31" x2="36" y2="40" stroke="#0f172a" stroke-width="2"/>
+      <polygon points="22,20 28,16 28,24" fill="#0f172a"/>
+      <text x="42" y="16" font-size="10" font-weight="bold" fill="#0369a1">Q3</text>
+      <text x="42" y="28" font-size="9" fill="#475569">AO3401A</text>
+    </g>
+<path d="M 540,260 L 580,250" fill="none" stroke="#004080" stroke-width="2" />
+
+    <g transform="translate(660,270)">
+      <path d="M 0,0 L 10,0 A 7 7 0 0 1 24,0 A 7 7 0 0 1 38,0 A 7 7 0 0 1 52,0 A 7 7 0 0 1 66,0 L 76,0" fill="none" stroke="#0f172a" stroke-width="2.2"/>
+      <text x="38" y="-14" font-size="11" font-weight="bold" fill="#0369a1" text-anchor="middle">L2</text>
+      <text x="38" y="20" font-size="10" fill="#475569" text-anchor="middle">10µH / 2.5A</text>
+    </g>
+<path d="M 616,270 L 660,270" fill="none" stroke="#004080" stroke-width="2" />
+
+        <g transform="translate(616,270)">
+          <line x1="0" y1="0" x2="0" y2="12" stroke="#0f172a" stroke-width="2"/>
+          <polygon points="-10,12 0,24 10,12" fill="#0f172a" stroke="#0f172a" stroke-width="1.5"/>
+          <path d="M -12,20 L -12,24 L 12,24 L 12,28" fill="none" stroke="#0f172a" stroke-width="2.2"/>
+          <line x1="0" y1="24" x2="0" y2="36" stroke="#0f172a" stroke-width="2"/>
+          <text x="16" y="16" font-size="11" font-weight="bold" fill="#0369a1">D3</text>
+          <text x="16" y="30" font-size="10" fill="#475569">SS34</text>
+        </g>
+
+    <g transform="translate(616,306)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+<path d="M 736,270 L 760,270" fill="none" stroke="#004080" stroke-width="2" />
+
+        <g transform="translate(760,270)">
+          <path d="M 0,0 L 8,0 L 12,-7 L 18,7 L 24,-7 L 30,7 L 34,0 L 42,0" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+          <text x="21" y="-12" font-size="11" font-weight="bold" fill="#0369a1" text-anchor="middle">R_CS</text>
+          <text x="21" y="20" font-size="10" fill="#475569" text-anchor="middle">0.100Ω (1.2A)</text>
+        </g>
+<path d="M 802,270 L 830,270" fill="none" stroke="#004080" stroke-width="2" />
+
+        <g transform="translate(830,290)">
+          <line x1="0" y1="0" x2="0" y2="16" stroke="#0f172a" stroke-width="2"/>
+          <line x1="-14" y1="16" x2="14" y2="16" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="-14" y1="24" x2="14" y2="24" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="0" y1="24" x2="0" y2="40" stroke="#0f172a" stroke-width="2"/>
+          
+          <text x="18" y="18" font-size="11" font-weight="bold" fill="#0369a1">C_BAT</text>
+          <text x="18" y="32" font-size="10" fill="#475569">22µF</text>
+        </g>
+
+    <g transform="translate(830,330)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+
+    <g transform="translate(120, 500)">
+      <rect width="180" height="180" rx="6" fill="#ffffff" stroke="#d97706" stroke-width="2"/>
+      <rect x="0" y="0" width="180" height="26" rx="6" fill="#d97706"/>
+      <text x="90" y="18" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">U5: SY8089 (SOT-23-5)</text>
+      <text x="90" y="38" font-size="9" fill="#64748b" text-anchor="middle">Buck Sync 3.3V / 2.0A</text>
+      
+      <text x="10" y="70" font-size="10" fill="#dc2626">4: IN (VBAT)</text>
+      <text x="10" y="105" font-size="10" fill="#0f172a">1: EN (Enable)</text>
+      <text x="10" y="140" font-size="10" fill="#004080">2: GND</text>
+      <text x="170" y="70" font-size="10" fill="#0f172a" text-anchor="end">3: LX</text>
+      <text x="170" y="105" font-size="10" fill="#0f172a" text-anchor="end">5: FB</text>
+    </g>
+    
+
+    <g transform="translate(210,680)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+<path d="M 300,565 L 340,565" fill="none" stroke="#004080" stroke-width="2" />
+
+    <g transform="translate(340,565)">
+      <path d="M 0,0 L 10,0 A 7 7 0 0 1 24,0 A 7 7 0 0 1 38,0 A 7 7 0 0 1 52,0 A 7 7 0 0 1 66,0 L 76,0" fill="none" stroke="#0f172a" stroke-width="2.2"/>
+      <text x="38" y="-14" font-size="11" font-weight="bold" fill="#0369a1" text-anchor="middle">L1</text>
+      <text x="38" y="20" font-size="10" fill="#475569" text-anchor="middle">2.2µH 3.0A</text>
+    </g>
+<path d="M 416,565 L 460,565" fill="none" stroke="#004080" stroke-width="2" />
+
+        <g transform="translate(460,585)">
+          <line x1="0" y1="0" x2="0" y2="16" stroke="#0f172a" stroke-width="2"/>
+          <line x1="-14" y1="16" x2="14" y2="16" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="-14" y1="24" x2="14" y2="24" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="0" y1="24" x2="0" y2="40" stroke="#0f172a" stroke-width="2"/>
+          
+          <text x="18" y="18" font-size="11" font-weight="bold" fill="#0369a1">C4</text>
+          <text x="18" y="32" font-size="10" fill="#475569">22µF</text>
+        </g>
+
+    <g transform="translate(460,625)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+
+        <g transform="translate(510,585)">
+          <line x1="0" y1="0" x2="0" y2="16" stroke="#0f172a" stroke-width="2"/>
+          <line x1="-14" y1="16" x2="14" y2="16" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="-14" y1="24" x2="14" y2="24" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="0" y1="24" x2="0" y2="40" stroke="#0f172a" stroke-width="2"/>
+          
+          <text x="18" y="18" font-size="11" font-weight="bold" fill="#0369a1">C5</text>
+          <text x="18" y="32" font-size="10" fill="#475569">22µF</text>
+        </g>
+
+    <g transform="translate(510,625)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+<path d="M 460,565 L 510,565 L 560,565" fill="none" stroke="#004080" stroke-width="2" />
+
+        <g transform="translate(590,585)">
+          <line x1="0" y1="0" x2="0" y2="16" stroke="#0f172a" stroke-width="2"/>
+          <line x1="-14" y1="16" x2="14" y2="16" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="-14" y1="24" x2="14" y2="24" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="0" y1="24" x2="0" y2="40" stroke="#0f172a" stroke-width="2"/>
+          <text x='-20' y='14' font-size='10' font-weight='bold' fill='#dc2626'>+</text>
+          <text x="18" y="18" font-size="11" font-weight="bold" fill="#0369a1">C1</text>
+          <text x="18" y="32" font-size="10" fill="#475569">220µF 6.3V</text>
+        </g>
+
+        <g transform="translate(650,585)">
+          <line x1="0" y1="0" x2="0" y2="16" stroke="#0f172a" stroke-width="2"/>
+          <line x1="-14" y1="16" x2="14" y2="16" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="-14" y1="24" x2="14" y2="24" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="0" y1="24" x2="0" y2="40" stroke="#0f172a" stroke-width="2"/>
+          <text x='-20' y='14' font-size='10' font-weight='bold' fill='#dc2626'>+</text>
+          <text x="18" y="18" font-size="11" font-weight="bold" fill="#0369a1">C2</text>
+          <text x="18" y="32" font-size="10" fill="#475569">220µF 6.3V</text>
+        </g>
+<path d="M 560,565 L 650,565" fill="none" stroke="#004080" stroke-width="2" />
+
+    <g transform="translate(590,625)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+
+    <g transform="translate(650,625)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#004080" stroke-width="2"/>
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="#004080" stroke-width="2.5"/>
+      <line x1="-7" y1="17" x2="7" y2="17" stroke="#004080" stroke-width="2"/>
+      <line x1="-2" y1="22" x2="2" y2="22" stroke="#004080" stroke-width="1.5"/>
+      <text x="14" y="16" font-size="10" fill="#475569" font-weight="bold">GND</text>
+    </g>
+
+    <g transform="translate(680, 565)">
+      <polygon points="0,0 20,-10 90,-10 105,0 90,10 20,10" fill="#e11d48"/>
+      <text x="55" y="4" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">+3.3V_SYS</text>
+    </g>
+    
+
+    <g transform="translate(950,130)">
+      <rect width="800" height="750" rx="12" fill="#f5f3ff" stroke="#4338ca" stroke-width="2" stroke-dasharray="8,6" opacity="0.95" filter="url(#shadow)"/>
+      <rect x="0" y="0" width="800" height="36" rx="12" fill="#4338ca"/>
+      <rect x="0" y="24" width="800" height="12" fill="#4338ca"/>
+      <text x="16" y="24" font-size="14" font-weight="bold" fill="#ffffff" letter-spacing="0.5">BLOQUE 2: MICROCONTROLADOR ESP32-S3-WROOM-1-N16R8</text>
+    </g>
+
+    <g transform="translate(1150, 200)">
+      <rect width="360" height="640" rx="8" fill="#ffffff" stroke="#1e1b4b" stroke-width="2.5" filter="url(#shadow)"/>
+      <rect x="0" y="0" width="360" height="32" rx="8" fill="#4338ca"/>
+      <text x="180" y="22" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">U1: ESP32-S3-WROOM-1</text>
+      
+      <text x="15" y="70" font-size="11" font-weight="bold" fill="#e11d48">2: 3V3 (+3.3V Alimentación)</text>
+      <text x="15" y="110" font-size="11" fill="#0284c7">3: EN (Reset RC / Pulsador)</text>
+      <text x="15" y="150" font-size="11" fill="#0284c7">27: IO0 (BOOT / Flasheo)</text>
+      <text x="15" y="190" font-size="11" fill="#d97706">4: IO1 (ADC VBAT_SENSE)</text>
+      <text x="15" y="230" font-size="11" fill="#2563eb">5: IO2 (LED Estado Azul)</text>
+      <text x="15" y="270" font-size="11" fill="#d97706">6: IO3 (ADC SOLAR_SENSE)</text>
+      <text x="15" y="310" font-size="11" font-weight="bold" fill="#7c3aed">7: IO4 (IMPULSE_TRIG -&gt; J5)</text>
+      <text x="15" y="350" font-size="11" font-weight="bold" fill="#ea580c">8: IO5 (BUZZER_PWM -&gt; J5)</text>
+      <text x="15" y="390" font-size="11" fill="#059669">11: IO8 (I2C_SDA Acelerómetro)</text>
+      <text x="15" y="430" font-size="11" fill="#059669">12: IO9 (I2C_SCL Acelerómetro)</text>
+      <text x="15" y="470" font-size="11" fill="#059669">13: IO10 (IMU_INT1 Wakeup)</text>
+      
+      <text x="345" y="70" font-size="11" font-weight="bold" fill="#004080" text-anchor="end">GND (Pins 1, 40, 41)</text>
+      <text x="345" y="110" font-size="11" fill="#0284c7" text-anchor="end">22: IO17 (UART1_TX -&gt; SIM_RX)</text>
+      <text x="345" y="150" font-size="11" fill="#0284c7" text-anchor="end">23: IO18 (UART1_RX &lt;- SIM_TX)</text>
+      <text x="345" y="190" font-size="11" fill="#0284c7" text-anchor="end">14: IO19 (USB_D- J1)</text>
+      <text x="345" y="230" font-size="11" fill="#0284c7" text-anchor="end">15: IO20 (USB_D+ J1)</text>
+      <text x="345" y="270" font-size="11" fill="#0284c7" text-anchor="end">24: IO21 (MODEM_PWRKEY)</text>
+      <text x="345" y="310" font-size="11" fill="#64748b" text-anchor="end">29: IO38 (MODEM_STATUS)</text>
+      <text x="345" y="350" font-size="11" fill="#0284c7" text-anchor="end">35: IO47 (CHRG_STAT Sense)</text>
+      <text x="345" y="390" font-size="11" fill="#0284c7" text-anchor="end">36: IO48 (CHRG_DONE Sense)</text>
+    </g>
+    
+
+    <g transform="translate(1780,130)">
+      <rect width="960" height="750" rx="12" fill="#ecfeff" stroke="#0891b2" stroke-width="2" stroke-dasharray="8,6" opacity="0.95" filter="url(#shadow)"/>
+      <rect x="0" y="0" width="960" height="36" rx="12" fill="#0891b2"/>
+      <rect x="0" y="24" width="960" height="12" fill="#0891b2"/>
+      <text x="16" y="24" font-size="14" font-weight="bold" fill="#ffffff" letter-spacing="0.5">BLOQUE 3: MÓDEM 4G LTE CAT-1 + GNSS (SIM7670SA)</text>
+    </g>
+
+    <g transform="translate(1840, 200)">
+      <rect width="320" height="640" rx="8" fill="#ffffff" stroke="#0e7490" stroke-width="2.5" filter="url(#shadow)"/>
+      <rect x="0" y="0" width="320" height="32" rx="8" fill="#0891b2"/>
+      <text x="160" y="22" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">U2: SIM7670SA (LGA-68)</text>
+      
+      <text x="15" y="70" font-size="11" font-weight="bold" fill="#dc2626">VBAT (Pins 55,56,57)</text>
+      <text x="15" y="110" font-size="11" font-weight="bold" fill="#0284c7">PWRKEY (Pin 1) [Control]</text>
+      <text x="15" y="150" font-size="11" font-weight="bold" fill="#004080">GND (Pins 2,17,29,59..)</text>
+      <text x="15" y="190" font-size="11" fill="#059669">UART_TXD (Pin 9) -&gt; ESP32</text>
+      <text x="15" y="230" font-size="11" fill="#059669">UART_RXD (Pin 10) &lt;- ESP32</text>
+      <text x="15" y="270" font-size="11" fill="#64748b">NETLIGHT (Pin 32)</text>
+      <text x="15" y="310" font-size="11" fill="#64748b">STATUS (Pin 31)</text>
+      <text x="15" y="350" font-size="11" fill="#d97706">SIM_VDD (Pin 13)</text>
+      <text x="15" y="390" font-size="11" fill="#d97706">SIM_DATA (Pin 14)</text>
+      <text x="15" y="430" font-size="11" fill="#d97706">SIM_CLK (Pin 12)</text>
+      <text x="15" y="470" font-size="11" fill="#d97706">SIM_RST (Pin 11)</text>
+    </g>
+    
+
+    <g transform="translate(2200, 250)">
+      <!-- Antenna LTE J3 -->
+      <rect width="180" height="80" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="2"/>
+      <text x="90" y="25" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">J3: u.FL (LTE ANT)</text>
+      <text x="90" y="48" font-size="10" fill="#475569" text-anchor="middle">50Ω Microstrip Coplanar</text>
+      <text x="90" y="68" font-size="10" fill="#64748b" text-anchor="middle">Antena FPC Adhesiva</text>
+    </g>
+
+    <g transform="translate(2200, 360)">
+      <!-- Antenna GNSS J4 -->
+      <rect width="180" height="80" rx="6" fill="#ffffff" stroke="#0284c7" stroke-width="2"/>
+      <text x="90" y="25" font-size="12" font-weight="bold" fill="#0284c7" text-anchor="middle">J4: u.FL (GPS ANT)</text>
+      <text x="90" y="48" font-size="10" fill="#475569" text-anchor="middle">50Ω Microstrip Coplanar</text>
+      <text x="90" y="68" font-size="10" fill="#64748b" text-anchor="middle">Parche Cerámico 25x25mm</text>
+    </g>
+
+    <g transform="translate(2200, 470)">
+      <!-- Push-Pull Nano-SIM Socket J_SIM -->
+      <rect width="200" height="150" rx="6" fill="#ffffff" stroke="#d97706" stroke-width="2"/>
+      <rect x="0" y="0" width="200" height="26" rx="6" fill="#d97706"/>
+      <text x="100" y="18" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">J_SIM: NANO-SIM 6P</text>
+      <text x="15" y="50" font-size="10" fill="#0f172a">Pin 1: VCC (3.0V)</text>
+      <text x="15" y="72" font-size="10" fill="#0f172a">Pin 2: RST</text>
+      <text x="15" y="94" font-size="10" fill="#0f172a">Pin 3: CLK</text>
+      <text x="15" y="116" font-size="10" fill="#0f172a">Pin 4: GND</text>
+      <text x="15" y="138" font-size="10" fill="#0f172a">Pin 6: I/O DATA + TVS</text>
+    </g>
+    
+
+    <g transform="translate(60,920)">
+      <rect width="850" height="480" rx="12" fill="#ecfdf5" stroke="#059669" stroke-width="2" stroke-dasharray="8,6" opacity="0.95" filter="url(#shadow)"/>
+      <rect x="0" y="0" width="850" height="36" rx="12" fill="#059669"/>
+      <rect x="0" y="24" width="850" height="12" fill="#059669"/>
+      <text x="16" y="24" font-size="14" font-weight="bold" fill="#ffffff" letter-spacing="0.5">BLOQUE 4: SENSOR INERCIAL I2C (SC7A20TR)</text>
+    </g>
+
+    <g transform="translate(140, 1000)">
+      <rect width="240" height="240" rx="8" fill="#ffffff" stroke="#059669" stroke-width="2"/>
+      <rect x="0" y="0" width="240" height="30" rx="8" fill="#059669"/>
+      <text x="120" y="20" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">U3: SC7A20TR (LGA-12)</text>
+      <text x="120" y="48" font-size="10" fill="#64748b" text-anchor="middle">Podómetro Ganadero (6µA)</text>
+      
+      <text x="15" y="80" font-size="11" fill="#e11d48">Pin 1: VDD (+3.3V)</text>
+      <text x="15" y="115" font-size="11" fill="#059669">Pin 4: SDA (I2C Datos)</text>
+      <text x="15" y="150" font-size="11" fill="#059669">Pin 6: SCL (I2C Reloj)</text>
+      <text x="15" y="185" font-size="11" fill="#059669">Pin 11: INT1 (Interrupción)</text>
+      <text x="15" y="220" font-size="11" fill="#004080">Pins 5,12: GND</text>
+    </g>
+    
+
+        <g transform="translate(440,1070)">
+          <path d="M 0,0 L 0,8 L -7,12 L 7,18 L -7,24 L 7,30 L 0,34 L 0,42" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+          <text x="12" y="18" font-size="11" font-weight="bold" fill="#0369a1">R_SDA</text>
+          <text x="12" y="32" font-size="10" fill="#475569">4.7k</text>
+        </g>
+
+        <g transform="translate(490,1070)">
+          <path d="M 0,0 L 0,8 L -7,12 L 7,18 L -7,24 L 7,30 L 0,34 L 0,42" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+          <text x="12" y="18" font-size="11" font-weight="bold" fill="#0369a1">R_SCL</text>
+          <text x="12" y="32" font-size="10" fill="#475569">4.7k</text>
+        </g>
+<path d="M 380,1115 L 440,1115" fill="none" stroke="#004080" stroke-width="2" />
+<path d="M 380,1150 L 490,1150" fill="none" stroke="#004080" stroke-width="2" />
+
+    <g transform="translate(950,920)">
+      <rect width="1790" height="480" rx="12" fill="#fefce8" stroke="#ca8a04" stroke-width="2" stroke-dasharray="8,6" opacity="0.95" filter="url(#shadow)"/>
+      <rect x="0" y="0" width="1790" height="36" rx="12" fill="#ca8a04"/>
+      <rect x="0" y="24" width="1790" height="12" fill="#ca8a04"/>
+      <text x="16" y="24" font-size="14" font-weight="bold" fill="#ffffff" letter-spacing="0.5">BLOQUE 5: CONECTOR DE ARNÉS DORSAL J5 (5 HILOS HACIA CÁPSULA DERECHA)</text>
+    </g>
+
+    <g transform="translate(1100, 1000)">
+      <rect width="450" height="340" rx="8" fill="#ffffff" stroke="#ca8a04" stroke-width="2.5" filter="url(#shadow)"/>
+      <rect x="0" y="0" width="450" height="34" rx="8" fill="#ca8a04"/>
+      <text x="225" y="23" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">J5: CONECTOR ARNÉS DORSAL (JST-PH 2.0mm 5-PIN)</text>
+      
+      <!-- Pin 1 -->
+      <circle cx="40" cy="70" r="14" fill="#dc2626"/>
+      <text x="40" y="75" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">1</text>
+      <text x="70" y="74" font-size="12" font-weight="bold" fill="#dc2626">VBAT (Entrada Alimentación Batería 3.7V - 4.2V desde Der)</text>
+
+      <!-- Pin 2 -->
+      <circle cx="40" cy="130" r="14" fill="#004080"/>
+      <text x="40" y="135" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">2</text>
+      <text x="70" y="134" font-size="12" font-weight="bold" fill="#004080">GND_SYS (Retorno Masa Común de Sistema)</text>
+
+      <!-- Pin 3 -->
+      <circle cx="40" cy="190" r="14" fill="#ea580c"/>
+      <text x="40" y="195" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">3</text>
+      <text x="70" y="194" font-size="12" font-weight="bold" fill="#ea580c">BUZZER_PWM (Señal PWM 4000Hz desde IO5 de ESP32)</text>
+
+      <!-- Pin 4 -->
+      <circle cx="40" cy="250" r="14" fill="#7c3aed"/>
+      <text x="40" y="255" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">4</text>
+      <text x="70" y="254" font-size="12" font-weight="bold" fill="#7c3aed">IMPULSE_TRIG (Disparo Cerca Virtual desde IO4 de ESP32)</text>
+
+      <!-- Pin 5 -->
+      <circle cx="40" cy="310" r="14" fill="#eab308"/>
+      <text x="40" y="315" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">5</text>
+      <text x="70" y="314" font-size="12" font-weight="bold" fill="#ca8a04">SOLAR_R (Positivo Panel Solar Derecho hacia D2)</text>
+    </g>
+
+    <!-- Cable Harness Graphic Representation -->
+    <g transform="translate(1600, 1040)">
+      <rect width="450" height="260" rx="8" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+      <text x="225" y="30" font-size="13" font-weight="bold" fill="#38bdf8" text-anchor="middle">ARNÉS DORSAL FLEXIBLE (SILICONA 5 x 24 AWG)</text>
+      
+      <line x1="30" y1="65" x2="420" y2="65" stroke="#ef4444" stroke-width="5"/>
+      <text x="430" y="70" font-size="10" font-weight="bold" fill="#ef4444">ROJO: VBAT</text>
+
+      <line x1="30" y1="105" x2="420" y2="105" stroke="#000000" stroke-width="5"/>
+      <text x="430" y="110" font-size="10" font-weight="bold" fill="#94a3b8">NEGRO: GND</text>
+
+      <line x1="30" y1="145" x2="420" y2="145" stroke="#f97316" stroke-width="5"/>
+      <text x="430" y="150" font-size="10" font-weight="bold" fill="#f97316">NARANJA: PWM</text>
+
+      <line x1="30" y1="185" x2="420" y2="185" stroke="#a855f7" stroke-width="5"/>
+      <text x="430" y="190" font-size="10" font-weight="bold" fill="#a855f7">MORADO: TRIG</text>
+
+      <line x1="30" y1="225" x2="420" y2="225" stroke="#eab308" stroke-width="5"/>
+      <text x="430" y="230" font-size="10" font-weight="bold" fill="#eab308">AMARILLO: SOLAR</text>
+    </g>
+    
+</svg>

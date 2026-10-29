@@ -1,0 +1,153 @@
+{
+  "head": {
+    "docType": "1",
+    "editorVersion": "6.5.22",
+    "newId": "schematic_collarnet_v2",
+    "c_para": {
+      "package": "CollarNet V2",
+      "BOM_Supplier": "LCSC",
+      "Creator": "Ing. Hardware CowAI",
+      "Date": "2026-10-27"
+    }
+  },
+  "components": [
+    {
+      "designator": "U1",
+      "title": "ESP32-S3-WROOM-1-N16R8",
+      "lcsc": "C2913202",
+      "package": "MODULE-ESP32-S3"
+    },
+    {
+      "designator": "U2",
+      "title": "SIM7670SA-MNGV",
+      "lcsc": "C2892994",
+      "package": "LCC-LGA-68"
+    },
+    {
+      "designator": "U3",
+      "title": "SC7A20TR",
+      "lcsc": "C392477",
+      "package": "LGA-12"
+    },
+    {
+      "designator": "U4",
+      "title": "CN3791",
+      "lcsc": "C154992",
+      "package": "SSOP-10"
+    },
+    {
+      "designator": "U5",
+      "title": "SY8089AAAC",
+      "lcsc": "C78988",
+      "package": "SOT-23-5"
+    },
+    {
+      "designator": "U6",
+      "title": "DW01A-G",
+      "lcsc": "C351410",
+      "package": "SOT-23-6"
+    },
+    {
+      "designator": "U7",
+      "title": "FS8205A",
+      "lcsc": "C32254",
+      "package": "TSSOP-8"
+    },
+    {
+      "designator": "U8",
+      "title": "EL817S1(C)",
+      "lcsc": "C4999",
+      "package": "SOP-4"
+    },
+    {
+      "designator": "U9",
+      "title": "74LVC1G123DCK",
+      "lcsc": "C128362",
+      "package": "VSSOP-8"
+    },
+    {
+      "designator": "TH1",
+      "title": "TYN1225RG",
+      "lcsc": "C14486",
+      "package": "TO-252"
+    },
+    {
+      "designator": "Q1,Q2",
+      "title": "AO3400A",
+      "lcsc": "C20917",
+      "package": "SOT-23"
+    },
+    {
+      "designator": "Q3",
+      "title": "AO3401A",
+      "lcsc": "C15127",
+      "package": "SOT-23"
+    },
+    {
+      "designator": "D1-D3,D5",
+      "title": "SS34",
+      "lcsc": "C8678",
+      "package": "SMA"
+    },
+    {
+      "designator": "D4",
+      "title": "1N4148W",
+      "lcsc": "C81598",
+      "package": "SOD-123"
+    },
+    {
+      "designator": "L1",
+      "title": "2.2uH 3.0A",
+      "lcsc": "C167733",
+      "package": "SMD-0420"
+    },
+    {
+      "designator": "L2",
+      "title": "10uH 2.5A",
+      "lcsc": "C38117",
+      "package": "SMD-0430"
+    },
+    {
+      "designator": "C1,C2",
+      "title": "220uF 6.3V Tantalum",
+      "lcsc": "C7187",
+      "package": "CASE-D_7343"
+    },
+    {
+      "designator": "C7",
+      "title": "0.1uF 1000V CBB21",
+      "lcsc": "C2839151",
+      "package": "SMD-1812 / PTH"
+    },
+    {
+      "designator": "BZ1",
+      "title": "Piezo Buzzer 95dB 4kHz",
+      "lcsc": "C253457",
+      "package": "PTH-D12.4mm"
+    },
+    {
+      "designator": "J1",
+      "title": "TYPE-C-16PIN",
+      "lcsc": "C2765186",
+      "package": "SMD-TYPE-C"
+    },
+    {
+      "designator": "J2",
+      "title": "NANO-SIM-6P",
+      "lcsc": "C2838382",
+      "package": "PUSH-PULL"
+    },
+    {
+      "designator": "J3,J4",
+      "title": "U.FL-R-SMT",
+      "lcsc": "C88373",
+      "package": "SMD-IPEX"
+    },
+    {
+      "designator": "EL1,EL2",
+      "title": "Pernos M4 Inox 316",
+      "lcsc": "HARDWARE-M4",
+      "package": "PAD-M4-8MM"
+    }
+  ]
+}

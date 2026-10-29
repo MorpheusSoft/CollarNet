@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Especificaciones de Fabricación PCB - CollarNet CowAI V2</title>
+<title>Especificaciones de Fabricación PCB - CollarNet CowAI V2 (Opción 2 Monolítica)</title>
 <style>
   @page { size: A4 portrait; margin: 15mm; }
   body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #0f172a; padding: 20px; max-width: 900px; margin: 0 auto; line-height: 1.5; }
@@ -17,45 +17,39 @@
 </head>
 <body>
 
-<h1>ESPECIFICACIONES TÉCNICAS PARA COTIZACIÓN Y FABRICACIÓN DE PCB</h1>
+<h1>ESPECIFICACIONES TÉCNICAS OFICIALES: PCB MONOLÍTICA ALL-IN-ONE</h1>
 <p style="font-size: 11px; color: #475569; margin-bottom: 15px;">
-  <strong>Proyecto:</strong> Collar Ganadero Inteligente CowAI / CollarNet V2 &bull; <strong>Revisión:</strong> 2.1 &bull; <strong>Fecha:</strong> Octubre 2026
+  <strong>Proyecto:</strong> Collar Ganadero Inteligente CowAI / CollarNet V2 &bull; <strong>Arquitectura:</strong> Opción 2 Monolítica (Placa Única con Portapilas Integrado) &bull; <strong>Revisión:</strong> 3.0 Definitiva
 </p>
 
-<h2>1. Placa 1: Lógica y Radiofrecuencia (Cápsula Izquierda)</h2>
+<h2>1. Parámetros Físicos y Mecánicos de la Placa</h2>
 <table>
-  <tr><th>Parámetro de Fabricación</th><th>Especificación Requerida</th><th>Notas para el Proveedor</th></tr>
-  <tr class="highlight"><td>Dimensiones de la Placa</td><td><strong>60.0 mm &times; 32.0 mm</strong></td><td>Esquinas redondeadas R=2.0 mm</td></tr>
-  <tr><td>Número de Capas</td><td>2 Capas (Top / Bottom)</td><td>FR-4 estándar Tg 130-140°C</td></tr>
-  <tr><td>Espesor de Sustrato</td><td>1.6 mm (&plusmn;10%)</td><td>Alta rigidez mecánica para campo ganadero</td></tr>
-  <tr><td>Espesor de Cobre</td><td>1 oz (35 µm)</td><td>Suficiente para ráfagas de 2A en línea VBAT</td></tr>
-  <tr class="highlight"><td>Acabado Superficial</td><td><strong>ENIG (Oro Químico de Inmersión)</strong></td><td>Requerido para resistencia a corrosión por humedad</td></tr>
+  <tr><th>Parámetro de Fabricación</th><th>Especificación Requerida</th><th>Notas para el Proveedor (JLCPCB / Ensamblador)</th></tr>
+  <tr class="highlight"><td>Dimensiones Exteriores</td><td><strong>110.60 mm &times; 33.10 mm</strong></td><td>Esquinas redondeadas con radio R=2.0 mm</td></tr>
+  <tr><td>Número de Capas</td><td>2 Capas (Top Layer / Bottom Layer)</td><td>FR-4 estándar de alta rigidez Tg 130-140°C</td></tr>
+  <tr><td>Espesor de la Placa</td><td>1.6 mm (&plusmn;10%)</td><td>Garantiza firmeza mecánica con la batería montada</td></tr>
+  <tr><td>Espesor de Cobre</td><td>1 oz (35 µm)</td><td>Suficiente para picos de transmisión celular 4G de 2.0A</td></tr>
+  <tr class="highlight"><td>Acabado Superficial</td><td><strong>ENIG (Oro Químico de Inmersión)</strong></td><td>Obligatorio para resistencia a corrosión por amoníaco y humedad</td></tr>
   <tr><td>Color de Máscara de Soldadura</td><td>Verde Profesional o Negro Mate</td><td>Ambas caras</td></tr>
-  <tr><td>Color de Serigrafía (Silkscreen)</td><td>Blanco de Alta Definición</td><td>Identificación clara de pines y números LCSC</td></tr>
-  <tr><td>Vías Mínimas</td><td>0.3 mm taladro / 0.6 mm pad</td><td>Estándar económico JLCPCB / PCBWay</td></tr>
-  <tr><td>Ancho / Separación Mínima Pista</td><td>6 mil / 6 mil (0.15 mm)</td><td>Estándar clase 2 IPC</td></tr>
-  <tr class="highlight"><td>Impedancia Controlada RF</td><td><strong>50 &Omega; Coplanar Waveguide</strong></td><td>En pistas de antenas hacia conectores IPEX</td></tr>
-  <tr><td>Ensamble Automatizado (SMT)</td><td>Montaje en Cara Superior (TOP)</td><td>Todos los chips SMD concentrados en una cara</td></tr>
+  <tr><td>Color de Serigrafía (Silkscreen)</td><td>Blanco de Alta Definición</td><td>Identificación clara de componentes, polaridades y pines</td></tr>
+  <tr class="highlight"><td>Taladros de Fijación</td><td><strong>4x Taladros metalizados Ø2.6 mm</strong></td><td>Distancia entre centros: <strong>dx = 27.75 mm, dy = 105.55 mm</strong></td></tr>
+  <tr class="highlight"><td>Ranura Fresada de Aislamiento</td><td><strong>Ranura pasante de 2.0 mm &times; 28.0 mm</strong></td><td>Barrera física de aire en capa Edge.Cuts para aislar 1000V</td></tr>
+  <tr><td>Orificios Electrodos de Choque</td><td>2x Taladros metalizados Ø4.2 mm</td><td>Para pernos de contacto de acero inoxidable marino M4</td></tr>
 </table>
 
-<h2>2. Placa 2: Potencia, Audio y Descarga Eléctrica (Cápsula Derecha)</h2>
+<h2>2. Proceso de Ensamble y Montaje SMT en Doble Cara (Double-Sided)</h2>
 <table>
-  <tr><th>Parámetro de Fabricación</th><th>Especificación Requerida</th><th>Notas para el Proveedor</th></tr>
-  <tr class="highlight"><td>Dimensiones de la Placa</td><td><strong>32.0 mm &times; 26.0 mm</strong></td><td>Esquinas redondeadas R=2.0 mm</td></tr>
-  <tr><td>Número de Capas</td><td>2 Capas (Top / Bottom)</td><td>FR-4 estándar Tg 130-140°C</td></tr>
-  <tr><td>Espesor de Sustrato y Cobre</td><td>1.6 mm / 1 oz (35 µm)</td><td>Garantiza disipación térmica y anclaje firme</td></tr>
-  <tr><td>Acabado Superficial</td><td>ENIG (Oro Químico de Inmersión)</td><td>Excelente soldabilidad para electrodos M4</td></tr>
-  <tr class="highlight"><td>Ranura de Aislamiento (Milling)</td><td><strong>Ranura fresada de 1.5 mm</strong></td><td>Aislamiento de fuga galvánica entre 1000V y lógica</td></tr>
-  <tr><td>Orificios de Salida de Descarga</td><td>2x Taladros metalizados Ø4.2 mm</td><td>Para pernos de contacto de acero inox M4</td></tr>
-  <tr><td>Ensamble Automatizado (SMT)</td><td>Montaje en Cara Superior (TOP)</td><td>Componentes SMD en TOP, electrodos pasantes</td></tr>
+  <tr><th>Cara de la Placa</th><th>Componentes Montados</th><th>Observaciones de Ensamble</th></tr>
+  <tr class="highlight"><td><strong>Cara Superior (TOP)</strong></td><td>ESP32-S3-WROOM-1, SIM7670SA, CN3791 MPPT, SY8089, SC7A20, Buzzer 95dB, Etapa Flyback HV, Condensador 1000V, Tiristor TYN1225RG, Conector USB-C, Conectores IPEX</td><td>Montaje SMT automatizado estándar. Pistas de radiofrecuencia (50 &Omega;) protegidas con planos de masa coplanar.</td></tr>
+  <tr class="highlight"><td><strong>Cara Inferior (BOTTOM)</strong></td><td>Clips portapilas Keystone 1042/1048 para celda Li-Ion (18650 o 21700), circuito BMS (DW01A + FS8205A), zócalo Nano-SIM Push-Pull y conector JST solar</td><td>La celda de litio queda suspendida dentro de la cavidad hueca de 24.5 mm de la base 3D del collar.</td></tr>
 </table>
 
-<h2>3. Resumen de Cantidades para Cotización por Lotes</h2>
+<h2>3. Resumen de Cotización para Producción en Lotes</h2>
 <table>
-  <tr><th>Lote de Cotización</th><th>Placas Lógica (Izq)</th><th>Placas Potencia (Der)</th><th>Total Ensambles SMT</th><th>Objetivo</th></tr>
-  <tr><td><strong>Lote 1 (Prototipos de Campo)</strong></td><td>5 a 10 unidades</td><td>5 a 10 unidades</td><td>10 a 20 PCBA</td><td>Validación física en potrero con ganado</td></tr>
-  <tr class="highlight"><td><strong>Lote 2 (Pre-serie Piloto)</strong></td><td>50 unidades</td><td>50 unidades</td><td>100 PCBA</td><td>Despliegue en 50 reses (Costo &lt; $24 USD)</td></tr>
-  <tr><td><strong>Lote 3 (Producción Comercial)</strong></td><td>200 a 500 unidades</td><td>200 a 500 unidades</td><td>400 a 1000 PCBA</td><td>Máximo ahorro de escala (&lt; $18 USD)</td></tr>
+  <tr><th>Lote de Producción</th><th>Cantidad de Collares</th><th>Total Placas (PCBA Monolítica)</th><th>Costo Objetivo por Collar</th></tr>
+  <tr><td><strong>Lote 1 (Prototipos de Campo)</strong></td><td>5 a 10 unidades</td><td>5 a 10 PCBA completas</td><td>~$28 - $32 USD</td></tr>
+  <tr class="highlight"><td><strong>Lote 2 (Pre-serie de 50 reses)</strong></td><td>50 unidades</td><td>50 PCBA completas</td><td><strong>~$21.40 USD</strong></td></tr>
+  <tr><td><strong>Lote 3 (Producción Comercial 200+)</strong></td><td>200 a 500 unidades</td><td>200 a 500 PCBA completas</td><td><strong>&lt; $18.50 USD</strong></td></tr>
 </table>
 
 </body>

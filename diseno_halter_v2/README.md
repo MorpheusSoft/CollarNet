@@ -23,16 +23,20 @@ A diferencia de las cajas tradicionales que cuelgan bajo el cuello del animal, e
 
 | Componente | Especificación / Modelo | Ubicación |
 | :--- | :--- | :--- |
-| **Batería Li-Ion** | Celda Li-Ion 21700 (3.7V / 5000 mAh) con protección BMS 1S (DW01A + FS8205) | Cápsula Derecha |
-| **Paneles Solares (2x)** | Monocristalinos Epoxi `RY9-414` de 55 × 60 × 2.2 mm | Tapa Izquierda y Tapa Derecha |
-| **Placa Lógica y RF** | PCB a Medida CowAI V2 (ESP32-S3 + SIM7670SA 4G LTE/GNSS + SC7A20) | Cápsula Izquierda |
-| **Antena GNSS** | Parche cerámico activo/pasivo 25.5 × 25.5 × 8.2 mm (apuntando al cielo) | Cuna sobreelevada Cápsula Izquierda |
-| **Cargador Solar MPPT** | Circuito integrado MPPT CN3791 para paneles de 6V | Integrado en PCB Cápsula Izquierda |
-| **Alerta Acústica** | Zumbador piezoeléctrico pasivo Ø12.4 × 8.0 mm (95 dB @ 4000 Hz) | Cámara acústica Cápsula Derecha |
-| **Estímulo Cerca Virtual** | Generador de pulso capacitivo CDI (800V-1000V / 0.05-0.1J) + Watchdog 1s | Cápsula Derecha |
-| **Electrodos de Cuello** | 2x Pernos redondeados de acero inoxidable M4 (calidad marina 316) con O-rings | Base inferior Cápsula Derecha |
-| **Visor de Estado** | Barra difusora vertical acrílico / PETG translúcido | Hombro frontal Cápsula Izquierda |
-| **Cincha Ganadera** | Paso universal de **52 mm** (admite correa de 38 mm a 50 mm) | Túnel continuo bajo ambas cápsulas |
+| **Placa Monolítica All-in-One** | PCB CowAI V2 Monolítica (110.60 × 33.10 mm) con doble cara SMT | Chasis Principal |
+| **Batería Li-Ion (Integrada)** | Celda Li-Ion 18650 o 21700 (5000 mAh) en clips Keystone soldados en Cara Bottom | Integrada en PCB (Bottom) |
+| **Módem Celular & Satelital** | SIMCom SIM7670SA (4G LTE Cat-1 + GNSS multi-constelación en 1 chip) | Integrado en PCB (Top) |
+| **Microcontrolador Principal** | Espressif ESP32-S3-WROOM-1-N16R8 (16MB Flash, 8MB PSRAM, USB nativo) | Integrado en PCB (Top) |
+| **Cargador Solar MPPT** | Circuito integrado MPPT CN3791 (SSOP-10) con P-MOSFET AO3401A para paneles 6V | Integrado en PCB (Top) |
+| **Regulador de Alimentación** | Silergy SY8089 síncrono (3.3V / 2.0A) de alta eficiencia | Integrado en PCB (Top) |
+| **Sensor de Reposo (IMU)** | Acelerómetro digital Silan SC7A20 I2C (ultra-bajo consumo: 6 µA) | Integrado en PCB (Top) |
+| **Alerta Acústica** | Zumbador piezoeléctrico pasivo Ø12.4 × 8.0 mm (95 dB @ 4000 Hz) | Integrado en PCB (Top) |
+| **Estímulo Cerca Virtual** | Generador de pulso capacitivo CDI (1000V / 0.05-0.10J) con optoacoplador y watchdog 1s | Integrado en PCB (Top) |
+| **Barrera de Aislamiento** | Ranura pasante fresada de 2.0 mm (Edge.Cuts) que aísla físicamente los 1000V | En placa PCB |
+| **Electrodos de Cuello** | 2x Pernos redondeados de acero inoxidable M4 (calidad marina 316) con O-rings | Base inferior del collar |
+| **Paneles Solares (2x)** | Monocristalinos Epoxi `RY9-414` de 55 × 60 × 2.2 mm | Tapas solares enrasadas |
+| **Antena GNSS** | Parche cerámico activo/pasivo 25.5 × 25.5 × 8.2 mm (apuntando al cielo) | Cuna sobreelevada |
+| **Cincha Ganadera** | Paso universal de **52 mm** (admite correa de 38 mm a 50 mm) | Túnel continuo bajo la caja |
 
 ---
 
@@ -99,34 +103,33 @@ Todos los archivos han sido generados y validados paramétricamente desde `colla
 ---
 
 ```
-        [CÁPSULA IZQUIERDA: Lógica & RF]                 [CÁPSULA DERECHA: Potencia & Estímulo]
- ┌──────────────────────────────────────────────┐       ┌──────────────────────────────────────┐
- │ • ESP32-S3-WROOM-1 (MCU LittleFS)            │       │ • Celda Li-Ion 21700 (3.7V / 5000mAh)│
- │ • SIM7670SA Módem (4G LTE Cat-1 + GNSS)      │       │ • Protección BMS 1S (DW01A + FS8205) │
- │ • Antena Parche GNSS Cerámica (al cielo)     │       │ • Buzzer Piezoeléctrico 95dB (4000Hz)│
- │ • Antena FPC 4G LTE Adhesiva                 │       │ • Driver MOSFET AO3400A              │
- │ • Acelerómetro SC7A20 I2C (6µA Reposo)       │       │ • Generador de Pulso CDI (800V-1000V)│
- │ • Cargador Solar MPPT CN3791 (Panel 6V)      │       │ • Optoacoplador EL817C + Watchdog 1s │
- │ • Regulador Buck DC-DC SY8089 (3.3V / 2A)    │       │ • 2x Electrodos Inox M4 para cuello  │
- └──────────────────────┬───────────────────────┘       └──────────────────┬───────────────────┘
-                        │                                                  │
-                        └────────────[ CANAL PUENTE DORSAL Ø8mm ]──────────┘
-                                      Arnés de 5 Hilos de Baja Tensión:
-                                      1. VBAT (+) [3.4V - 4.2V]
-                                      2. GND (-)  [0V Masa Común]
-                                      3. BUZZER_CTRL (PWM 4000Hz desde IO5)
-                                      4. IMPULSE_TRIG (Pulso 1s desde IO4)
-                                      5. SOLAR_DER_IN (Panel Solar Derecho)
+               ARQUITECTURA OFICIAL: PLACA MONOLÍTICA ALL-IN-ONE (110.60 × 33.10 mm)
+ ┌───────────────────────────────────────────────────────────────────────────────────┐
+ │ CARA SUPERIOR (TOP LAYER):                                                        │
+ │ • ESP32-S3-WROOM-1-N16R8 (MCU 240MHz, 16MB Flash, 8MB PSRAM, USB nativo)         │
+ │ • SIMCom SIM7670SA Módem Combo (4G LTE Cat-1 + GNSS satelital en 1 chip)          │
+ │ • Cargador Solar MPPT CN3791 (SSOP-10) con P-MOSFET AO3401A para paneles 6V       │
+ │ • Regulador Buck DC-DC SY8089 (3.3V / 2.0A síncrono alta eficiencia)             │
+ │ • Acelerómetro Silan SC7A20 I2C (ultra-bajo consumo: 6 µA en reposo)             │
+ │ • Zumbador piezoeléctrico de 95 dB (4000 Hz) con N-MOSFET AO3400A                │
+ │ • Ranura fresada de aislamiento de 2.0 mm (separación galvánica para 1000V)       │
+ │ • Generador de pulso capacitivo CDI (1000V / 0.05-0.10J) con watchdog de 1s      │
+ │ • 2x Salidas para electrodos de acero inoxidable M4 pasantes hacia el cuello      │
+ ├───────────────────────────────────────────────────────────────────────────────────┤
+ │ CARA INFERIOR (BOTTOM LAYER):                                                     │
+ │ • Base portapilas Keystone 1042 / 1048 para celda Li-Ion (18650 o 21700 5000 mAh)│
+ │ • Circuito BMS 1S de protección integral (DW01A-G + FS8205A)                      │
+ │ • Ranura Nano-SIM Push-Pull (J2) bajo perfil con protección ESD                   │
+ │ • Conector JST-PH 2.0mm para entrada de los paneles solares de la tapa            │
+ └───────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 > [!NOTE]
-> La documentación detallada para fabricar las placas en EasyEDA / KiCad y pedir el ensamblaje automatizado SMT en JLCPCB se encuentra en:
-> 👉 [`docs/diseno_electronico_pcb/`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/)
-> - `01_ARQUITECTURA_Y_DISTRIBUCION.md`: Fundamentos y aislamiento galvánico.
-> - `02_ESQUEMATICO_CAPSULA_IZQUIERDA_LOGICA.md`: Esquemático completo de la placa lógica.
-> - `03_ESQUEMATICO_CAPSULA_DERECHA_POTENCIA.md`: Esquemático de descarga eléctrica y audio.
-> - `04_LISTA_MATERIALES_BOM_LCSC.csv`: Lista de compra y fabricación con números LCSC.
-> - `05_GUIA_DISENO_EASYEDA_JLC.md`: Guía paso a paso para mandar a fabricar las placas.
+> La documentación técnica de fabricación, planos esquemáticos y archivos Gerber listos para JLCPCB se encuentran en:
+> 👉 **[`CollarNet_V2_Planos_Esquematico_y_PCB.pdf`](file:///home/lzambrano/Desarrollo/CollarNet/CollarNet_V2_Planos_Esquematico_y_PCB.pdf)** (Planos de ingeniería en PDF A3)  
+> 👉 **[`docs/diseno_electronico_pcb/visor_cad_esquematico_y_pcb.html`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/visor_cad_esquematico_y_pcb.html)** (Visor interactivo con capas y zoom)  
+> 👉 **[`docs/paquete_cotizacion_presupuesto/LISTA_COMPONENTES_BOM_COTIZACION.csv`](file:///home/lzambrano/Desarrollo/CollarNet/docs/paquete_cotizacion_presupuesto/LISTA_COMPONENTES_BOM_COTIZACION.csv)** (BOM con códigos LCSC)  
+> 👉 **[`docs/diseno_electronico_pcb/fabricacion/Gerber_CollarNet_V2.zip`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/fabricacion/Gerber_CollarNet_V2.zip)** (Paquete Gerber listo para JLCPCB)
 
 ---
 

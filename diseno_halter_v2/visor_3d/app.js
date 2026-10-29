@@ -1,7 +1,7 @@
 /**
- * COWAI CollarNet V2 - Aplicación CAD 3D Interactiva
+ * COWAI CollarNet V2 (Rev 2.1) - Aplicación CAD 3D Interactiva
  * Motor de visualización WebGL con Three.js, despiece paramétrico, planos de corte,
- * cotas tridimensionales e inspector de espacios y holguras para dispositivos.
+ * cotas tridimensionales e inspector de las 2 PCBs SMT, estímulo CDI y dispositivos.
  */
 
 // =============================================================================
@@ -42,148 +42,323 @@ const CAD_CONSTANTS = {
 };
 
 // =============================================================================
-// 2. BASE DE DATOS DE COMPONENTES Y ANÁLISIS DE HOLGURAS (FIT & CLEARANCE)
+// 2. BASE DE DATOS ACTUALIZADA DE DISPOSITIVOS Y ANÁLISIS DE HOLGURAS (REV 2.1)
 // =============================================================================
 const COMPONENTS_DB = {
+  'lilygo': {
+    name: 'Placa PCB 1: Lógica, RF 4G/GNSS & MPPT (COWAI V2)',
+    category: 'Cápsula Izquierda • Computación, Telecomunicaciones y Carga Solar',
+    partId: 'lilygo',
+    meshKey: 'comp_lilygo',
+    color: '#0f5132',
+    lcsc: 'U1: C2913202 | U2: C2892994 | U3: C392477 | U4: C154992 | U5: C78988',
+    dim_comp: { x: 60.0, y: 32.0, z: 6.2 },
+    dim_cavity: { x: 70.0, y: 70.8, z: 15.5 },
+    clearance: { x: 10.0, y: 38.8, z: 9.3 },
+    fit_status: 'ok',
+    fit_label: 'PCBA Custom 60×32 mm (+10 mm X, +38.8 mm Y)',
+    description: 'Placa PCB a medida de 2 capas FR4 (1.6 mm, acabado ENIG Oro) diseñada para ensamblaje SMT en JLCPCB. Integra el MCU Espressif ESP32-S3-WROOM-1-N16R8 (16MB Flash / 8MB PSRAM), módem celular SIMCom SIM7670SA-MNGV (4G LTE Cat-1 + GNSS), cargador solar MPPT CN3791 (6V / 1.2A con 2 diodos Schottky SS34), regulador Buck síncrono SY8089 (3.3V / 2A), acelerómetro Silan SC7A20 (6 µA en reposo), 2 condensadores de tantalio de 220µF, conector USB-C 16P nativo, porta Nano-SIM Push-Pull en cara inferior y 2 conectores coaxiales IPEX de 50 Ω.',
+    notes: 'Montada sobre 4 postes M2.5 de 4.5 mm de altura (centros a 53.0 × 25.0 mm). Al integrar el cargador MPPT CN3791 en esta placa y aislar la alta tensión en la cápsula derecha, se logra inmunidad electromagnética (EMC/EMI) total para el receptor satelital y el módem LTE.'
+  },
+  'mppt': {
+    name: 'Placa PCB 2: Potencia, Audio y Descarga CDI (POWER & SHOCK V2)',
+    category: 'Cápsula Derecha • BMS, Audio 95dB y Estímulo de Cerca Virtual',
+    partId: 'mppt',
+    meshKey: 'comp_mppt',
+    color: '#166534',
+    lcsc: 'U6: C351410 | U7: C32254 | U8: C4999 | U9: C128362 | C7: C2839151 | TH1: C14486',
+    dim_comp: { x: 26.0, y: 32.0, z: 9.1 },
+    dim_cavity: { x: 28.0, y: 34.0, z: 15.5 },
+    clearance: { x: 2.0, y: 2.0, z: 6.4 },
+    fit_status: 'ok',
+    fit_label: 'Aislamiento Galvánico 5 kV + Watchdog 1s',
+    description: 'Placa PCB de potencia de 2 capas FR4 (26.0 × 32.0 × 1.6 mm, ENIG Oro) con ranura fresada de 1.5 mm para aislamiento galvánico. Integra: (1) Protección BMS 1S (DW01A + MOSFET dual FS8205A + Fusible PPTC 3.0A); (2) Driver MOSFET AO3400A + Diodo Flyback 1N4148W para el zumbador de 95 dB; y (3) Generador de pulso capacitivo CDI (800V–1000V / 0.05J) con optoacoplador EL817C (5 kV), temporizador monoestable hardware 74LVC1G123 (corte forzoso a 1000 ms), bobina elevadora Flyback HV, condensador CBB21 0.1µF 1000V, tiristor SCR TYN1225RG y resistencia limitadora 220Ω/2W.',
+    notes: 'Alojada en su bahía tabicada detrás del compartimento de batería. La tierra de alta tensión (HV_GND) está físicamente separada de la masa lógica (GND_SYS) mediante el optoacoplador EL817C.'
+  },
   'bateria': {
-    name: 'Pack Batería 21700-3P',
-    category: 'Energía / Alimentación',
-    partId: 'comp_bateria',
+    name: 'Batería Li-Ion 21700 (3.7V / 5000 mAh - Pack 1S3P 15Ah)',
+    category: 'Cápsula Derecha • Almacenamiento Primario de Energía',
+    partId: 'bateria',
     meshKey: 'comp_bateria',
     color: '#1e88e5',
+    lcsc: 'BAT1: Celda 21700 Grado A (3.7V 5000mAh) + BMS 1S DW01A/FS8205A',
     dim_comp: { x: 72.0, y: 65.4, z: 21.2 },
     dim_cavity: { x: 76.0, y: 70.0, z: 24.0 },
     clearance: { x: 4.0, y: 4.6, z: 2.8 },
     fit_status: 'ok',
-    fit_label: 'Ajuste Óptimo (+4.0 mm libre)',
-    description: 'Pack de 3 celdas cilíndricas 21700 Li-ion en paralelo (1S3P / 3.7V 15.000 mAh) con placa BMS de protección y cables flexibles 18AWG.',
-    notes: 'La cavidad en la cápsula derecha ofrece 4.0 mm de holgura longitudinal y 4.6 mm lateral, permitiendo colocar espuma EVA de 1.5 mm anti-vibración y salida suave de cables sin estrangulamiento.'
-  },
-  'lilygo': {
-    name: 'Placa MCU LilyGO T-A7670X-S3',
-    category: 'Electrónica / Telecomunicaciones',
-    partId: 'comp_lilygo',
-    meshKey: 'comp_lilygo',
-    color: '#0d47a1',
-    dim_comp: { x: 75.0, y: 44.0, z: 4.8 },
-    dim_cavity: { x: 85.0, y: 74.0, z: 15.5 },
-    clearance: { x: 10.0, y: 30.0, z: 6.2 },
-    fit_status: 'ok',
-    fit_label: 'Espacio Muy Holgado (+10 mm X, +30 mm Y)',
-    description: 'Placa base IoT con microcontrolador ESP32-S3 Dual-Core, módem celular 4G LTE Cat-1, GPS/GNSS, slot MicroSIM y puerto USB-C.',
-    notes: 'Montada sobre 4 postes cilíndricos de 4.5 mm de altura a 44x28 mm entre centros. El margen lateral de +30 mm deja espacio sobrado para el cableado de la antena y conectores JST.'
-  },
-  'antena': {
-    name: 'Antena Cerámica GNSS Patch',
-    category: 'Posicionamiento Satelital',
-    partId: 'comp_antena',
-    meshKey: 'comp_antena',
-    color: '#b0bec5',
-    dim_comp: { x: 25.0, y: 25.0, z: 5.15 },
-    dim_cavity: { x: 26.0, y: 26.0, z: 10.0 },
-    clearance: { x: 1.0, y: 1.0, z: 4.85 },
-    fit_status: 'ok',
-    fit_label: 'Ajuste Antivibración (+1.0 mm)',
-    description: 'Parche cerámico GPS/GLONASS de alta ganancia con plano de masa metálico inferior de 26x26 mm.',
-    notes: 'Ubicada en una cuna sobreelevada en la cápsula izquierda para orientarse siempre hacia el cielo cuando el animal pasta, maximizando la recepción satelital.'
-  },
-  'mppt': {
-    name: 'Cargador Solar MPPT (CN3791)',
-    category: 'Gestión Energética',
-    partId: 'comp_mppt',
-    meshKey: 'comp_mppt',
-    color: '#c62828',
-    dim_comp: { x: 20.0, y: 24.0, z: 7.6 },
-    dim_cavity: { x: 24.0, y: 26.0, z: 15.0 },
-    clearance: { x: 4.0, y: 2.0, z: 7.4 },
-    fit_status: 'ok',
-    fit_label: 'Ajuste Óptimo (+4.0 mm X, +2.0 mm Y)',
-    description: 'Regulador de carga solar con seguimiento de punto de máxima potencia (MPPT) para exprimir los paneles bajo sombra o sol pleno.',
-    notes: 'Alojado en su propio compartimento tabicado al lado del pack de batería para aislar térmicamente la zona de carga.'
+    fit_label: 'Ajuste Óptimo (+4.0 mm X, +4.6 mm Y)',
+    description: 'Almacenamiento primario Li-Ion 21700 (admite desde 1 celda de 5.000 mAh hasta pack 1S3P de 15.000 mAh en paralelo) protegido por circuito BMS 1S (corte sobrecarga 4.28V, sobredescarga 2.40V) y fusible térmico reseteable PPTC de 3.0A.',
+    notes: 'La cavidad ofrece +4.0 mm de holgura longitudinal y +4.6 mm lateral para revestimiento amortiguador de espuma EVA de 1.5 mm contra golpes del ganado.'
   },
   'buzzer': {
-    name: 'Zumbador Piezoeléctrico',
-    category: 'Estímulo Acústico (Geocercas)',
-    partId: 'comp_buzzer',
+    name: 'Zumbador Piezoeléctrico Pasivo 95 dB (4000 Hz)',
+    category: 'Cápsula Derecha • Estímulo Auditivo Progresivo de Geocerca',
+    partId: 'buzzer',
     meshKey: 'comp_buzzer',
     color: '#212121',
-    dim_comp: { x: 12.0, y: 12.0, z: 9.5 },
-    dim_cavity: { x: 12.4, y: 12.4, z: 12.0 },
-    clearance: { x: 0.4, y: 0.4, z: 2.5 },
+    lcsc: 'BZ1: C253457 / C2904128 (PTH Ø12.4 × 8.0 mm, 4000 Hz)',
+    dim_comp: { x: 12.4, y: 12.4, z: 8.0 },
+    dim_cavity: { x: 12.8, y: 12.8, z: 12.0 },
+    clearance: { x: 0.4, y: 0.4, z: 4.0 },
     fit_status: 'ok',
-    fit_label: 'Ajuste Ceñido (+0.4 mm Ø)',
-    description: 'Transductor acústico para entrenamiento y geocercas virtuales ganaderas.',
-    notes: 'Alineado con un embudo acústico cónico inferior que amplifica la onda sonora y la proyecta hacia abajo hacia el cuello del animal.'
+    fit_label: 'Cámara Acústica Cónica (+0.4 mm Ø)',
+    description: 'Transductor acústico piezoeléctrico pasivo excitado a su frecuencia de resonancia de 4000 Hz mediante PWM (ESP32 GPIO 5 -> Hilo 3 del arnés -> Driver MOSFET AO3400A alimentado desde VBAT).',
+    notes: 'Acoplado sobre una tobera acústica cónica inferior que proyecta los 95 dB hacia el cuello de la res para el pre-aviso auditivo antes de aplicar cualquier estímulo eléctrico.'
+  },
+  'electrodos': {
+    name: '2× Electrodos de Cuello Acero Inoxidable 316 (M4)',
+    category: 'Cápsula Derecha • Contacto Disuasorio de Cerca Virtual',
+    partId: 'electrodos',
+    meshKey: 'comp_electrodos',
+    color: '#94a3b8',
+    lcsc: 'EL1, EL2: Pernos M4 Semiesféricos Inox 316 Marino + O-Ring EPDM',
+    dim_comp: { x: 21.2, y: 7.2, z: 24.9 },
+    dim_cavity: { x: 22.0, y: 7.6, z: 25.5 },
+    clearance: { x: 0.8, y: 0.4, z: 0.6 },
+    fit_status: 'ok',
+    fit_label: 'Pasamuros Sellado con O-Ring EPDM',
+    description: 'Par de bornes de acero inoxidable 316 calidad marina (rosca M4, separación 14.0 mm entre centros) con puntas semiesféricas pulidas que sobresalen 7.5 mm por la base inferior de la cápsula derecha.',
+    notes: 'Situados en Y = 72.0 mm (completamente fuera del túnel de 52 mm de la cincha ganadera) y sellados con junta tórica EPDM en su cajera inferior para mantener el grado IP67.'
+  },
+  'antena': {
+    name: 'Antena Cerámica GNSS Patch (GPS / GLONASS / Galileo)',
+    category: 'Cápsula Izquierda • Posicionamiento Satelital Cenital',
+    partId: 'antena',
+    meshKey: 'comp_antena',
+    color: '#b0bec5',
+    lcsc: 'ANT_GPS + Conector Coaxial IPEX J3 (C88373)',
+    dim_comp: { x: 25.5, y: 25.5, z: 5.2 },
+    dim_cavity: { x: 26.0, y: 26.0, z: 10.0 },
+    clearance: { x: 0.5, y: 0.5, z: 4.8 },
+    fit_status: 'ok',
+    fit_label: 'Cuna Cenital Antivibración (+0.5 mm)',
+    description: 'Parche cerámico dieléctrico de alta ganancia con plano de masa metálico de 26×26 mm conectado por línea de 50 Ω al puerto GNSS_ANT (J3) del módem SIM7670SA.',
+    notes: 'Alojada en su cuna sobreelevada dedicada para apuntar perpendicularmente al cielo en el lomo del animal.'
+  },
+  'antena_lte': {
+    name: 'Antena 4G LTE FPC Adhesiva + Coaxial IPEX',
+    category: 'Cápsula Izquierda • Enlace Celular Multibanda',
+    partId: 'antena_lte',
+    meshKey: 'comp_antena_lte',
+    color: '#d97706',
+    lcsc: 'ANT_LTE FPC + Conector Coaxial IPEX J4 (C88373)',
+    dim_comp: { x: 40.0, y: 1.5, z: 13.0 },
+    dim_cavity: { x: 45.0, y: 4.0, z: 15.5 },
+    clearance: { x: 5.0, y: 2.5, z: 2.5 },
+    fit_status: 'ok',
+    fit_label: 'Fijación Lateral Interna (50 Ω)',
+    description: 'Antena dipolo flexible en poliimida (FPC) para bandas celulares 4G LTE Cat-1 (APN Digitel), con adhesivo 3M y cable coaxial 1.13 mm hacia el conector u.FL/IPEX J4 (MAIN_ANT).',
+    notes: 'Adherida a la pared interior de ASA de la cápsula izquierda, alejada del plano de masa y libre de apantallamiento.'
+  },
+  'led_status': {
+    name: 'Barra Difusora Vertical LED de Estado',
+    category: 'Cápsula Izquierda • Diagnóstico Visual en Campo',
+    partId: 'led_status',
+    meshKey: 'comp_led_status',
+    color: '#00e676',
+    lcsc: 'STATUS_LED (ESP32-S3 GPIO 2) + Inserto Translúcido PETG/Acrílico',
+    dim_comp: { x: 3.0, y: 26.0, z: 7.5 },
+    dim_cavity: { x: 4.0, y: 28.0, z: 8.5 },
+    clearance: { x: 1.0, y: 2.0, z: 1.0 },
+    fit_status: 'ok',
+    fit_label: 'Hombro Frontal Sellado',
+    description: 'Visor difusor luminoso vertical en el hombro frontal de la tapa izquierda que transmite los destellos del indicador STATUS_LED (GPIO 2) para confirmar enlace 4G, fijación GNSS y estado de geocerca.',
+    notes: 'Se sella con resina epoxi o poliuretano transparente para conservar el hermetismo IP67 de la tapa.'
   },
   'solar': {
-    name: 'Paneles Solares Monocristalinos (x2)',
-    category: 'Cosecha de Energía',
-    partId: 'comp_solar',
+    name: 'Paneles Solares Monocristalinos RY9-414 (×2)',
+    category: 'Ambas Tapas • Cosecha Fotovoltaica Dual Continua',
+    partId: 'solar',
     meshKey: 'comp_solar',
-    color: '#0a192f',
-    dim_comp: { x: 55.0, y: 60.0, z: 2.1 },
-    dim_cavity: { x: 56.0, y: 61.0, z: 2.2 },
+    color: '#0d2149',
+    lcsc: '2× Paneles RY9-414 (6.0V / 120mA) + 2× Diodos Schottky SS34 (C8678)',
+    dim_comp: { x: 60.0, y: 55.0, z: 2.1 },
+    dim_cavity: { x: 61.0, y: 56.0, z: 2.2 },
     clearance: { x: 1.0, y: 1.0, z: 0.1 },
     fit_status: 'ok',
     fit_label: 'Encastre Enrasado (Flush-Mount)',
-    description: 'Dos paneles solares (uno en cada tapa de cápsula) de alta eficiencia con encapsulado epoxy resistente al impacto y radiación UV.',
-    notes: 'Se montan enrasados con el techo de la tapa para evitar que ramas o frotamiento con arbustos puedan arrancarlos.'
+    description: 'Dos paneles fotovoltaicos monocristalinos encapsulados en epoxi (60.0 × 55.0 × 2.2 mm, 6V nominales) inclinados a ±32° a babor y estribor para captar sol de mañana, mediodía y tarde.',
+    notes: 'Cada panel ingresa al cargador MPPT CN3791 a través de su propio diodo Schottky SS34, evitando que un panel en sombra descargue al panel iluminado.'
   },
-  'cincha': {
-    name: 'Cincha Ganadera (Opción A Continua)',
-    category: 'Sujeción Estructural',
-    partId: 'comp_cincha',
-    meshKey: 'comp_cincha',
-    color: '#ff6d00',
-    dim_comp: { x: 387.0, y: 50.0, z: 3.0 },
-    dim_cavity: { x: 404.0, y: 52.0, z: 5.5 },
-    clearance: { x: 0.0, y: 2.0, z: 2.5 },
+  'solar_left': {
+    name: 'Panel Solar 1 Izquierdo (RY9-414 6V)',
+    category: 'Tapa Izquierda • Cosecha Solar Directa a PCB Lógica',
+    partId: 'solar_left',
+    meshKey: 'comp_solar',
+    color: '#0d2149',
+    lcsc: 'SOLAR_IZQ: Epoxi Monocristalino 60×55×2.2 mm + Diodo SS34 (C8678)',
+    dim_comp: { x: 60.0, y: 55.0, z: 2.1 },
+    dim_cavity: { x: 61.0, y: 56.0, z: 2.2 },
+    clearance: { x: 1.0, y: 1.0, z: 0.1 },
     fit_status: 'ok',
-    fit_label: 'Túnel Continuo 52 x 5.5 mm',
-    description: 'Correa de nylon de alta tenacidad (ancho 38 mm a 50 mm, espesor 3.0 mm) continua a través de las 2 cápsulas y el puente dorsal sin cortes.',
-    notes: 'El túnel continuo de 52x5.5 mm en el piso del collar mantiene la cincha completamente independiente del cableado eléctrico, separada por un tabique macizo de 4.5 mm de TPU.'
+    fit_label: 'Flush-Mount (+1.0 mm perimetral)',
+    description: 'Panel solar monocristalino izquierdo alojado a ras de la tapa izquierda. Se conecta directamente a la entrada solar de la PCB 1 (Lógica & MPPT CN3791).',
+    notes: 'El montaje enrasado con cordón perimetral de Sikaflex 221 impide que ramas o cercas lo desprendan.'
+  },
+  'solar_right': {
+    name: 'Panel Solar 2 Derecho (RY9-414 6V)',
+    category: 'Tapa Derecha • Cosecha Solar vía Hilo 5 del Arnés',
+    partId: 'solar_right',
+    meshKey: 'comp_solar',
+    color: '#0d2149',
+    lcsc: 'SOLAR_DER: Epoxi Monocristalino 60×55×2.2 mm -> Hilo 5 (SOLAR_DER_IN)',
+    dim_comp: { x: 60.0, y: 55.0, z: 2.1 },
+    dim_cavity: { x: 61.0, y: 56.0, z: 2.2 },
+    clearance: { x: 1.0, y: 1.0, z: 0.1 },
+    fit_status: 'ok',
+    fit_label: 'Flush-Mount (+1.0 mm perimetral)',
+    description: 'Panel solar monocristalino derecho alojado a ras de la tapa derecha. Envía su corriente (5.5V–6.5V) por el Hilo 5 (SOLAR_DER_IN) del arnés dorsal hacia el cargador MPPT CN3791 en la cápsula izquierda.',
+    notes: 'Garantiza recarga continua incluso cuando el animal pasta de costado respecto al sol.'
   },
   'arnes': {
-    name: 'Arnés de Cables Inter-Cápsulas',
-    category: 'Interconexión Eléctrica',
-    partId: 'comp_arnes',
+    name: 'Arnés Dorsal de 5 Hilos de Baja Tensión (< 5V)',
+    category: 'Puente Dorsal • Interconexión Eléctrica Segura Inter-Cápsulas',
+    partId: 'arnes',
     meshKey: 'comp_arnes',
     color: '#37474f',
+    lcsc: 'Mazo Blindado 5 Conductores (AWG24 Potencia / AWG26 Control)',
     dim_comp: { x: 186.4, y: 7.0, z: 7.0 },
     dim_cavity: { x: 186.4, y: 8.0, z: 8.0 },
     clearance: { x: 0.0, y: 1.0, z: 1.0 },
     fit_status: 'ok',
     fit_label: 'Conducto Estanco Ø8.0 mm (Z=17 mm)',
-    description: 'Mazo de 5 conductores (Alimentación V_BAT, GND, Solar+, Bus de datos) con funda exterior de silicona flexible de Ø7.0 mm.',
-    notes: 'Discurre a una altura exacta de Z = 17.0 mm (R = 142.0 mm en el arco), entrando directo a las cámaras de electrónica y batería sin rozar la cincha.'
+    description: 'Mazo flexible de 5 conductores con funda de silicona de Ø7.0 mm: [1] VBAT_PWR (3.4–4.2V), [2] GND_SYS (0V), [3] BUZZER_PWM (4000Hz desde GPIO 5), [4] IMPULSE_TRIG (disparo 1s desde GPIO 4) y [5] SOLAR_DER_IN (retorno panel derecho 6V).',
+    notes: 'CERO ALTA TENSIÓN EN EL LOMO: Ningún cable de alto voltaje cruza el puente dorsal; toda la elevación a 1000V ocurre localmente en la cápsula derecha.'
+  },
+  'cincha': {
+    name: 'Cincha Ganadera Continua (Opción A)',
+    category: 'Estructura • Sujeción de Alta Tenacidad y Contrapeso',
+    partId: 'cincha',
+    meshKey: 'comp_cincha',
+    color: '#ff6d00',
+    lcsc: 'Correa Nylon Trenzado 38 mm a 50 mm × 3.0 mm',
+    dim_comp: { x: 387.0, y: 50.0, z: 3.0 },
+    dim_cavity: { x: 404.0, y: 52.0, z: 5.5 },
+    clearance: { x: 0.0, y: 2.0, z: 2.5 },
+    fit_status: 'ok',
+    fit_label: 'Túnel Continuo 52 × 5.5 mm',
+    description: 'Correa continua que atraviesa sin cortes las dos cápsulas de ASA y el puente central de TPU, cerrándose en la papada inferior con hebilla de contrapeso.',
+    notes: 'Separada del conducto pasacables por un tabique macizo de 4.5 mm de TPU y libre de interferencia con los electrodos M4 (situados en Y=72 mm).'
   },
   'puente': {
-    name: 'Puente Dorsal Anatómico COWAI',
-    category: 'Estructura Flexible (TPU)',
-    partId: 'puente_dorsal_cowai',
+    name: 'Puente Dorsal Anatómico COWAI (TPU 95A)',
+    category: 'Estructura Flexible • Ergonomía y Absorción de Impactos',
+    partId: 'puente',
     meshKey: 'puente_dorsal_cowai',
     color: '#262930',
+    lcsc: 'Impresión 3D FDM en TPU 95A (R=125 mm, ±32°)',
     dim_comp: { x: 219.3, y: 82.0, z: 63.6 },
     dim_cavity: { x: 219.3, y: 82.0, z: 63.6 },
-    clearance: { x: 0, y: 0, z: 0 },
+    clearance: { x: 0.3, y: 0.3, z: 0.3 },
     fit_status: 'ok',
-    fit_label: 'Radio Anatómico R=125 mm',
-    description: 'Puente elástico de TPU 95A con radio interior de 125 mm y ángulo de caída de 32° que se amolda suavemente a la cruz del bovino.',
-    notes: 'Aloja en su interior el túnel continuo de la cincha, el conducto pasacables, y en sus extremos las dos cunas envolventes con cierre de clip snap-fit y cuellos de estanqueidad IP67.'
+    fit_label: 'Cunas Snap-Fit 35 mm + Cuello IP67',
+    description: 'Arco dorsal flexible con radio interior anatómico de 125 mm, canales de ventilación en el intradós, bolsillos envolventes de 35 mm con dientes de click y cuellos anulares de estanqueidad IP67 (Ø12×2.2 mm).',
+    notes: '100% libre de tornillos metálicos en la zona de apoyo sobre la cruz del animal.'
   },
-  'sello_ip67': {
-    name: 'Sello IP67 Frontal y Potting',
-    category: 'Estanqueidad Hermética',
-    partId: 'sello_ip67',
-    meshKey: null,
-    color: '#00e5ff',
-    dim_comp: { x: 12.0, y: 12.0, z: 2.2 },
-    dim_cavity: { x: 12.0, y: 12.0, z: 1.8 },
+  'texto_cowai': {
+    name: 'Emblema y Logotipo 3D COWAI (Inlay Multicolor)',
+    category: 'Identidad Visual • Inserto Co-Impreso en Cresta Dorsal',
+    partId: 'texto_cowai',
+    meshKey: 'puente_texto_cowai',
+    color: '#f8fafc',
+    lcsc: 'Co-Impresión Multicolor OrcaSlicer / Bambu Lab AMS (TPU Blanco)',
+    dim_comp: { x: 50.4, y: 11.8, z: 3.4 },
+    dim_cavity: { x: 50.4, y: 11.8, z: 3.4 },
+    clearance: { x: 0.0, y: 0.0, z: 0.0 },
+    fit_status: 'ok',
+    fit_label: 'Origen Coordenado Compartido (0,0,0)',
+    description: 'Inserto 3D en bajorrelieve con el icono de ondas satelitales IoT, logotipo principal COWAI y subtítulo SMART CATTLE IoT en la cima del puente dorsal.',
+    notes: 'Comparte el mismo sistema de coordenadas que puente_dorsal_cowai.stl para fusión multimaterial directa en el laminador.'
+  },
+  'pod_right_base': {
+    name: 'Cápsula Derecha Base (Potencia, Audio & CDI)',
+    category: 'Chasis Rígido • ASA resistente UV e Impacto',
+    partId: 'pod_right_base',
+    meshKey: 'capsula_derecha_base_bateria_21700',
+    color: '#dae2ec',
+    lcsc: 'Impresión 3D en ASA (Pared 2.8 mm, 5 Perímetros, Giroide 40%)',
+    dim_comp: { x: 126.0, y: 82.0, z: 26.0 },
+    dim_cavity: { x: 114.8, y: 70.8, z: 15.5 },
+    clearance: { x: 0.3, y: 0.3, z: 0.3 },
+    fit_status: 'ok',
+    fit_label: 'Lengüeta Snap-Fit 35 mm + Canal en U',
+    description: 'Chasis derecho con compartimento para batería 21700, bahía aislada de 28×34 mm para la PCB de Potencia y Descarga CDI, cámara acústica con tobera cónica para el buzzer de 95 dB y 2 pasamuros con asiento O-Ring para los electrodos M4.',
+    notes: 'Incluye cajera frontal Ø12×1.8 mm para compresión del cuello IP67 del puente y cajera interna para sellador Sikaflex 221.'
+  },
+  'pod_right_lid': {
+    name: 'Cápsula Derecha Tapa Solar (ASA)',
+    category: 'Cierre Clamshell Snap-Fit • 7 Clips + Lengüeta IP67',
+    partId: 'pod_right_lid',
+    meshKey: 'capsula_derecha_tapa_solar',
+    color: '#b0bec5',
+    lcsc: 'Impresión 3D en ASA con Cuna Solar Flush-Mount (61×56×2.2 mm)',
+    dim_comp: { x: 126.8, y: 83.6, z: 16.5 },
+    dim_cavity: { x: 126.0, y: 82.0, z: 9.0 },
     clearance: { x: 0.0, y: 0.0, z: -0.4 },
     fit_status: 'ok',
-    fit_label: '22.2% Compresión Axial (ISO 3601)',
-    description: 'Cuello de TPU sobresaliente de 2.2 mm comprimido 0.4 mm dentro de la cajera frontal de ASA de 1.8 mm de profundidad.',
-    notes: 'Complementado con una cajera interior de Ø12x1.8 mm para sellador Sikaflex 221 que elimina por completo cualquier capilaridad hacia los circuitos.'
+    fit_label: '7 Clips Cantilever + Lengüeta Compresora',
+    description: 'Tapa superior derecha con cuna enrasada para el Panel Solar 2 (RY9-414), lengüeta perimetral de compresión sobre la junta tórica y 7 ganchos snap-fit.',
+    notes: 'Al insertar la cápsula en el bolsillo de TPU del puente, los clips delanteros quedan bloqueados mecánicamente contra apertura accidental.'
+  },
+  'pod_left_base': {
+    name: 'Cápsula Izquierda Base (Lógica, RF 4G & GNSS)',
+    category: 'Chasis Rígido • ASA resistente UV e Impacto',
+    partId: 'pod_left_base',
+    meshKey: 'capsula_izquierda_base_lilygo',
+    color: '#dae2ec',
+    lcsc: 'Impresión 3D en ASA (4 Postes M2.5 a 53×25 mm + Cuna GNSS)',
+    dim_comp: { x: 126.0, y: 82.0, z: 26.0 },
+    dim_cavity: { x: 114.8, y: 70.8, z: 15.5 },
+    clearance: { x: 0.3, y: 0.3, z: 0.3 },
+    fit_status: 'ok',
+    fit_label: 'Postes PCB 60×32 mm + Cuna GNSS',
+    description: 'Chasis izquierdo actualizado con 4 postes M2.5 (53.0 × 25.0 mm) para la PCB Lógica & RF de 60×32 mm, cuna sobreelevada para la antena cerámica GNSS de 25.5×25.5 mm y pared lateral libre para la antena 4G LTE FPC.',
+    notes: 'Garantiza separación total entre los postes de la PCB y la cuna satelital GNSS.'
+  },
+  'pod_left_lid': {
+    name: 'Cápsula Izquierda Tapa Solar y Visor LED (ASA)',
+    category: 'Cierre Clamshell Snap-Fit • 7 Clips + Ventana LED',
+    partId: 'pod_left_lid',
+    meshKey: 'capsula_izquierda_tapa_solar',
+    color: '#b0bec5',
+    lcsc: 'Impresión 3D en ASA con Cuna Solar (61×56 mm) y Ranura LED',
+    dim_comp: { x: 126.8, y: 83.6, z: 17.0 },
+    dim_cavity: { x: 126.0, y: 82.0, z: 9.0 },
+    clearance: { x: 0.0, y: 0.0, z: -0.4 },
+    fit_status: 'ok',
+    fit_label: '7 Clips Cantilever + Ranura Visor LED',
+    description: 'Tapa superior izquierda con alojamiento enrasado para el Panel Solar 1 (RY9-414), ventana en hombro frontal para la barra difusora LED de estado y lengüeta compresora IP67.',
+    notes: 'Cierre 100% libre de tornillos con precarga uniforme sobre el cordón elástico de TPU 85A.'
+  },
+  'junta_right': {
+    name: 'Junta Tórica Perimetral IP67 Derecha (TPU 85A)',
+    category: 'Sellado Hermético • Machihembrado Laberíntico en U',
+    partId: 'junta_right',
+    meshKey: 'junta_estanca_tpu_ip67',
+    color: '#00e676',
+    lcsc: 'Cordón Elástico Impreso en TPU 85A / Silicona (Sección 2.0×2.0 mm)',
+    dim_comp: { x: 120.0, y: 76.0, z: 2.0 },
+    dim_cavity: { x: 120.4, y: 76.4, z: 2.8 },
+    clearance: { x: 0.2, y: 0.2, z: -0.4 },
+    fit_status: 'ok',
+    fit_label: '20%–25% Compresión Elástica IP67',
+    description: 'Junta perimetral continua alojada en el canal en U de la base derecha y comprimida axialmente por la lengüeta de la tapa solar.',
+    notes: 'Impide el ingreso de lluvia torrencial, polvo y lodo.'
+  },
+  'junta_left': {
+    name: 'Junta Tórica Perimetral IP67 Izquierda (TPU 85A)',
+    category: 'Sellado Hermético • Machihembrado Laberíntico en U',
+    partId: 'junta_left',
+    meshKey: 'junta_estanca_tpu_ip67',
+    color: '#00e676',
+    lcsc: 'Cordón Elástico Impreso en TPU 85A / Silicona (Sección 2.0×2.0 mm)',
+    dim_comp: { x: 120.0, y: 76.0, z: 2.0 },
+    dim_cavity: { x: 120.4, y: 76.4, z: 2.8 },
+    clearance: { x: 0.2, y: 0.2, z: -0.4 },
+    fit_status: 'ok',
+    fit_label: '20%–25% Compresión Elástica IP67',
+    description: 'Junta perimetral continua alojada en el canal en U de la base izquierda y comprimida axialmente por la lengüeta de la tapa solar.',
+    notes: 'Protege la electrónica lógica, módem 4G y ranura Nano-SIM frente a humedad extrema.'
   }
 };
 
@@ -194,6 +369,7 @@ let scene, camera, renderer, controls;
 let container;
 let clipPlane;
 let meshes = {};
+let partKeyToMesh = {};
 let nodeGroups = {};
 let dimensionLinesGroup;
 let raycaster, mouse;
@@ -206,8 +382,6 @@ function init() {
   // 1. Escena
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x12151b);
-
-  // Niebla suave de profundidad para aspecto técnico
   scene.fog = new THREE.FogExp2(0x12151b, 0.0018);
 
   // 2. Cámara
@@ -221,7 +395,7 @@ function init() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.localClippingEnabled = true; // Activar planos de corte interactivos
+  renderer.localClippingEnabled = true;
   container.appendChild(renderer.domElement);
 
   // 4. Controles Orbitales (CAD Navigation)
@@ -230,7 +404,7 @@ function init() {
   controls.dampingFactor = 0.08;
   controls.maxDistance = 1400;
   controls.minDistance = 30;
-  controls.target.set(0, 0, 95); // Centrado en la cresta del puente
+  controls.target.set(0, 0, 95);
   controls.update();
 
   // 5. Iluminación de Estudio CAD
@@ -250,7 +424,7 @@ function init() {
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
-  // 10. Cargar y Ensamblar Modelos
+  // 10. Cargar y Ensamblar Modelos Actualizados
   buildAssembly();
 
   // 11. Crear Cotas CAD 3D
@@ -273,11 +447,9 @@ function init() {
 // Iluminación
 // -----------------------------------------------------------------------------
 function setupLighting() {
-  // Luz ambiental suave para sombras no opacas
-  const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.58);
   scene.add(ambient);
 
-  // Luz principal de estudio (Key light)
   const keyLight = new THREE.DirectionalLight(0xfff5ea, 0.85);
   keyLight.position.set(250, -250, 400);
   keyLight.castShadow = true;
@@ -292,12 +464,10 @@ function setupLighting() {
   keyLight.shadow.bias = -0.0005;
   scene.add(keyLight);
 
-  // Luz de relleno fría (Fill light)
   const fillLight = new THREE.DirectionalLight(0x90caf9, 0.45);
   fillLight.position.set(-250, 200, 300);
   scene.add(fillLight);
 
-  // Luz de contra (Rim light) para resaltar contornos y materiales TPU/ASA
   const rimLight = new THREE.DirectionalLight(0x00e5ff, 0.40);
   rimLight.position.set(0, 350, -100);
   scene.add(rimLight);
@@ -308,13 +478,13 @@ function setupLighting() {
 // -----------------------------------------------------------------------------
 function setupGrid() {
   gridHelper = new THREE.GridHelper(600, 60, 0x00e5ff, 0x263238);
-  gridHelper.rotation.x = Math.PI / 2; // Colocar en plano X-Y
+  gridHelper.rotation.x = Math.PI / 2;
   gridHelper.position.z = 0;
   scene.add(gridHelper);
 }
 
 // =============================================================================
-// 4. CREACIÓN Y ENSAMBLAJE DE LAS MALLAS 3D (CAD ASSEMBLY)
+// 4. CREACIÓN Y ENSAMBLAJE DE LAS MALLAS 3D ACTUALIZADAS (CAD ASSEMBLY REV 2.1)
 // =============================================================================
 function createBufferGeometryFromBase64(b64Data) {
   const binary = atob(b64Data);
@@ -329,6 +499,11 @@ function createBufferGeometryFromBase64(b64Data) {
   return geom;
 }
 
+function registerMesh(partKey, mesh) {
+  meshes[partKey] = mesh;
+  partKeyToMesh[partKey] = mesh;
+}
+
 function buildAssembly() {
   const models = window.COWAI_MODELS;
   if (!models) {
@@ -336,7 +511,7 @@ function buildAssembly() {
     return;
   }
 
-  // Materiales PBR Paramétricos
+  // Materiales PBR Paramétricos de Ingeniería
   materials = {
     tpu: new THREE.MeshStandardMaterial({
       color: 0x1a1c22,
@@ -368,28 +543,50 @@ function buildAssembly() {
       metalness: 0.25,
       side: THREE.DoubleSide
     }),
-    lilygo: new THREE.MeshStandardMaterial({
-      color: 0x0d47a1,
-      roughness: 0.38,
+    pcbLogic: new THREE.MeshStandardMaterial({
+      color: 0x0f5132, // Máscara de soldadura verde FR4 profesional (PCB 1)
+      roughness: 0.34,
+      metalness: 0.30,
+      side: THREE.DoubleSide
+    }),
+    pcbPower: new THREE.MeshStandardMaterial({
+      color: 0x166534, // Verde FR4 con bobina HV y condensador CDI (PCB 2)
+      roughness: 0.36,
       metalness: 0.28,
       side: THREE.DoubleSide
     }),
     antenna: new THREE.MeshStandardMaterial({
       color: 0xb0bec5,
-      roughness: 0.50,
-      metalness: 0.15,
+      roughness: 0.45,
+      metalness: 0.20,
       side: THREE.DoubleSide
     }),
-    mppt: new THREE.MeshStandardMaterial({
-      color: 0xc62828,
+    antennaLte: new THREE.MeshStandardMaterial({
+      color: 0xd97706, // Poliimida FPC cobre/ámbar
       roughness: 0.40,
-      metalness: 0.20,
+      metalness: 0.35,
+      side: THREE.DoubleSide
+    }),
+    ledStatus: new THREE.MeshStandardMaterial({
+      color: 0x00e676,
+      emissive: 0x00c853,
+      emissiveIntensity: 0.45,
+      roughness: 0.20,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.92,
       side: THREE.DoubleSide
     }),
     buzzer: new THREE.MeshStandardMaterial({
       color: 0x212121,
-      roughness: 0.70,
-      metalness: 0.10,
+      roughness: 0.65,
+      metalness: 0.12,
+      side: THREE.DoubleSide
+    }),
+    electrodos: new THREE.MeshStandardMaterial({
+      color: 0xcbd5e1, // Acero Inoxidable 316 Marino pulido
+      roughness: 0.20,
+      metalness: 0.85,
       side: THREE.DoubleSide
     }),
     solar: new THREE.MeshStandardMaterial({
@@ -399,20 +596,20 @@ function buildAssembly() {
       side: THREE.DoubleSide
     }),
     strap: new THREE.MeshStandardMaterial({
-      color: 0xff6d00, // Naranja alta visibilidad
+      color: 0xff6d00,
       roughness: 0.85,
       metalness: 0.02,
       side: THREE.DoubleSide
     }),
     arnes: new THREE.MeshStandardMaterial({
-      color: 0x263238, // Funda de silicona negra
+      color: 0x263238,
       roughness: 0.55,
       metalness: 0.05,
       side: THREE.DoubleSide
     })
   };
 
-  // Crear Geometrías a partir de COWAI_MODELS
+  // Decodificar geometrías desde COWAI_MODELS
   const geoms = {};
   for (let key in models) {
     geoms[key] = createBufferGeometryFromBase64(models[key].data);
@@ -423,7 +620,7 @@ function buildAssembly() {
   scene.add(assemblyGroup);
   nodeGroups.assembly = assemblyGroup;
 
-  // 2. Puente Dorsal Central y Logo
+  // 2. Puente Dorsal Central y Emblema 3D COWAI
   const bridgeGroup = new THREE.Group();
   assemblyGroup.add(bridgeGroup);
   nodeGroups.bridge = bridgeGroup;
@@ -431,42 +628,40 @@ function buildAssembly() {
   const bridgeMesh = new THREE.Mesh(geoms['puente_dorsal_cowai'], materials.tpu);
   bridgeMesh.castShadow = true;
   bridgeMesh.receiveShadow = true;
-  bridgeMesh.userData = { id: 'puente', name: 'Puente Dorsal TPU', type: 'structure' };
+  bridgeMesh.userData = { id: 'puente', name: 'Puente Dorsal TPU 95A', type: 'structure' };
   bridgeGroup.add(bridgeMesh);
-  meshes.bridge = bridgeMesh;
+  registerMesh('puente', bridgeMesh);
 
   const badgeMesh = new THREE.Mesh(geoms['puente_texto_cowai'], materials.tpuText);
-  badgeMesh.userData = { id: 'texto_cowai', name: 'Emblema y Texto COWAI', type: 'badge' };
+  badgeMesh.userData = { id: 'texto_cowai', name: 'Emblema y Logotipo 3D COWAI', type: 'badge' };
   bridgeGroup.add(badgeMesh);
-  meshes.badge = badgeMesh;
+  registerMesh('texto_cowai', badgeMesh);
 
-  // 3. Cincha y Arnés Pasante (Globalmente alineados)
+  // 3. Cincha Ganadera (Opción A) y Arnés Dorsal de 5 Hilos (Z=17 mm)
   const strapMesh = new THREE.Mesh(geoms['comp_cincha'], materials.strap);
   strapMesh.castShadow = true;
   strapMesh.userData = { id: 'cincha', name: 'Cincha Ganadera 50mm (Túnel Continuo)' };
   assemblyGroup.add(strapMesh);
-  meshes.strap = strapMesh;
+  registerMesh('cincha', strapMesh);
 
   const arnesMesh = new THREE.Mesh(geoms['comp_arnes'], materials.arnes);
-  arnesMesh.userData = { id: 'arnes', name: 'Arnés de Cables Inter-Cápsulas (Ø7 mm)' };
+  arnesMesh.userData = { id: 'arnes', name: 'Arnés Dorsal 5 Hilos Baja Tensión (Ø7 mm)' };
   assemblyGroup.add(arnesMesh);
-  meshes.arnes = arnesMesh;
+  registerMesh('arnes', arnesMesh);
 
   // ---------------------------------------------------------------------------
-  // 4. Cápsula Derecha (Batería 21700-3P + MPPT + Buzzer + Panel Solar 2)
+  // 4. Cápsula Derecha (Batería 21700 + PCB 2 Potencia/CDI + Buzzer 95dB + 2x Electrodos M4 + Panel Solar 2)
   // ---------------------------------------------------------------------------
   const ang = CAD_CONSTANTS.ang_rad;
   const x_j = CAD_CONSTANTS.x_j;
   const z_j = CAD_CONSTANTS.z_j;
 
   const rightPodGroup = new THREE.Group();
-  // Posicionar y rotar el pod derecho según collar_halter_v2.scad
   rightPodGroup.position.set(x_j, 0, z_j);
-  rightPodGroup.rotation.y = ang; // Rotación en plano X-Z
+  rightPodGroup.rotation.y = ang;
   assemblyGroup.add(rightPodGroup);
   nodeGroups.rightPod = rightPodGroup;
 
-  // Subgrupo local centrado en Y = -pod_w/2
   const rightLocal = new THREE.Group();
   rightLocal.position.set(0, -CAD_CONSTANTS.pod_w / 2, 0);
   rightPodGroup.add(rightLocal);
@@ -478,9 +673,9 @@ function buildAssembly() {
   rightBaseMesh.receiveShadow = true;
   rightBaseMesh.userData = { id: 'pod_right_base', name: 'Cápsula Derecha Base (ASA)' };
   rightLocal.add(rightBaseMesh);
-  meshes.rightBase = rightBaseMesh;
+  registerMesh('pod_right_base', rightBaseMesh);
 
-  // Tapa Derecha ASA (Se eleva en despiece)
+  // Tapa Derecha ASA
   const rightLidGroup = new THREE.Group();
   rightLidGroup.position.set(0, 0, CAD_CONSTANTS.pod_base_h);
   rightLocal.add(rightLidGroup);
@@ -490,7 +685,7 @@ function buildAssembly() {
   rightLidMesh.castShadow = true;
   rightLidMesh.userData = { id: 'pod_right_lid', name: 'Cápsula Derecha Tapa Solar (ASA)' };
   rightLidGroup.add(rightLidMesh);
-  meshes.rightLid = rightLidMesh;
+  registerMesh('pod_right_lid', rightLidMesh);
 
   // Junta Tórica Derecha (IP67)
   const rightGasketGroup = new THREE.Group();
@@ -501,62 +696,75 @@ function buildAssembly() {
   const rightGasketMesh = new THREE.Mesh(geoms['junta_estanca_tpu_ip67'], materials.gasket);
   rightGasketMesh.userData = { id: 'junta_right', name: 'Junta Tórica Estanca IP67 Derecha' };
   rightGasketGroup.add(rightGasketMesh);
-  meshes.rightGasket = rightGasketMesh;
+  registerMesh('junta_right', rightGasketMesh);
 
-  // Panel Solar Derecho
+  // Panel Solar 2 Derecho (RY9-414: 60.0 x 55.0 mm en cuna [(126-60)/2 + 8, (82-55)/2])
   const rightSolarGroup = new THREE.Group();
-  rightSolarGroup.position.set((CAD_CONSTANTS.pod_l - 55.0) / 2 + 8, (CAD_CONSTANTS.pod_w - 60.0) / 2, CAD_CONSTANTS.pod_base_h + CAD_CONSTANTS.lid_h - 2.0 + 0.2);
+  rightSolarGroup.position.set((CAD_CONSTANTS.pod_l - 60.0) / 2 + 8.0, (CAD_CONSTANTS.pod_w - 55.0) / 2, CAD_CONSTANTS.pod_base_h + CAD_CONSTANTS.lid_h - 2.2 + 0.2);
   rightLocal.add(rightSolarGroup);
   nodeGroups.rightSolar = rightSolarGroup;
 
   const rightSolarMesh = new THREE.Mesh(geoms['comp_solar'], materials.solar);
-  rightSolarMesh.userData = { id: 'solar', name: 'Panel Solar 2 (55x60 mm)' };
+  rightSolarMesh.userData = { id: 'solar_right', name: 'Panel Solar 2 Derecho RY9-414 (60×55 mm)' };
   rightSolarGroup.add(rightSolarMesh);
-  meshes.rightSolar = rightSolarMesh;
+  registerMesh('solar_right', rightSolarMesh);
 
-  // Componentes Internos Derecho (Pack Batería 21700-3P)
+  // Batería Li-Ion 21700 + BMS 1S
   const rightBatGroup = new THREE.Group();
-  // Posición CAD: translate([11.5, (pod_w - bat_w)/2, 10.5])
   rightBatGroup.position.set(11.5, (CAD_CONSTANTS.pod_w - 65.4) / 2, 10.5);
   rightLocal.add(rightBatGroup);
   nodeGroups.rightBat = rightBatGroup;
 
   const batMesh = new THREE.Mesh(geoms['comp_bateria'], materials.battery);
   batMesh.castShadow = true;
-  batMesh.userData = { id: 'bateria', name: 'Pack Batería 21700-3P (Li-ion)' };
+  batMesh.userData = { id: 'bateria', name: 'Batería Li-Ion 21700 + BMS 1S' };
   rightBatGroup.add(batMesh);
-  meshes.battery = batMesh;
+  registerMesh('bateria', batMesh);
 
-  // Cargador Solar MPPT
+  // Placa PCB 2: Potencia, Audio y Descarga CDI (26.0 x 32.0 mm en bahía X=88, Y=26)
   const rightMpptGroup = new THREE.Group();
-  rightMpptGroup.position.set(73.0 + 16.0, (CAD_CONSTANTS.pod_w - 26.0) / 2, 10.5);
+  rightMpptGroup.position.set(89.0, 27.0, 11.5);
   rightLocal.add(rightMpptGroup);
   nodeGroups.rightMppt = rightMpptGroup;
 
-  const mpptMesh = new THREE.Mesh(geoms['comp_mppt'], materials.mppt);
-  mpptMesh.userData = { id: 'mppt', name: 'Módulo Regulador Solar MPPT (CN3791)' };
+  const mpptMesh = new THREE.Mesh(geoms['comp_mppt'], materials.pcbPower);
+  mpptMesh.castShadow = true;
+  mpptMesh.userData = { id: 'mppt', name: 'Placa PCB 2: Potencia, Audio y Descarga CDI (1000V)' };
   rightMpptGroup.add(mpptMesh);
-  meshes.mppt = mpptMesh;
+  registerMesh('mppt', mpptMesh);
 
-  // Buzzer Acústico
+  // Zumbador Piezoeléctrico 95 dB (4000 Hz, Ø12.4 mm en X=102, Y=14)
   const rightBuzzerGroup = new THREE.Group();
-  rightBuzzerGroup.position.set(73.0 + 25.0 + 6.0, 16.0 + 6.0, 10.5);
+  rightBuzzerGroup.position.set(102.0, 14.0, 10.5);
   rightLocal.add(rightBuzzerGroup);
   nodeGroups.rightBuzzer = rightBuzzerGroup;
 
   const buzzerMesh = new THREE.Mesh(geoms['comp_buzzer'], materials.buzzer);
-  buzzerMesh.userData = { id: 'buzzer', name: 'Zumbador Piezoeléctrico' };
+  buzzerMesh.userData = { id: 'buzzer', name: 'Zumbador Piezoeléctrico 95dB (4000 Hz)' };
   rightBuzzerGroup.add(buzzerMesh);
-  meshes.buzzer = buzzerMesh;
+  registerMesh('buzzer', buzzerMesh);
+
+  // 2x Electrodos de Cuello de Acero Inoxidable 316 M4 + O-Rings EPDM (en X=94, 108 y Y=72)
+  const rightElectrodosGroup = new THREE.Group();
+  rightElectrodosGroup.position.set(94.0, 72.0, 0.0);
+  rightLocal.add(rightElectrodosGroup);
+  nodeGroups.rightElectrodos = rightElectrodosGroup;
+
+  if (geoms['comp_electrodos']) {
+    const electrodosMesh = new THREE.Mesh(geoms['comp_electrodos'], materials.electrodos);
+    electrodosMesh.castShadow = true;
+    electrodosMesh.userData = { id: 'electrodos', name: '2× Electrodos de Cuello Inox 316 M4' };
+    rightElectrodosGroup.add(electrodosMesh);
+    registerMesh('electrodos', electrodosMesh);
+  }
 
   // ---------------------------------------------------------------------------
-  // 5. Cápsula Izquierda (Electrónica LILYGO + Antena GNSS + Panel Solar 1)
+  // 5. Cápsula Izquierda (PCB 1 Lógica/RF/MPPT 60x32mm + Antena GNSS + Antena 4G LTE FPC + Barra LED + Panel Solar 1)
   // ---------------------------------------------------------------------------
   const leftPodGroup = new THREE.Group();
-  // Simetría en plano X: mirror([1,0,0]) translate([x_j, 0, z_j]) rotate([0, ang, 0])
   leftPodGroup.position.set(-x_j, 0, z_j);
   leftPodGroup.rotation.y = -ang;
-  leftPodGroup.scale.set(-1, 1, 1); // Espejo a lo largo de X
+  leftPodGroup.scale.set(-1, 1, 1);
   assemblyGroup.add(leftPodGroup);
   nodeGroups.leftPod = leftPodGroup;
 
@@ -571,7 +779,7 @@ function buildAssembly() {
   leftBaseMesh.receiveShadow = true;
   leftBaseMesh.userData = { id: 'pod_left_base', name: 'Cápsula Izquierda Base (ASA)' };
   leftLocal.add(leftBaseMesh);
-  meshes.leftBase = leftBaseMesh;
+  registerMesh('pod_left_base', leftBaseMesh);
 
   // Tapa Izquierda ASA
   const leftLidGroup = new THREE.Group();
@@ -583,7 +791,20 @@ function buildAssembly() {
   leftLidMesh.castShadow = true;
   leftLidMesh.userData = { id: 'pod_left_lid', name: 'Cápsula Izquierda Tapa Solar (ASA)' };
   leftLidGroup.add(leftLidMesh);
-  meshes.leftLid = leftLidMesh;
+  registerMesh('pod_left_lid', leftLidMesh);
+
+  // Barra Difusora Vertical LED de Estado (Hombro X=8.5, Y=28, Z=27.5)
+  const leftLedGroup = new THREE.Group();
+  leftLedGroup.position.set(8.5, (CAD_CONSTANTS.pod_w - 26.0) / 2, CAD_CONSTANTS.pod_base_h + 1.5);
+  leftLocal.add(leftLedGroup);
+  nodeGroups.leftLed = leftLedGroup;
+
+  if (geoms['comp_led_status']) {
+    const ledMesh = new THREE.Mesh(geoms['comp_led_status'], materials.ledStatus);
+    ledMesh.userData = { id: 'led_status', name: 'Barra Difusora Vertical LED de Estado' };
+    leftLedGroup.add(ledMesh);
+    registerMesh('led_status', ledMesh);
+  }
 
   // Junta Tórica Izquierda
   const leftGasketGroup = new THREE.Group();
@@ -594,41 +815,54 @@ function buildAssembly() {
   const leftGasketMesh = new THREE.Mesh(geoms['junta_estanca_tpu_ip67'], materials.gasket);
   leftGasketMesh.userData = { id: 'junta_left', name: 'Junta Tórica Estanca IP67 Izquierda' };
   leftGasketGroup.add(leftGasketMesh);
-  meshes.leftGasket = leftGasketMesh;
+  registerMesh('junta_left', leftGasketMesh);
 
-  // Panel Solar Izquierdo
+  // Panel Solar 1 Izquierdo (RY9-414: 60.0 x 55.0 mm)
   const leftSolarGroup = new THREE.Group();
-  leftSolarGroup.position.set((CAD_CONSTANTS.pod_l - 55.0) / 2 + 8, (CAD_CONSTANTS.pod_w - 60.0) / 2, CAD_CONSTANTS.pod_base_h + CAD_CONSTANTS.lid_h - 2.0 + 0.2);
+  leftSolarGroup.position.set((CAD_CONSTANTS.pod_l - 60.0) / 2 + 8.0, (CAD_CONSTANTS.pod_w - 55.0) / 2, CAD_CONSTANTS.pod_base_h + CAD_CONSTANTS.lid_h - 2.2 + 0.2);
   leftLocal.add(leftSolarGroup);
   nodeGroups.leftSolar = leftSolarGroup;
 
   const leftSolarMesh = new THREE.Mesh(geoms['comp_solar'], materials.solar);
-  leftSolarMesh.userData = { id: 'solar', name: 'Panel Solar 1 (55x60 mm)' };
+  leftSolarMesh.userData = { id: 'solar_left', name: 'Panel Solar 1 Izquierdo RY9-414 (60×55 mm)' };
   leftSolarGroup.add(leftSolarMesh);
-  meshes.leftSolar = leftSolarMesh;
+  registerMesh('solar_left', leftSolarMesh);
 
-  // Placa LILYGO T-A7670X
+  // Placa PCB 1: Lógica, RF 4G/GNSS & MPPT COWAI V2 (60.0 x 32.0 mm sobre 4 postes en X=14, Y=12, Z=15)
   const leftLilygoGroup = new THREE.Group();
-  leftLilygoGroup.position.set(8.0, 8.0, 15.0);
+  leftLilygoGroup.position.set(14.0, 12.0, 15.0);
   leftLocal.add(leftLilygoGroup);
   nodeGroups.leftLilygo = leftLilygoGroup;
 
-  const lilygoMesh = new THREE.Mesh(geoms['comp_lilygo'], materials.lilygo);
+  const lilygoMesh = new THREE.Mesh(geoms['comp_lilygo'], materials.pcbLogic);
   lilygoMesh.castShadow = true;
-  lilygoMesh.userData = { id: 'lilygo', name: 'Placa MCU LilyGO T-A7670X-S3' };
+  lilygoMesh.userData = { id: 'lilygo', name: 'Placa PCB 1: Lógica, RF 4G/GNSS & MPPT V2 (60×32 mm)' };
   leftLilygoGroup.add(lilygoMesh);
-  meshes.lilygo = lilygoMesh;
+  registerMesh('lilygo', lilygoMesh);
 
-  // Antena GNSS
+  // Antena Cerámica GNSS Patch (en cuna sobreelevada X=86, Y=42, Z=12.5)
   const leftAntennaGroup = new THREE.Group();
-  leftAntennaGroup.position.set(CAD_CONSTANTS.pod_l - 42.0 + 2.0, CAD_CONSTANTS.pod_w - 42.0 + 2.0, 10.5);
+  leftAntennaGroup.position.set(CAD_CONSTANTS.pod_l - 42.0 + 2.0, CAD_CONSTANTS.pod_w - 42.0 + 2.0, 12.5);
   leftLocal.add(leftAntennaGroup);
   nodeGroups.leftAntenna = leftAntennaGroup;
 
   const antennaMesh = new THREE.Mesh(geoms['comp_antena'], materials.antenna);
-  antennaMesh.userData = { id: 'antena', name: 'Antena Cerámica GNSS Patch' };
+  antennaMesh.userData = { id: 'antena', name: 'Antena Cerámica GNSS Patch (25.5×25.5 mm)' };
   leftAntennaGroup.add(antennaMesh);
-  meshes.antenna = antennaMesh;
+  registerMesh('antena', antennaMesh);
+
+  // Antena 4G LTE FPC Adhesiva (en pared interior lateral X=24, Y=6.0, Z=11.5)
+  const leftAntennaLteGroup = new THREE.Group();
+  leftAntennaLteGroup.position.set(24.0, 6.0, 11.5);
+  leftLocal.add(leftAntennaLteGroup);
+  nodeGroups.leftAntennaLte = leftAntennaLteGroup;
+
+  if (geoms['comp_antena_lte']) {
+    const antennaLteMesh = new THREE.Mesh(geoms['comp_antena_lte'], materials.antennaLte);
+    antennaLteMesh.userData = { id: 'antena_lte', name: 'Antena 4G LTE FPC Adhesiva (40×13 mm)' };
+    leftAntennaLteGroup.add(antennaLteMesh);
+    registerMesh('antena_lte', antennaLteMesh);
+  }
 }
 
 // =============================================================================
@@ -637,18 +871,15 @@ function buildAssembly() {
 function create3DDimensionLine(start, end, text, color = 0x00e5ff) {
   const group = new THREE.Group();
 
-  // Línea principal
   const material = new THREE.LineBasicMaterial({ color: color, depthTest: false, transparent: true, opacity: 0.9 });
   const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)];
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
   const line = new THREE.Line(geometry, material);
   group.add(line);
 
-  // Marcas en extremos (Ticks perpendiculares)
   const dir = new THREE.Vector3().subVectors(points[1], points[0]).normalize();
   const tickLength = 5.0;
 
-  // Vector perpendicular en Z o Y
   const perp = new THREE.Vector3(0, 0, 1);
   if (Math.abs(dir.dot(perp)) > 0.9) perp.set(0, 1, 0);
   const side = new THREE.Vector3().crossVectors(dir, perp).normalize().multiplyScalar(tickLength);
@@ -665,37 +896,35 @@ function create3DDimensionLine(start, end, text, color = 0x00e5ff) {
   group.add(new THREE.Line(tick1Geom, material));
   group.add(new THREE.Line(tick2Geom, material));
 
-  // Etiqueta flotante Sprite de Texto
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  canvas.width = 256;
+  canvas.width = 280;
   canvas.height = 64;
 
-  ctx.fillStyle = 'rgba(15, 18, 24, 0.85)';
+  ctx.fillStyle = 'rgba(15, 18, 24, 0.88)';
   ctx.strokeStyle = '#00e5ff';
   ctx.lineWidth = 2;
   if (ctx.roundRect) {
-    ctx.roundRect(4, 4, 248, 56, 12);
+    ctx.roundRect(4, 4, 272, 56, 12);
   } else {
-    ctx.rect(4, 4, 248, 56);
+    ctx.rect(4, 4, 272, 56);
   }
   ctx.fill();
   ctx.stroke();
 
-  ctx.font = 'bold 24px JetBrains Mono, monospace';
+  ctx.font = 'bold 22px JetBrains Mono, monospace';
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, 128, 32);
+  ctx.fillText(text, 140, 32);
 
   const texture = new THREE.CanvasTexture(canvas);
   const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
   const sprite = new THREE.Sprite(spriteMat);
-  sprite.scale.set(30, 8, 1);
+  sprite.scale.set(32, 8, 1);
 
-  // Posición en punto medio
   const mid = new THREE.Vector3().addVectors(points[0], points[1]).multiplyScalar(0.5);
-  mid.add(new THREE.Vector3(0, 0, 6)); // Ligeramente sobreelevado
+  mid.add(new THREE.Vector3(0, 0, 6));
   sprite.position.copy(mid);
   group.add(sprite);
 
@@ -717,25 +946,22 @@ function build3DDimensions() {
   // 4. Cota: Túnel de Cincha Ganadera (52.0 mm x 5.5 mm)
   dimensionLinesGroup.add(create3DDimensionLine([0, -26, 128 + 2.75], [0, 26, 128 + 2.75], "52.0 x 5.5 mm (Túnel Cincha)", 0xff9100));
 
-  // 5. Cota: Eje Pasacables y Tabique Macizo de 4.5 mm
+  // 5. Cota: Arnés 5 Hilos Baja Tensión y Tabique Macizo de 4.5 mm
   dimensionLinesGroup.add(create3DDimensionLine([0, 0, 133.5], [0, 0, 138.0], "4.5 mm (Tabique TPU)", 0x00e676));
-  dimensionLinesGroup.add(create3DDimensionLine([0, 12, 142.0], [0, 20, 142.0], "Ø8.0 mm (Cables Z=17)", 0x00e5ff));
+  dimensionLinesGroup.add(create3DDimensionLine([0, 12, 142.0], [0, 20, 142.0], "Ø8 mm (Arnés 5P Z=17)", 0x00e5ff));
 
-  // 6. Cota: Cápsula Derecha Externa (126.0 mm x 82.0 mm x 35.0 mm)
-  // Localizada en la cápsula derecha
+  // 6. Cota: Cápsula Derecha Externa (126.0 mm)
   const x_j = CAD_CONSTANTS.x_j;
   const z_j = CAD_CONSTANTS.z_j;
   const ang = CAD_CONSTANTS.ang_rad;
 
-  const rightPodCenter = new THREE.Vector3(x_j + 63 * Math.cos(ang), 0, z_j - 63 * Math.sin(ang));
   dimensionLinesGroup.add(create3DDimensionLine(
-    [x_j, -55, z_j - 10], 
+    [x_j, -55, z_j - 10],
     [x_j + 126 * Math.cos(ang), -55, z_j - 126 * Math.sin(ang) - 10],
     "126.0 mm (Cápsula)",
     0xd500f9
   ));
 
-  // Visibilidad controlada por STATE.showDimensions
   dimensionLinesGroup.visible = STATE.showDimensions;
 }
 
@@ -751,7 +977,7 @@ function updateExplosion(val) {
   const z_j = CAD_CONSTANTS.z_j;
 
   // 1. Desplazamiento exterior de las cápsulas en su ángulo natural de 32°
-  const slideDist = f * 55.0; // Se separan 55 mm hacia afuera de las cunas de TPU
+  const slideDist = f * 55.0;
   if (nodeGroups.rightPod) {
     nodeGroups.rightPod.position.set(
       x_j + slideDist * Math.cos(ang),
@@ -767,30 +993,32 @@ function updateExplosion(val) {
     );
   }
 
-  // 2. Elevación de Tapas en Z local (+45 mm)
-  if (nodeGroups.rightLid) nodeGroups.rightLid.position.z = CAD_CONSTANTS.pod_base_h + f * 45.0;
-  if (nodeGroups.leftLid) nodeGroups.leftLid.position.z = CAD_CONSTANTS.pod_base_h + f * 45.0;
+  // 2. Elevación de Tapas en Z local (+48 mm)
+  if (nodeGroups.rightLid) nodeGroups.rightLid.position.z = CAD_CONSTANTS.pod_base_h + f * 48.0;
+  if (nodeGroups.leftLid) nodeGroups.leftLid.position.z = CAD_CONSTANTS.pod_base_h + f * 48.0;
+  if (nodeGroups.leftLed) nodeGroups.leftLed.position.z = (CAD_CONSTANTS.pod_base_h + 1.5) + f * 56.0;
 
-  // 3. Elevación de Juntas Tóricas (+25 mm)
-  if (nodeGroups.rightGasket) nodeGroups.rightGasket.position.z = (CAD_CONSTANTS.pod_base_h - 2.8) + f * 25.0;
-  if (nodeGroups.leftGasket) nodeGroups.leftGasket.position.z = (CAD_CONSTANTS.pod_base_h - 2.8) + f * 25.0;
+  // 3. Elevación de Juntas Tóricas (+26 mm)
+  if (nodeGroups.rightGasket) nodeGroups.rightGasket.position.z = (CAD_CONSTANTS.pod_base_h - 2.8) + f * 26.0;
+  if (nodeGroups.leftGasket) nodeGroups.leftGasket.position.z = (CAD_CONSTANTS.pod_base_h - 2.8) + f * 26.0;
 
-  // 4. Elevación de Paneles Solares (+65 mm)
-  const baseSolarZ = CAD_CONSTANTS.pod_base_h + CAD_CONSTANTS.lid_h - 2.0 + 0.2;
-  if (nodeGroups.rightSolar) nodeGroups.rightSolar.position.z = baseSolarZ + f * 65.0;
-  if (nodeGroups.leftSolar) nodeGroups.leftSolar.position.z = baseSolarZ + f * 65.0;
+  // 4. Elevación de Paneles Solares (+68 mm)
+  const baseSolarZ = CAD_CONSTANTS.pod_base_h + CAD_CONSTANTS.lid_h - 2.2 + 0.2;
+  if (nodeGroups.rightSolar) nodeGroups.rightSolar.position.z = baseSolarZ + f * 68.0;
+  if (nodeGroups.leftSolar) nodeGroups.leftSolar.position.z = baseSolarZ + f * 68.0;
 
-  // 5. Elevación de Componentes Internos (+35 mm para inspección visual)
-  if (nodeGroups.rightBat) nodeGroups.rightBat.position.z = 10.5 + f * 35.0;
-  if (nodeGroups.rightMppt) nodeGroups.rightMppt.position.z = 10.5 + f * 35.0;
-  if (nodeGroups.rightBuzzer) nodeGroups.rightBuzzer.position.z = 10.5 + f * 35.0;
-  if (nodeGroups.leftLilygo) nodeGroups.leftLilygo.position.z = 15.0 + f * 35.0;
-  if (nodeGroups.leftAntenna) nodeGroups.leftAntenna.position.z = 10.5 + f * 35.0;
+  // 5. Despiece de Dispositivos Internos y Electrodos
+  if (nodeGroups.rightBat) nodeGroups.rightBat.position.z = 10.5 + f * 32.0;
+  if (nodeGroups.rightMppt) nodeGroups.rightMppt.position.z = 11.5 + f * 36.0;
+  if (nodeGroups.rightBuzzer) nodeGroups.rightBuzzer.position.z = 10.5 + f * 28.0;
+  if (nodeGroups.rightElectrodos) nodeGroups.rightElectrodos.position.z = -f * 26.0; // Descienden hacia el cuello
+  if (nodeGroups.leftLilygo) nodeGroups.leftLilygo.position.z = 15.0 + f * 34.0;
+  if (nodeGroups.leftAntenna) nodeGroups.leftAntenna.position.z = 12.5 + f * 38.0;
+  if (nodeGroups.leftAntennaLte) nodeGroups.leftAntennaLte.position.z = 11.5 + f * 26.0;
 
-  // 6. Elevación del Emblema COWAI sobre la cresta del puente
-  if (meshes.badge) meshes.badge.position.z = f * 16.0;
+  // 6. Elevación del Emblema 3D COWAI sobre la cresta del puente
+  if (meshes.texto_cowai) meshes.texto_cowai.position.z = f * 16.0;
 
-  // Actualizar texto del slider
   const label = document.getElementById('explode-value');
   if (label) label.textContent = Math.round(f * 100) + '%';
 }
@@ -827,11 +1055,11 @@ function updateXRayOpacity(val) {
   const isTransparent = val < 0.98;
 
   const shellMeshes = [
-    meshes.bridge,
-    meshes.rightBase,
-    meshes.rightLid,
-    meshes.leftBase,
-    meshes.leftLid
+    meshes.puente,
+    meshes.pod_right_base,
+    meshes.pod_right_lid,
+    meshes.pod_left_base,
+    meshes.pod_left_lid
   ];
 
   shellMeshes.forEach(mesh => {
@@ -851,7 +1079,7 @@ function updateXRayOpacity(val) {
 // 9. VISTAS DE CÁMARA PREESTABLECIDAS
 // =============================================================================
 function setCameraPreset(preset) {
-  const duration = 800; // ms
+  const duration = 800;
   const startPos = camera.position.clone();
   const startTarget = controls.target.clone();
   let endPos, endTarget;
@@ -873,20 +1101,20 @@ function setCameraPreset(preset) {
       endPos = new THREE.Vector3(450, 0, 95);
       endTarget = new THREE.Vector3(0, 0, 95);
       break;
-    case 'pod_right': // Enfoque en pack 21700
-      endPos = new THREE.Vector3(220, -180, 160);
-      endTarget = new THREE.Vector3(CAD_CONSTANTS.x_j + 40, 0, CAD_CONSTANTS.z_j - 20);
-      selectComponent('bateria');
+    case 'pod_right': // Enfoque en Cápsula Derecha (Potencia, Batería 21700, PCB CDI y Electrodos M4)
+      endPos = new THREE.Vector3(230, -185, 155);
+      endTarget = new THREE.Vector3(CAD_CONSTANTS.x_j + 45, 0, CAD_CONSTANTS.z_j - 25);
+      selectComponent('mppt');
       break;
-    case 'pod_left': // Enfoque en LilyGO
-      endPos = new THREE.Vector3(-220, -180, 160);
-      endTarget = new THREE.Vector3(-CAD_CONSTANTS.x_j - 40, 0, CAD_CONSTANTS.z_j - 20);
+    case 'pod_left': // Enfoque en Cápsula Izquierda (PCB Lógica/RF/MPPT, GNSS y Antena LTE)
+      endPos = new THREE.Vector3(-230, -185, 155);
+      endTarget = new THREE.Vector3(-CAD_CONSTANTS.x_j - 45, 0, CAD_CONSTANTS.z_j - 25);
       selectComponent('lilygo');
       break;
-    case 'bridge': // Enfoque en el túnel dorsal y sello
-      endPos = new THREE.Vector3(0, -180, 170);
+    case 'bridge': // Enfoque en Puente Dorsal y Arnés de 5 Hilos
+      endPos = new THREE.Vector3(0, -180, 175);
       endTarget = new THREE.Vector3(0, 0, 135);
-      selectComponent('cincha');
+      selectComponent('arnes');
       break;
   }
 
@@ -894,7 +1122,7 @@ function setCameraPreset(preset) {
   function tweenCamera(now) {
     const elapsed = now - startTime;
     const progress = Math.min(elapsed / duration, 1.0);
-    const ease = 0.5 - Math.cos(progress * Math.PI) / 2; // Ease in-out
+    const ease = 0.5 - Math.cos(progress * Math.PI) / 2;
 
     camera.position.lerpVectors(startPos, endPos, ease);
     controls.target.lerpVectors(startTarget, endTarget, ease);
@@ -906,7 +1134,6 @@ function setCameraPreset(preset) {
   }
   requestAnimationFrame(tweenCamera);
 
-  // Actualizar botones de vista activa
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === preset);
   });
@@ -917,13 +1144,13 @@ function setCameraPreset(preset) {
 // =============================================================================
 function selectComponent(compKey) {
   STATE.selectedPartId = compKey;
-  const comp = COMPONENTS_DB[compKey];
+  const comp = COMPONENTS_DB[compKey] || COMPONENTS_DB['lilygo'];
   if (!comp) return;
 
-  // Cambiar pestaña del panel derecho a 'inspector'
   switchTab('inspector');
 
-  // Rellenar datos en la tarjeta del Inspector
+  const formatClearance = (v) => (v >= 0 ? `+${v} mm` : `${v} mm`);
+
   const container = document.getElementById('inspector-content');
   if (container) {
     container.innerHTML = `
@@ -936,13 +1163,17 @@ function selectComponent(compKey) {
           <span class="fit-badge ${comp.fit_status}">${comp.fit_label}</span>
         </div>
 
+        <div style="font-size: 11px; color: var(--accent-cyan); font-family: var(--font-mono); padding: 4px 8px; background: rgba(0, 229, 255, 0.08); border-radius: 6px; border: 1px solid rgba(0, 229, 255, 0.2);">
+          <strong>BOM / LCSC:</strong> ${comp.lcsc || 'Componente Estructural CAD'}
+        </div>
+
         <table class="dim-table">
           <thead>
             <tr>
               <th>Dimensión</th>
-              <th>Componente</th>
-              <th>Cavidad Caja</th>
-              <th>Holgura Libre</th>
+              <th>Dispositivo</th>
+              <th>Alojamiento</th>
+              <th>Holgura / Sello</th>
             </tr>
           </thead>
           <tbody>
@@ -950,32 +1181,32 @@ function selectComponent(compKey) {
               <td>Longitud (X)</td>
               <td>${comp.dim_comp.x} mm</td>
               <td>${comp.dim_cavity.x} mm</td>
-              <td class="clearance-val">+${comp.clearance.x} mm</td>
+              <td class="clearance-val">${formatClearance(comp.clearance.x)}</td>
             </tr>
             <tr>
               <td>Ancho (Y)</td>
               <td>${comp.dim_comp.y} mm</td>
               <td>${comp.dim_cavity.y} mm</td>
-              <td class="clearance-val">+${comp.clearance.y} mm</td>
+              <td class="clearance-val">${formatClearance(comp.clearance.y)}</td>
             </tr>
             <tr>
               <td>Altura (Z)</td>
               <td>${comp.dim_comp.z} mm</td>
               <td>${comp.dim_cavity.z} mm</td>
-              <td class="clearance-val">+${comp.clearance.z} mm</td>
+              <td class="clearance-val">${formatClearance(comp.clearance.z)}</td>
             </tr>
           </tbody>
         </table>
 
         <div class="fit-card-notes">
-          <strong>Propósito:</strong> ${comp.description}<br><br>
-          <strong>Criterio Dimensional:</strong> ${comp.notes}
+          <strong>Categoría:</strong> ${comp.category}<br><br>
+          <strong>Arquitectura y Especificación:</strong> ${comp.description}<br><br>
+          <strong>Criterio de Ingeniería:</strong> ${comp.notes}
         </div>
       </div>
     `;
   }
 
-  // Resaltar en el árbol
   document.querySelectorAll('.tree-item').forEach(item => {
     item.classList.toggle('selected', item.dataset.part === compKey);
   });
@@ -987,21 +1218,21 @@ function onCanvasClick(event) {
 
   raycaster.setFromCamera(mouse, camera);
 
-  const interactableMeshes = Object.values(meshes).filter(m => m && m.visible);
+  const interactableMeshes = Object.values(partKeyToMesh).filter(m => m && m.visible);
   const intersects = raycaster.intersectObjects(interactableMeshes, false);
 
   if (intersects.length > 0) {
     const hit = intersects[0].object;
     const partId = hit.userData.id;
 
-    // Buscar si corresponde a una clave en COMPONENTS_DB
     if (COMPONENTS_DB[partId]) {
       selectComponent(partId);
-    } else {
-      // Intentar mapear partes estructurales
-      if (partId.includes('right')) selectComponent('bateria');
-      else if (partId.includes('left')) selectComponent('lilygo');
-      else if (partId.includes('bridge') || partId.includes('puente')) selectComponent('puente');
+    } else if (partId && partId.includes('right')) {
+      selectComponent('mppt');
+    } else if (partId && partId.includes('left')) {
+      selectComponent('lilygo');
+    } else if (partId && (partId.includes('bridge') || partId.includes('puente'))) {
+      selectComponent('puente');
     }
   }
 }
@@ -1037,12 +1268,10 @@ function setTheme(themeName) {
       themeBtn.innerHTML = '🌙';
       themeBtn.title = 'Cambiar a Modo Oscuro (Studio)';
     }
-    // Ajuste de fondo de escena y niebla 3D
     if (scene) {
       scene.background.setHex(0xf8fafc);
       if (scene.fog) scene.fog.color.setHex(0xf8fafc);
     }
-    // Rejilla de ingeniería en modo claro
     if (gridHelper) {
       scene.remove(gridHelper);
       gridHelper = new THREE.GridHelper(600, 60, 0x0284c7, 0xcbd5e1);
@@ -1050,7 +1279,6 @@ function setTheme(themeName) {
       gridHelper.position.z = 0;
       scene.add(gridHelper);
     }
-    // Contraste óptico para piezas blancas de ASA sobre fondo claro
     if (materials && materials.asa) {
       materials.asa.color.setHex(0xcfd8dc);
     }
@@ -1060,12 +1288,10 @@ function setTheme(themeName) {
       themeBtn.innerHTML = '☀️';
       themeBtn.title = 'Cambiar a Modo Claro (Studio)';
     }
-    // Fondo de escena y niebla en modo oscuro
     if (scene) {
       scene.background.setHex(0x12151b);
       if (scene.fog) scene.fog.color.setHex(0x12151b);
     }
-    // Rejilla de ingeniería en modo oscuro
     if (gridHelper) {
       scene.remove(gridHelper);
       gridHelper = new THREE.GridHelper(600, 60, 0x00e5ff, 0x263238);
@@ -1078,7 +1304,6 @@ function setTheme(themeName) {
     }
   }
 
-  // Actualizar color de líneas de cotas para contraste
   if (dimensionLinesGroup) {
     dimensionLinesGroup.traverse((child) => {
       if (child.isLine && child.material) {
@@ -1101,7 +1326,6 @@ function initTheme() {
 }
 
 function setupUIEventListeners() {
-  // Botón Alternar Modo Claro / Oscuro
   const themeToggleBtn = document.getElementById('btn-theme-toggle');
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
@@ -1110,7 +1334,6 @@ function setupUIEventListeners() {
     });
   }
 
-  // Slider de Despiece (Explosion)
   const explodeSlider = document.getElementById('explode-slider');
   if (explodeSlider) {
     explodeSlider.addEventListener('input', (e) => {
@@ -1118,16 +1341,14 @@ function setupUIEventListeners() {
     });
   }
 
-  // Botón Animar Despiece
   const playExplodeBtn = document.getElementById('btn-play-explode');
   if (playExplodeBtn) {
     playExplodeBtn.addEventListener('click', () => {
       STATE.isExploding = !STATE.isExploding;
-      playExplodeBtn.textContent = STATE.isExploding ? '⏸ Pausar' : '▶ Animar';
+      playExplodeBtn.textContent = STATE.isExploding ? '⏸ Pausar' : '▶ Animar Despiece';
     });
   }
 
-  // Slider Rayos X
   const xraySlider = document.getElementById('xray-slider');
   if (xraySlider) {
     xraySlider.addEventListener('input', (e) => {
@@ -1135,7 +1356,6 @@ function setupUIEventListeners() {
     });
   }
 
-  // Toggle Cotas 3D
   const dimToggle = document.getElementById('toggle-dimensions');
   if (dimToggle) {
     dimToggle.addEventListener('change', (e) => {
@@ -1144,18 +1364,16 @@ function setupUIEventListeners() {
     });
   }
 
-  // Toggle Modo Alámbrico
   const wireToggle = document.getElementById('toggle-wireframe');
   if (wireToggle) {
     wireToggle.addEventListener('change', (e) => {
       STATE.wireframe = e.target.checked;
-      Object.values(meshes).forEach(m => {
+      Object.values(partKeyToMesh).forEach(m => {
         if (m && m.material) m.material.wireframe = STATE.wireframe;
       });
     });
   }
 
-  // Controles de Plano de Corte (Section Slicer)
   const sliceToggle = document.getElementById('toggle-slicing');
   if (sliceToggle) {
     sliceToggle.addEventListener('change', (e) => {
@@ -1167,7 +1385,7 @@ function setupUIEventListeners() {
   }
 
   document.querySelectorAll('.slice-axis-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', () => {
       document.querySelectorAll('.slice-axis-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       STATE.slicing.axis = btn.dataset.axis;
@@ -1193,14 +1411,12 @@ function setupUIEventListeners() {
     });
   }
 
-  // Botones de Vistas de Cámara
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       setCameraPreset(btn.dataset.view);
     });
   });
 
-  // Pestañas del Panel Derecho
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab);
@@ -1220,7 +1436,7 @@ function setupUIEventListeners() {
     if (visBtn) {
       visBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const targetMesh = meshes[partKey] || Object.values(meshes).find(m => m && m.userData.id === partKey);
+        const targetMesh = partKeyToMesh[partKey];
         if (targetMesh) {
           targetMesh.visible = !targetMesh.visible;
           visBtn.textContent = targetMesh.visible ? '👁' : '🚫';
@@ -1233,23 +1449,23 @@ function setupUIEventListeners() {
     if (soloBtn) {
       soloBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        Object.values(meshes).forEach(m => {
-          if (m) m.visible = (m.userData.id === partKey);
+        Object.entries(partKeyToMesh).forEach(([k, m]) => {
+          if (m) m.visible = (k === partKey);
         });
         document.querySelectorAll('.vis-btn').forEach(b => {
           const p = b.closest('.tree-item').dataset.part;
           b.textContent = (p === partKey) ? '👁' : '🚫';
           b.classList.toggle('visible', p === partKey);
         });
+        selectComponent(partKey);
       });
     }
   });
 
-  // Botón Restablecer Todas las Visibilidades
   const resetVisBtn = document.getElementById('btn-reset-vis');
   if (resetVisBtn) {
     resetVisBtn.addEventListener('click', () => {
-      Object.values(meshes).forEach(m => { if (m) m.visible = true; });
+      Object.values(partKeyToMesh).forEach(m => { if (m) m.visible = true; });
       document.querySelectorAll('.vis-btn').forEach(b => {
         b.textContent = '👁';
         b.classList.add('visible');
@@ -1257,20 +1473,18 @@ function setupUIEventListeners() {
     });
   }
 
-  // Captura de Pantalla HD
   const screenshotBtn = document.getElementById('btn-screenshot');
   if (screenshotBtn) {
     screenshotBtn.addEventListener('click', () => {
       renderer.render(scene, camera);
       const dataURL = renderer.domElement.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = 'COWAI_CollarNet_CAD_Inspection.png';
+      link.download = 'COWAI_CollarNet_V2_1_CAD_Inspection.png';
       link.href = dataURL;
       link.click();
     });
   }
 
-  // Modal de Ayuda / Presentación
   const helpBtn = document.getElementById('btn-help');
   const helpModal = document.getElementById('help-modal');
   const closeHelpBtn = document.getElementById('btn-close-help');
@@ -1304,7 +1518,6 @@ let animDirection = 1;
 function animate() {
   requestAnimationFrame(animate);
 
-  // Animación continua de despiece si está activa
   if (STATE.isExploding) {
     let newExplode = STATE.explodeFactor + 0.006 * animDirection;
     if (newExplode >= 1.0) {
@@ -1323,5 +1536,4 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-// Iniciar aplicación al cargar el DOM
 window.addEventListener('DOMContentLoaded', init);
