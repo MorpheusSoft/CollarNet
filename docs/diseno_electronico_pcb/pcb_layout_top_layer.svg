@@ -1,0 +1,265 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2800 1100" width="2800" height="1100" style="background-color: #0b0f19; font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;">
+<defs>
+
+      <pattern id="gridMinorDark" width="10" height="10" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="0.6" fill="#1e293b" opacity="0.6"/>
+      </pattern>
+      <pattern id="gridMajorDark" width="50" height="50" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="1.2" fill="#334155" opacity="0.8"/>
+      </pattern>
+      <pattern id="topGroundPour" width="12" height="12" patternUnits="userSpaceOnUse">
+        <path d="M 0,0 L 12,12 M 12,0 L 0,12" stroke="#dc2626" stroke-width="0.8" opacity="0.25"/>
+      </pattern>
+      <pattern id="bottomGroundPour" width="12" height="12" patternUnits="userSpaceOnUse">
+        <path d="M 0,0 L 12,12 M 12,0 L 0,12" stroke="#2563eb" stroke-width="0.8" opacity="0.25"/>
+      </pattern>
+      <filter id="pcbShadow" x="-5%" y="-5%" width="110%" height="110%">
+        <feDropShadow dx="3" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.6"/>
+      </filter>
+      <filter id="traceGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="1.5" result="blur"/>
+        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+      </filter>
+    
+</defs>
+<rect width="2800" height="1100" fill="#0a0e17"/>
+<rect width="2800" height="1100" fill="url(#gridMinorDark)"/>
+<rect width="2800" height="1100" fill="url(#gridMajorDark)"/>
+<rect x="35" y="35" width="2730" height="1030" fill="none" stroke="#334155" stroke-width="3"/>
+<rect x="45" y="45" width="2710" height="1010" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+    <g transform="translate(60, 50)">
+      <rect width="1800" height="50" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="2"/>
+      <rect x="0" y="0" width="10" height="50" fill="#ef4444" rx="3"/>
+      <text x="25" y="32" font-size="18" font-weight="bold" fill="#fca5a5" letter-spacing="1">COLLARNET V2 — CARA SUPERIOR AISLADA (TOP LAYER COPPER + PADS SMT + SERIGRAFÍA BLANCA)</text>
+      <text x="1400" y="32" font-size="12" font-weight="bold" fill="#94a3b8">DIMENSIONES: 110.60 × 33.10 mm</text>
+    </g>
+    
+<rect x="180" y="180" width="2433.2" height="728.2" rx="66.0" fill="#064e3b" stroke="#10b981" stroke-width="2.5" filter="url(#pcbShadow)"/>
+
+        <g transform="translate(235.55, 238.85)">
+          <circle cx="0" cy="0" r="55.0" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="29.700000000000003" fill="#0a0e17"/>
+          <text x="70.4" y="4" font-size="10" font-weight="bold" fill="#38bdf8" text-anchor="start">M2.5 (1)</text>
+        </g>
+        
+
+        <g transform="translate(235.55, 849.35)">
+          <circle cx="0" cy="0" r="55.0" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="29.700000000000003" fill="#0a0e17"/>
+          <text x="70.4" y="4" font-size="10" font-weight="bold" fill="#38bdf8" text-anchor="start">M2.5 (2)</text>
+        </g>
+        
+
+        <g transform="translate(2557.65, 238.85)">
+          <circle cx="0" cy="0" r="55.0" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="29.700000000000003" fill="#0a0e17"/>
+          <text x="-70.4" y="4" font-size="10" font-weight="bold" fill="#38bdf8" text-anchor="end">M2.5 (3)</text>
+        </g>
+        
+
+        <g transform="translate(2557.65, 849.35)">
+          <circle cx="0" cy="0" r="55.0" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="29.700000000000003" fill="#0a0e17"/>
+          <text x="-70.4" y="4" font-size="10" font-weight="bold" fill="#38bdf8" text-anchor="end">M2.5 (4)</text>
+        </g>
+        
+
+    <rect x="2006.0" y="268.0" width="44.0" height="552.2" rx="22.0" fill="#0a0e17" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/>
+    <text x="2028.0" y="544.1" font-size="9" font-weight="bold" fill="#ef4444" text-anchor="middle" transform="rotate(-90 2028.0 544.1)">RANURA FRESADA 2.0 mm (AISLAMIENTO HV &gt; 8 mm)</text>
+    
+<rect x="268.0" y="224.0" width="1716.0" height="640.2" fill="url(#topGroundPour)" opacity="0.4"/>
+<rect x="2072.0" y="224.0" width="462.0" height="640.2" fill="url(#topGroundPour)" opacity="0.3"/>
+
+    <line x1="1654.0" y1="224.0" x2="1654.0" y2="862.0" stroke="#ffffff" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+    <text x="917.0" y="888.4000000000001" font-size="10" font-weight="bold" fill="#94a3b8" text-anchor="middle">SECTOR 1: PROCESAMIENTO, RF LTE/GNSS Y CARGA SOLAR</text>
+    <text x="1841.0" y="888.4000000000001" font-size="10" font-weight="bold" fill="#94a3b8" text-anchor="middle">SECTOR 2: AUDIO</text>
+    <text x="2336.0" y="888.4000000000001" font-size="10" font-weight="bold" fill="#ef4444" text-anchor="middle">SECTOR 3: ALTA TENSIÓN (1000V DC)</text>
+    
+
+    <g transform="translate(180, 445.1)">
+      <rect x="0" y="0" width="165.0" height="198.0" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="1.8"/>
+      <rect x="0" y="26.4" width="33.0" height="145.2" fill="#0f172a"/>
+      <rect x="132.0" y="33.0" width="39.6" height="132.0" fill="#fbbf24"/>
+      <text x="77.0" y="-8" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">J1: USB-C</text>
+    </g>
+    
+
+    <g transform="translate(400.0, 268.0)">
+      <rect width="561.0" height="396.0" rx="3" fill="#0f172a" stroke="#ffffff" stroke-width="1.5"/>
+      <rect x="132.0" y="22.0" width="407.0" height="352.0" rx="2" fill="#475569" stroke="#94a3b8" stroke-width="1.5"/>
+      <text x="334.4" y="176.0" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">ESPRESSIF</text>
+      <text x="334.4" y="242.0" font-size="10" font-weight="bold" fill="#38bdf8" text-anchor="middle">ESP32-S3-WROOM-1</text>
+      <text x="334.4" y="297.0" font-size="8" fill="#cbd5e1" text-anchor="middle">N16R8 (16MB Flash / 8MB PSRAM)</text>
+      
+      <!-- PCB Antenna Area -->
+      <rect x="17.6" y="33.0" width="92.4" height="330.0" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+      <path d="M 33.0,66.0 L 88.0,66.0 L 88.0,132.0 L 33.0,132.0 L 33.0,198.0 L 88.0,198.0 L 88.0,264.0 L 33.0,264.0" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="61.599999999999994" y="319.0" font-size="7" fill="#fbbf24" text-anchor="middle">2.4GHz</text>
+
+      <!-- Bottom & Right SMT Pads -->
+      <rect x="154.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="187.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="220.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="253.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="286.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="319.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="352.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="385.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="418.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="451.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="484.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/><rect x="517.0" y="374.0" width="17.6" height="26.4" fill="#fbbf24"/>
+      <rect x="539.0" y="55.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="88.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="121.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="154.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="187.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="220.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="253.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="286.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="319.0" width="26.4" height="17.6" fill="#fbbf24"/><rect x="539.0" y="352.0" width="26.4" height="17.6" fill="#fbbf24"/>
+    </g>
+    
+
+    <g transform="translate(444.0, 719.0)">
+      <rect width="66.0" height="44.0" fill="#0f172a" stroke="#ffffff" stroke-width="0.8"/>
+      <rect x="-13.2" y="4.4" width="17.6" height="11.0" fill="#fbbf24"/>
+      <rect x="-13.2" y="28.6" width="17.6" height="11.0" fill="#fbbf24"/>
+      <rect x="61.599999999999994" y="4.4" width="17.6" height="8.8" fill="#fbbf24"/>
+      <rect x="61.599999999999994" y="17.6" width="17.6" height="8.8" fill="#fbbf24"/>
+      <rect x="61.599999999999994" y="30.799999999999997" width="17.6" height="8.8" fill="#fbbf24"/>
+      <text x="33.0" y="-4" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">U5: SY8089</text>
+    </g>
+    <g transform="translate(543.0, 708.0)">
+      <rect width="92.4" height="92.4" rx="1" fill="#1e293b" stroke="#ffffff" stroke-width="1"/>
+      <circle cx="46.2" cy="46.2" r="33.0" fill="#334155" stroke="#fbbf24" stroke-width="0.8"/>
+      <rect x="-13.2" y="17.6" width="17.6" height="57.2" fill="#fbbf24"/>
+      <rect x="88.0" y="17.6" width="17.6" height="57.2" fill="#fbbf24"/>
+      <text x="46.2" y="-4" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">L1: 2.2uH</text>
+    </g>
+    
+
+    <g transform="translate(774.0, 719.0)">
+      <rect width="107.80000000000001" height="85.8" fill="#0f172a" stroke="#ffffff" stroke-width="0.8"/>
+      <rect x="-17.6" y="6.6" width="22.0" height="8.8" fill="#fbbf24"/><rect x="-17.6" y="22.0" width="22.0" height="8.8" fill="#fbbf24"/><rect x="-17.6" y="37.4" width="22.0" height="8.8" fill="#fbbf24"/><rect x="-17.6" y="52.8" width="22.0" height="8.8" fill="#fbbf24"/><rect x="-17.6" y="68.2" width="22.0" height="8.8" fill="#fbbf24"/>
+      <rect x="103.4" y="6.6" width="22.0" height="8.8" fill="#fbbf24"/><rect x="103.4" y="22.0" width="22.0" height="8.8" fill="#fbbf24"/><rect x="103.4" y="37.4" width="22.0" height="8.8" fill="#fbbf24"/><rect x="103.4" y="52.8" width="22.0" height="8.8" fill="#fbbf24"/><rect x="103.4" y="68.2" width="22.0" height="8.8" fill="#fbbf24"/>
+      <text x="53.900000000000006" y="-4" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">U4: CN3791</text>
+    </g>
+    <g transform="translate(906.0, 708.0)">
+      <rect width="96.80000000000001" height="96.80000000000001" rx="1" fill="#1e293b" stroke="#ffffff" stroke-width="1"/>
+      <circle cx="48.400000000000006" cy="48.400000000000006" r="35.2" fill="#334155" stroke="#fbbf24" stroke-width="0.8"/>
+      <rect x="-13.2" y="19.8" width="17.6" height="57.2" fill="#fbbf24"/>
+      <rect x="92.4" y="19.8" width="17.6" height="57.2" fill="#fbbf24"/>
+      <text x="48.400000000000006" y="-4" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">L2: 10uH</text>
+    </g>
+    
+
+    <g transform="translate(1038.0, 268.0)">
+      <rect width="528.0" height="528.0" rx="3" fill="#0f172a" stroke="#ffffff" stroke-width="1.5"/>
+      <rect x="44.0" y="44.0" width="440.0" height="440.0" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="1.2"/>
+      <text x="264.0" y="220.0" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">SIMCOM</text>
+      <text x="264.0" y="286.0" font-size="11" font-weight="bold" fill="#38bdf8" text-anchor="middle">SIM7670SA</text>
+      <text x="264.0" y="352.0" font-size="8" fill="#94a3b8" text-anchor="middle">4G LTE Cat-1 + GNSS Combo</text>
+
+      <!-- Perimeter LGA Pads -->
+      <rect x="22.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="66.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="110.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="154.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="198.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="242.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="286.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="330.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="374.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="418.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/><rect x="462.0" y="22.0" width="17.6" height="17.6" fill="#fbbf24"/>
+      <rect x="22.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="66.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="110.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="154.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="198.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="242.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="286.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="330.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="374.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="418.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/><rect x="462.0" y="488.4" width="17.6" height="17.6" fill="#fbbf24"/>
+    </g>
+    
+
+    <g transform="translate(1577.0, 290.0)">
+      <rect width="66.0" height="66.0" fill="#334155" stroke="#ffffff" stroke-width="0.8"/>
+      <circle cx="33.0" cy="33.0" r="19.8" fill="#fbbf24"/>
+      <circle cx="33.0" cy="33.0" r="8.8" fill="#0f172a"/>
+      <text x="33.0" y="-4" font-size="7" font-weight="bold" fill="#ffffff" text-anchor="middle">J3: LTE</text>
+    </g>
+    <g transform="translate(1577.0, 422.0)">
+      <rect width="66.0" height="66.0" fill="#334155" stroke="#ffffff" stroke-width="0.8"/>
+      <circle cx="33.0" cy="33.0" r="19.8" fill="#fbbf24"/>
+      <circle cx="33.0" cy="33.0" r="8.8" fill="#0f172a"/>
+      <text x="33.0" y="-4" font-size="7" font-weight="bold" fill="#ffffff" text-anchor="middle">J4: GNSS</text>
+    </g>
+    
+
+    <g transform="translate(1577.0, 642.0)">
+      <rect width="55.0" height="55.0" fill="#0f172a" stroke="#ffffff" stroke-width="0.8"/>
+      <circle cx="8.8" cy="8.8" r="2" fill="#fbbf24"/>
+      <text x="27.5" y="-4" font-size="7" font-weight="bold" fill="#ffffff" text-anchor="middle">U3: SC7A20</text>
+    </g>
+    
+
+    <g transform="translate(1830.0, 544.1)">
+      <circle cx="0" cy="0" r="136.4" fill="#0f172a" stroke="#ffffff" stroke-width="1.8"/>
+      <circle cx="0" cy="0" r="77.0" fill="#1e293b" stroke="#ffffff" stroke-width="1"/>
+      <circle cx="0" cy="0" r="26.4" fill="#d97706"/>
+      <circle cx="0" cy="-83.6" r="22.0" fill="#fbbf24" stroke="#d97706" stroke-width="0.8"/>
+      <circle cx="0" cy="83.6" r="22.0" fill="#fbbf24" stroke="#d97706" stroke-width="0.8"/>
+      <circle cx="0" cy="-83.6" r="11.0" fill="#0a0e17"/>
+      <circle cx="0" cy="83.6" r="11.0" fill="#0a0e17"/>
+      <text x="0" y="-149.6" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">BZ1: 95dB PIEZO</text>
+    </g>
+    
+
+    <g transform="translate(2028.0, 664.0)">
+      <rect x="-48.400000000000006" y="-44.0" width="96.80000000000001" height="88.0" rx="1" fill="#0f172a" stroke="#ffffff" stroke-width="1"/>
+      <rect x="-63.8" y="-33.0" width="26.4" height="17.6" fill="#fbbf24"/>
+      <rect x="-63.8" y="15.399999999999999" width="26.4" height="17.6" fill="#fbbf24"/>
+      <rect x="37.4" y="-33.0" width="26.4" height="17.6" fill="#fbbf24"/>
+      <rect x="37.4" y="15.399999999999999" width="26.4" height="17.6" fill="#fbbf24"/>
+      <text x="0" y="-57.2" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">U8: EL817C (5kV)</text>
+    </g>
+    
+
+    <g transform="translate(2138.0, 334.0)">
+      <rect width="198.0" height="176.0" rx="2" fill="#1e293b" stroke="#7c3aed" stroke-width="1.8"/>
+      <circle cx="99.0" cy="88.0" r="66.0" fill="#0f172a" stroke="#a855f7" stroke-width="1"/>
+      <text x="99.0" y="-4" font-size="8" font-weight="bold" fill="#c084fc" text-anchor="middle">FLYBACK: 1000V</text>
+    </g>
+    
+
+    <g transform="translate(2138.0, 565.0)">
+      <rect width="143.0" height="143.0" rx="1" fill="#0f172a" stroke="#ef4444" stroke-width="1.5"/>
+      <rect x="22.0" y="17.6" width="99.0" height="83.6" fill="#fbbf24"/>
+      <rect x="17.6" y="110.0" width="33.0" height="39.6" fill="#fbbf24"/>
+      <rect x="92.4" y="110.0" width="33.0" height="39.6" fill="#fbbf24"/>
+      <text x="71.5" y="-4" font-size="8" font-weight="bold" fill="#ef4444" text-anchor="middle">TH1: TYN1225</text>
+    </g>
+    
+
+    <g transform="translate(2336.0, 334.0)">
+      <rect width="176.0" height="110.0" rx="1.5" fill="#312e81" stroke="#a855f7" stroke-width="1.5"/>
+      <rect x="-17.6" y="22.0" width="26.4" height="66.0" fill="#fbbf24"/>
+      <rect x="167.2" y="22.0" width="26.4" height="66.0" fill="#fbbf24"/>
+      <text x="88.0" y="-4" font-size="8" font-weight="bold" fill="#c084fc" text-anchor="middle">C7: 0.1uF 1kV</text>
+    </g>
+    
+
+    <g transform="translate(2336.0, 499.0)">
+      <rect width="176.0" height="70.4" rx="1" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.5"/>
+      <rect x="-17.6" y="11.0" width="26.4" height="48.400000000000006" fill="#fbbf24"/>
+      <rect x="167.2" y="11.0" width="26.4" height="48.400000000000006" fill="#fbbf24"/>
+      <text x="88.0" y="-4" font-size="8" font-weight="bold" fill="#ef4444" text-anchor="middle">R_LIM: 220Ω 2W</text>
+    </g>
+    
+
+    <g transform="translate(2468.0, 741.0)">
+      <circle cx="0" cy="0" r="88.0" fill="#fbbf24" stroke="#dc2626" stroke-width="2"/>
+      <circle cx="0" cy="0" r="46.2" fill="#0a0e17"/>
+      <text x="0" y="-105.6" font-size="9" font-weight="bold" fill="#ef4444" text-anchor="middle">EL1: HV (+)</text>
+      <text x="0" y="132.0" font-size="8" fill="#f8fafc" text-anchor="middle">Perno M4</text>
+    </g>
+    <g transform="translate(2248.0, 741.0)">
+      <circle cx="0" cy="0" r="88.0" fill="#fbbf24" stroke="#7c3aed" stroke-width="2"/>
+      <circle cx="0" cy="0" r="46.2" fill="#0a0e17"/>
+      <text x="0" y="-105.6" font-size="9" font-weight="bold" fill="#c084fc" text-anchor="middle">EL2: RET (-)</text>
+      <text x="0" y="132.0" font-size="8" fill="#f8fafc" text-anchor="middle">Perno M4</text>
+    </g>
+    
+
+    <g id="top_copper_traces" stroke="#ef4444" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" filter="url(#traceGlow)">
+      <!-- Power Traces (1.5mm width) -->
+      <path d="M 246.0,544.1 L 400.0,544.1 L 400.0,741.0 L 444.0,730.0" fill="none" stroke-width="3"/>
+      <!-- VDD 3.3V System Rail (1.2mm width) -->
+      <path d="M 543.0,741.0 L 680.5,763.0 L 680.5,664.0" fill="none" stroke-width="2.5"/>
+      <path d="M 680.5,763.0 L 1038.0,763.0 L 1038.0,488.0" fill="none" stroke-width="2.5"/>
+      <!-- RF 50R Coplanar Microstrips -->
+      <path d="M 1566.0,323.0 L 1577.0,323.0" fill="none" stroke="#fca5a5" stroke-width="2.2"/>
+      <path d="M 1566.0,455.0 L 1577.0,455.0" fill="none" stroke="#fca5a5" stroke-width="2.2"/>
+      <!-- Control Lines (0.3mm width) -->
+      <path d="M 961.0,422.0 L 1038.0,422.0" fill="none" stroke-width="1.2"/>
+      <path d="M 961.0,455.0 L 1038.0,455.0" fill="none" stroke-width="1.2"/>
+      <path d="M 961.0,488.0 L 1038.0,488.0" fill="none" stroke-width="1.2"/>
+      <!-- Buzzer Gate Line -->
+      <path d="M 961.0,554.0 L 1720.0,554.0 L 1720.0,627.7 L 1830.0,627.7" fill="none" stroke-width="1.5"/>
+      <!-- Impulse Trigger to U8 Optocoupler -->
+      <path d="M 961.0,587.0 L 1896.0,587.0 L 1896.0,631.0 L 1973.0,631.0" fill="none" stroke-width="1.5"/>
+      <!-- High Voltage 1000V DC Traces in Sector 3 (Clearance > 4mm) -->
+      <path d="M 2336.0,422.0 L 2336.0,389.0" fill="none" stroke="#ff4444" stroke-width="3"/>
+      <path d="M 2512.0,389.0 L 2209.5,620.0" fill="none" stroke="#ff4444" stroke-width="3"/>
+      <path d="M 2248.0,686.0 L 2336.0,534.2" fill="none" stroke="#ff4444" stroke-width="3"/>
+      <path d="M 2512.0,534.2 L 2468.0,741.0" fill="none" stroke="#ff4444" stroke-width="3.5"/>
+    </g>
+    
+</svg>

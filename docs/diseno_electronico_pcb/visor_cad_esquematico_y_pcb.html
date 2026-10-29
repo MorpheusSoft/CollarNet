@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visor CAD Oficial — Esquemático y Layout PCB CollarNet V2</title>
+  <style>
+    :root {
+      --primary: #38bdf8;
+      --bg: #090d16;
+      --panel: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .logo-badge {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .title-area h1 { font-size: 16px; font-weight: 700; color: #fff; }
+    .title-area p { font-size: 11px; color: #9ca3af; }
+    .tab-groups { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .group-label { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #94a3b8; }
+    .tabs { display: flex; gap: 6px; }
+    .tab-btn {
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: #d1d5db;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { background: #374151; color: #fff; }
+    .tab-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);
+    }
+    .controls { display: flex; gap: 8px; align-items: center; }
+    .action-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .action-btn:hover { background: #334155; }
+    .action-btn.primary { background: #16a34a; border-color: #22c55e; color: #fff; }
+    .action-btn.primary:hover { background: #15803d; }
+    main {
+      flex: 1;
+      position: relative;
+      background: #06090f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .canvas-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: grab;
+      position: relative;
+      user-select: none;
+    }
+    .canvas-container:active { cursor: grabbing; }
+    .diagram-view {
+      max-width: 98%;
+      max-height: 98%;
+      transition: transform 0.1s ease-out;
+      transform-origin: center center;
+    }
+    .floating-bar {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 24, 39, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid #374151;
+      padding: 8px 18px;
+      border-radius: 30px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      z-index: 20;
+    }
+    .zoom-btn {
+      background: #374151;
+      border: none;
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .zoom-btn:hover { background: #4b5563; }
+    .zoom-level { font-size: 13px; font-weight: 600; min-width: 60px; text-align: center; color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-area">
+      <div class="logo-badge">CowAI CAD</div>
+      <div class="title-area">
+        <h1>CollarNet V2 — Visor de Ingeniería (Esquemático y PCB)</h1>
+        <p>ESP32-S3 | 4G LTE SIM7670SA | MPPT CN3791 | Choque CDI 1000V con Watchdog Hardware 1s</p>
+      </div>
+    </div>
+    
+    <div class="tab-groups">
+      <span class="group-label">Vistas de Ingeniería Oficial:</span>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchView('schematic', this)">Esquemático Completo AIO</button>
+        <button class="tab-btn" onclick="switchView('pcb_all', this)">PCB Layout Completo (Top+Bottom)</button>
+        <button class="tab-btn" onclick="switchView('pcb_top', this)">Cara Superior (Top Layer)</button>
+        <button class="tab-btn" onclick="switchView('pcb_bot', this)">Cara Inferior (Bottom Layer)</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <a href="CollarNet_V2_Planos_Esquematico_y_PCB.pdf" class="action-btn primary" target="_blank" download>
+        <span>📥 Descargar PDF Planos A3 (4 Láminas)</span>
+      </a>
+      <a href="fabricacion/Gerber_CollarNet_V2.zip" class="action-btn" download>
+        <span>📦 Descargar Gerbers (ZIP)</span>
+      </a>
+      <a href="easyeda/README_EASYEDA_IMPORT.md" class="action-btn" target="_blank">
+        <span>⚙️ Guía JLCPCB / EasyEDA</span>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="canvas-container" id="container">
+      <img id="diagramImage" class="diagram-view" src="esquematico_circuito_completo.png" alt="Plano CAD">
+    </div>
+
+    <div class="floating-bar">
+      <button class="zoom-btn" onclick="adjustZoom(-0.25)">-</button>
+      <div class="zoom-level" id="zoomText">100%</div>
+      <button class="zoom-btn" onclick="adjustZoom(0.25)">+</button>
+      <button class="action-btn" onclick="resetZoom()" style="padding: 4px 10px; font-size: 11px;">Restaurar</button>
+    </div>
+  </main>
+
+  <script>
+    let currentZoom = 1.0;
+    const views = {
+      schematic: 'esquematico_circuito_completo.png',
+      pcb_all: 'pcb_layout_completo.png',
+      pcb_top: 'pcb_layout_top_layer.png',
+      pcb_bot: 'pcb_layout_bottom_layer.png'
+    };
+
+    function switchView(viewKey, btnElement) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+      const img = document.getElementById('diagramImage');
+      img.src = views[viewKey];
+      resetZoom();
+    }
+
+    function adjustZoom(delta) {
+      currentZoom = Math.max(0.5, Math.min(4.0, currentZoom + delta));
+      applyZoom();
+    }
+
+    function resetZoom() {
+      currentZoom = 1.0;
+      applyZoom();
+    }
+
+    function applyZoom() {
+      const img = document.getElementById('diagramImage');
+      img.style.transform = `scale(${currentZoom})`;
+      document.getElementById('zoomText').innerText = `${Math.round(currentZoom * 100)}%`;
+    }
+  </script>
+</body>
+</html>

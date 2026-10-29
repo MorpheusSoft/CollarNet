@@ -1,0 +1,57 @@
+{
+  "head": {
+    "docType": "2",
+    "editorVersion": "6.5.22",
+    "newId": "pcb_collarnet_v2",
+    "c_para": {
+      "package": "CollarNet V2 AIO",
+      "layers": 2,
+      "dimension_width": 110.6,
+      "dimension_height": 33.1,
+      "mounting_hole_dx": 27.75,
+      "mounting_hole_dy": 105.55,
+      "isolation_slot_width": 2.0,
+      "copper_weight": "1oz",
+      "surface_finish": "ENIG"
+    }
+  },
+  "board_outline": {
+    "width": 110.6,
+    "height": 33.1,
+    "corner_radius": 3.0,
+    "mounting_holes": [
+      {
+        "x": 2.525,
+        "y": 2.675,
+        "drill": 2.7,
+        "pad": 5.0
+      },
+      {
+        "x": 2.525,
+        "y": 30.425,
+        "drill": 2.7,
+        "pad": 5.0
+      },
+      {
+        "x": 108.075,
+        "y": 2.675,
+        "drill": 2.7,
+        "pad": 5.0
+      },
+      {
+        "x": 108.075,
+        "y": 30.425,
+        "drill": 2.7,
+        "pad": 5.0
+      }
+    ],
+    "milling_slots": [
+      {
+        "x": 84.0,
+        "y_start": 4.0,
+        "y_end": 29.1,
+        "width": 2.0
+      }
+    ]
+  }
+}

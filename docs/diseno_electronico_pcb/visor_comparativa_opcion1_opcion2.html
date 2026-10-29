@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Comparativa de Diseño PCB: Opción 1 vs Opción 2 - CollarNet CowAI V2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .gold-pad { fill: #d4af37; stroke: #b89728; }
+    .silk-text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: bold; }
+    .component-box { cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    .component-box:hover { filter: brightness(1.25) drop-shadow(0 0 8px rgba(56, 189, 248, 0.6)); stroke: #38bdf8; stroke-width: 2px; }
+    .wire-line { stroke-dasharray: 6; animation: dash 25s linear infinite; }
+    @keyframes dash { to { stroke-dashoffset: -1000; } }
+    .tab-btn.active { background-color: #059669; color: #ffffff; border-color: #10b981; }
+    .layer-btn.active { background-color: #0284c7; color: #ffffff; border-color: #38bdf8; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-6 font-sans">
+  <div class="max-w-7xl mx-auto space-y-5">
+    
+    <!-- Encabezado de Ingeniería -->
+    <header class="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-800 pb-4 gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+            JLCPCB SMT OPTIMIZED
+          </span>
+          <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2">
+            CollarNet / CowAI V2 <span class="text-emerald-400 font-light">| Diseño de PCB</span>
+          </h1>
+        </div>
+        <p class="text-sm text-slate-400 mt-1">
+          Comparativa de Optimización Espacial: <strong>Opción 1</strong> (Modular en 2 Diagramas: Externo vs Circuito) vs <strong>Opción 2</strong> (Monolítica Integrada con Portapilas 110.6&times;33.1mm)
+        </p>
+      </div>
+
+      <!-- Barra de Pestañas de Navegación -->
+      <div class="flex flex-wrap gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800 self-start lg:self-auto">
+        <button onclick="setTab('op1_externo')" id="tab-op1_externo" class="tab-btn active px-3.5 py-2 text-xs font-bold rounded-lg border border-transparent transition text-slate-300 hover:text-white">
+          Opción 1: Diagrama Externo
+        </button>
+        <button onclick="setTab('op1_circuito')" id="tab-op1_circuito" class="tab-btn px-3.5 py-2 text-xs font-bold rounded-lg border border-transparent transition text-slate-300 hover:text-white">
+          Opción 1: Circuito PCB
+        </button>
+        <button onclick="setTab('op2_monolitica')" id="tab-op2_monolitica" class="tab-btn px-3.5 py-2 text-xs font-bold rounded-lg border border-transparent transition text-slate-300 hover:text-white">
+          Opción 2: Placa Única + Batería
+        </button>
+        <button onclick="setTab('renders')" id="tab-renders" class="tab-btn px-3.5 py-2 text-xs font-bold rounded-lg border border-transparent transition text-slate-300 hover:text-white">
+          Renders 3D Reales
+        </button>
+        <button onclick="setTab('comparativa')" id="tab-comparativa" class="tab-btn px-3.5 py-2 text-xs font-bold rounded-lg border border-transparent transition text-slate-300 hover:text-white">
+          Tabla de Decisión
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenido Dinámico según Pestaña -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      
+      <!-- Panel de Visualización Principal (8 o 9 columnas) -->
+      <div class="lg:col-span-8 xl:col-span-9 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-2xl relative overflow-hidden">
+        
+        <!-- Barra de Estado / Modo -->
+        <div class="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs text-slate-400 gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="view-title" class="font-mono text-emerald-400 font-bold uppercase tracking-wider">
+              OPCIÓN 1: DIAGRAMA DE COMPONENTES EXTERNOS, PERIFÉRICOS Y ARNÉS DORSAL
+            </span>
+          </div>
+          <span class="text-slate-500 italic">Haz clic en cualquier bloque para inspeccionar pines y especificaciones</span>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VISTA 1: OPCIÓN 1 - DIAGRAMA EXTERNO Y PERIFÉRICOS (SVG) -->
+        <!-- ======================================================== -->
+        <div id="view-op1_externo" class="tab-content block">
+          <svg viewBox="0 0 1100 620" class="w-full h-auto select-none rounded-xl bg-slate-950/60 border border-slate-800/80">
+            <defs>
+              <linearGradient id="solarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1e3a8a"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <linearGradient id="batteryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#047857"/>
+                <stop offset="100%" stop-color="#064e3b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Título Superior -->
+            <text x="550" y="30" text-anchor="middle" font-size="14" class="silk-text" fill="#94a3b8">
+              DIAGRAMA 1A: ARQUITECTURA FÍSICA EXTERNA - COLLAR GANADERO DORSAL ANATÓMICO
+            </text>
+
+            <!-- PANELES SOLARES SUPERIORES (LOMO DEL ANIMAL) -->
+            <!-- Panel Solar Izquierdo -->
+            <g class="component-box" onclick="showComponent('Panel Solar Izquierdo', 'SOLAR_IZQ', 'Paneles Monocristalinos RY9-414', '6.0V / 120mA (55x60mm)', 'Alojado en la cara inclinada de la cápsula izquierda. Recarga la batería durante el pastoreo mediante el controlador MPPT CN3791.')">
+              <rect x="130" y="60" width="180" height="90" rx="8" fill="url(#solarGrad)" stroke="#3b82f6" stroke-width="2" />
+              <line x1="175" y1="60" x2="175" y2="150" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4" />
+              <line x1="220" y1="60" x2="220" y2="150" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4" />
+              <line x1="265" y1="60" x2="265" y2="150" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4" />
+              <line x1="130" y1="105" x2="310" y2="105" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4" />
+              <text x="220" y="95" text-anchor="middle" font-size="11" class="silk-text" fill="#93c5fd">PANEL SOLAR IZQ</text>
+              <text x="220" y="125" text-anchor="middle" font-size="10" class="silk-text" fill="#bfdbfe">6.0V / 120mA</text>
+            </g>
+
+            <!-- Panel Solar Derecho -->
+            <g class="component-box" onclick="showComponent('Panel Solar Derecho', 'SOLAR_DER', 'Paneles Monocristalinos RY9-414', '6.0V / 120mA (55x60mm)', 'Alojado en la cara inclinada de la cápsula derecha. Su energía viaja por el arnés dorsal (hilo 5) hacia el cargador central MPPT en la cápsula izquierda.')">
+              <rect x="790" y="60" width="180" height="90" rx="8" fill="url(#solarGrad)" stroke="#3b82f6" stroke-width="2" />
+              <line x1="835" y1="60" x2="835" y2="150" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4" />
+              <line x1="880" y1="60" x2="880" y2="150" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4" />
+              <line x1="925" y1="60" x2="925" y2="150" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4" />
+              <line x1="790" y1="105" x2="970" y2="105" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.4" />
+              <text x="880" y="95" text-anchor="middle" font-size="11" class="silk-text" fill="#93c5fd">PANEL SOLAR DER</text>
+              <text x="880" y="125" text-anchor="middle" font-size="10" class="silk-text" fill="#bfdbfe">6.0V / 120mA</text>
+            </g>
+
+            <!-- PUENTE DORSAL ANATÓMICO (TPU) Y CANAL PASACABLES -->
+            <path d="M 310 105 C 450 105, 650 105, 790 105" fill="none" stroke="#059669" stroke-width="8" stroke-linecap="round" />
+            <rect x="440" y="80" width="220" height="50" rx="8" fill="#064e3b" stroke="#10b981" stroke-width="1.5" />
+            <text x="550" y="102" text-anchor="middle" font-size="11" class="silk-text" fill="#a7f3d0">PUENTE DORSAL (TPU)</text>
+            <text x="550" y="118" text-anchor="middle" font-size="9" class="silk-text" fill="#6ee7b7">CANAL ESTANCO Ø8.0 mm</text>
+
+            <!-- CÁPSULA IZQUIERDA (CONTENEDOR EXTERNO) -->
+            <rect x="80" y="210" width="340" height="260" rx="14" fill="#0f172a" stroke="#0284c7" stroke-width="2" stroke-dasharray="4" />
+            <text x="250" y="235" text-anchor="middle" font-size="13" class="silk-text" fill="#38bdf8">CÁPSULA IZQUIERDA (LOGIC POD)</text>
+            
+            <!-- PCB Lógica Interior (Esbozo de espacio) -->
+            <rect x="110" y="255" width="280" height="150" rx="8" fill="#14532d" stroke="#22c55e" stroke-width="2" />
+            <text x="250" y="325" text-anchor="middle" font-size="13" class="silk-text" fill="#ffffff">PLACA LÓGICA & RF</text>
+            <text x="250" y="345" text-anchor="middle" font-size="10" class="silk-text" fill="#bbf7d0">DIM: 60.0 &times; 32.0 mm</text>
+
+            <!-- Periféricos Externos Conectados a Cápsula Izquierda -->
+            <!-- Antena GPS Cerámica -->
+            <g class="component-box" onclick="showComponent('Antena GNSS Cerámica', 'ANT_GPS', 'Parche Pasivo 25x25x4mm', '1575.42 MHz (L1 GPS/GLO)', 'Montada en la parte más alta de la tapa mirando directamente al cénit para máxima captura satelital en campo abierto.')">
+              <rect x="30" y="270" width="60" height="60" rx="6" fill="#cbd5e1" stroke="#64748b" stroke-width="2" />
+              <rect x="45" y="285" width="30" height="30" rx="3" fill="#e2e8f0" />
+              <circle cx="60" cy="300" r="4" fill="#0284c7" />
+              <path d="M 90 300 L 110 300" stroke="#0284c7" stroke-width="2.5" />
+              <text x="60" y="348" text-anchor="middle" font-size="9" class="silk-text" fill="#cbd5e1">ANTENA GPS</text>
+            </g>
+
+            <!-- Antena Celular LTE FPC -->
+            <g class="component-box" onclick="showComponent('Antena 4G LTE FPC', 'ANT_LTE', 'FPC Adhesiva Multibanda 110x20mm', '700-2600 MHz (B2/B4/B7/B28)', 'Adherida internamente en la cara lateral plástica sin bloquear la recepción satelital. Conector coaxial IPEX u.FL.')">
+              <rect x="30" y="370" width="60" height="40" rx="4" fill="#b45309" stroke="#d97706" stroke-width="2" />
+              <path d="M 90 390 L 110 390" stroke="#f59e0b" stroke-width="2.5" />
+              <text x="60" y="425" text-anchor="middle" font-size="9" class="silk-text" fill="#fcd34d">ANTENA 4G</text>
+            </g>
+
+            <!-- Puerto USB-C Pasamuros -->
+            <g class="component-box" onclick="showComponent('Puerto USB-C Pasamuros IP67', 'J1', 'Conector Tipo C con Tapón Estanco', 'USB 2.0 Nativo ESP32-S3', 'Permite actualización de firmware y diagnóstico en taller con sello hermético roscado para intemperie.')">
+              <rect x="210" y="445" width="80" height="20" rx="4" fill="#334155" stroke="#94a3b8" stroke-width="1.5" />
+              <text x="250" y="459" text-anchor="middle" font-size="8" class="silk-text" fill="#e2e8f0">PUERTO USB-C</text>
+            </g>
+
+            <!-- CÁPSULA DERECHA (CONTENEDOR EXTERNO) -->
+            <rect x="680" y="210" width="340" height="260" rx="14" fill="#0f172a" stroke="#ea580c" stroke-width="2" stroke-dasharray="4" />
+            <text x="850" y="235" text-anchor="middle" font-size="13" class="silk-text" fill="#fb923c">CÁPSULA DERECHA (POWER POD)</text>
+
+            <!-- Batería Li-Ion 21700 Externa -->
+            <g class="component-box" onclick="showComponent('Celda Li-Ion 21700', 'BAT1', 'Batería Cilíndrica 3.7V / 5000mAh', 'Capacidad 18.5 Wh (Peso 70g)', 'Alojada en la cápsula derecha. Su masa equilibra perfectamente el peso de la placa lógica y antenas de la cápsula izquierda. Autonomía de 3 a 5 semanas sin sol.')">
+              <rect x="700" y="260" width="90" height="150" rx="10" fill="url(#batteryGrad)" stroke="#10b981" stroke-width="2" />
+              <rect x="730" y="250" width="30" height="10" rx="2" fill="#d4af37" />
+              <text x="745" y="325" text-anchor="middle" font-size="11" class="silk-text" fill="#ffffff" transform="rotate(-90 745,325)">CELDA 21700</text>
+              <text x="745" y="355" text-anchor="middle" font-size="9" class="silk-text" fill="#a7f3d0" transform="rotate(-90 745,355)">5000 mAh</text>
+            </g>
+
+            <!-- PCB Potencia Interior -->
+            <rect x="810" y="260" width="180" height="120" rx="8" fill="#14532d" stroke="#22c55e" stroke-width="2" />
+            <text x="900" y="315" text-anchor="middle" font-size="11" class="silk-text" fill="#ffffff">PLACA POTENCIA</text>
+            <text x="900" y="333" text-anchor="middle" font-size="9" class="silk-text" fill="#bbf7d0">& DESCARGA CDI</text>
+            <text x="900" y="353" text-anchor="middle" font-size="8" class="silk-text" fill="#86efac">32.0 &times; 26.0 mm</text>
+
+            <!-- Buzzer Externo -->
+            <g class="component-box" onclick="showComponent('Zumbador Acústico 95dB', 'BZ1', 'Transductor Piezoeléctrico Pasivo', '95 dB SPL @ 10cm (4000 Hz)', 'Salida sonora sellada con membrana semipermeable hacia el canal auditivo del animal. Emite tono preventivo antes del estímulo de choque.')">
+              <circle cx="950" cy="425" r="22" fill="#18181b" stroke="#71717a" stroke-width="2" />
+              <circle cx="950" cy="425" r="7" fill="#09090b" />
+              <text x="950" y="460" text-anchor="middle" font-size="9" class="silk-text" fill="#cbd5e1">BUZZER 95dB</text>
+            </g>
+
+            <!-- 2x Electrodos Inox M4 Inferiores -->
+            <g class="component-box" onclick="showComponent('Electrodos de Choque M4 Inox 316', 'EL1, EL2', 'Pernos Semiesféricos Pulidos Grado Marino', 'Pico 800V-1000V / 0.05J / Watchdog 1s', 'Hacen contacto directo con la piel de la tabla del cuello. Sellados con O-ring de goma EPDM. Inofensivos para el tejido dérmico pero generan el reflejo de retroceso ganadero.')">
+              <rect x="730" y="480" width="16" height="45" rx="3" fill="#94a3b8" stroke="#f1f5f9" stroke-width="1.5" />
+              <circle cx="738" cy="530" r="10" fill="#cbd5e1" stroke="#f8fafc" stroke-width="2" />
+              
+              <rect x="800" y="480" width="16" height="45" rx="3" fill="#94a3b8" stroke="#f1f5f9" stroke-width="1.5" />
+              <circle cx="808" cy="530" r="10" fill="#cbd5e1" stroke="#f8fafc" stroke-width="2" />
+
+              <path d="M 850 380 L 850 490 L 808 490" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="3" />
+              <path d="M 850 490 L 738 490" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="3" />
+              <text x="773" y="555" text-anchor="middle" font-size="10" class="silk-text" fill="#fca5a5">2x ELECTRODOS INOX M4 (AL CUELLO)</text>
+            </g>
+
+            <!-- MAZO DE 5 CONDUCTORES DEL ARNÉS DORSAL INTERCONECTANDO AMBAS CÁPSULAS -->
+            <g>
+              <path d="M 390 280 C 500 280, 600 280, 810 280" fill="none" stroke="#ef4444" stroke-width="3" class="wire-line" />
+              <path d="M 390 300 C 500 300, 600 300, 810 300" fill="none" stroke="#000000" stroke-width="3" />
+              <path d="M 390 320 C 500 320, 600 320, 810 320" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" />
+              <path d="M 390 340 C 500 340, 600 340, 810 340" fill="none" stroke="#eab308" stroke-width="2" stroke-dasharray="4" />
+              <path d="M 390 360 C 500 360, 600 360, 810 360" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4" />
+
+              <rect x="440" y="255" width="220" height="135" rx="8" fill="#0f172a" stroke="#059669" stroke-width="1.5" />
+              <text x="550" y="275" text-anchor="middle" font-size="10" class="silk-text" fill="#34d399">ARNÉS DORSAL (5 HILOS):</text>
+              <text x="455" y="295" font-size="9" class="silk-text" fill="#f87171">[1] VBAT_PWR (3.7V / AWG24)</text>
+              <text x="455" y="315" font-size="9" class="silk-text" fill="#e2e8f0">[2] GND_SYS (0.0V / AWG24)</text>
+              <text x="455" y="335" font-size="9" class="silk-text" fill="#60a5fa">[3] BUZZER_PWM (LEDC / AWG26)</text>
+              <text x="455" y="355" font-size="9" class="silk-text" fill="#fde047">[4] IMPULSE_TRIG (3.3V / AWG26)</text>
+              <text x="455" y="375" font-size="9" class="silk-text" fill="#6ee7b7">[5] SOLAR_DER (6.0V / AWG26)</text>
+            </g>
+
+            <rect x="420" y="420" width="260" height="30" rx="6" fill="#7f1d1d" stroke="#ef4444" stroke-width="1" />
+            <text x="550" y="440" text-anchor="middle" font-size="9" class="silk-text" fill="#fecaca">
+              SEGURIDAD: CERO ALTA TENSIÓN EN EL ARNÉS DORSAL
+            </text>
+          </svg>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VISTA 2: OPCIÓN 1 - CIRCUITO INTERNO PCB DETALLADO (SVG) -->
+        <!-- ======================================================== -->
+        <div id="view-op1_circuito" class="tab-content hidden">
+          <svg viewBox="0 0 1100 620" class="w-full h-auto select-none rounded-xl bg-slate-950/60 border border-slate-800/80">
+            <defs>
+              <linearGradient id="mcuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#334155"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+              <linearGradient id="shieldGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e2e8f0"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#94a3b8"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Título Superior -->
+            <text x="550" y="30" text-anchor="middle" font-size="14" class="silk-text" fill="#94a3b8">
+              DIAGRAMA 1B: DISTRIBUCIÓN ELECTRÓNICA DE COMPONENTES INTERNOS Y CONEXIÓN J5 ↔ J6
+            </text>
+
+            <!-- PLACA 1: LÓGICA Y RF (IZQUIERDA: 60.0 x 32.0 mm) -->
+            <g transform="translate(60, 60)">
+              <rect width="480" height="480" rx="14" fill="#0f381e" stroke="#15803d" stroke-width="3" />
+              <text x="240" y="38" text-anchor="middle" font-size="14" class="silk-text" fill="#f0fdf4">
+                PLACA 1: LÓGICA Y RF (60.0 &times; 32.0 mm)
+              </text>
+
+              <!-- Agujeros M2.5 con pad dorado -->
+              <circle cx="25" cy="25" r="14" class="gold-pad" /><circle cx="25" cy="25" r="8" fill="#020617" />
+              <circle cx="455" cy="25" r="14" class="gold-pad" /><circle cx="455" cy="25" r="8" fill="#020617" />
+              <circle cx="455" cy="455" r="14" class="gold-pad" /><circle cx="455" cy="455" r="8" fill="#020617" />
+              <circle cx="25" cy="455" r="14" class="gold-pad" /><circle cx="25" cy="455" r="8" fill="#020617" />
+
+              <!-- Microcontrolador ESP32-S3 -->
+              <g class="component-box" onclick="showComponent('ESP32-S3-WROOM-1', 'U1', 'Espressif Dual Core LX7 240MHz', '16MB Flash, 8MB PSRAM', 'Ejecuta el motor de geocercas poligonales por ray-casting, máquina de estados, MQTT y gestión de sueño profundo.')">
+                <rect x="40" y="65" width="160" height="225" rx="6" fill="url(#shieldGrad2)" stroke="#475569" stroke-width="1.5" />
+                <rect x="40" y="240" width="160" height="50" rx="2" fill="#451a03" />
+                <text x="120" y="270" text-anchor="middle" font-size="10" class="silk-text" fill="#fde68a">PCB ANT (WIFI/BLE)</text>
+                <text x="120" y="145" text-anchor="middle" font-size="17" font-weight="900" fill="#0f172a">ESP32-S3</text>
+                <text x="120" y="170" text-anchor="middle" font-size="10" fill="#334155">WROOM-1-N16R8</text>
+              </g>
+
+              <!-- Módem SIMCom SIM7670SA -->
+              <g class="component-box" onclick="showComponent('SIM7670SA-MNGV', 'U2', 'Módem 4G LTE Cat-1 + GNSS Integrado', 'Bandas LTE B2/B4/B7/B28', 'Transmite coordenadas de la res cada 120s por MQTT sobre red Digitel y calcula la posición satelital GPS.')">
+                <rect x="230" y="65" width="210" height="205" rx="8" fill="url(#shieldGrad2)" stroke="#475569" stroke-width="1.5" />
+                <text x="335" y="140" text-anchor="middle" font-size="17" font-weight="900" fill="#0f172a">SIM7670SA</text>
+                <text x="335" y="165" text-anchor="middle" font-size="11" fill="#334155">4G LTE & GNSS COMBO</text>
+              </g>
+
+              <!-- Puertos IPEX RF -->
+              <g class="component-box" onclick="showComponent('Conectores Coaxiales IPEX u.FL', 'J3, J4', 'Conectores RF 50R de Ultra Bajo Perfil', 'Impedancia controlada 50Ω', 'J3 conecta la antena activa GPS cerámica superior; J4 conecta la antena 4G LTE flexible adhesiva.')">
+                <circle cx="410" cy="95" r="13" class="gold-pad" /><circle cx="410" cy="95" r="5" fill="#0f172a" />
+                <text x="410" y="120" text-anchor="middle" font-size="8" class="silk-text" fill="#0f172a">GPS</text>
+
+                <circle cx="410" cy="160" r="13" class="gold-pad" /><circle cx="410" cy="160" r="5" fill="#0f172a" />
+                <text x="410" y="185" text-anchor="middle" font-size="8" class="silk-text" fill="#0f172a">LTE</text>
+              </g>
+
+              <!-- Conector USB-C en Borde -->
+              <g class="component-box" onclick="showComponent('Conector USB-C SMD 16P', 'J1', 'Interfaz USB 2.0 Nativa ESP32', 'Conexión Directa D+/D-', 'Programación directa y flasheo de fábrica sin necesidad de integrado adaptador serie CH340.')">
+                <rect x="-6" y="130" width="40" height="85" rx="4" fill="#cbd5e1" stroke="#334155" stroke-width="1.5" />
+                <text x="14" y="175" font-size="8" class="silk-text" fill="#0f172a" transform="rotate(-90 14,175)">USB-C</text>
+              </g>
+
+              <!-- Bloque Inferior: Energía y Sensores -->
+              <!-- MPPT CN3791 -->
+              <g class="component-box" onclick="showComponent('Cargador Solar MPPT CN3791', 'U4', 'Controlador de Carga Li-Ion Pmax 6V', 'Corriente máx 1.2A', 'Rastrea el punto de máxima potencia de los 2 paneles solares monocristalinos y recarga la celda 21700.')">
+                <rect x="40" y="315" width="80" height="60" rx="4" fill="url(#mcuGrad)" stroke="#64748b" stroke-width="1" />
+                <text x="80" y="343" text-anchor="middle" font-size="9" class="silk-text" fill="#f8fafc">CN3791</text>
+                <text x="80" y="362" text-anchor="middle" font-size="8" class="silk-text" fill="#94a3b8">MPPT 6V</text>
+              </g>
+
+              <!-- Buck SY8089 -->
+              <g class="component-box" onclick="showComponent('Regulador Buck SY8089', 'U5', 'Conversor Reductor Síncrono 1.5MHz', '3.3V / 2.0A (Eficiencia >92%)', 'Reduce la tensión de batería (3.4V-4.2V) a 3.3V limpios para el ESP32-S3 y sensores, con inductor blindado 2.2µH.')">
+                <rect x="135" y="315" width="80" height="60" rx="4" fill="url(#mcuGrad)" stroke="#64748b" stroke-width="1" />
+                <text x="175" y="343" text-anchor="middle" font-size="9" class="silk-text" fill="#f8fafc">SY8089</text>
+                <text x="175" y="362" text-anchor="middle" font-size="8" class="silk-text" fill="#94a3b8">3.3V / 2A</text>
+              </g>
+
+              <!-- Acelerómetro SC7A20 -->
+              <g class="component-box" onclick="showComponent('Acelerómetro I2C SC7A20', 'U3', 'Sensor Inercial 3 Ejes Ultra Bajo Consumo', 'Consumo: 6 µA @ 10Hz', 'Detecta si la res está pastando, rumiando o en reposo. Despierta al ESP32 por interrupción hardware.')">
+                <rect x="230" y="315" width="65" height="60" rx="4" fill="url(#mcuGrad)" stroke="#64748b" stroke-width="1" />
+                <text x="262" y="343" text-anchor="middle" font-size="9" class="silk-text" fill="#f8fafc">SC7A20</text>
+                <text x="262" y="362" text-anchor="middle" font-size="7" class="silk-text" fill="#94a3b8">IMU 6µA</text>
+              </g>
+
+              <!-- Tantalio 2x 220uF -->
+              <g class="component-box" onclick="showComponent('Condensadores de Tantalio 2x 220µF', 'C1, C2', 'Filtro Baja ESR Case D', 'Capacidad 440 µF total', 'Absorben los transitorios de 2.0A en ráfagas de transmisión celular 4G sin que caiga la tensión.')">
+                <rect x="315" y="315" width="55" height="35" rx="3" fill="#b45309" stroke="#f59e0b" stroke-width="1" />
+                <rect x="380" y="315" width="55" height="35" rx="3" fill="#b45309" stroke="#f59e0b" stroke-width="1" />
+                <text x="375" y="338" text-anchor="middle" font-size="8" class="silk-text" fill="#ffffff">2x 220µF</text>
+              </g>
+
+              <!-- Conector J5 de Arnés Dorsal (5 Pines) -->
+              <g class="component-box" onclick="showComponent('Conector J5 Arnés Dorsal (Placa Lógica)', 'J5', 'Conector JST 5 Pines (Paso 1.0mm)', 'P1:VBAT, P2:GND, P3:BUZ, P4:IMP, P5:SOL', 'Terminal de salida hacia Placa de Potencia en Cápsula Derecha.')">
+                <rect x="130" y="405" width="220" height="50" rx="5" fill="#1e293b" stroke="#d4af37" stroke-width="2" />
+                <circle cx="155" cy="430" r="7" class="gold-pad" /><circle cx="155" cy="430" r="3" fill="#020617" />
+                <circle cx="192" cy="430" r="7" class="gold-pad" /><circle cx="192" cy="430" r="3" fill="#020617" />
+                <circle cx="230" cy="430" r="7" class="gold-pad" /><circle cx="230" cy="430" r="3" fill="#020617" />
+                <circle cx="268" cy="430" r="7" class="gold-pad" /><circle cx="268" cy="430" r="3" fill="#020617" />
+                <circle cx="305" cy="430" r="7" class="gold-pad" /><circle cx="305" cy="430" r="3" fill="#020617" />
+                <text x="240" y="448" text-anchor="middle" font-size="8" class="silk-text" fill="#fde047">J5: ARNÉS DORSAL 5P</text>
+              </g>
+            </g>
+
+            <!-- PLACA 2: POTENCIA Y DESCARGA (DERECHA: 32.0 x 26.0 mm) -->
+            <g transform="translate(640, 60)">
+              <rect width="400" height="480" rx="14" fill="#0f381e" stroke="#15803d" stroke-width="3" />
+              <text x="200" y="38" text-anchor="middle" font-size="13" class="silk-text" fill="#f0fdf4">
+                PLACA 2: POTENCIA & DESCARGA (32.0 &times; 26.0 mm)
+              </text>
+
+              <circle cx="25" cy="25" r="14" class="gold-pad" /><circle cx="25" cy="25" r="8" fill="#020617" />
+              <circle cx="375" cy="25" r="14" class="gold-pad" /><circle cx="375" cy="25" r="8" fill="#020617" />
+              <circle cx="375" cy="455" r="14" class="gold-pad" /><circle cx="375" cy="455" r="8" fill="#020617" />
+              <circle cx="25" cy="455" r="14" class="gold-pad" /><circle cx="25" cy="455" r="8" fill="#020617" />
+
+              <!-- Buzzer Piezo 95dB -->
+              <g class="component-box" onclick="showComponent('Zumbador Piezoeléctrico 95dB', 'BZ1', 'Transductor Pasivo Ø12.4mm', '4000 Hz / Driver MOSFET AO3400A', 'Emite tonos modulados por PWM de advertencia antes de activar la descarga electrostática.')">
+                <circle cx="290" cy="135" r="60" fill="#18181b" stroke="#52525b" stroke-width="2.5" />
+                <circle cx="290" cy="135" r="16" fill="#09090b" />
+                <text x="290" y="140" text-anchor="middle" font-size="11" class="silk-text" fill="#ffffff">BUZZER</text>
+                <text x="290" y="158" text-anchor="middle" font-size="8" class="silk-text" fill="#a1a1aa">95dB 4kHz</text>
+              </g>
+
+              <!-- BMS 1S (DW01A + FS8205A) -->
+              <g class="component-box" onclick="showComponent('Protección BMS 1S', 'U6, U7', 'DW01A + MOSFET Dual FS8205A', 'Corte sobrecarga 4.28V / sobredescarga 2.4V', 'Protege la celda 21700 contra cortocircuitos y sobretensión con fusible PPTC 3.0A.')">
+                <rect x="40" y="75" width="110" height="55" rx="4" fill="url(#mcuGrad)" stroke="#64748b" stroke-width="1" />
+                <text x="95" y="100" text-anchor="middle" font-size="10" class="silk-text" fill="#f8fafc">BMS 1S</text>
+                <text x="95" y="118" text-anchor="middle" font-size="8" class="silk-text" fill="#94a3b8">DW01A + FS8205</text>
+              </g>
+
+              <!-- Optoacoplador EL817C -->
+              <g class="component-box" onclick="showComponent('Optoacoplador EL817C', 'U8', 'Fototransistor con Aislamiento 5kV', 'Barrera Galvánica Lógica vs HV', 'Garantiza que la alta tensión jamás llegue al microcontrolador ESP32 ni a las líneas de radiofrecuencia.')">
+                <rect x="40" y="150" width="85" height="50" rx="4" fill="url(#mcuGrad)" stroke="#64748b" stroke-width="1" />
+                <text x="82" y="177" text-anchor="middle" font-size="10" class="silk-text" fill="#f8fafc">EL817C</text>
+                <text x="82" y="193" text-anchor="middle" font-size="8" class="silk-text" fill="#38bdf8">OPTO 5kV</text>
+              </g>
+
+              <!-- Watchdog 74LVC1G123 -->
+              <g class="component-box" onclick="showComponent('Watchdog Monoestable Hardware', 'U9', 'Temporizador 74LVC1G123', 'Corte Irrevocable a 1000 ms', 'Seguro por hardware: desactiva el pulso si la señal IMPULSE_TRIG queda pegada en alto por fallo de firmware.')">
+                <rect x="145" y="150" width="85" height="50" rx="4" fill="url(#mcuGrad)" stroke="#ef4444" stroke-width="1" />
+                <text x="187" y="177" text-anchor="middle" font-size="9" class="silk-text" fill="#fca5a5">WATCHDOG</text>
+                <text x="187" y="193" text-anchor="middle" font-size="8" class="silk-text" fill="#f87171">1.0 SEG MÁX</text>
+              </g>
+
+              <!-- Mini Bobina Elevadora Flyback -->
+              <g class="component-box" onclick="showComponent('Bobina Elevadora Flyback', 'TX1', 'Transformador de Ferrita Miniatura', '3.7V a 800V-1000V DC', 'Carga el condensador de pulso de descarga con oscilación controlada de alta frecuencia.')">
+                <rect x="40" y="225" width="105" height="75" rx="6" fill="#78350f" stroke="#d97706" stroke-width="2" />
+                <text x="92" y="260" text-anchor="middle" font-size="11" class="silk-text" fill="#fef3c7">BOBINA HV</text>
+                <text x="92" y="280" text-anchor="middle" font-size="8" class="silk-text" fill="#fde68a">1000V PULSE</text>
+              </g>
+
+              <!-- Condensador CDI CBB21 1000V -->
+              <g class="component-box" onclick="showComponent('Condensador CDI 0.1µF 1000V', 'C7', 'Polipropileno Metalizado CBB21', 'Energía E = 0.05 Joules', 'Almacena la energía del pulso disuasorio. Su valor de 0.05J es inofensivo para el corazón de la res.')">
+                <rect x="165" y="225" width="95" height="45" rx="4" fill="#b91c1c" stroke="#f87171" stroke-width="1.5" />
+                <text x="212" y="252" text-anchor="middle" font-size="10" class="silk-text" fill="#ffffff">0.1µF 1kV</text>
+              </g>
+
+              <!-- Tiristor SCR TYN1225RG / MCR100 -->
+              <g class="component-box" onclick="showComponent('Tiristor SCR TYN1225RG', 'TH1', 'Conmutador de Pulso de Descarga (1200V / 25A)', 'Disparo Instantáneo CDI', 'Dispara la descarga del condensador instantáneamente hacia la resistencia limitadora de 220Ω.')">
+                <rect x="165" y="280" width="95" height="35" rx="4" fill="url(#mcuGrad)" stroke="#64748b" stroke-width="1" />
+                <text x="212" y="302" text-anchor="middle" font-size="9" class="silk-text" fill="#f8fafc">SCR TYN1225</text>
+              </g>
+
+              <!-- Terminales de Conexión a Electrodos M4 -->
+              <g class="component-box" onclick="showComponent('Bornes de Electrodos Inox M4', 'TB_HV', 'Pads Reforzados para Tornillos M4', 'Salida de Estímulo Eléctrico', 'Pads de cobre de 6.0mm con orificio M4 y vías térmicas para atornillar los electrodos directamente.')">
+                <rect x="40" y="335" width="320" height="65" rx="6" fill="#1e293b" stroke="#ef4444" stroke-width="2" />
+                <circle cx="110" cy="367" r="15" class="gold-pad" /><circle cx="110" cy="367" r="6" fill="#020617" />
+                <circle cx="270" cy="367" r="15" class="gold-pad" /><circle cx="270" cy="367" r="6" fill="#020617" />
+                <text x="190" y="388" text-anchor="middle" font-size="8" class="silk-text" fill="#fca5a5">BORNES ELECTRODOS M4 (HV_OUT / HV_GND)</text>
+              </g>
+
+              <!-- CONECTOR J6 DE ARNÉS DORSAL EN PLACA POTENCIA (5 PINES) -->
+              <g class="component-box" onclick="showComponent('Conector J6 Arnés Dorsal (Placa Potencia)', 'J6', 'Conector JST 5 Pines (Paso 1.0mm)', 'P1:VBAT, P2:GND, P3:BUZ, P4:IMP, P5:SOL', 'Terminal de entrada que recibe el arnés dorsal proveniente de Placa Lógica J5.')">
+                <rect x="90" y="415" width="220" height="48" rx="5" fill="#1e293b" stroke="#d4af37" stroke-width="2" />
+                <circle cx="115" cy="439" r="7" class="gold-pad" /><circle cx="115" cy="439" r="3" fill="#020617" />
+                <circle cx="152" cy="439" r="7" class="gold-pad" /><circle cx="152" cy="439" r="3" fill="#020617" />
+                <circle cx="190" cy="439" r="7" class="gold-pad" /><circle cx="190" cy="439" r="3" fill="#020617" />
+                <circle cx="228" cy="439" r="7" class="gold-pad" /><circle cx="228" cy="439" r="3" fill="#020617" />
+                <circle cx="265" cy="439" r="7" class="gold-pad" /><circle cx="265" cy="439" r="3" fill="#020617" />
+                <text x="195" y="456" text-anchor="middle" font-size="8" class="silk-text" fill="#fde047">J6: ARNÉS DORSAL 5P</text>
+              </g>
+            </g>
+
+            <!-- LÍNEAS DE INTERCONEXIÓN J5 (IZQ) ↔ J6 (DER) -->
+            <path d="M 410 490 C 530 490, 610 500, 730 500" fill="none" stroke="#fde047" stroke-width="2.5" stroke-dasharray="4" class="wire-line" />
+            <text x="570" y="482" text-anchor="middle" font-size="9" class="silk-text" fill="#fef08a">INTERCONEXIÓN J5 ↔ J6 (5 HILOS)</text>
+          </svg>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VISTA 3: OPCIÓN 2 - PLACA ÚNICA MONOLÍTICA INTEGRADA (SVG) -->
+        <!-- ======================================================== -->
+        <div id="view-op2_monolitica" class="tab-content hidden">
+          <!-- Selector de Cara TOP vs BOTTOM -->
+          <div class="flex items-center justify-between mb-3 bg-slate-950/80 p-2 rounded-xl border border-slate-800">
+            <span class="text-xs font-mono text-slate-300 font-bold ml-2">DIMENSIONES NORMALIZADAS: 110.6 &times; 33.1 mm (Compatible caja_lilygo_t7670x.scad)</span>
+            <div class="flex gap-2">
+              <button onclick="setOp2Layer('top')" id="btn-layer-top" class="layer-btn active px-3 py-1 text-xs font-bold rounded-lg border border-transparent transition">
+                Cara Superior (TOP)
+              </button>
+              <button onclick="setOp2Layer('bottom')" id="btn-layer-bottom" class="layer-btn px-3 py-1 text-xs font-bold rounded-lg border border-transparent transition text-slate-300 hover:text-white">
+                Cara Inferior (BOTTOM · Portapilas)
+              </button>
+            </div>
+          </div>
+
+          <!-- CARA SUPERIOR (TOP) -->
+          <div id="op2-layer-top" class="block">
+            <svg viewBox="0 0 1100 480" class="w-full h-auto select-none rounded-xl bg-slate-950/60 border border-slate-800/80">
+              <!-- CONTORNO DE LA PLACA ÚNICA (110.6 x 33.1 mm escalada) -->
+              <g transform="translate(30, 40)">
+                <rect width="1040" height="360" rx="20" fill="#0a2a16" stroke="#16a34a" stroke-width="3" />
+                
+                <!-- Agujeros de fijación M2.5 coincidentes exactamente con postes 3D (dx=27.75, dy=105.55) -->
+                <circle cx="28" cy="28" r="16" class="gold-pad" /><circle cx="28" cy="28" r="9" fill="#020617" />
+                <circle cx="1012" cy="28" r="16" class="gold-pad" /><circle cx="1012" cy="28" r="9" fill="#020617" />
+                <circle cx="1012" cy="332" r="16" class="gold-pad" /><circle cx="1012" cy="332" r="9" fill="#020617" />
+                <circle cx="28" cy="332" r="16" class="gold-pad" /><circle cx="28" cy="332" r="9" fill="#020617" />
+
+                <!-- RANURA DE AISLAMIENTO FRESADA PASANTE (ISOLATION MILLING SLOT) -->
+                <g class="component-box" onclick="showComponent('Ranura de Aislamiento Fresada (Creepage Slot)', 'SLOT_2MM', 'Fresado Pasante 2.0 x 24.0 mm en PCB', 'Rigidez Dieléctrica por Aire: 3 kV/mm', 'Elimina el sustrato FR4 entre el lado de 3.3V y el lado de 1000V. Impide arcos voltaicos y fugas según norma IEC 60664-1.')">
+                  <rect x="760" y="25" width="22" height="310" rx="10" fill="#020617" stroke="#ef4444" stroke-width="2" stroke-dasharray="3" />
+                  <text x="771" y="180" text-anchor="middle" font-size="10" class="silk-text" fill="#ef4444" transform="rotate(-90 771,180)">
+                    RANURA FRESADA 2.0 mm (CREEPAGE > 8mm · IEC 60664-1)
+                  </text>
+                </g>
+
+                <!-- Conector USB-C en borde -->
+                <g class="component-box" onclick="showComponent('Conector USB-C Estanco', 'J1', 'USB 2.0 Nativo en Borde de Placa', 'D+/D- con Diodos TVS ESD', 'Puerto de carga rápida de taller y flasheo de firmware sin adaptadores serie.')">
+                  <rect x="-8" y="130" width="38" height="100" rx="4" fill="#cbd5e1" stroke="#475569" stroke-width="2" />
+                  <text x="12" y="180" font-size="9" class="silk-text" fill="#0f172a" transform="rotate(-90 12,180)">USB-C</text>
+                </g>
+
+                <!-- ESP32-S3 -->
+                <g class="component-box" onclick="showComponent('ESP32-S3-WROOM-1', 'U1', 'Procesador Principal 240MHz', '16MB Flash, 8MB PSRAM', 'Controla la telemetría, el algoritmo de cerca virtual y el disparo del watchdog.')">
+                  <rect x="60" y="55" width="165" height="210" rx="5" fill="#e2e8f0" stroke="#475569" stroke-width="1.5" />
+                  <rect x="60" y="220" width="165" height="45" rx="2" fill="#451a03" />
+                  <text x="142" y="248" text-anchor="middle" font-size="10" class="silk-text" fill="#fde68a">PCB ANT (WIFI/BLE)</text>
+                  <text x="142" y="135" text-anchor="middle" font-size="18" font-weight="900" fill="#0f172a">ESP32-S3</text>
+                  <text x="142" y="160" text-anchor="middle" font-size="11" fill="#334155">Dual-Core 240MHz</text>
+                </g>
+
+                <!-- SIM7670SA Módem 4G LTE + GPS -->
+                <g class="component-box" onclick="showComponent('SIM7670SA-MNGV Combo', 'U2', '4G LTE Cat-1 + Receptor Satelital GNSS', 'Módulo LCC/LGA 24x24mm', 'Transmite posición por MQTT y lee satélites GPS/GLONASS/Galileo.')">
+                  <rect x="250" y="55" width="180" height="180" rx="6" fill="#cbd5e1" stroke="#475569" stroke-width="1.5" />
+                  <text x="340" y="125" text-anchor="middle" font-size="16" font-weight="900" fill="#0f172a">SIM7670SA</text>
+                  <text x="340" y="150" text-anchor="middle" font-size="11" fill="#334155">4G LTE & GNSS</text>
+                  
+                  <circle cx="395" cy="85" r="11" class="gold-pad" /><circle cx="395" cy="85" r="5" fill="#0f172a" />
+                  <text x="395" y="108" text-anchor="middle" font-size="8" class="silk-text" fill="#0f172a">GPS</text>
+                  <circle cx="395" cy="150" r="11" class="gold-pad" /><circle cx="395" cy="150" r="5" fill="#0f172a" />
+                  <text x="395" y="173" text-anchor="middle" font-size="8" class="silk-text" fill="#0f172a">LTE</text>
+                </g>
+
+                <!-- SC7A20 IMU -->
+                <g class="component-box" onclick="showComponent('Acelerómetro I2C SC7A20', 'U3', 'Sensor Inercial 3 Ejes 6µA', 'Encapsulado LGA-16', 'Detecta patrones de movimiento ganadero y ahorra energía en reposo.')">
+                  <rect x="60" y="280" width="60" height="55" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1" />
+                  <text x="90" y="312" text-anchor="middle" font-size="10" class="silk-text" fill="#f8fafc">SC7A20</text>
+                </g>
+
+                <!-- Buck SY8089 -->
+                <g class="component-box" onclick="showComponent('Regulador Buck SY8089', 'U5', 'Reductor Síncrono 3.3V 2A', 'Inductor SMD Blindado 2.2µH', 'Alimentación principal ultraeficiente del sistema.')">
+                  <rect x="135" y="280" width="90" height="55" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1" />
+                  <text x="180" y="312" text-anchor="middle" font-size="10" class="silk-text" fill="#f8fafc">SY8089 3V3</text>
+                </g>
+
+                <!-- MPPT Solar CN3791 -->
+                <g class="component-box" onclick="showComponent('Cargador Solar MPPT CN3791', 'U4', 'Controlador de Carga Li-Ion 6V', 'Corriente 1.2A con Diodos SS34', 'Recarga continua con los paneles solares monocristalinos.')">
+                  <rect x="250" y="255" width="100" height="80" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1" />
+                  <text x="300" y="290" text-anchor="middle" font-size="10" class="silk-text" fill="#f8fafc">CN3791</text>
+                  <text x="300" y="312" text-anchor="middle" font-size="9" class="silk-text" fill="#38bdf8">MPPT SOLAR</text>
+                </g>
+
+                <!-- Buzzer Piezo 95dB -->
+                <g class="component-box" onclick="showComponent('Buzzer Piezo 95dB Integrado', 'BZ1', 'Transductor Pasivo Ø12.4mm', 'Driver MOSFET AO3400A', 'Soldado directamente a la placa. Emite tonos de advertencia acústica.')">
+                  <circle cx="395" cy="295" r="35" fill="#18181b" stroke="#71717a" stroke-width="2" />
+                  <circle cx="395" cy="295" r="10" fill="#09090b" />
+                  <text x="395" y="300" text-anchor="middle" font-size="9" class="silk-text" fill="#ffffff">BUZZER</text>
+                </g>
+
+                <!-- Optoacoplador cruzando la ranura de aislamiento -->
+                <g class="component-box" onclick="showComponent('Optoacoplador EL817C en Ranura', 'U8', 'Aislamiento Óptico 5000 V RMS', 'Cruza la frontera de aislamiento', 'Pines 1 y 2 en lado 3.3V lógico; pines 3 y 4 en lado 1000V de choque.')">
+                  <rect x="745" y="150" width="55" height="55" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+                  <text x="772" y="180" text-anchor="middle" font-size="9" class="silk-text" fill="#38bdf8">OPTO</text>
+                  <text x="772" y="195" text-anchor="middle" font-size="8" class="silk-text" fill="#94a3b8">5kV</text>
+                </g>
+
+                <!-- SECTOR HV -->
+                <!-- Watchdog 74LVC1G123 -->
+                <g class="component-box" onclick="showComponent('Temporizador Watchdog 1000ms', 'U9', 'Temporizador Monoestable por Hardware', 'Límite Infranqueable de 1 Segundo', 'Desconecta el transformador elevador tras 1 segundo para evitar daño al animal.')">
+                  <rect x="805" y="55" width="85" height="55" rx="4" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" />
+                  <text x="847" y="82" text-anchor="middle" font-size="9" class="silk-text" fill="#fca5a5">WATCHDOG</text>
+                  <text x="847" y="100" text-anchor="middle" font-size="8" class="silk-text" fill="#f87171">1000 ms</text>
+                </g>
+
+                <!-- Bobina Flyback HV -->
+                <g class="component-box" onclick="showComponent('Transformador Flyback HV', 'TX1', 'Bobina Elevadora Potted', '3.7V a 1000V DC', 'Genera la alta tensión electrostática del pulso CDI.')">
+                  <rect x="805" y="125" width="95" height="85" rx="6" fill="#78350f" stroke="#d97706" stroke-width="1.5" />
+                  <text x="852" y="165" text-anchor="middle" font-size="11" class="silk-text" fill="#fef3c7">FLYBACK</text>
+                  <text x="852" y="185" text-anchor="middle" font-size="9" class="silk-text" fill="#fde68a">1000V DC</text>
+                </g>
+
+                <!-- Condensador CDI CBB21 0.1uF 1000V -->
+                <g class="component-box" onclick="showComponent('Condensador CDI 0.1µF 1000V', 'C7', 'Condensador de Pulso CBB21', '0.05 Joules Almacenados', 'Almacena la energía del pulso disuasorio inofensivo.')">
+                  <rect x="805" y="225" width="95" height="45" rx="4" fill="#b91c1c" stroke="#f87171" stroke-width="1.5" />
+                  <text x="852" y="252" text-anchor="middle" font-size="10" class="silk-text" fill="#ffffff">0.1µF 1kV</text>
+                </g>
+
+                <!-- Tiristor SCR + Resistencia Limitadora 220R -->
+                <g class="component-box" onclick="showComponent('SCR TYN1225RG + R 220Ω', 'TH1, R_LIM', 'Disparo y Limitación de Corriente', 'Anti-quemaduras de piel', 'El tiristor conmuta el pulso a través de 220Ω / 2W.')">
+                  <rect x="805" y="285" width="95" height="40" rx="3" fill="#1e293b" stroke="#64748b" stroke-width="1" />
+                  <text x="852" y="310" text-anchor="middle" font-size="9" class="silk-text" fill="#f8fafc">SCR + 220Ω 2W</text>
+                </g>
+
+                <!-- Bornes M4 -->
+                <g class="component-box" onclick="showComponent('Bornes de Electrodos Inox M4', 'EL1, EL2', 'Pads Reforzados para Pernos M4', 'Salida Directa sin Cables', 'Los electrodos de acero inoxidable se atornillan directamente a la placa.')">
+                  <rect x="920" y="65" width="70" height="230" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="2" />
+                  <circle cx="955" cy="120" r="17" class="gold-pad" /><circle cx="955" cy="120" r="8" fill="#020617" />
+                  <text x="955" y="152" text-anchor="middle" font-size="9" class="silk-text" fill="#fca5a5">ELECTRODO 1</text>
+                  
+                  <circle cx="955" cy="230" r="17" class="gold-pad" /><circle cx="955" cy="230" r="8" fill="#020617" />
+                  <text x="955" y="262" text-anchor="middle" font-size="9" class="silk-text" fill="#fca5a5">ELECTRODO 2</text>
+                </g>
+
+                <text x="80" y="348" class="silk-text" font-size="11" fill="#4ade80">COWAI ALL-IN-ONE V2 (CARA SUPERIOR)</text>
+                <text x="500" y="348" class="silk-text" font-size="9" fill="#94a3b8">DIMENSIONES: 110.6 &times; 33.1 mm | 4 CAPAS FR4</text>
+              </g>
+            </svg>
+          </div>
+
+          <!-- CARA INFERIOR (BOTTOM) -->
+          <div id="op2-layer-bottom" class="hidden">
+            <svg viewBox="0 0 1100 480" class="w-full h-auto select-none rounded-xl bg-slate-950/60 border border-slate-800/80">
+              <defs>
+                <linearGradient id="holderGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#27272a"/>
+                  <stop offset="50%" stop-color="#18181b"/>
+                  <stop offset="100%" stop-color="#09090b"/>
+                </linearGradient>
+              </defs>
+              <g transform="translate(30, 40)">
+                <rect width="1040" height="360" rx="20" fill="#0a2a16" stroke="#16a34a" stroke-width="3" />
+                
+                <circle cx="28" cy="28" r="16" class="gold-pad" /><circle cx="28" cy="28" r="9" fill="#020617" />
+                <circle cx="1012" cy="28" r="16" class="gold-pad" /><circle cx="1012" cy="28" r="9" fill="#020617" />
+                <circle cx="1012" cy="332" r="16" class="gold-pad" /><circle cx="1012" cy="332" r="9" fill="#020617" />
+                <circle cx="28" cy="332" r="16" class="gold-pad" /><circle cx="28" cy="332" r="9" fill="#020617" />
+
+                <!-- Slot de aislamiento visto en reverso -->
+                <rect x="760" y="25" width="22" height="310" rx="10" fill="#020617" stroke="#ef4444" stroke-width="2" stroke-dasharray="3" />
+
+                <!-- PORTAPILAS INTEGRADO 18650 / 21700 EN BOTTOM LAYER (76mm longitud) -->
+                <g class="component-box" onclick="showComponent('Portapilas Cilíndrico Soldado en Cara Inferior', 'HOLDER_18650_21700', 'Clips de Bronce Fosforado Keystone 1042/1048', 'Acepta celda 18650 (65mm) o 21700 (70mm)', 'SOPORTE INTEGRADO EN CARA INFERIOR. Se suspende dentro de la cavidad de 24.5 mm de altura provista por los postes de caja_lilygo_t7670x.scad. Cero cables.')">
+                  <!-- Cuerpo del soporte plástico / cuna -->
+                  <rect x="180" y="70" width="540" height="220" rx="14" fill="url(#holderGrad2)" stroke="#52525b" stroke-width="2.5" />
+                  
+                  <!-- Celda Li-Ion Cilíndrica Verde -->
+                  <rect x="230" y="100" width="440" height="160" rx="12" fill="#047857" stroke="#10b981" stroke-width="2" />
+                  <!-- Bornes Keystone -->
+                  <rect x="195" y="140" width="25" height="80" rx="4" fill="#d4af37" />
+                  <rect x="680" y="150" width="20" height="60" rx="4" fill="#d4af37" />
+                  
+                  <text x="450" y="170" text-anchor="middle" font-size="20" font-weight="900" class="silk-text" fill="#ffffff">
+                    CELDA LI-ION 3.7V (18650 / 21700)
+                  </text>
+                  <text x="450" y="200" text-anchor="middle" font-size="13" class="silk-text" fill="#a7f3d0">
+                    PORTAPILAS SOLDADO DIRECTO EN CARA INFERIOR (CAVIDAD 24.5 mm)
+                  </text>
+                </g>
+
+                <!-- Porta Nano-SIM Push-Pull en reverso -->
+                <g class="component-box" onclick="showComponent('Porta Nano-SIM Push-Pull (Reverso)', 'J2', 'Ranura SIM Ultra Bajo Perfil (1.3 mm)', 'Lado Inferior PCB', 'Permite insertar la SIM Digitel desde el compartimento inferior de batería.')">
+                  <rect x="50" y="80" width="100" height="110" rx="6" fill="#334155" stroke="#94a3b8" stroke-width="2" />
+                  <text x="100" y="135" text-anchor="middle" font-size="10" class="silk-text" fill="#ffffff">NANO-SIM</text>
+                  <text x="100" y="155" text-anchor="middle" font-size="8" class="silk-text" fill="#94a3b8">PUSH-PULL</text>
+                </g>
+
+                <!-- Conector JST Entrada Solar -->
+                <g class="component-box" onclick="showComponent('Conector Solar JST-PH 2P', 'J_SOLAR', 'Terminal de Entrada de Paneles Solares', '2 Pines (5.5V-6.5V DC)', 'Conexión directa para el cable de los paneles fotovoltaicos.')">
+                  <rect x="50" y="220" width="100" height="70" rx="5" fill="#334155" stroke="#94a3b8" stroke-width="1.5" />
+                  <circle cx="80" cy="255" r="8" class="gold-pad" />
+                  <circle cx="120" cy="255" r="8" class="gold-pad" />
+                  <text x="100" y="280" text-anchor="middle" font-size="9" class="silk-text" fill="#f8fafc">JST SOLAR</text>
+                </g>
+
+                <!-- Electrodos Inox M4 que asoman hacia abajo -->
+                <g class="component-box" onclick="showComponent('Pads Soldados Electrodos M4', 'EL1, EL2', 'Pernos Semiesféricos Inox 316', 'Salida Directa Hacia Piel', 'Tuercas y pernos M4 sellados con junta tórica EPDM en el fondo de la caja.')">
+                  <rect x="920" y="65" width="70" height="230" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="2" />
+                  <circle cx="955" cy="120" r="17" class="gold-pad" /><circle cx="955" cy="120" r="8" fill="#cbd5e1" />
+                  <circle cx="955" cy="230" r="17" class="gold-pad" /><circle cx="955" cy="230" r="8" fill="#cbd5e1" />
+                  <text x="955" y="152" text-anchor="middle" font-size="9" class="silk-text" fill="#fca5a5">M4 INOX 1</text>
+                  <text x="955" y="262" text-anchor="middle" font-size="9" class="silk-text" fill="#fca5a5">M4 INOX 2</text>
+                </g>
+
+                <text x="80" y="348" class="silk-text" font-size="11" fill="#38bdf8">COWAI ALL-IN-ONE V2 (CARA INFERIOR · REVERSO)</text>
+                <text x="500" y="348" class="silk-text" font-size="9" fill="#94a3b8">BATERÍA SUSPENDIDA EN CAVIDAD DE 24.5mm DE SEPARADORES 3D</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VISTA 4: RENDERS 3D FOTORREALISTAS Y CAD OPENSCAD         -->
+        <!-- ======================================================== -->
+        <div id="view-renders" class="tab-content hidden">
+          <div class="space-y-6">
+            
+            <!-- Renders CAD OpenSCAD Generados del Código -->
+            <div>
+              <h4 class="text-xs font-bold text-sky-400 font-mono uppercase tracking-wider mb-3">
+                1. Renders Técnicos CAD OpenSCAD (Generados Directamente desde modelo_pcb_3d.scad)
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                  <span class="text-[11px] font-bold text-slate-300 block font-mono">Opción 1: Modular (Lógica + Potencia)</span>
+                  <div class="overflow-hidden rounded-lg border border-slate-800 bg-black">
+                    <img src="render_cad_opcion1_modular.png" alt="Render CAD Opción 1" class="w-full h-auto object-cover hover:scale-105 transition duration-300" />
+                  </div>
+                  <p class="text-[11px] text-slate-400">Placas separadas de 60&times;32 mm y 32&times;26 mm con conectores J5 y J6.</p>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                  <span class="text-[11px] font-bold text-slate-300 block font-mono">Opción 2: Monolítica All-In-One</span>
+                  <div class="overflow-hidden rounded-lg border border-slate-800 bg-black">
+                    <img src="render_cad_opcion2_monolitica.png" alt="Render CAD Opción 2" class="w-full h-auto object-cover hover:scale-105 transition duration-300" />
+                  </div>
+                  <p class="text-[11px] text-slate-400">Placa única de 110.6&times;33.1 mm con celda 18650 integrada y ranura de 2mm.</p>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                  <span class="text-[11px] font-bold text-slate-300 block font-mono">Comparativa de Tamaño Directa</span>
+                  <div class="overflow-hidden rounded-lg border border-slate-800 bg-black">
+                    <img src="render_cad_comparativa_ambas.png" alt="Render Comparativa" class="w-full h-auto object-cover hover:scale-105 transition duration-300" />
+                  </div>
+                  <p class="text-[11px] text-slate-400">Escala 1:1 lado a lado demostrando la compacidad de ambas arquitecturas.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Renders Fotorrealistas de Laboratorio -->
+            <div>
+              <h4 class="text-xs font-bold text-emerald-400 font-mono uppercase tracking-wider mb-3">
+                2. Renders Fotorrealistas de Integración Física
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-emerald-400 font-mono">OPCIÓN 1: ARQUITECTURA MODULAR (2 BOARDS)</span>
+                    <span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300">Halter V2 Style</span>
+                  </div>
+                  <div class="overflow-hidden rounded-lg border border-slate-800 bg-black">
+                    <img src="render_pcb_opcion1_modular.jpg" alt="Render Opción 1 Modular" class="w-full h-auto object-cover hover:scale-105 transition duration-300" />
+                  </div>
+                  <p class="text-xs text-slate-400">
+                    Se observa a la izquierda la <strong>Placa Lógica y RF (60&times;32mm)</strong> con ESP32-S3 y SIM7670, y a la derecha la <strong>Placa de Potencia (32&times;26mm)</strong> con el buzzer y circuito CDI. En el centro, el arnés dorsal flexible de 5 conductores de baja tensión y los componentes externos (paneles solares, celda 21700 y electrodos de cuello).
+                  </p>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-emerald-400 font-mono">OPCIÓN 2: PLACA ÚNICA MONOLÍTICA INTEGRADA</span>
+                    <span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300">All-in-One IP67</span>
+                  </div>
+                  <div class="overflow-hidden rounded-lg border border-slate-800 bg-black">
+                    <img src="render_pcb_opcion2_monolitica.jpg" alt="Render Opción 2 Monolítica" class="w-full h-auto object-cover hover:scale-105 transition duration-300" />
+                  </div>
+                  <p class="text-xs text-slate-400">
+                    Se observa la placa continua de <strong>110.6&times;33.1mm</strong> con el <strong>portapilas cilíndrico para batería 18650 / 21700 soldado en la cara inferior</strong>. A la izquierda la zona de cómputo y módem 4G/GPS, y a la derecha el circuito de alta tensión disuasorio aislado por la ranura de fresado de 2.0 mm con los bornes de electrodos de acero inoxidable.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- VISTA 5: TABLA COMPARATIVA DE DECISIÓN DE INGENIERÍA     -->
+        <!-- ======================================================== -->
+        <div id="view-comparativa" class="tab-content hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-800/80 text-slate-200 border-b border-slate-700">
+                  <th class="p-3 font-bold">Criterio de Evaluación</th>
+                  <th class="p-3 font-bold text-sky-400">Opción 1: Modular (2 Placas + Arnés)</th>
+                  <th class="p-3 font-bold text-emerald-400">Opción 2: Monolítica All-In-One (Con Portapilas)</th>
+                  <th class="p-3 font-bold text-amber-400">Veredicto de Ingeniería</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 text-slate-300">
+                <tr>
+                  <td class="p-3 font-semibold text-white">Superficie Total de PCB</td>
+                  <td class="p-3">27.5 cm² (Lógica: 19.2 cm² + Potencia: 8.3 cm²)</td>
+                  <td class="p-3">36.6 cm² (Placa única: 11.06 &times; 3.31 cm)</td>
+                  <td class="p-3 font-bold text-sky-400">Gana Opción 1 (25% menos cobre)</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">Integración de la Batería</td>
+                  <td class="p-3">Batería externa 21700 en su propia cuna con cable JST</td>
+                  <td class="p-3">Base/clips portapilas soldados directamente a la PCB</td>
+                  <td class="p-3 font-bold text-emerald-400">Gana Opción 2 (Cero cables sueltos)</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">Cableado y Soldadura Manual</td>
+                  <td class="p-3">Requiere soldar 5 hilos del arnés dorsal en taller (J5 ↔ J6)</td>
+                  <td class="p-3 font-bold text-emerald-300">CERO cables internos entre placas</td>
+                  <td class="p-3 font-bold text-emerald-400">Gana Opción 2 (Ahorra 15 min de taller)</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">Riesgo Mecánico en Campo</td>
+                  <td class="p-3">Riesgo de fatiga o corte del arnés dorsal en matorrales</td>
+                  <td class="p-3">Todo el circuito está dentro de una sola carcasa rígida</td>
+                  <td class="p-3 font-bold text-emerald-400">Gana Opción 2 (Mayor vida útil)</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">Aislamiento de Choque (1000V)</td>
+                  <td class="p-3 font-bold text-sky-300">Aislamiento Físico Total (15 cm de separación en aire)</td>
+                  <td class="p-3">Aislamiento por Ranura Fresada de 2.0 mm + Optoacoplador 5kV</td>
+                  <td class="p-3 font-bold text-sky-400">Gana Opción 1 (Cero ruido EMC en GPS)</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">Balance de Peso en el Animal</td>
+                  <td class="p-3 font-bold text-sky-300">Simétrico: Batería a la derecha equilibra RF a la izquierda</td>
+                  <td class="p-3">Todo el peso (135g) en un solo punto ventral o dorsal</td>
+                  <td class="p-3 font-bold text-sky-400">Gana Opción 1 (No gira en el cuello)</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">Costo de Fabricación SMT (JLCPCB)</td>
+                  <td class="p-3">Requiere 2 montajes SMT distintos (o panelizado)</td>
+                  <td class="p-3 font-bold text-emerald-300">1 sola orden SMT: los robots montan todo de una vez</td>
+                  <td class="p-3 font-bold text-emerald-400">Gana Opción 2 (~$3.50 USD menos por unidad)</td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-semibold text-white">Carcasa 3D Compatible</td>
+                  <td class="p-3">`diseno_halter_v2`: Puente dorsal + 2 cápsulas</td>
+                  <td class="p-3">`caja_3d/caja_lilygo_t7670x.scad`: Caja unificada IP67</td>
+                  <td class="p-3 font-bold text-slate-300">Ambas tienen su modelo 3D listo en el repo</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Panel Lateral Inspector de Componentes (4 o 3 columnas) -->
+      <div class="lg:col-span-4 xl:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col justify-between">
+        <div class="space-y-4">
+          <div class="border-b border-slate-800 pb-3">
+            <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block font-mono">INSPECTOR TÉCNICO</span>
+            <h3 id="panel-name" class="text-lg font-bold text-white mt-1">Selecciona un Componente</h3>
+            <span id="panel-ref" class="inline-block mt-1 text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              CLICK EN EL DIAGRAMA
+            </span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <span class="text-slate-500 uppercase font-semibold text-[10px] block">Modelo / Part Number:</span>
+              <p id="panel-model" class="text-slate-200 font-mono mt-0.5">ESP32-S3 / SIM7670 / CN3791 / SY8089</p>
+            </div>
+
+            <div>
+              <span class="text-slate-500 uppercase font-semibold text-[10px] block">Especificación Eléctrica:</span>
+              <p id="panel-specs" class="text-emerald-400 font-mono mt-0.5 font-bold">Ver parámetros en tiempo real</p>
+            </div>
+
+            <div>
+              <span class="text-slate-500 uppercase font-semibold text-[10px] block">Función en el Sistema:</span>
+              <p id="panel-desc" class="text-slate-300 mt-1 leading-relaxed">
+                Haz clic sobre cualquier chip, módulo, conector o terminal en cualquiera de los diagramas para consultar su código LCSC, pines, tensión de operación y función en el collar ganadero.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen de Optimización Espacial -->
+        <div class="mt-6 pt-4 border-t border-slate-800 space-y-2 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+          <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">REGLAS DE MÁXIMA COMPACIDAD:</span>
+          <ul class="text-[11px] text-slate-400 space-y-1 list-disc list-inside">
+            <li>Pasivos en encapsulado <strong>0402 / 0603</strong>.</li>
+            <li>SIM7670SA integra <strong>4G LTE + GPS</strong> (ahorra 450 mm²).</li>
+            <li>Montaje en doble cara (Portapilas 18650 en Bottom).</li>
+            <li>Ranura pasante de 2mm para aislar 1000V.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Pie de Página -->
+    <footer class="text-center text-xs text-slate-500 pt-4 border-t border-slate-800/80 flex flex-col md:flex-row justify-between items-center gap-2">
+      <div>CollarNet / CowAI V2 &bull; Sistema de Pastoreo Virtual y Monitoreo IoT Bovino</div>
+      <div class="font-mono text-slate-400">Diseñado para Fabricación y Ensamblaje SMT en JLCPCB</div>
+    </footer>
+
+  </div>
+
+  <!-- Script de Interacción y Gestión de Pestañas -->
+  <script>
+    function setTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+      const btn = document.getElementById('tab-' + tabId);
+      if (btn) btn.classList.add('active');
+
+      const content = document.getElementById('view-' + tabId);
+      if (content) content.classList.remove('hidden');
+
+      const titleElem = document.getElementById('view-title');
+      if (tabId === 'op1_externo') {
+        titleElem.textContent = 'OPCIÓN 1: DIAGRAMA DE COMPONENTES EXTERNOS, PERIFÉRICOS Y ARNÉS DORSAL';
+      } else if (tabId === 'op1_circuito') {
+        titleElem.textContent = 'OPCIÓN 1: DIAGRAMA ELECTRÓNICO Y DISTRIBUCIÓN DE CIRCUITOS PCB INTERNOS (J5 ↔ J6)';
+      } else if (tabId === 'op2_monolitica') {
+        titleElem.textContent = 'OPCIÓN 2: PLACA ÚNICA MONOLÍTICA ALL-IN-ONE CON PORTAPILAS INTEGRADO (110.6x33.1mm)';
+      } else if (tabId === 'renders') {
+        titleElem.textContent = 'RENDERS 3D FOTORREALISTAS Y CAD OPENSCAD (OPCIÓN 1 vs OPCIÓN 2)';
+      } else if (tabId === 'comparativa') {
+        titleElem.textContent = 'MATRIZ COMPARATIVA Y CRITERIOS DE DECISIÓN DE INGENIERÍA';
+      }
+    }
+
+    function setOp2Layer(layer) {
+      document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('op2-layer-top').classList.add('hidden');
+      document.getElementById('op2-layer-bottom').classList.add('hidden');
+
+      if (layer === 'top') {
+        document.getElementById('btn-layer-top').classList.add('active');
+        document.getElementById('op2-layer-top').classList.remove('hidden');
+      } else {
+        document.getElementById('btn-layer-bottom').classList.add('active');
+        document.getElementById('op2-layer-bottom').classList.remove('hidden');
+      }
+    }
+
+    function showComponent(name, ref, model, specs, desc) {
+      document.getElementById('panel-name').textContent = name;
+      document.getElementById('panel-ref').textContent = ref;
+      document.getElementById('panel-model').textContent = model;
+      document.getElementById('panel-specs').textContent = specs;
+      document.getElementById('panel-desc').textContent = desc;
+    }
+  </script>
+</body>
+</html>
