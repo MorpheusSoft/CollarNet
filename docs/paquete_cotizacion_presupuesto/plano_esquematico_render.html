@@ -2,41 +2,41 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Plano Esquemático - CollarNet CowAI V2</title>
+<title>Plano Esquemático y Layout PCB - CollarNet CowAI V2 (Opción 2 Monolítica)</title>
 <style>
   @page {
     size: A3 landscape;
-    margin: 10mm;
+    margin: 8mm;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     background: #ffffff;
     color: #0f172a;
-    padding: 15px;
+    padding: 12px;
     width: 1580px;
     margin: 0 auto;
   }
   .blueprint-border {
     border: 3px solid #0f172a;
-    padding: 15px;
+    padding: 12px;
     position: relative;
     background: #fdfdfd;
   }
   .inner-border {
     border: 1px solid #334155;
-    padding: 12px;
+    padding: 10px;
   }
   .header-title {
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid #0f172a;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
   }
   .logo-box {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 900;
     letter-spacing: 1px;
     color: #047857;
@@ -48,91 +48,82 @@
   }
   .main-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 12px;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 14px;
+    margin-bottom: 10px;
   }
   .schematic-box {
     border: 2px solid #1e293b;
     border-radius: 8px;
-    padding: 12px;
+    padding: 10px;
     background: #ffffff;
   }
   .schematic-header {
     background: #0f172a;
     color: #ffffff;
-    padding: 6px 12px;
-    font-size: 13px;
+    padding: 5px 10px;
+    font-size: 12px;
     font-weight: bold;
     border-radius: 4px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
   }
   .sub-block {
     border: 1px solid #cbd5e1;
     border-radius: 6px;
-    padding: 8px;
-    margin-bottom: 8px;
+    padding: 7px;
+    margin-bottom: 7px;
     background: #f8fafc;
   }
   .sub-title {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: bold;
     color: #0369a1;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     text-transform: uppercase;
   }
   table.pin-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10px;
+    font-size: 9.5px;
     font-family: monospace;
   }
   table.pin-table th {
     background: #e2e8f0;
     text-align: left;
-    padding: 3px 6px;
+    padding: 2.5px 5px;
     border: 1px solid #cbd5e1;
     color: #1e293b;
   }
   table.pin-table td {
-    padding: 3px 6px;
+    padding: 2.5px 5px;
     border: 1px solid #e2e8f0;
     color: #334155;
   }
-  .highlight-row {
-    background: #f0fdf4;
-    font-weight: bold;
-  }
-  .warning-row {
-    background: #fef2f2;
-    color: #b91c1c;
-    font-weight: bold;
-  }
+  .highlight-row { background: #f0fdf4; font-weight: bold; }
+  .warning-row { background: #fef2f2; color: #b91c1c; font-weight: bold; }
   .footer-title-block {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr;
     border: 2px solid #0f172a;
-    margin-top: 10px;
-    font-size: 10px;
+    margin-top: 8px;
+    font-size: 9.5px;
     font-family: monospace;
   }
   .footer-cell {
     border-right: 1px solid #0f172a;
-    padding: 6px 10px;
+    padding: 5px 8px;
   }
-  .footer-cell:last-child {
-    border-right: none;
-  }
+  .footer-cell:last-child { border-right: none; }
   .footer-label {
-    font-size: 8px;
+    font-size: 7.5px;
     color: #64748b;
     text-transform: uppercase;
     display: block;
   }
   .footer-value {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: bold;
     color: #0f172a;
   }
@@ -140,9 +131,9 @@
     background: #ecfdf5;
     border: 1.5px dashed #059669;
     border-radius: 6px;
-    padding: 8px 12px;
-    margin-bottom: 12px;
-    font-size: 10px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    font-size: 9.5px;
   }
 </style>
 </head>
@@ -154,127 +145,108 @@
     <!-- Encabezado del Plano -->
     <div class="header-title">
       <div>
-        <div class="logo-box">COWAI / COLLARNET V2</div>
-        <div class="logo-sub">SISTEMA GANADERO DE CERCA VIRTUAL Y TELEMETRÍA IOT - PLANO DE ESQUEMÁTICO GENERAL</div>
+        <div class="logo-box">COWAI / COLLARNET V2 — ARQUITECTURA MONOLÍTICA ALL-IN-ONE</div>
+        <div class="logo-sub">SISTEMA INTEGRADO EN PLACA ÚNICA CON PORTAPILAS KEYSTONE Y DESCARGA AISLADA POR RANURA DE 2.0 mm</div>
       </div>
-      <div style="text-align: right; font-family: monospace; font-size: 11px;">
-        <div><strong>DOCUMENTO DE COTIZACIÓN INDUSTRIAL</strong></div>
+      <div style="text-align: right; font-family: monospace; font-size: 10px;">
+        <div><strong>PLANO TÉCNICO OFICIAL DE FABRICACIÓN</strong></div>
         <div style="color: #64748b;">FORMATO NORMALIZADO JLCPCB / LCSC / EASYEDA</div>
       </div>
     </div>
 
-    <!-- Banner del Arnés de Interconexión Dorsal -->
+    <!-- Banner de Especificación de la Placa Única -->
     <div class="harness-banner">
-      <strong style="color: #047857; text-transform: uppercase;">Arnés Inter-Cápsulas (Puente Dorsal Anatómico Ø8.0 mm):</strong>
-      <span style="font-family: monospace; margin-left: 10px;">
-        [1] VBAT_PWR (3.4V-4.2V / AWG24) &bull;
-        [2] GND_SYS (0.0V / AWG24) &bull;
-        [3] BUZZER_PWM (LEDC 4000Hz / AWG26) &bull;
-        [4] IMPULSE_TRIG (3.3V Pulso 1s / AWG26) &bull;
-        [5] SOLAR_DER_IN (5.5V-6.5V / AWG26)
+      <strong style="color: #047857; text-transform: uppercase;">Dimensiones de Fabricación:</strong>
+      <span style="font-family: monospace; margin-left: 8px;">
+        110.60 &times; 33.10 mm &bull; 4x Taladros M2.5 (dx=27.75mm, dy=105.55mm) &bull; Ranura pasante fresada 2.0mm &bull; Acabado ENIG Oro &bull; Double-Sided SMT
       </span>
-      <span style="float: right; color: #047857; font-weight: bold;">(CERO ALTA TENSIÓN EN EL LOMO DEL ANIMAL)</span>
+      <span style="float: right; color: #047857; font-weight: bold;">(CERO CABLES DE ARNÉS EXTERNO)</span>
     </div>
 
-    <!-- Rejilla Principal de Esquemáticos: Placa Izquierda y Placa Derecha -->
+    <!-- Rejilla Principal -->
     <div class="main-grid">
 
-      <!-- ============================================== -->
-      <!-- PLACA 1: LÓGICA Y TELECOMUNICACIONES (IZQUIERDA)-->
-      <!-- ============================================== -->
+      <!-- COLUMNA 1: DIAGRAMA DEL CIRCUITO (ESQUEMÁTICO ELÉCTRICO) -->
       <div class="schematic-box">
         <div class="schematic-header">
-          <span>PLACA 1: LÓGICA Y RADIOFRECUENCIA (CÁPSULA IZQUIERDA)</span>
-          <span>DIM: 60.0 &times; 32.0 mm (2 CAPAS FR4)</span>
+          <span>DIAGRAMA DEL CIRCUITO (SECTOR 1: PROCESAMIENTO, RF Y ENERGÍA)</span>
+          <span>LONGITUD: 85.0 mm</span>
         </div>
 
-        <!-- Bloque MCU ESP32-S3 -->
         <div class="sub-block">
-          <div class="sub-title">1. Microcontrolador: Espressif ESP32-S3-WROOM-1-N8 (U1)</div>
+          <div class="sub-title">1. Microcontrolador: ESP32-S3-WROOM-1-N16R8 (U1)</div>
           <table class="pin-table">
-            <tr><th>Pin Módulo</th><th>Señal Net</th><th>Destino / Conexión</th><th>Función Técnica</th></tr>
-            <tr><td>Pin 2 (3V3)</td><td>+3V3_SYS</td><td>Salida Buck SY8089 (U5)</td><td>Alimentación 3.3V filtrada (10µF + 100nF)</td></tr>
-            <tr class="highlight-row"><td>IO 17 (TX1)</td><td>MODEM_TXD</td><td>SIM7670SA Pin RXD (U2)</td><td>UART1 Transmisión comandos AT (115200 bps)</td></tr>
-            <tr class="highlight-row"><td>IO 18 (RX1)</td><td>MODEM_RXD</td><td>SIM7670SA Pin TXD (U2)</td><td>UART1 Recepción datos y tramas GNSS</td></tr>
-            <tr><td>IO 21</td><td>MODEM_PWRKEY</td><td>Gate NPN hacia Módem Pin PWRKEY</td><td>Control de encendido y reinicio del módem</td></tr>
-            <tr class="highlight-row"><td>IO 4</td><td>IMPULSE_TRIG</td><td>Hacia Arnés Dorsal [Hilo 4]</td><td>Disparo de estímulo de cerca virtual (1s máx)</td></tr>
-            <tr class="highlight-row"><td>IO 5</td><td>BUZZER_PWM</td><td>Hacia Arnés Dorsal [Hilo 3]</td><td>Modulación acústica LEDC (4000 Hz dinámico)</td></tr>
-            <tr><td>IO 8, IO 9</td><td>I2C_SDA, SCL</td><td>Acelerómetro SC7A20 (U3)</td><td>Bus I2C (Pull-Up 4.7k) para detección de reposo</td></tr>
-            <tr><td>IO 19, IO 20</td><td>USB_D_N, D_P</td><td>Conector USB-C (J1)</td><td>USB 2.0 nativo (Flasheo y depuración sin CH340)</td></tr>
-            <tr><td>IO 2</td><td>STATUS_LED</td><td>LED SMD Azul + R 1k</td><td>Indicador visual de estado y baliza nocturna</td></tr>
+            <tr><th>Pin</th><th>Señal Net</th><th>Conexión Destino</th><th>Función</th></tr>
+            <tr class="highlight-row"><td>IO 17 / 18</td><td>UART1 (TXD/RXD)</td><td>SIM7670SA Módem (U2)</td><td>Comandos AT (115200 bps) y tramas satelitales GNSS</td></tr>
+            <tr><td>IO 21</td><td>MODEM_PWRKEY</td><td>Gate NPN hacia PWRKEY módem</td><td>Control de encendido / reinicio autónomo</td></tr>
+            <tr class="highlight-row"><td>IO 4</td><td>IMPULSE_TRIG</td><td>Optoacoplador EL817C (U8)</td><td>Disparo de pulso electrostático disuasorio (1s máx)</td></tr>
+            <tr class="highlight-row"><td>IO 5</td><td>BUZZER_PWM</td><td>Gate MOSFET AO3400A (Q1)</td><td>Audio modulado dinámico LEDC a 4000 Hz (95 dB)</td></tr>
+            <tr><td>IO 8 / 9</td><td>I2C (SDA/SCL)</td><td>Acelerómetro SC7A20 (U3)</td><td>Detección de reposo/rumia (consumo ultrabajo: 6 µA)</td></tr>
+            <tr><td>IO 19 / 20</td><td>USB_D_N / D_P</td><td>Conector USB Tipo-C (J1)</td><td>USB 2.0 nativo (Flasheo y depuración sin chip puente)</td></tr>
+            <tr><td>IO 1 / 3</td><td>VBAT / SOLAR_ADC</td><td>Divisores resistivos de precisión</td><td>Monitoreo de voltaje de celda y radiación solar</td></tr>
           </table>
         </div>
 
-        <!-- Bloque Módem 4G LTE y GNSS -->
         <div class="sub-block">
-          <div class="sub-title">2. Módem Celular & Satelital: SIMCom SIM7670SA-MNGV (U2)</div>
+          <div class="sub-title">2. Módem Celular & Satelital: SIMCom SIM7670SA (U2)</div>
           <table class="pin-table">
-            <tr><th>Pin Módulo</th><th>Señal Net</th><th>Destino / Componente</th><th>Función Técnica</th></tr>
-            <tr class="highlight-row"><td>VBAT (Pines)</td><td>VBAT_PWR</td><td>Batería Li-Ion + 2x Tantalio 220µF</td><td>Alimentación directa 3.4V-4.2V (picos 2A LTE)</td></tr>
-            <tr><td>MAIN_ANT</td><td>RF_LTE_50R</td><td>Conector IPEX u.FL (J4)</td><td>Pista RF 50Ω hacia antena FPC celular adhesiva</td></tr>
-            <tr class="highlight-row"><td>GNSS_ANT</td><td>RF_GPS_50R</td><td>Conector IPEX u.FL (J3)</td><td>Línea 50Ω hacia parche cerámico GNSS al cielo</td></tr>
-            <tr><td>SIM_VDD,CLK,DATA</td><td>SIM_BUS</td><td>Ranura Nano-SIM 6P (J2)</td><td>Lectura de chip SIM Digitel 4G LTE</td></tr>
+            <tr><th>Pin</th><th>Señal Net</th><th>Componente</th><th>Función</th></tr>
+            <tr class="highlight-row"><td>VBAT</td><td>VBAT_PWR</td><td>2x Tantalio 220µF Case D</td><td>Amortigua picos de corriente LTE (2.0A)</td></tr>
+            <tr><td>MAIN_ANT</td><td>RF_LTE_50R</td><td>Conector IPEX u.FL (J4)</td><td>Pista coplanar 50&Omega; hacia antena flexible 4G LTE</td></tr>
+            <tr class="highlight-row"><td>GNSS_ANT</td><td>RF_GPS_50R</td><td>Conector IPEX u.FL (J3)</td><td>Pista 50&Omega; hacia antena de parche cerámico al cielo</td></tr>
+            <tr><td>SIM_BUS</td><td>SIM_SIGNALS</td><td>Ranura Nano-SIM (J2, Cara Bottom)</td><td>Lectura de chip celular 4G Digitel con filtro TVS</td></tr>
           </table>
         </div>
 
-        <!-- Bloque MPPT y Buck -->
         <div class="sub-block">
-          <div class="sub-title">3. Energía: Cargador MPPT CN3791 (U4) + Buck 3.3V SY8089 (U5)</div>
+          <div class="sub-title">3. Gestión Solar MPPT (CN3791) + Buck 3.3V (SY8089)</div>
           <table class="pin-table">
-            <tr><th>Componente</th><th>Configuración</th><th>Conexión Net</th><th>Especificación Técnica</th></tr>
-            <tr><td>CN3791 (SOP-8)</td><td>MPPT 6.0V</td><td>Paneles Solares (Izq + Der)</td><td>Carga Li-Ion a 1.2A con seguimiento solar máx</td></tr>
-            <tr><td>2x SS34 (SMA)</td><td>Diodos Schottky</td><td>Panel Izq y Panel Der</td><td>Aislamiento entre paneles (evita descarga mutua)</td></tr>
-            <tr class="highlight-row"><td>SY8089 (SOT-23-5)</td><td>Buck Síncrono</td><td>L1: 2.2µH / Cout: 2x 22µF</td><td>Conversión 3.7V a 3.3V / 2.0A (eficiencia >92%)</td></tr>
-            <tr><td>SC7A20 (LGA-16)</td><td>Acelerómetro I2C</td><td>ESP32 SDA=IO8, SCL=IO9</td><td>Consumo ultrabajo: 6µA en monitoreo de movimiento</td></tr>
+            <tr><th>Componente</th><th>Topología</th><th>Parámetros</th><th>Función</th></tr>
+            <tr><td>CN3791 (SSOP-10)</td><td>MPPT Reductor</td><td>Panel 6V / L2: 10µH / R_CS: 0.1&Omega;</td><td>Carga de batería Li-Ion a 1.2A máximo</td></tr>
+            <tr><td>SY8089 (SOT-23-5)</td><td>Buck Síncrono</td><td>3.3V / 2.0A / L1: 2.2µH</td><td>Alimentación limpia para ESP32-S3 y sensores</td></tr>
+            <tr><td>4x SS34 (SMA)</td><td>Schottky 40V/3A</td><td>Paneles, VBUS y Freewheeling</td><td>Protección de retorno y lazo asíncrono MPPT</td></tr>
           </table>
         </div>
-
       </div>
 
-      <!-- ============================================== -->
-      <!-- PLACA 2: POTENCIA, AUDIO Y DESCARGA (DERECHA) -->
-      <!-- ============================================== -->
+      <!-- COLUMNA 2: POTENCIA, BMS, BATERÍA Y ALTA TENSIÓN AISLADA -->
       <div class="schematic-box">
         <div class="schematic-header">
-          <span>PLACA 2: POTENCIA, BOCINA Y DESCARGA (CÁPSULA DERECHA)</span>
-          <span>DIM: 32.0 &times; 26.0 mm (2 CAPAS FR4)</span>
+          <span>SECTOR 2: BATERÍA, BMS Y ALTA TENSIÓN AISLADA</span>
+          <span>LONGITUD: 22.0 mm (AISLADO POR RANURA 2mm)</span>
         </div>
 
-        <!-- Bloque Batería y BMS -->
         <div class="sub-block">
-          <div class="sub-title">1. Batería Primaria y Protección BMS 1S (DW01A + FS8205A)</div>
+          <div class="sub-title">4. Almacenamiento Primario y Protección BMS 1S (Cara Bottom)</div>
           <table class="pin-table">
-            <tr><th>Componente</th><th>Designador</th><th>Conexión</th><th>Función de Protección</th></tr>
-            <tr class="highlight-row"><td>Celda Li-Ion 21700</td><td>BAT1</td><td>3.7V Nominal / 5000 mAh</td><td>Almacenamiento primario para autonomía de campo</td></tr>
-            <tr><td>DW01A (SOT-23-6)</td><td>U6</td><td>Sensor Batería</td><td>Corte por sobrecarga (>4.28V) y sobredescarga (<2.4V)</td></tr>
-            <tr><td>FS8205A (TSSOP-8)</td><td>U7</td><td>MOSFET Dual Canal N</td><td>Interruptor de paso de potencia de ultra baja Rds(on)</td></tr>
-            <tr><td>Polyswitch PPTC</td><td>F1</td><td>Fusible 3.0A Reseteable</td><td>Protección térmica contra corto accidental en arnés</td></tr>
+            <tr><th>Componente</th><th>Designador</th><th>Ubicación</th><th>Función</th></tr>
+            <tr class="highlight-row"><td>Clips Keystone 1042/1048</td><td>BT_CLIP</td><td>Cara Inferior (Bottom)</td><td>Retención para celda Li-Ion 18650 o 21700 (5000 mAh)</td></tr>
+            <tr><td>DW01A-G (SOT-23-6)</td><td>U6</td><td>Cara Inferior (Bottom)</td><td>Protección contra sobrecarga (>4.28V) y sobredescarga (<2.4V)</td></tr>
+            <tr><td>FS8205A (TSSOP-8)</td><td>U7</td><td>Cara Inferior (Bottom)</td><td>MOSFET dual de corte de potencia (Rds < 25m&Omega;)</td></tr>
+            <tr><td>Fusible PPTC 3.0A</td><td>F1</td><td>Cara Inferior (Bottom)</td><td>Protección térmica reseteable contra cortocircuito</td></tr>
           </table>
         </div>
 
-        <!-- Bloque Alerta Acústica -->
         <div class="sub-block">
-          <div class="sub-title">2. Etapa Acústica: Zumbador Piezoeléctrico 95dB (4000 Hz)</div>
+          <div class="sub-title">5. Alerta Acústica: Buzzer Piezoeléctrico 95dB (IO5)</div>
           <table class="pin-table">
-            <tr><th>Componente</th><th>Designador</th><th>Señal Conectada</th><th>Operación Acústica</th></tr>
-            <tr class="highlight-row"><td>Buzzer Ø12.4mm</td><td>BZ1</td><td>Alimentado de VBAT_PWR</td><td>Emite 95 dB a 10 cm con cámara resonante lateral</td></tr>
-            <tr><td>AO3400A (SOT-23)</td><td>Q1</td><td>Gate a BUZZER_PWM [Hilo 3]</td><td>Conmutación PWM rápida a 4000 Hz desde ESP32 IO5</td></tr>
-            <tr><td>1N4148W (SOD-123)</td><td>D4</td><td>Antiparalelo con BZ1</td><td>Diodo flyback supresor de picos inductivos piezo</td></tr>
+            <tr><th>Componente</th><th>Designador</th><th>Control</th><th>Función</th></tr>
+            <tr class="highlight-row"><td>Buzzer Ø12.4mm</td><td>BZ1</td><td>Alimentado de VBAT_PWR</td><td>Emite 95 dB a 10 cm con modulación PWM a 4000 Hz</td></tr>
+            <tr><td>AO3400A (SOT-23)</td><td>Q1</td><td>ESP32 IO5 (LEDC)</td><td>Transistor MOSFET N de conmutación rápida</td></tr>
+            <tr><td>1N4148W (SOD-123)</td><td>D4</td><td>Antiparalelo</td><td>Diodo supresor de picos inductivos piezoeléctricos</td></tr>
           </table>
         </div>
 
-        <!-- Bloque Descarga Eléctrica Disuasoria -->
         <div class="sub-block">
-          <div class="sub-title">3. Estímulo Eléctrico Seguro: Circuito CDI + Watchdog 1s (Cerca Virtual)</div>
+          <div class="sub-title">6. Circuito de Descarga CDI Aislado (Cerca Virtual)</div>
           <table class="pin-table">
-            <tr><th>Componente</th><th>Designador</th><th>Función en Circuito</th><th>Parámetro de Seguridad Animal</th></tr>
-            <tr class="highlight-row"><td>Optoacoplador EL817C</td><td>U8</td><td>Aislamiento galvánico 5kV</td><td>La alta tensión NUNCA tiene contacto con el ESP32</td></tr>
-            <tr class="warning-row"><td>74LVC1G123 (SC-70)</td><td>U9</td><td>Watchdog Hardware 1000ms</td><td>Corta el pulso a 1s exacto si el software se congela</td></tr>
-            <tr><td>Bobina Flyback Ferrita</td><td>TX1</td><td>Elevador de tensión DC</td><td>Eleva de 3.7V a 800V-1000V con limitación de corriente</td></tr>
-            <tr class="highlight-row"><td>Condensador CDI 0.1µF</td><td>C7</td><td>Polipropileno 1000V CBB21</td><td>Almacena 0.05 a 0.10 Joules (inofensivo para la piel)</td></tr>
-            <tr><td>Tiristor SCR MCR100-6</td><td>TH1</td><td>Disparo de descarga</td><td>Conmuta la energía del condensador hacia electrodos</td></tr>
-            <tr><td>Resistencia 220Ω / 2W</td><td>R_LIMIT</td><td>En serie con salida HV</td><td>Limita corriente de pico para evitar cualquier quemadura</td></tr>
-            <tr class="highlight-row"><td>2x Electrodos Inox M4</td><td>EL1, EL2</td><td>Salida inferior hacia cuello</td><td>Pernos redondeados inox 316 marina con junta O-ring</td></tr>
+            <tr><th>Componente</th><th>Designador</th><th>Parámetro</th><th>Función de Seguridad</th></tr>
+            <tr class="highlight-row"><td>Optoacoplador EL817C</td><td>U8</td><td>Aislamiento 5000 Vrms</td><td>Barrera galvánica total: alta tensión nunca toca al ESP32</td></tr>
+            <tr class="warning-row"><td>74LVC1G123 (VSSOP-8)</td><td>U9</td><td>Watchdog 1000 ms</td><td>Corta el pulso a 1s exacto aunque el software se congele</td></tr>
+            <tr><td>Bobina Flyback DC-HV</td><td>TX1 / MOD_HV</td><td>3.7V a 1000V DC</td><td>Elevador de tensión con limitación de corriente</td></tr>
+            <tr class="highlight-row"><td>Condensador CDI 0.1µF</td><td>C7</td><td>Polipropileno 1000V</td><td>Almacena 0.05 a 0.10 Joules (inofensivo para la piel)</td></tr>
+            <tr><td>Tiristor TYN1225RG</td><td>TH1</td><td>1200V / 25A (TO-252)</td><td>Conmutador de alta tensión de disparo seguro</td></tr>
+            <tr class="highlight-row"><td>2x Electrodos Inox M4</td><td>EL1, EL2</td><td>Pernos Inox 316 marina</td><td>Bornes semiesféricos inferiores con junta tórica O-ring</td></tr>
           </table>
         </div>
 
@@ -282,23 +254,23 @@
 
     </div>
 
-    <!-- Cajetín Técnico de Ingeniería (Title Block) -->
+    <!-- Cajetín Técnico de Ingeniería -->
     <div class="footer-title-block">
       <div class="footer-cell">
         <span class="footer-label">PROYECTO</span>
-        <span class="footer-value">COLLARNET / COWAI V2 - COLLAR INTELIGENTE GANADERO HALTER</span>
+        <span class="footer-value">COLLARNET / COWAI V2 — PLACA MONOLÍTICA ALL-IN-ONE</span>
       </div>
       <div class="footer-cell">
         <span class="footer-label">DISEÑADOR / AUTOR</span>
-        <span class="footer-value">Lindbergh Zambrano / CowAI</span>
+        <span class="footer-value">Lindbergh Zambrano / CowAI IoT</span>
       </div>
       <div class="footer-cell">
         <span class="footer-label">FECHA / REVISIÓN</span>
-        <span class="footer-value">14-OCT-2026 | REV 2.1 (2-PCBs)</span>
+        <span class="footer-value">28-OCT-2026 | REV 3.0 (OPCIÓN 2 MONOLÍTICA)</span>
       </div>
       <div class="footer-cell">
-        <span class="footer-label">ESTÁNDAR FABRICACIÓN</span>
-        <span class="footer-value">JLCPCB SMT / LCSC BOM COMPATIBLE</span>
+        <span class="footer-label">COMPATIBILIDAD MECÁNICA</span>
+        <span class="footer-value">110.60 &times; 33.10 mm (caja_lilygo_t7670x.scad)</span>
       </div>
     </div>
 

@@ -50,7 +50,10 @@ def parse_stl(filepath):
 
 def main():
     print("=== Procesando modelos STL para Visualizador 3D COWAI V2 ===")
-    stl_files = sorted(glob.glob(os.path.join(STL_DIR, '*.stl')))
+    stl_files = sorted([
+        f for f in glob.glob(os.path.join(STL_DIR, '*.stl'))
+        if not f.endswith('_bin.stl')
+    ])
     
     models = {}
     total_triangles = 0

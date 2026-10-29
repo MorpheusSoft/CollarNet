@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CollarNet V2 — Planos Formales de Ingeniería (Esquemático y PCB)</title>
+  <style>
+    @page {
+      size: 420mm 297mm; /* A3 Landscape */
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #000;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    .page {
+      width: 420mm;
+      height: 297mm;
+      page-break-after: always;
+      page-break-inside: avoid;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      background: #0a0e17;
+      position: relative;
+    }
+    .page.light {
+      background: #fcfdfd;
+    }
+    .page img {
+      width: 418mm;
+      height: 295mm;
+      object-fit: contain;
+    }
+    .page-footer {
+      position: absolute;
+      bottom: 6mm;
+      right: 12mm;
+      color: #94a3b8;
+      font-size: 9pt;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- LÁMINA 1: ESQUEMÁTICO COMPLETO ALL-IN-ONE (8 BLOQUES) -->
+  <div class="page light">
+    <img src="esquematico_circuito_completo.svg" alt="Lámina 1: Esquemático Electrónico Completo Monolítico All-in-One">
+    <div class="page-footer" style="color: #475569;">COLLARNET V2 | PLANO 1 DE 4: ESQUEMÁTICO ELECTRÓNICO COMPLETO MONOLÍTICO ALL-IN-ONE</div>
+  </div>
+
+  <!-- LÁMINA 2: LAYOUT PCB COMPLETO ALL-IN-ONE (110.6 x 33.1 mm) -->
+  <div class="page">
+    <img src="pcb_layout_completo.svg" alt="Lámina 2: PCB Layout Completo Monolítico All-in-One">
+    <div class="page-footer">COLLARNET V2 | PLANO 2 DE 4: PCB ARTWORK MONOLÍTICO (TOP + BOTTOM + COTAS MECÁNICAS Y SLOT 2.0mm)</div>
+  </div>
+
+  <!-- LÁMINA 3: PCB CARA SUPERIOR (TOP LAYER) -->
+  <div class="page">
+    <img src="pcb_layout_top_layer.svg" alt="Lámina 3: PCB Cara Superior Top Layer">
+    <div class="page-footer">COLLARNET V2 | PLANO 3 DE 4: PCB CARA SUPERIOR (TOP LAYER SMT & RUTEO ESP32-S3 / SIM7670 / MPPT / CDI)</div>
+  </div>
+
+  <!-- LÁMINA 4: PCB CARA INFERIOR (BOTTOM LAYER CON PORTAPILAS) -->
+  <div class="page">
+    <img src="pcb_layout_bottom_layer.svg" alt="Lámina 4: PCB Cara Inferior Bottom Layer">
+    <div class="page-footer">COLLARNET V2 | PLANO 4 DE 4: PCB CARA INFERIOR (BOTTOM LAYER - BASE BATERÍA KEYSTONE 18650/21700 Y PLANO GND)</div>
+  </div>
+</body>
+</html>
