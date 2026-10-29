@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visor CAD 3D — Baquelita Grupo B (24.0 × 48.0 × 1.6 mm · Carga + Buzzer + Batería)</title>
+  <title>Simulación 3D — Placa de Potencia (24.0 × 48.0 × 1.6 mm · Cápsula Derecha)</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     * { box-sizing: border-box; }
-    body, html {
+    html, body {
       margin: 0;
       padding: 0;
       width: 100%;
@@ -16,25 +16,28 @@
       background: #090d16;
       color: #f1f5f9;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
     }
     canvas {
       display: block;
       width: 100%;
       height: 100%;
       touch-action: none;
-      user-select: none;
     }
     .glass-panel {
-      background: rgba(15, 23, 42, 0.86);
+      background: rgba(15, 23, 42, 0.88);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(148, 163, 184, 0.18);
+      border: 1px solid rgba(148, 163, 184, 0.2);
     }
     .custom-scroll::-webkit-scrollbar { width: 5px; }
-    .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
-    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 9999px;
+    }
   </style>
 </head>
-<body class="relative w-full h-full select-none">
+<body class="relative w-full h-full overflow-hidden">
 
   <canvas id="cadCanvas" class="cursor-grab active:cursor-grabbing"></canvas>
 
@@ -42,33 +45,38 @@
   <header class="glass-panel absolute top-3 left-3 right-3 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 z-10 shadow-xl">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-sm">
-        B
+        ⚡
       </div>
       <div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <h1 class="text-sm md:text-base font-bold text-white tracking-tight">
-            Baquelita Grupo B: Carga Solar + Batería + Buzzer + LED
+            Placa de Potencia (Cápsula Derecha) — Simulación 3D Exacta
           </h1>
-          <span class="hidden sm:inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-semibold">
-            24.0 × 48.0 × 1.6 mm · Huecos 3×3 mm (DX=15, DY=39)
+          <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-semibold">
+            24.0 × 48.0 × 1.6 mm · DX=15, DY=39
           </span>
         </div>
         <p class="text-xs text-slate-400">
-          HW-373 V1.2.1 (TP4056 USB-C) · Buzzer Ø12 mm · LED Verde 5 mm · Batería LMT 21700-3P · 2 Paneles Solares (Caimanes)
+          Base Plana PETG Gris (1.6 mm) + Cunas Escalonadas y Letras Inferiores Sobresalidas (+0.4 mm) en PETG Verde + HW-373 (TP4056 USB-C)
         </p>
       </div>
     </div>
 
-    <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-700/70">
-      <button id="modeWithModules" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-500 text-slate-950 shadow transition">
+    <!-- 3 VIEW MODES -->
+    <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-700/70">
+      <button id="modeBoardMods" class="px-2.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-500 text-slate-950 shadow transition">
         🧩 Placa + Componentes
       </button>
-      <button id="modeOnlyBoard" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
-        🖨️ Solo Baquelita 24×48 (PETG)
+      <button id="modeOnlyPrint" class="px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
+        🖨️ Solo Baquelita PETG
+      </button>
+      <button id="modeInCapsule" class="px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
+        📦 En Cápsula Derecha + 21700
       </button>
     </div>
 
-    <div class="flex items-center gap-1.5">
+    <!-- CAMERA PRESETS -->
+    <div class="flex items-center gap-1.5 flex-wrap">
       <button data-cam="iso" class="cam-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition">
         Isométrica
       </button>
@@ -76,7 +84,13 @@
         Cara Superior
       </button>
       <button data-cam="bottom" class="cam-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition">
-        🔥 Cara Inferior (Nombres en PETG Verde)
+        🔥 Cara Inferior (Soldadura + Letras)
+      </button>
+      <button data-cam="side" class="cam-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+        Perfil Z
+      </button>
+      <button id="btnResetCam" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+        🎯 Centrar
       </button>
     </div>
   </header>
@@ -85,131 +99,192 @@
   <aside class="glass-panel absolute top-20 left-3 bottom-16 w-72 rounded-xl p-3 flex flex-col gap-2.5 z-10 shadow-xl overflow-hidden">
     <div class="flex items-center justify-between border-b border-slate-700/70 pb-2">
       <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
-        Componentes Grupo B (Foto)
+        Elementos de Potencia
       </span>
       <button id="btnAllComp" class="text-xs text-sky-400 hover:underline font-medium">
         Ver todo
       </button>
     </div>
+
     <div id="compList" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-1"></div>
+
+    <div class="border-t border-slate-700/70 pt-2.5 space-y-1.5">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
+          Guía de Soldadura y Flux
+        </span>
+        <button id="btnToggleSolder" class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium">
+          Estaño: ON
+        </button>
+      </div>
+      <div class="grid grid-cols-2 gap-1 text-xs">
+        <button data-bus="all" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-sky-500/20 border border-sky-500/50 text-white font-semibold">
+          <span class="w-2 h-2 rounded-full bg-white"></span>Todos (8 Pines)
+        </button>
+        <button data-bus="solar" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-yellow-400"></span>IN+ / IN- (Solar)
+        </button>
+        <button data-bus="bat" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-blue-400"></span>B+ / B- (21700)
+        </button>
+        <button data-bus="out" class="bus-btn flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-red-400"></span>O+ / O- (Puente)
+        </button>
+        <button data-bus="buz" class="bus-btn col-span-2 flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/60 border border-transparent hover:border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-purple-400"></span>BZ+ / BZ- (Buzzer Geocerca)
+        </button>
+      </div>
+    </div>
   </aside>
 
   <!-- RIGHT PANEL -->
   <aside class="glass-panel absolute top-20 right-3 w-80 rounded-xl p-3.5 flex flex-col gap-2.5 z-10 shadow-xl max-h-[calc(100%-6.5rem)] overflow-y-auto custom-scroll">
     <div class="flex items-center justify-between">
       <span id="detailBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-        Cotas Oficiales
+        Diseño Final Verificado
       </span>
       <span id="detailDims" class="text-xs font-mono text-slate-400">24.0 × 48.0 × 1.6 mm</span>
     </div>
+
     <h2 id="detailTitle" class="text-base font-bold text-white leading-snug">
-      Baquelita Grupo B (24 × 48 mm)
+      Placa de Potencia (24 × 48 mm)
     </h2>
+
     <p id="detailDesc" class="text-xs text-slate-300 leading-relaxed"></p>
+
     <div class="border-t border-slate-700/70 pt-2.5">
       <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-        Pines y Conexiones (Nombres en PETG Verde Abajo)
+        Pines a Soldar con Flux (Cara Inferior)
       </div>
       <div id="detailPins" class="space-y-1.5 text-xs font-mono"></div>
     </div>
+
+    <div class="mt-1 p-2.5 rounded-lg bg-amber-950/60 border border-amber-500/40 text-xs text-amber-200 leading-relaxed space-y-1">
+      <div class="font-bold text-amber-300">💡 Cómo Soldar esta Placa con Flux:</div>
+      <div>1. Inserta los pines macho en los 6 pads del <b>HW-373 (TP4056)</b> y pásalos por los 6 orificios de <code>1.6×1.6 mm</code> de la baquelita.</div>
+      <div>2. Voltea la placa (botón <b>🔥 Cara Inferior</b>): aplica una gota de <b>Flux No-Clean en jeringa</b> sobre cada pin junto a su etiqueta verde (<code>IN+</code>, <code>IN-</code>, <code>O+</code>, <code>B+</code>, <code>B-</code>, <code>O-</code>, <code>BZ+</code>, <code>BZ-</code>).</div>
+      <div>3. Toca 1 segundo con estaño <b>63/37</b> o <b>Sn42/Bi58 (138 °C)</b> para fijar los cables sin calentar el PETG.</div>
+    </div>
   </aside>
 
-  <!-- FOOTER -->
+  <!-- BOTTOM CONTROL DOCK -->
   <footer class="glass-panel absolute bottom-3 left-3 right-3 rounded-xl px-4 py-2 flex flex-wrap items-center justify-between gap-4 z-10 shadow-xl">
-    <div class="flex items-center gap-3 flex-1 min-w-[220px]">
+    <div class="flex items-center gap-3 flex-1 min-w-[200px]">
       <label for="sliderExplode" class="text-xs font-semibold text-amber-300 whitespace-nowrap">
-        🔧 Despiece 3D (Separar Módulos):
+        🔧 Despiece 3D (Separar Capas):
       </label>
       <input id="sliderExplode" type="range" min="0" max="100" value="0" class="w-full accent-amber-400 cursor-pointer h-1.5" />
       <span id="valExplode" class="text-xs font-mono text-slate-300 w-9 text-right">0%</span>
     </div>
-    <div class="text-xs text-slate-400 font-mono">
-      Arrastra para rotar 360° · Rueda del ratón para zoom
+
+    <div class="flex items-center gap-3 flex-1 min-w-[200px]">
+      <label for="sliderXray" class="text-xs font-semibold text-sky-300 whitespace-nowrap">
+        🩻 Rayos X (Ver Anclaje y Pistas):
+      </label>
+      <input id="sliderXray" type="range" min="0" max="80" value="0" class="w-full accent-sky-400 cursor-pointer h-1.5" />
+      <span id="valXray" class="text-xs font-mono text-slate-300 w-9 text-right">0%</span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="btnLabels" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700 transition">
+        🏷️ Etiquetas: ON
+      </button>
+      <button id="btnRotate" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition">
+        🔄 Giro Auto: OFF
+      </button>
     </div>
   </footer>
 
   <script>
-    const GROUP_B_COMPONENTS = {
+    const POWER_COMPONENTS = {
       all: {
-        name: '0. Placa Grupo B Completa',
-        short: '24.0 × 48.0 × 1.6 mm (DX=15, DY=39)',
-        badge: 'Tabla de Cotas Exacta',
+        name: '0. Placa de Potencia Completa (24 × 48 mm)',
+        short: 'Base Plana 1.6mm + Cunas Verdes + TP4056 + 8 Pines',
+        badge: 'Cotas Oficiales STL',
         dims: '24.0 × 48.0 × 1.6 mm',
         color: '#10b981',
-        desc: 'Placa trasera de la Cápsula Derecha (24.0 × 48.0 × 1.6 mm) con 4 huecos cuadrados de 3.0 × 3.0 mm en las esquinas (margen 3.0 mm, centros a 4.5 mm: DX = 15.0 mm, DY = 39.0 mm). Nombres de pines impresos al ras en PETG Verde por la cara de abajo.',
+        desc: 'Baquelita de potencia de la Cápsula Derecha (24.0 × 48.0 × 1.60 mm). Cuenta con 4 huecos cuadrados en las esquinas de 3.15 × 3.15 mm (DX = 15.0 mm, DY = 39.0 mm), rieles laterales escalonados en PETG Verde empotrados 1.0 mm en la placa, y etiquetas inferiores sobresalidas 0.40 mm hacia afuera.',
         pins: [
-          '☀️ S+ / S- (Arriba): Pines macho para morder con los caimanes de los 2 paneles solares',
-          '🔌 IN+ / IN-: Entrada al cargador HW-373 V1.2.1 (TP4056 USB-C)',
-          '🔋 B+ / B-: Cables rojo (+) y negro (-) de tu batería azul LMT 21700-3P',
-          '⚡ O+ / O- → V+ / GD: Salida protegida hacia el puente dorsal (Placa Lógica)',
-          '🔊 BZ+ / BZ-: Buzzer piezoeléctrico Ø12 mm (activado desde pin BZ / GPIO 5)',
-          '💡 L+ / L-: LED Verde de 5 mm de estado (activado desde pin LD / GPIO 2)'
+          '☀️ IN+ / IN- (Y = +12.6 mm, X = ±7.13 mm): Entrada 5V desde los 2 paneles solares en paralelo',
+          '🔋 B+ / B- (Y = -9.91 mm, X = ∓3.72 mm): Cables Rojo (+) y Negro (-) de la batería LMT 21700-3P',
+          '⚡ O+ / O- (Y = -9.91 mm, X = ∓7.13 mm): Salida protegida (3.7V–4.2V) hacia el arnés del puente dorsal',
+          '🔊 BZ+ / BZ- (Y = -17.50 mm, X = ∓3.20 mm): Puntos de soldadura y sujeción para el Buzzer Ø12 mm'
+        ]
+      },
+      substrate: {
+        name: '1. Baquelita PETG Bicolor (Gris + Verde)',
+        short: 'Base Plana 1.6mm sin hundimientos + Letras +0.4mm',
+        badge: 'Bambu Lab P1S (AMS)',
+        dims: '24.0 × 48.0 × 1.6 mm',
+        color: '#22c55e',
+        desc: 'La placa gris de 1.60 mm tiene su cara inferior 100% plana (sin ventanas hundidas). Las letras verdes sobresalen 0.40 mm hacia abajo (Z = -0.40 a 0.00 mm) y se anclan 0.40 mm dentro de la base. Los rieles verdes superiores se anclan 1.00 mm dentro de la placa (Z = 0.60 a 1.60 mm) para máxima resistencia.',
+        pins: [
+          '📐 4 Huecos Esquina: 3.15 × 3.15 mm en X = ±7.50 mm, Y = ±19.50 mm (DX=15, DY=39)',
+          '🟢 Rieles Escalonados: Hombro de apoyo a Z = 3.20 mm (+1.6 mm) y pared guía hasta Z = 4.80 mm',
+          '🔤 Letras Inferiores Verdes: Trazo de 0.40 mm (boquilla 0.4 mm) sobresalido 0.40 mm abajo'
         ]
       },
       tp4056: {
-        name: '1. Cargador HW-373 V1.2.1 (TP4056)',
-        short: 'Módulo Azul USB-C (17.2 × 26 mm)',
-        badge: 'Carga + Protección BMS',
-        dims: '17.2 × 26.0 mm',
+        name: '2. Módulo Cargador HW-373 V1.2.1 (TP4056)',
+        short: '17.15 × 25.70 mm · USB-C hacia arriba',
+        badge: 'Cargador + BMS DW01A',
+        dims: '17.15 × 25.70 × 1.55 mm',
         color: '#38bdf8',
-        desc: 'El módulo azul de tu foto es un cargador Li-Ion TP4056 (HW-373 V1.2.1) con puerto USB-C y chips de protección DW01A + FS8205A integrados. Carga la batería LMT 21700-3P desde los paneles solares (IN+/IN-) o por USB-C y entrega salida protegida por OUT+/OUT-.',
+        desc: 'Descansa sobre los dos hombros verdes internos (a Z = 3.20 mm) y queda abrazado lateralmente por las paredes verdes (X = ±8.70 a ±10.30 mm). Integra el cargador lineal TP4056 (1A), el circuito de protección BMS (DW01A + MOSFET FS8205A) y conector USB-C.',
         pins: [
-          '☀️ IN+ / IN- (Lado USB-C): Recibe 5V de los 2 paneles solares en paralelo',
-          '🔋 B+ / B- (Centro abajo): Va directo a la batería azul LMT 21700-3P',
-          '⚡ OUT+ / OUT- (Esquinas abajo): Salida hacia V+ y GD del puente dorsal'
+          '☀️ Pad IN+ (Izq Sup) / Pad IN- (Der Sup): Reciben 5V solar o carga por USB-C',
+          '🔋 Pad B+ (Izq Centro) / Pad B- (Der Centro): Conectan directo a la celda 21700-3P',
+          '⚡ Pad OUT+ (Izq Inf) / Pad OUT- (Der Inf): Salida protegida contra sobredescarga (<2.4V) y cortocircuito'
         ]
       },
-      battery: {
-        name: '2. Batería Azul LMT 21700-3P',
-        short: 'Sí es la exacta del diseño (3.7V ~15Ah)',
-        badge: 'Pack 21700-3P Oficial',
-        dims: '73 × 67 × 23.5 mm',
-        color: '#2563eb',
-        desc: '¡La batería azul de tu foto ("LMT 21700-3P") ES EXACTAMENTE el pack de 3 celdas 21700 en paralelo (3.7V nominal / 4.2V carga) para el que se diseñó el compartimento grande de la Cápsula Derecha! Sus cables rojo y negro se sueldan en B+ y B-.',
+      solder_pins: {
+        name: '3. 8 Pines Pasantes + Conos de Estaño con Flux',
+        short: 'Soldadura inferior guiada por letras verdes',
+        badge: 'Flux No-Clean + 63/37',
+        dims: '8 Orificios 1.60 × 1.60 mm',
+        color: '#fbbf24',
+        desc: 'Los 8 pines atraviesan los orificios cuadrados de 1.60 × 1.60 mm y sobresalen 2.2 mm por la cara inferior (dejando +5.8 mm libres sobre el piso de la cápsula). El flux en gel se aplica justo en la unión del pin con el cable para lograr conos de estaño brillantes en 1 segundo.',
         pins: [
-          '🔴 Cable Rojo (+): Soldar al pin B+ del módulo HW-373 (TP4056)',
-          '⚫ Cable Negro (-): Soldar al pin B- del módulo HW-373 (TP4056)'
+          '🔥 Paso 1: Aplicar Flux No-Clean (Mechanic UV80 / ChipQuik SMD291) en los 8 pines inferiores',
+          '🔥 Paso 2: Pre-estañar las puntas de los cables AWG 24 (Rojo VBAT, Negro GND, Amarillo Solar, Morado Buzzer)',
+          '🔥 Paso 3: Unir cable al pin por debajo con cautín a 280–300 °C durante 1 seg'
         ]
       },
-      buzzer: {
-        name: '3. Buzzer Piezoeléctrico Ø12 mm',
-        short: 'Abajo en su cuna circular verde',
-        badge: 'Alerta Geocerca 4000 Hz',
-        dims: 'Ø 12.0 × 9.0 mm',
-        color: '#facc15',
-        desc: 'Zumbador cilíndrico negro de tu foto. Encaja dentro del anillo guía de PETG Verde en la placa (con ranuras elongadas compatibles con pines a 5.08 mm, 6.5 mm o 7.62 mm) o puede ir cableado a la cámara acústica vecina.',
+      buzzer_bat: {
+        name: '4. Buzzer Ø12 mm + Batería Azul LMT 21700-3P',
+        short: 'Alojados en la Cápsula Derecha junto a la placa',
+        badge: 'Cápsula Derecha IP67',
+        dims: 'Pack 70×62×21.5 mm + Buzzer Ø12',
+        color: '#a855f7',
+        desc: 'Dentro de la Cápsula Derecha, la placa de 24 × 48 mm encaja en las 4 espigas cuadradas izquierdas (X_cad = 28 mm). El Buzzer piezoeléctrico de Ø12 mm se aloja en su cuna acústica cilíndrica inferior (conectado a BZ+ y BZ-) y la batería azul LMT 21700-3P ocupa el compartimento derecho (conectada a B+ y B-).',
         pins: [
-          '🔊 BZ+ (+): Unido al pin BZ (viene de D5 / GPIO 5 del ESP32)',
-          '➖ BZ- (-): Unido a tierra común (GD / OUT-)'
-        ]
-      },
-      solar_led: {
-        name: '4. Paneles Solares (Caimanes) + LED',
-        short: '2 Paneles 60×55mm + LED Verde 5mm',
-        badge: 'Interacción Exterior',
-        dims: 'Pines S+/S- y L+/L-',
-        color: '#4ade80',
-        desc: 'En el borde superior (entre los 2 huecos cuadrados de 3×3 mm) tienes 2 pines verticales (S+ y S-) para enganchar directamente las pinzas caimán de tus 2 paneles solares en paralelo, más los 2 huecos (L+ y L-) para el LED verde de 5 mm.',
-        pins: [
-          '🐊 Pin S+ (Rojo Caimán) → Unido por debajo a IN+ del TP4056',
-          '🐊 Pin S- (Negro Caimán) → Unido por debajo a IN- del TP4056',
-          '💚 L+ / L- (LED Verde 5mm) → Ánodo (patilla larga) en L+, Cátodo en L-'
+          '🔋 Batería LMT 21700-3P (3.7V ~15Ah): Cable Rojo → B+ | Cable Negro → B-',
+          '🔊 Buzzer Piezo Ø12 mm (95 dB): Pin Positivo → BZ+ (hilo PWM del ESP32) | Pin Negativo → BZ- (unido a O-)',
+          '🌉 Arnés Puente Dorsal: O+ (VBAT) y O- (GND) cruzan hacia la Cápsula Izquierda (Placa Lógica)'
         ]
       }
     };
 
     let selectedComp = 'all';
-    let hideModules = false;
+    let selectedBus = 'all';
+    let viewMode = 'board_mods';
+    let showSolder = true;
+    let showLabels = true;
+    let autoRotate = false;
     let explodeVal = 0;
+    let xrayVal = 0;
 
     const compListEl = document.getElementById('compList');
+
     function renderCompList() {
       compListEl.innerHTML = '';
-      Object.entries(GROUP_B_COMPONENTS).forEach(([key, item]) => {
+      Object.entries(POWER_COMPONENTS).forEach(([key, item]) => {
         const active = (key === selectedComp);
         const btn = document.createElement('button');
         btn.className = `w-full text-left p-2 rounded-lg border transition flex items-start gap-2.5 ${
-          active ? 'bg-slate-800/95 border-emerald-400/70' : 'bg-slate-900/50 border-slate-800/80 hover:bg-slate-800/60'
+          active
+            ? 'bg-slate-800/95 border-emerald-400/70 shadow-sm'
+            : 'bg-slate-900/50 border-slate-800/80 hover:bg-slate-800/60 hover:border-slate-700'
         }`;
         btn.innerHTML = `
           <span class="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style="background:${item.color}"></span>
@@ -218,15 +293,15 @@
             <div class="text-xs text-slate-400 truncate">${item.short}</div>
           </div>
         `;
-        btn.onclick = () => selectComp(key);
+        btn.addEventListener('click', () => selectComponent(key));
         compListEl.appendChild(btn);
       });
     }
 
-    function selectComp(key) {
+    function selectComponent(key) {
       selectedComp = key;
       renderCompList();
-      const info = GROUP_B_COMPONENTS[key] || GROUP_B_COMPONENTS.all;
+      const info = POWER_COMPONENTS[key] || POWER_COMPONENTS.all;
       document.getElementById('detailBadge').textContent = info.badge;
       document.getElementById('detailDims').textContent = info.dims;
       document.getElementById('detailTitle').textContent = info.name;
@@ -236,222 +311,631 @@
         .join('');
     }
 
-    document.getElementById('btnAllComp').onclick = () => selectComp('all');
+    document.getElementById('btnAllComp').addEventListener('click', () => selectComponent('all'));
 
-    const btnWithMod = document.getElementById('modeWithModules');
-    const btnOnlyBrd = document.getElementById('modeOnlyBoard');
-    btnWithMod.onclick = () => {
-      hideModules = false;
-      btnWithMod.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-500 text-slate-950 shadow transition';
-      btnOnlyBrd.className = 'px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition';
-    };
-    btnOnlyBrd.onclick = () => {
-      hideModules = true;
-      btnOnlyBrd.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-400 text-slate-950 shadow transition';
-      btnWithMod.className = 'px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition';
-    };
+    const btnBoardMods = document.getElementById('modeBoardMods');
+    const btnOnlyPrint = document.getElementById('modeOnlyPrint');
+    const btnInCapsule = document.getElementById('modeInCapsule');
 
-    document.getElementById('sliderExplode').oninput = e => {
+    function updateModeButtons() {
+      const activeCls = 'px-2.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-500 text-slate-950 shadow transition';
+      const idleCls   = 'px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition';
+      btnBoardMods.className = viewMode === 'board_mods' ? activeCls : idleCls;
+      btnOnlyPrint.className = viewMode === 'only_print' ? activeCls : idleCls;
+      btnInCapsule.className = viewMode === 'in_capsule' ? activeCls : idleCls;
+    }
+
+    btnBoardMods.addEventListener('click', () => {
+      viewMode = 'board_mods';
+      updateModeButtons();
+      targetZoom = 8.2;
+      targetPanX = 0;
+      targetPanY = 10;
+      selectComponent('all');
+    });
+
+    btnOnlyPrint.addEventListener('click', () => {
+      viewMode = 'only_print';
+      updateModeButtons();
+      targetZoom = 8.5;
+      targetPanX = 0;
+      targetPanY = 10;
+      selectComponent('substrate');
+    });
+
+    btnInCapsule.addEventListener('click', () => {
+      viewMode = 'in_capsule';
+      updateModeButtons();
+      targetPitch = 0.68;
+      targetYaw = -0.38;
+      targetZoom = 4.3;
+      targetPanX = -8;
+      targetPanY = 16;
+      selectComponent('buzzer_bat');
+    });
+
+    document.querySelectorAll('.bus-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedBus = btn.dataset.bus;
+        document.querySelectorAll('.bus-btn').forEach(b => {
+          const isAct = b.dataset.bus === selectedBus;
+          const spanCol = b.dataset.bus === 'buz' ? 'col-span-2 ' : '';
+          b.className = `bus-btn ${spanCol}flex items-center gap-1.5 px-2 py-1 rounded border text-xs ${
+            isAct
+              ? 'bg-sky-500/20 border-sky-500/50 text-white font-semibold'
+              : 'bg-slate-900/60 border-transparent hover:border-slate-700 text-slate-300'
+          }`;
+        });
+      });
+    });
+
+    const sliderExplode = document.getElementById('sliderExplode');
+    const valExplode = document.getElementById('valExplode');
+    sliderExplode.addEventListener('input', e => {
       explodeVal = parseFloat(e.target.value) / 100;
-      document.getElementById('valExplode').textContent = `${e.target.value}%`;
-    };
+      valExplode.textContent = `${e.target.value}%`;
+    });
+
+    const sliderXray = document.getElementById('sliderXray');
+    const valXray = document.getElementById('valXray');
+    sliderXray.addEventListener('input', e => {
+      xrayVal = parseFloat(e.target.value) / 100;
+      valXray.textContent = `${e.target.value}%`;
+    });
+
+    const btnToggleSolder = document.getElementById('btnToggleSolder');
+    btnToggleSolder.addEventListener('click', () => {
+      showSolder = !showSolder;
+      btnToggleSolder.textContent = showSolder ? 'Estaño: ON' : 'Estaño: OFF';
+      btnToggleSolder.className = showSolder
+        ? 'text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium'
+        : 'text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-medium';
+    });
+
+    const btnLabels = document.getElementById('btnLabels');
+    btnLabels.addEventListener('click', () => {
+      showLabels = !showLabels;
+      btnLabels.textContent = showLabels ? '🏷️ Etiquetas: ON' : '🏷️ Etiquetas: OFF';
+    });
+
+    const btnRotate = document.getElementById('btnRotate');
+    btnRotate.addEventListener('click', () => {
+      autoRotate = !autoRotate;
+      btnRotate.textContent = autoRotate ? '🔄 Giro Auto: ON' : '🔄 Giro Auto: OFF';
+    });
 
     const canvas = document.getElementById('cadCanvas');
     const ctx = canvas.getContext('2d');
-    let width = window.innerWidth, height = window.innerHeight;
-    function resize() {
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resizeCanvas() {
       width = window.innerWidth;
       height = window.innerHeight;
-      canvas.width = width * window.devicePixelRatio;
-      canvas.height = height * window.devicePixelRatio;
-      ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    window.addEventListener('resize', resize);
-    resize();
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-    let camPitch = 0.65, camYaw = -0.45, camZoom = 7.5;
-    let targetPitch = 0.65, targetYaw = -0.45, targetZoom = 7.5;
-    let isDragging = false, prevX = 0, prevY = 0;
+    let camPitch = 0.65;
+    let camYaw = -0.45;
+    let camZoom = 8.2;
+    let camPanX = 0;
+    let camPanY = 10;
+
+    let targetPitch = camPitch;
+    let targetYaw = camYaw;
+    let targetZoom = camZoom;
+    let targetPanX = camPanX;
+    let targetPanY = camPanY;
 
     document.querySelectorAll('.cam-btn').forEach(btn => {
-      btn.onclick = () => {
-        const c = btn.dataset.cam;
-        if (c === 'iso') { targetPitch = 0.65; targetYaw = -0.45; }
-        if (c === 'top') { targetPitch = 1.48; targetYaw = 0; }
-        if (c === 'bottom') { targetPitch = -1.48; targetYaw = 0; }
-      };
+      btn.addEventListener('click', () => {
+        const preset = btn.dataset.cam;
+        autoRotate = false;
+        btnRotate.textContent = '🔄 Giro Auto: OFF';
+        const baseZ = viewMode === 'in_capsule' ? 4.3 : 8.4;
+        if (preset === 'iso') {
+          targetPitch = 0.65; targetYaw = -0.45; targetZoom = baseZ;
+        } else if (preset === 'top') {
+          targetPitch = 1.52; targetYaw = 0.0; targetZoom = baseZ * 1.05;
+        } else if (preset === 'bottom') {
+          targetPitch = -1.48; targetYaw = 0.0; targetZoom = baseZ * 1.08;
+        } else if (preset === 'side') {
+          targetPitch = 0.08; targetYaw = -1.57; targetZoom = baseZ * 1.05;
+        }
+      });
+    });
+
+    document.getElementById('btnResetCam').addEventListener('click', () => {
+      targetPitch = 0.65;
+      targetYaw = -0.45;
+      targetZoom = viewMode === 'in_capsule' ? 4.3 : 8.2;
+      targetPanX = 0;
+      targetPanY = 10;
     });
 
     function project(x, y, z) {
       const cy = Math.cos(camYaw), sy = Math.sin(camYaw);
       const x1 = x * cy - z * sy;
       const z1 = z * cy + x * sy;
+
       const cp = Math.cos(camPitch), sp = Math.sin(camPitch);
       const y2 = y * cp - z1 * sp;
       const z2 = z1 * cp + y * sp;
-      const fov = 560;
-      const dist = 190;
-      const s = (fov / (dist + z2)) * (camZoom / 4.2);
-      return { x: width / 2 + x1 * s, y: height / 2 - y2 * s, z: z2 };
+
+      const fov = 620;
+      const dist = 240;
+      const s = (fov / Math.max(35, dist + z2)) * (camZoom / 4.0);
+
+      return {
+        x: width / 2 + camPanX + x1 * s,
+        y: height / 2 + camPanY - y2 * s,
+        z: z2,
+        s
+      };
+    }
+
+    function adjustHex(hex, factor) {
+      hex = hex.replace('#', '');
+      const r = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(0, 2), 16) * (1 + factor))));
+      const g = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(2, 4), 16) * (1 + factor))));
+      const b = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(4, 6), 16) * (1 + factor))));
+      return `rgb(${r},${g},${b})`;
     }
 
     let primitives = [];
-    function addBox3D(cx, cy, cz, w, h, d, color, stroke = '#334155', label = null) {
+
+    function getAlpha(compId, baseAlpha = 1.0) {
+      if ((compId === 'substrate' || compId === 'capsule') && xrayVal > 0) {
+        return Math.max(0.15, (1 - xrayVal) * baseAlpha);
+      }
+      if (selectedComp !== 'all' && selectedComp !== compId) {
+        return 0.25 * baseAlpha;
+      }
+      return baseAlpha;
+    }
+
+    function addBox3D(cx, cy, cz, w, h, d, color, compId, opts = {}) {
       const hw = w / 2, hh = h / 2, hd = d / 2;
-      const v = [
-        [cx - hw, cy - hh, cz - hd], [cx + hw, cy - hh, cz - hd],
-        [cx + hw, cy + hh, cz - hd], [cx - hw, cy + hh, cz - hd],
-        [cx - hw, cy - hh, cz + hd], [cx + hw, cy - hh, cz + hd],
-        [cx + hw, cy + hh, cz + hd], [cx - hw, cy + hh, cz + hd]
-      ].map(p => project(p[0], p[1], p[2]));
-      const faces = [
-        { idx: [0, 1, 2, 3] }, { idx: [5, 4, 7, 6] },
-        { idx: [4, 0, 3, 7] }, { idx: [1, 5, 6, 2] },
-        { idx: [3, 2, 6, 7], top: true }, { idx: [4, 5, 1, 0] }
+      const verts = [
+        [cx - hw, cy - hh, cz - hd],
+        [cx + hw, cy - hh, cz - hd],
+        [cx + hw, cy + hh, cz - hd],
+        [cx - hw, cy + hh, cz - hd],
+        [cx - hw, cy - hh, cz + hd],
+        [cx + hw, cy - hh, cz + hd],
+        [cx + hw, cy + hh, cz + hd],
+        [cx - hw, cy + hh, cz + hd]
       ];
+      const pv = verts.map(v => project(v[0], v[1], v[2]));
+
+      const faces = [
+        { idx: [3, 2, 6, 7], lum: 0.16, top: true },
+        { idx: [0, 1, 5, 4], lum: -0.24, top: false },
+        { idx: [4, 5, 6, 7], lum: -0.02, top: false },
+        { idx: [0, 1, 2, 3], lum: -0.14, top: false },
+        { idx: [1, 2, 6, 5], lum: -0.08, top: false },
+        { idx: [0, 3, 7, 4], lum: -0.10, top: false }
+      ];
+
+      const alpha = getAlpha(compId, opts.alpha !== undefined ? opts.alpha : 1.0);
+      const isFocused = (selectedComp === compId);
+
       faces.forEach(f => {
-        const pts = f.idx.map(i => v[i]);
-        const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) * 0.25;
-        primitives.push({ pts, z: avgZ, fill: color, stroke, label: f.top ? label : null });
+        const pts = f.idx.map(i => pv[i]);
+        const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) * 0.25 + (opts.zBias || 0);
+        primitives.push({
+          type: 'poly',
+          pts,
+          z: avgZ,
+          fill: adjustHex(color, f.lum),
+          stroke: isFocused ? '#fbbf24' : (opts.stroke || adjustHex(color, f.lum - 0.18)),
+          lineWidth: isFocused ? 1.3 : (opts.lineWidth || 0.65),
+          alpha,
+          compId,
+          label: f.top ? opts.label : null,
+          subLabel: f.top ? opts.subLabel : null
+        });
       });
     }
 
-    function addCyl3D(cx, cy, cz, r, h, color, segs = 18, label = null) {
-      const topPts = [], botPts = [];
+    function addCyl3D(cx, cy, cz, rTop, rBot, h, color, compId, opts = {}) {
+      const segs = opts.segs || 16;
+      const topPts = [];
+      const botPts = [];
       for (let i = 0; i < segs; i++) {
         const a = (i / segs) * Math.PI * 2;
-        topPts.push(project(cx + Math.cos(a) * r, cy + h / 2, cz + Math.sin(a) * r));
-        botPts.push(project(cx + Math.cos(a) * r, cy - h / 2, cz + Math.sin(a) * r));
+        const c = Math.cos(a), s = Math.sin(a);
+        topPts.push(project(cx + c * rTop, cy + h / 2, cz + s * rTop));
+        botPts.push(project(cx + c * rBot, cy - h / 2, cz + s * rBot));
       }
+
+      const alpha = getAlpha(compId, opts.alpha !== undefined ? opts.alpha : 1.0);
+      const isFocused = (selectedComp === compId);
+
       for (let i = 0; i < segs; i++) {
         const nxt = (i + 1) % segs;
         const pts = [botPts[i], botPts[nxt], topPts[nxt], topPts[i]];
-        primitives.push({ pts, z: (pts[0].z + pts[2].z) * 0.5, fill: color, stroke: '#1e293b' });
+        const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) * 0.25;
+        const lum = Math.sin((i / segs) * Math.PI * 2) * 0.15 - 0.05;
+        primitives.push({
+          type: 'poly',
+          pts,
+          z: avgZ,
+          fill: adjustHex(color, lum),
+          stroke: isFocused ? '#fbbf24' : adjustHex(color, lum - 0.12),
+          lineWidth: isFocused ? 1.1 : 0.4,
+          alpha,
+          compId
+        });
       }
+
+      const avgTopZ = topPts.reduce((s, p) => s + p.z, 0) / segs;
       primitives.push({
+        type: 'poly',
         pts: topPts,
-        z: topPts.reduce((s, p) => s + p.z, 0) / segs - 0.1,
-        fill: color,
-        stroke: '#475569',
-        label
+        z: avgTopZ - 0.1,
+        fill: adjustHex(color, 0.16),
+        stroke: isFocused ? '#fbbf24' : (opts.stroke || adjustHex(color, -0.18)),
+        lineWidth: isFocused ? 1.3 : 0.65,
+        alpha,
+        compId,
+        label: opts.label,
+        subLabel: opts.subLabel
       });
     }
 
+    function addPath3D(pts3D, color, widthPx, busType, compId) {
+      if (selectedBus !== 'all' && selectedBus !== busType) return;
+      const pts = pts3D.map(p => project(p[0], p[1], p[2]));
+      const avgZ = pts.reduce((s, p) => s + p.z, 0) / pts.length - 0.4;
+      const isBusActive = (selectedBus === busType);
+      primitives.push({
+        type: 'path',
+        pts,
+        z: avgZ,
+        stroke: color,
+        lineWidth: isBusActive ? widthPx * 1.45 : widthPx,
+        alpha: (selectedComp !== 'all' && selectedComp !== compId && selectedBus === 'all') ? 0.3 : 0.95,
+        compId
+      });
+    }
+
+    const SOLDER_PINS = [
+      { id: 'IN+', x: -7.13, z: -12.60, bus: 'solar', color: '#facc15', labelX: -7.13, labelZ: -15.3 },
+      { id: 'IN-', x:  7.13, z: -12.60, bus: 'solar', color: '#facc15', labelX:  7.13, labelZ: -15.3 },
+      { id: 'O+',  x: -7.13, z:   9.91, bus: 'out',   color: '#f87171', labelX: -7.13, labelZ:  12.6 },
+      { id: 'B+',  x: -3.72, z:   9.91, bus: 'bat',   color: '#60a5fa', labelX: -3.72, labelZ:   7.1 },
+      { id: 'B-',  x:  3.72, z:   9.91, bus: 'bat',   color: '#60a5fa', labelX:  3.72, labelZ:   7.1 },
+      { id: 'O-',  x:  7.13, z:   9.91, bus: 'out',   color: '#4ade80', labelX:  7.13, labelZ:  12.6 },
+      { id: 'BZ+', x: -3.20, z:  17.50, bus: 'buz',   color: '#c084fc', labelX: -3.20, labelZ:  20.3 },
+      { id: 'BZ-', x:  3.20, z:  17.50, bus: 'buz',   color: '#c084fc', labelX:  3.20, labelZ:  20.3 }
+    ];
+
+    function buildPowerBoardScene() {
+      primitives = [];
+      const ex = explodeVal * 18.0;
+      const inCap = (viewMode === 'in_capsule');
+      const offX = inCap ? -35.0 : 0.0;
+      const offY = inCap ? (ex * 0.4) : 0.0;
+      const offZ = inCap ? -7.0 : 0.0;
+
+      if (inCap) {
+        addBox3D(0, -8.5, 0, 120.4, 2.0, 76.4, '#ea580c', 'buzzer_bat', { alpha: 0.45 });
+        addBox3D(0, -0.25, -38.2, 126.0, 15.5, 5.6, '#f97316', 'buzzer_bat', { alpha: 0.38 });
+        addBox3D(0, -0.25,  38.2, 126.0, 15.5, 5.6, '#f97316', 'buzzer_bat', { alpha: 0.38 });
+        addBox3D(-60.2, -0.25, 0, 5.6, 15.5, 70.8, '#f97316', 'buzzer_bat', { alpha: 0.38 });
+        addBox3D( 60.2, -0.25, 0, 5.6, 15.5, 70.8, '#f97316', 'buzzer_bat', { alpha: 0.38 });
+
+        [[-7.5, -19.5], [7.5, -19.5], [7.5, 19.5], [-7.5, 19.5]].forEach(([px, pz], idx) => {
+          addBox3D(offX + px, -4.0, offZ + pz, 4.5, 8.0, 4.5, '#fb923c', 'buzzer_bat', { stroke: '#fde047' });
+          addBox3D(offX + px,  2.5, offZ + pz, 2.40, 5.0, 2.40, '#facc15', 'buzzer_bat', {
+            stroke: '#fef08a',
+            label: idx === 0 ? 'Espiga 2.4×2.4mm' : null
+          });
+        });
+
+        addCyl3D(-35.0, -3.5, 25.0, 6.8, 6.8, 7.0, '#c2410c', 'buzzer_bat', { alpha: 0.55 });
+        addCyl3D(-35.0, -2.5 + ex * 0.5, 25.0, 6.0, 6.0, 8.5, '#1e293b', 'buzzer_bat', {
+          stroke: '#94a3b8',
+          label: 'Buzzer Ø12mm (95dB)',
+          subLabel: 'Cuna Acústica Cápsula'
+        });
+        addCyl3D(-35.0, 1.9 + ex * 0.5, 25.0, 1.8, 1.8, 0.3, '#e2e8f0', 'buzzer_bat');
+
+        addBox3D(18.0, 2.5 + ex * 0.3, 0.0, 70.0, 21.0, 62.0, '#1d4ed8', 'buzzer_bat', {
+          stroke: '#60a5fa',
+          alpha: 0.90,
+          label: 'Batería Azul LMT 21700-3P',
+          subLabel: '3.7V ~15Ah (Va a B+ y B-)'
+        });
+      }
+
+      const bY = 0.80 + offY;
+      addBox3D(offX, bY, offZ, 24.0, 1.60, 48.0, '#94a3b8', 'substrate', {
+        stroke: '#475569',
+        label: viewMode === 'only_print' ? 'Baquelita PETG Gris (24×48×1.6mm)' : null,
+        subLabel: viewMode === 'only_print' ? 'Base 100% Plana sin Hundimientos' : null
+      });
+
+      [[-7.50, -19.50], [7.50, -19.50], [7.50, 19.50], [-7.50, 19.50]].forEach(([hx, hz], idx) => {
+        addBox3D(offX + hx, bY, offZ + hz, 3.15, 1.66, 3.15, '#090d16', 'substrate', {
+          stroke: '#38bdf8',
+          lineWidth: 1.2,
+          label: (idx === 1 && viewMode === 'only_print') ? 'Hueco 3.15×3.15mm' : null
+        });
+      });
+
+      SOLDER_PINS.forEach(p => {
+        addBox3D(offX + p.x, bY, offZ + p.z, 1.60, 1.66, 1.60, '#090d16', 'substrate', {
+          stroke: p.color,
+          lineWidth: 0.9
+        });
+      });
+
+      const cunaLift = (viewMode === 'only_print') ? (ex * 0.4) : 0.0;
+      addBox3D(offX - 9.50, 2.70 + offY + cunaLift, offZ - 1.00, 1.60, 4.20, 26.00, '#16a34a', 'substrate', {
+        stroke: '#4ade80',
+        label: viewMode === 'only_print' ? 'Cuna Verde TP4056' : null
+      });
+      addBox3D(offX + 9.50, 2.70 + offY + cunaLift, offZ - 1.00, 1.60, 4.20, 26.00, '#16a34a', 'substrate', {
+        stroke: '#4ade80'
+      });
+      addBox3D(offX - 7.98, 2.40 + offY + cunaLift, offZ - 1.35, 1.40, 1.60, 14.50, '#22c55e', 'substrate', {
+        stroke: '#86efac'
+      });
+      addBox3D(offX + 7.98, 2.40 + offY + cunaLift, offZ - 1.35, 1.40, 1.60, 14.50, '#22c55e', 'substrate', {
+        stroke: '#86efac'
+      });
+
+      SOLDER_PINS.forEach(p => {
+        const wbox = p.id.length * 1.35 + 0.6;
+        addBox3D(offX + p.labelX, 0.0 + offY - cunaLift * 0.5, offZ + p.labelZ, wbox, 0.80, 1.85, '#16a34a', 'substrate', {
+          stroke: '#4ade80',
+          lineWidth: 0.8
+        });
+      });
+
+      if (viewMode !== 'only_print') {
+        const modY = 3.98 + offY + ex * 0.95;
+
+        addBox3D(offX, modY, offZ - 1.00, 17.15, 1.55, 25.70, '#1d4ed8', 'tp4056', {
+          stroke: '#60a5fa',
+          label: 'HW-373 V1.2.1 (TP4056)',
+          subLabel: 'Carga Solar 1A + BMS DW01A'
+        });
+
+        addBox3D(offX, modY + 2.10, offZ - 11.64, 8.90, 3.10, 7.30, '#cbd5e1', 'tp4056', {
+          stroke: '#64748b',
+          label: 'Puerto USB-C'
+        });
+
+        addBox3D(offX, modY + 1.15, offZ - 3.20, 4.90, 0.90, 6.00, '#0f172a', 'tp4056', { stroke: '#475569' });
+        addBox3D(offX - 3.10, modY + 1.10, offZ + 4.20, 2.90, 0.85, 2.80, '#0f172a', 'tp4056', { stroke: '#475569' });
+        addBox3D(offX + 3.10, modY + 1.10, offZ + 4.20, 3.20, 0.85, 4.40, '#0f172a', 'tp4056', { stroke: '#475569' });
+
+        SOLDER_PINS.slice(0, 6).forEach(p => {
+          addBox3D(offX + p.x, modY + 0.05, offZ + p.z, 2.10, 1.65, 2.10, '#eab308', 'tp4056', {
+            stroke: '#fef08a'
+          });
+        });
+
+        const pinShiftY = offY - ex * 0.25;
+        SOLDER_PINS.forEach(p => {
+          if (selectedBus !== 'all' && selectedBus !== p.bus) return;
+
+          const pinTopY = (p.bus === 'buz') ? 2.80 : (3.98 + ex * 0.45);
+          const pinBotY = -2.20;
+          const pinH = pinTopY - pinBotY;
+          addBox3D(offX + p.x, (pinTopY + pinBotY) / 2 + pinShiftY, offZ + p.z, 0.64, pinH, 0.64, '#f8fafc', 'solder_pins', {
+            stroke: '#94a3b8'
+          });
+
+          if (showSolder) {
+            addCyl3D(offX + p.x, -0.08 + pinShiftY, offZ + p.z, 1.25, 1.25, 0.16, '#f59e0b', 'solder_pins', {
+              segs: 12,
+              alpha: 0.75
+            });
+            addCyl3D(offX + p.x, -0.70 + pinShiftY, offZ + p.z, 0.42, 1.08, 1.30, '#e2e8f0', 'solder_pins', {
+              segs: 12,
+              stroke: '#cbd5e1'
+            });
+            if (p.bus !== 'buz') {
+              addCyl3D(offX + p.x, modY + 1.15, offZ + p.z, 0.38, 0.98, 0.85, '#e2e8f0', 'solder_pins', {
+                segs: 12,
+                stroke: '#94a3b8'
+              });
+            }
+          }
+        });
+
+        const wy = -0.85 + pinShiftY;
+        addPath3D([[offX - 7.13, wy, offZ - 12.60], [offX - 7.13, wy, offZ - 23.5]], '#facc15', 2.8, 'solar', 'solder_pins');
+        addPath3D([[offX + 7.13, wy, offZ - 12.60], [offX + 7.13, wy, offZ - 23.5]], '#fde047', 2.8, 'solar', 'solder_pins');
+
+        const batEndX = inCap ? 10.0 : (offX + 13.5);
+        addPath3D([[offX - 3.72, wy, offZ + 9.91], [offX - 3.72, wy, offZ + 13.8], [batEndX, wy, offZ + 13.8]], '#ef4444', 3.2, 'bat', 'solder_pins');
+        addPath3D([[offX + 3.72, wy, offZ + 9.91], [batEndX, wy, offZ + 9.91]], '#3b82f6', 3.2, 'bat', 'solder_pins');
+
+        addPath3D([[offX - 7.13, wy, offZ + 9.91], [offX - 11.2, wy, offZ + 9.91], [offX - 11.2, wy, offZ - 18.0]], '#f87171', 2.8, 'out', 'solder_pins');
+        addPath3D([[offX + 7.13, wy, offZ + 9.91], [offX + 7.13, wy, offZ + 17.50], [offX + 3.20, wy, offZ + 17.50]], '#4ade80', 2.8, 'out', 'solder_pins');
+
+        const buzEndZ = inCap ? 25.0 : (offZ + 24.5);
+        addPath3D([[offX - 3.20, wy, offZ + 17.50], [offX - 3.20, wy, buzEndZ]], '#c084fc', 2.6, 'buz', 'solder_pins');
+        addPath3D([[offX + 3.20, wy, offZ + 17.50], [offX + 3.20, wy, buzEndZ]], '#4ade80', 2.6, 'buz', 'solder_pins');
+      }
+    }
+
     function render() {
+      if (autoRotate) {
+        targetYaw += 0.006;
+      }
       camPitch += (targetPitch - camPitch) * 0.14;
-      camYaw += (targetYaw - camYaw) * 0.14;
-      camZoom += (targetZoom - camZoom) * 0.14;
+      camYaw   += (targetYaw - camYaw) * 0.14;
+      camZoom  += (targetZoom - camZoom) * 0.14;
+      camPanX  += (targetPanX - camPanX) * 0.14;
+      camPanY  += (targetPanY - camPanY) * 0.14;
 
       ctx.fillStyle = '#090d16';
       ctx.fillRect(0, 0, width, height);
 
-      primitives = [];
-      const ex = explodeVal * 16;
-
-      // 1. Baquelita Grupo B: 24.0 x 48.0 x 1.6 mm (X = width 24, Z = length 48)
-      addBox3D(0, 0, 0, 24.0, 1.6, 48.0, '#64748b', '#475569', hideModules ? 'Baquelita 24×48×1.6 mm' : null);
-
-      // 2. 4 Corner Square Holes (3.0 x 3.0 mm at DX = 15.0 -> X=±7.5, DY = 39.0 -> Z=±19.5)
-      [[-7.5, -19.5], [7.5, -19.5], [7.5, 19.5], [-7.5, 19.5]].forEach(([hx, hz]) => {
-        addBox3D(hx, 0, hz, 3.15, 1.75, 3.15, '#090d16', '#38bdf8');
-      });
-
-      // 3. Green PETG Top Cradles (TP4056 side rails + Buzzer ring)
-      addBox3D(-9.3, 1.8, -4.2, 1.4, 2.0, 18.0, '#16a34a', '#4ade80');
-      addBox3D( 9.3, 1.8, -4.2, 1.4, 2.0, 18.0, '#16a34a', '#4ade80');
-      addCyl3D(0, 1.8, 14.0, 7.0, 2.0, '#16a34a', 20);
-      addCyl3D(0, 1.85, 14.0, 6.1, 2.05, '#64748b', 20);
-
-      // 4. Modules on top (when not hidden)
-      if (!hideModules) {
-        // HW-373 V1.2.1 (TP4056 USB-C 17.2 x 26.0 mm)
-        addBox3D(0, 2.6 + ex, -4.2, 17.2, 1.5, 26.0, '#1d4ed8', '#60a5fa', 'HW-373 (TP4056)');
-        // USB-C connector on TP4056
-        addBox3D(0, 4.2 + ex, -15.5, 7.2, 2.8, 6.5, '#cbd5e1', '#64748b', 'USB-C');
-        // TP4056 & DW01 ICs
-        addBox3D(0, 3.6 + ex, -5.0, 5.0, 1.0, 6.0, '#0f172a', '#475569');
-        addBox3D(-3.2, 3.5 + ex, 3.0, 3.0, 0.9, 3.2, '#0f172a', '#475569');
-        addBox3D( 3.2, 3.5 + ex, 3.0, 3.5, 0.9, 4.2, '#0f172a', '#475569');
-
-        // Piezo Buzzer Ø 12.0 x 9.0 mm
-        addCyl3D(0, 5.5 + ex, 14.0, 6.0, 8.5, '#111827', 22, 'Buzzer Ø12mm');
-        addCyl3D(0, 9.8 + ex, 14.0, 1.6, 0.3, '#cbd5e1', 14);
-
-        // 5mm Green LED at top right (X = +2.54, Z = -20.2)
-        addCyl3D(2.54, 4.5 + ex, -20.2, 2.5, 6.0, '#22c55e', 16, 'LED 5mm');
-
-        // Solar Alligator Clip Pins (X = -3.81, -1.27, Z = -20.2)
-        addBox3D(-3.81, 3.5 + ex * 0.4, -20.2, 1.0, 6.5, 1.0, '#ef4444', '#fca5a5', 'S+');
-        addBox3D(-1.27, 3.5 + ex * 0.4, -20.2, 1.0, 6.5, 1.0, '#eab308', '#fde047', 'S-');
+      ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+      ctx.lineWidth = 1;
+      for (let g = -60; g <= 60; g += 10) {
+        const p1 = project(g, -9, -60), p2 = project(g, -9, 60);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        const q1 = project(-60, -9, g), q2 = project(60, -9, g);
+        ctx.beginPath(); ctx.moveTo(q1.x, q1.y); ctx.lineTo(q2.x, q2.y); ctx.stroke();
       }
 
+      buildPowerBoardScene();
       primitives.sort((a, b) => b.z - a.z);
-      primitives.forEach(p => {
-        ctx.beginPath();
-        ctx.moveTo(p.pts[0].x, p.pts[0].y);
-        for (let i = 1; i < p.pts.length; i++) ctx.lineTo(p.pts[i].x, p.pts[i].y);
-        ctx.closePath();
-        ctx.fillStyle = p.fill;
-        ctx.fill();
-        ctx.strokeStyle = p.stroke;
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
 
-        if (p.label) {
-          const cx = p.pts.reduce((s, v) => s + v.x, 0) / p.pts.length;
-          const cy = p.pts.reduce((s, v) => s + v.y, 0) / p.pts.length;
-          ctx.fillStyle = 'rgba(15,23,42,0.88)';
-          ctx.fillRect(cx - 38, cy - 9, 76, 18);
-          ctx.fillStyle = '#f8fafc';
-          ctx.font = '600 10px system-ui';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(p.label, cx, cy);
+      const pendingLabels = [];
+
+      primitives.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha !== undefined ? p.alpha : 1.0;
+
+        if (p.type === 'poly') {
+          ctx.beginPath();
+          ctx.moveTo(p.pts[0].x, p.pts[0].y);
+          for (let i = 1; i < p.pts.length; i++) {
+            ctx.lineTo(p.pts[i].x, p.pts[i].y);
+          }
+          ctx.closePath();
+          ctx.fillStyle = p.fill;
+          ctx.fill();
+          if (p.stroke) {
+            ctx.strokeStyle = p.stroke;
+            ctx.lineWidth = p.lineWidth || 0.7;
+            ctx.stroke();
+          }
+          if (showLabels && p.label) {
+            const cx = p.pts.reduce((s, v) => s + v.x, 0) / p.pts.length;
+            const cy = p.pts.reduce((s, v) => s + v.y, 0) / p.pts.length;
+            pendingLabels.push({ x: cx, y: cy, text: p.label, sub: p.subLabel });
+          }
+        } else if (p.type === 'path') {
+          ctx.beginPath();
+          ctx.moveTo(p.pts[0].x, p.pts[0].y);
+          for (let i = 1; i < p.pts.length; i++) {
+            ctx.lineTo(p.pts[i].x, p.pts[i].y);
+          }
+          ctx.strokeStyle = p.stroke;
+          ctx.lineWidth = p.lineWidth || 2.4;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
         }
+        ctx.restore();
       });
 
-      // Bottom-face Green PETG pin labels when viewing from bottom
-      if (camPitch < 0.15) {
-        const botLabels = [
-          { x: -3.81, z: -22.2, t: 'S+' }, { x: -1.27, z: -22.2, t: 'S-' },
-          { x:  1.27, z: -22.2, t: 'L+' }, { x:  3.81, z: -22.2, t: 'L-' },
-          { x: -7.25, z: -13.0, t: 'IN+' }, { x:  7.25, z: -13.0, t: 'IN-' },
-          { x: -7.25, z:  4.6,  t: 'O+' }, { x: -2.54, z:  4.6,  t: 'B+' },
-          { x:  2.54, z:  4.6,  t: 'B-' }, { x:  7.25, z:  4.6,  t: 'O-' },
-          { x: -7.2,  z:  14.0, t: 'BZ+' }, { x:  7.2,  z:  14.0, t: 'BZ-' },
-          { x: -3.81, z:  22.2, t: 'V+' }, { x: -1.27, z:  22.2, t: 'GD' },
-          { x:  1.27, z:  22.2, t: 'BZ' }, { x:  3.81, z:  22.2, t: 'LD' }
-        ];
-        ctx.font = '700 10px monospace';
+      if (showLabels) {
+        const inCap = (viewMode === 'in_capsule');
+        const offX = inCap ? -35.0 : 0.0;
+        const offY = inCap ? (explodeVal * 7.2) : 0.0;
+        const offZ = inCap ? -7.0 : 0.0;
+        const labelY = (camPitch < 0.15) ? (-0.55 + offY) : (1.75 + offY);
+
+        ctx.save();
+        ctx.font = '700 11px ui-monospace, SFMono-Regular, Menlo, monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        botLabels.forEach(b => {
-          const pt = project(b.x, -1.0, b.z);
+
+        SOLDER_PINS.forEach(p => {
+          if (selectedBus !== 'all' && selectedBus !== p.bus) return;
+          const pt = project(offX + p.labelX, labelY, offZ + p.labelZ);
+          const w = p.id.length * 7.5 + 8;
           ctx.fillStyle = 'rgba(6, 78, 59, 0.92)';
-          ctx.fillRect(pt.x - 12, pt.y - 7, 24, 14);
-          ctx.fillStyle = '#4ade80';
-          ctx.fillText(b.t, pt.x, pt.y);
+          ctx.strokeStyle = '#4ade80';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(pt.x - w / 2, pt.y - 8, w, 16, 4);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#86efac';
+          ctx.fillText(p.id, pt.x, pt.y + 0.5);
         });
+        ctx.restore();
+      }
+
+      if (showLabels) {
+        ctx.save();
+        pendingLabels.forEach(lbl => {
+          ctx.font = '600 11px system-ui, sans-serif';
+          const tw = Math.max(ctx.measureText(lbl.text).width, lbl.sub ? ctx.measureText(lbl.sub).width : 0) + 16;
+          const th = lbl.sub ? 30 : 19;
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(lbl.x - tw / 2, lbl.y - th / 2, tw, th, 5);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(lbl.text, lbl.x, lbl.sub ? lbl.y - 6 : lbl.y);
+          if (lbl.sub) {
+            ctx.font = '500 10px ui-monospace, monospace';
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillText(lbl.sub, lbl.x, lbl.y + 7);
+          }
+        });
+        ctx.restore();
       }
 
       requestAnimationFrame(render);
     }
 
-    canvas.onpointerdown = e => { isDragging = true; prevX = e.clientX; prevY = e.clientY; };
-    window.onpointerup = () => { isDragging = false; };
-    window.onpointermove = e => {
-      if (!isDragging) return;
-      targetYaw += (e.clientX - prevX) * 0.01;
-      targetPitch = Math.max(-1.52, Math.min(1.52, targetPitch + (e.clientY - prevY) * 0.01));
+    let isDragging = false;
+    let dragButton = 0;
+    let prevX = 0, prevY = 0;
+
+    canvas.addEventListener('pointerdown', e => {
+      isDragging = true;
+      dragButton = e.button;
       prevX = e.clientX;
       prevY = e.clientY;
-    };
-    canvas.onwheel = e => {
-      e.preventDefault();
-      targetZoom = Math.max(3.5, Math.min(14.0, targetZoom - e.deltaY * 0.005));
-    };
+      canvas.setPointerCapture(e.pointerId);
+    });
 
-    selectComp('all');
+    window.addEventListener('pointerup', () => {
+      isDragging = false;
+    });
+
+    window.addEventListener('pointermove', e => {
+      if (!isDragging) return;
+      const dx = e.clientX - prevX;
+      const dy = e.clientY - prevY;
+      prevX = e.clientX;
+      prevY = e.clientY;
+
+      if (dragButton === 2 || e.shiftKey) {
+        targetPanX += dx;
+        targetPanY += dy;
+      } else {
+        targetYaw += dx * 0.01;
+        targetPitch = Math.max(-1.54, Math.min(1.54, targetPitch + dy * 0.01));
+      }
+    });
+
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      targetZoom = Math.max(2.8, Math.min(16.0, targetZoom - e.deltaY * 0.005));
+    }, { passive: false });
+
+    selectComponent('all');
     render();
   </script>
 </body>
