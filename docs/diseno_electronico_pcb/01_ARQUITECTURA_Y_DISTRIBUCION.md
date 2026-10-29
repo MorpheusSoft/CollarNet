@@ -1,64 +1,70 @@
-# Arquitectura General y Distribución Física del Hardware
-## Collar Inteligente Ganadero CowAI / CollarNet V2 (Estilo Halter)
+# Arquitectura Oficial del Hardware: Opción 2 Monolítica (All-in-One)
+## Collar Inteligente Ganadero CowAI / CollarNet V2
 
-Este documento describe la arquitectura modular de hardware del collar inteligente, diseñado para optimizar costos, maximizar la eficiencia energética con recarga solar continua y aislar completamente la alta tensión del pulso disuasorio de los circuitos de radiofrecuencia y computación.
+A partir de esta revisión técnica, el proyecto adopta de forma oficial y definitiva la **Opción 2: Integrado Monolítico Todo-en-Uno (110.60 × 33.10 mm)** como la arquitectura de hardware de producción.
 
 ---
 
-## 1. Justificación de la Distribución en 2 Cápsulas
+## 1. Justificación de la Arquitectura Monolítica
 
-El collar se basa en una arquitectura anatómica dorsal inspirada en los collares comerciales de pastoreo virtual de referencia en la industria (*Halter*, *Nofence*):
+La arquitectura monolítica unifica toda la electrónica del collar en una **única tarjeta de circuito impreso (PCBA)**, eliminando por completo el arnés dorsal de interconexión y reduciendo drásticamente los costos de ensamble y fallas mecánicas en campo.
 
 ```
-                                [LOMO SUPERIOR DE LA RES]
-                                     ▲             ▲
-                             [Panel Solar Izq] [Panel Solar Der]
-                                     │             │
-                          ┌──────────┴─────────────┴──────────┐
-                          │    Puente Dorsal Anatómico (TPU)  │
-                          │      (Canal Pasacables Ø8mm)      │
-                          └──────────┬─────────────┬──────────┘
-                                     │             │
-                          ┌──────────▼────────┐   ┌▼──────────────────┐
-                          │ CÁPSULA IZQUIERDA │   │  CÁPSULA DERECHA  │
-                          │   (Lógica y RF)   │   │(Potencia y Estímulo│
-                          ├───────────────────┤   ├───────────────────┤
-                          │ • ESP32-S3        │   │ • Pack Batería    │
-                          │ • Módem SIM7670   │   │   21700 (5000mAh) │
-                          │ • Antena GNSS     │   │ • Zumbador 95dB   │
-                          │   (al cielo)      │   │ • Generador Pulso │
-                          │ • Antena FPC LTE  │   │   Descarga (CDI)  │
-                          │ • Acelerómetro    │   │ • 2x Electrodos   │
-                          │ • Cargador MPPT   │   │   Inox de Cuello  │
-                          │ • Puerto USB-C    │   │ • Watchdog 1s     │
-                          │ • Slot Nano-SIM   │   │   Hardware        │
-                          └───────────────────┘   └───────────────────┘
+══════════════════════════════════════════════════════════════════════════════════════════════════
+               PLACA MONOLÍTICA COWAI V2 (ALL-IN-ONE) — 110.60 × 33.10 mm
+══════════════════════════════════════════════════════════════════════════════════════════════════
+
+CARA SUPERIOR (TOP LAYER):
+ [USB-C] ┌──────────────┐ ┌──────────────┐ ┌──────────┐ ┌────────┐   ||   ┌──────┐ ┌──────┐
+ ──[J1]──┤   ESP32-S3   │ │  SIM7670SA   │ │CN3791 MPPT││ BUZZER ├───||───┤BOBINA│ │ TIR. │ ──[EL1]
+         │ WROOM-1-N16R8│ │ (4G LTE+GPS) │ │ + SY8089 ││  95dB  │   ||   │ 1000V│ │ TYN  │ ──[EL2]
+         └──────────────┘ └──────────────┘ └──────────┘ └────────┘   ||   └──────┘ └──────┘
+ <────────────── SECTOR LÓGICA & RADIOFRECUENCIA (85 mm) ─────────────>   [RANURA   <── SECTOR HV ──>
+                                                                          FRESADA       (22 mm)
+                                                                          2.0 mm]
+
+CARA INFERIOR (BOTTOM LAYER):
+           ┌──────────────────────────────────────────────────────────┐
+           │        BASE PORTAPILAS KEYSTONE 1042 / 1048 SMT          │    [Slot Nano-SIM]   [JST Solar]
+           │         (Celda Li-Ion 18650 / 21700 suspendida)          │    ──────[J2]──────    ───[J3]───
+           └──────────────────────────────────────────────────────────┘
 ```
 
-### Ventajas de Ingeniería:
-1. **Aislamiento Electromagnético (EMC / EMI)**: Los pulsos de alta tensión (800V - 1200V) generan transitorios inductivos severos. Al estar confinados en la **Cápsula Derecha**, nunca interfieren con el sintonizador de radio del módem 4G LTE ni con el receptor satelital GNSS de la Cápsula Izquierda.
-2. **Seguridad Total en el Puente Dorsal**: Solo 5 conductores de señal de muy baja tensión (< 5V) cruzan la parte superior del cuello del animal. La alta tensión se genera localmente en la cápsula derecha y baja directo a la piel del cuello.
-3. **Distribución Simétrica de Peso**: La batería 21700 (~70 g) en la derecha equilibra perfectamente el peso de la electrónica de radiofrecuencia y antenas en la izquierda (~65 g).
+### Ventajas de Ingeniería sobre el diseño modular:
+1. **Cero Cables de Arnés Dorsal**: Todo el conexionado (alimentación, buzzer, carga solar y pulso de choque) ocurre a través de pistas de cobre internas de baja impedancia. Se elimina el mazo de cables pasantes que cruzaba el cuello.
+2. **Menor Costo de Fabricación**: Se manda a producir y ensamblar una sola PCB en JLCPCB en lugar de dos placas separadas, abaratando la orden SMT a **~$21 USD por collar**.
+3. **Compatibilidad Mecánica 100%**: Encaja directamente sobre los 4 postes con orificios de tornillos M2.5 de la caja ganadera [`caja_3d/caja_lilygo_t7670x.scad`](file:///home/lzambrano/Desarrollo/CollarNet/caja_3d/caja_lilygo_t7670x.scad) (`hole_dx = 27.75 mm`, `hole_dy = 105.55 mm`).
+4. **Seguridad y Aislamiento de 1000V**: Una **ranura pasante fresada de 2.0 mm en la placa** crea una barrera física de aire con distancia de fuga (*creepage*) superior a 8 mm entre el sector de alta tensión y la lógica del microcontrolador.
 
 ---
 
-## 2. Arnés de Interconexión del Puente Dorsal
+## 2. Especificaciones Mecánicas y Dimensionales
 
-El puente de TPU 95A cuenta con un canal interno estanco de Ø8.0 mm. Los cables que lo atraviesan forman un mazo flexible blindado de 5 conductores (calibre AWG 24 para alimentación y AWG 26 para control):
-
-| Hilo | Etiqueta de Red | Tensión Nominal | Descripción |
-| :---: | :--- | :---: | :--- |
-| **1** | `VBAT_PWR` | 3.4V – 4.2V | Alimentación positiva desde el polo de la batería Li-Ion 21700 |
-| **2** | `GND_SYS` | 0.0V | Retorno común de masa del sistema |
-| **3** | `BUZZER_PWM` | 3.3V (0–4000 Hz) | Salida LEDC desde ESP32-S3 GPIO 5 hacia la puerta del MOSFET de audio |
-| **4** | `IMPULSE_TRIG`| 3.3V Lógico | Disparo de pulso de descarga desde ESP32-S3 GPIO 4 hacia el optoacoplador |
-| **5** | `SOLAR_PANEL_R`| 5.5V – 6.5V | Retorno del panel solar derecho hacia el cargador MPPT central |
+* **Longitud Total**: **110.60 mm**
+* **Ancho Total**: **33.10 mm**
+* **Grosor del Sustrato**: **1.6 mm** (FR-4 estándar, 2 capas, 1 oz de cobre)
+* **Taladros de Montaje**: 4 orificios metalizados de Ø2.6 mm para tornillos M2.5 con pads de refuerzo de Ø5.0 mm.
+  - Distancia entre centros a lo largo (`dy`): **105.55 mm**
+  - Distancia entre centros a lo ancho (`dx`): **27.75 mm**
+* **Aislamiento Galvánico**: Ranura pasante de **2.0 mm × 28.0 mm** ubicada en $X = 85.0\text{ mm}$ que divide la placa en:
+  - **Sector 1 (Lógica y RF)**: Longitud 85.0 mm.
+  - **Sector 2 (Alta Tensión / Descarga)**: Longitud 22.0 mm.
 
 ---
 
-## 3. Especificaciones del Estímulo Eléctrico (Cerca Virtual)
+## 3. Distribución por Capas (Double-Sided SMT)
 
-* **Topología**: Descarga por Condensador de Impulso (CDI - *Capacitive Discharge Impulse*).
-* **Tensión Pico**: 800V - 1000V en circuito abierto.
-* **Energía por Pulso**: 0.05 a 0.10 Joules. Es una sacudida refleja e incómoda en el cuello, pero inofensiva para la piel y el sistema cardíaco del bovino.
-* **Seguro por Hardware**: Temporizador monoestable (RC / 555) que corta la oscilación del transformador tras **1000 milisegundos continuos**, garantizando que el animal nunca quede sometido a estímulo prolongado aun si el microcontrolador llegara a bloquearse.
+### Cara Superior (Top Layer - Componentes Principales):
+* **Microcontrolador**: Espressif ESP32-S3-WROOM-1-N16R8 (16MB Flash, 8MB PSRAM, USB nativo).
+* **Módem Celular & Satelital**: SIMCom SIM7670SA (4G LTE Cat-1 + GNSS) con conectores IPEX u.FL para antena GNSS cerámica y antena 4G LTE.
+* **Cargador Solar MPPT**: Consonance CN3791 (SSOP-10) con P-MOSFET AO3401A, diodos Schottky SS34 e inductor de 10 µH.
+* **Regulador Buck**: Silergy SY8089 (3.3V / 2.0A) con inductor blindado de 2.2 µH.
+* **Acelerómetro I2C**: Silan SC7A20 (ultra-bajo consumo: 6 µA en reposo).
+* **Buzzer Acústico**: Zumbador piezoeléctrico de 95dB (4000 Hz) con N-MOSFET AO3400A.
+* **Etapa de Descarga Cerca Virtual**: Optoacoplador EL817C, temporizador de seguridad de 1000 ms, oscilador flyback elevador, condensador CDI 1000V/0.1µF, tiristor TYN1225RG (1200V) y terminales pasantes M4.
+
+### Cara Inferior (Bottom Layer - Energía y Conectividad):
+* **Base Portapilas Keystone**: Clips metálicos SMD/PTH (Keystone 1042 / 1048) soldados para alojar firmemente una celda cilíndrica Li-Ion **18650 (65 mm)** o **21700 (70 mm)**.
+* **BMS Integrado 1S**: Controlador DW01A-G + MOSFET dual FS8205A soldados junto a los bornes de la celda.
+* **Ranura Nano-SIM**: Zócalo Push-Pull de 6 pines bajo perfil (`J2`) con filtro ESD.
+* **Conector Solar JST**: Conector de 2 pines (JST-PH 2.0 mm) para conectar los paneles solares de la tapa.

@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador CAD 3D — Encaje de Placa Lógica (107×70 mm) en Cápsula Izquierda (ZIP)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #090d16; color: #f1f5f9;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
+    }
+    canvas {
+      display: block; width: 100%; height: 100%;
+      cursor: grab; touch-action: none;
+    }
+    canvas:active { cursor: grabbing; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+      z-index: 10;
+    }
+    .topbar {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      padding: 10px 16px; display: flex; flex-wrap: wrap;
+      align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .left-panel {
+      position: absolute; top: 76px; left: 12px; bottom: 74px;
+      width: 315px; padding: 13px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .right-panel {
+      position: absolute; top: 76px; right: 12px; bottom: 74px;
+      width: 350px; padding: 13px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .bottom-dock {
+      position: absolute; bottom: 12px; left: 12px; right: 12px;
+      padding: 10px 16px; display: flex; flex-wrap: wrap;
+      align-items: center; justify-content: space-between; gap: 14px;
+    }
+    .btn {
+      padding: 6px 11px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(30, 41, 59, 0.9); color: #e2e8f0; transition: all 0.15s;
+    }
+    .btn:hover { background: rgba(51, 65, 85, 1); color: #fff; }
+    .btn.active-emerald { background: #10b981; color: #022c22; border-color: #34d399; font-weight: 700; }
+    .btn.active-sky { background: rgba(56, 189, 248, 0.22); color: #7dd3fc; border-color: rgba(56, 189, 248, 0.5); }
+    .btn.active-amber { background: rgba(245, 158, 11, 0.22); color: #fcd34d; border-color: rgba(245, 158, 11, 0.5); }
+    .card {
+      background: rgba(2, 6, 23, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 9px; padding: 9px 11px;
+    }
+    .card-ok {
+      background: rgba(6, 78, 59, 0.42);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+    }
+    .card-warn {
+      background: rgba(69, 26, 3, 0.5);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+    }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+    }
+    .badge-ok { background: rgba(16, 185, 129, 0.22); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.45); }
+    .badge-warn { background: rgba(245, 158, 11, 0.22); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 5px; }
+    th, td { padding: 4px 5px; text-align: left; border-bottom: 1px solid rgba(148, 163, 184, 0.12); }
+    th { color: #94a3b8; font-weight: 600; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .comp-item {
+      width: 100%; text-align: left; padding: 7px 9px; border-radius: 8px;
+      border: 1px solid rgba(30, 41, 59, 0.9); background: rgba(15, 23, 42, 0.55);
+      color: #e2e8f0; cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: all 0.15s; margin-bottom: 5px;
+    }
+    .comp-item:hover { background: rgba(30, 41, 59, 0.8); border-color: rgba(148, 163, 184, 0.3); }
+    .comp-item.active { background: rgba(30, 41, 59, 0.95); border-color: #10b981; }
+    input[type="range"] { cursor: pointer; height: 6px; }
+  </style>
+</head>
+<body>
+
+  <canvas id="cadCanvas"></canvas>
+
+  <!-- TOP HEADER -->
+  <header class="glass-panel topbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:36px; height:36px; border-radius:8px; background:rgba(16,185,129,0.2); border:1px solid #10b981; display:flex; align-items:center; justify-content:center; color:#34d399; font-weight:800; font-size:14px;">3D</div>
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <h1 style="font-size:15px; font-weight:700; color:#fff;">Simulación de Encaje 3D: Placa Lógica (107×70 mm) + Cápsula Izquierda (ZIP)</h1>
+          <span class="badge badge-ok mono">✅ ENCAJE VERIFICADO (DX=98, DY=61, Z=18.5 mm)</span>
+        </div>
+        <p style="font-size:11.5px; color:#94a3b8;">
+          1. Cápsula Base ASA (4 Espigas 2.4×2.4mm) · 2. Baquelita PETG (4 Huecos 3.15×3.15mm) · 3. 4 Módulos · 4. Tapa Solar con 4 Pisadores
+        </p>
+      </div>
+    </div>
+
+    <!-- MODO DE ENSAMBLE RÁPIDO -->
+    <div style="display:flex; align-items:center; gap:5px; background:rgba(2,6,23,0.85); padding:4px; border-radius:9px; border:1px solid rgba(148,163,184,0.2);">
+      <button id="btnStateSeated" class="btn active-emerald">🔒 Placa Encajada + Tapa</button>
+      <button id="btnStateOpenLid" class="btn">📂 Abrir Tapa (Ver Adentro)</button>
+      <button id="btnStateExplode" class="btn">💥 Despiece Completo</button>
+    </div>
+
+    <!-- CÁMARAS -->
+    <div style="display:flex; align-items:center; gap:5px;">
+      <button data-cam="iso" class="btn cam-btn active-sky">Isométrica</button>
+      <button data-cam="top" class="btn cam-btn">Planta (XY)</button>
+      <button data-cam="sideZ" class="btn cam-btn">Perfil Corte Z</button>
+      <button data-cam="corner" class="btn cam-btn active-amber">🔎 Zoom Espiga Esquina</button>
+      <button id="btnResetCam" class="btn">🎯 Centrar</button>
+    </div>
+  </header>
+
+  <!-- LEFT PANEL: PARTS & LAYER CONTROLS -->
+  <aside class="glass-panel left-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148,163,184,0.2); padding-bottom:6px;">
+      <span style="font-size:11.5px; font-weight:700; text-transform:uppercase; color:#cbd5e1;">Piezas del Ensamble</span>
+      <button id="btnAllParts" style="background:none; border:none; color:#38bdf8; font-size:11.5px; font-weight:600; cursor:pointer;">Ver todas</button>
+    </div>
+
+    <div id="partList"></div>
+
+    <!-- Visibilidad rápida -->
+    <div class="card" style="display:flex; flex-direction:column; gap:6px; margin-top:2px;">
+      <div style="font-size:11.5px; font-weight:700; color:#38bdf8;">👁️ Mostrar / Ocultar Capas:</div>
+      <label style="font-size:11.5px; display:flex; align-items:center; gap:7px; cursor:pointer;">
+        <input type="checkbox" id="chkShowBase" checked /> 🟧 Cápsula Base ASA (con 4 espigas)
+      </label>
+      <label style="font-size:11.5px; display:flex; align-items:center; gap:7px; cursor:pointer;">
+        <input type="checkbox" id="chkShowLid" checked /> 🧢 Tapa Solar ASA (con 4 pisadores)
+      </label>
+      <label style="font-size:11.5px; display:flex; align-items:center; gap:7px; cursor:pointer;">
+        <input type="checkbox" id="chkShowBoard" checked /> 🩶 Baquelita PETG (107×70×1.6 mm)
+      </label>
+      <label style="font-size:11.5px; display:flex; align-items:center; gap:7px; cursor:pointer;">
+        <input type="checkbox" id="chkShowMods" checked /> 🧩 4 Módulos (ESP32, SIM, GPS, MPU)
+      </label>
+      <label style="font-size:11.5px; display:flex; align-items:center; gap:7px; cursor:pointer;">
+        <input type="checkbox" id="chkShowTracks" checked /> ⚡ Pistas y 49 Pines Inferiores
+      </label>
+    </div>
+
+    <div class="card card-ok" style="font-size:11px; color:#d1fae5; line-height:1.42;">
+      <div style="font-weight:700; color:#34d399; margin-bottom:3px;">🔒 Sistema 100% Sin Tornillos:</div>
+      1. La placa baja y sus <b>4 huecos cuadrados (3.15 mm)</b> entran en las <b>4 espigas cuadradas (2.40 mm)</b> de la base.<br/>
+      2. La placa apoya en los <b>4 hombros a Z=18.5 mm</b>.<br/>
+      3. Al cerrar la tapa, sus <b>4 columnas pisadoras (Z=20.4 mm)</b> inmovilizan las esquinas desde arriba.
+    </div>
+  </aside>
+
+  <!-- RIGHT PANEL: METRIC CLEARANCES & DIAGNOSTIC -->
+  <aside class="glass-panel right-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span id="detailBadge" class="badge badge-ok">Simulación Exacta ZIP</span>
+      <span id="detailDims" class="mono" style="font-size:11px; color:#94a3b8;">107×70 mm en 114.8×70.8 mm</span>
+    </div>
+
+    <h2 id="detailTitle" style="font-size:15px; font-weight:700; color:#fff;">
+      Verificación de Encaje Milimétrico
+    </h2>
+    <p id="detailDesc" style="font-size:11.5px; color:#cbd5e1; line-height:1.45;"></p>
+
+    <!-- Tabla 1: Cotas X-Y -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; font-weight:700; color:#e2e8f0;">1. Holguras en Plano X-Y</span>
+        <span class="badge badge-ok">✅ ENTRA PERFECTO</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Parámetro</th><th>Placa Lógica</th><th>Cápsula ZIP</th><th>Holgura</th></tr>
+        </thead>
+        <tbody class="mono">
+          <tr><td>Largo (X)</td><td>107.00 mm</td><td>114.80 mm</td><td style="color:#4ade80;">+7.80 mm (+3.9/lado)</td></tr>
+          <tr><td>Ancho (Y)</td><td>70.00 mm</td><td>70.80 mm</td><td style="color:#4ade80;">+0.80 mm (+0.4/lado)</td></tr>
+          <tr><td>Centros DX</td><td>98.00 mm</td><td>98.00 mm</td><td style="color:#38bdf8;">0.00 mm (Exacto)</td></tr>
+          <tr><td>Centros DY</td><td>61.00 mm</td><td>61.00 mm</td><td style="color:#38bdf8;">0.00 mm (Exacto)</td></tr>
+          <tr><td>Espiga Esquina</td><td>Hueco 3.15mm</td><td>Espiga 2.40mm</td><td style="color:#4ade80;">+0.375 mm / lado</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tabla 2: Cotas Z -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11.5px; font-weight:700; color:#e2e8f0;">2. Alturas Verticales (Eje Z)</span>
+        <span class="badge badge-ok">✅ +11.0 mm ARRIBA</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Nivel Z (Base=0)</th><th>Cota (mm)</th><th>Holgura / Estado</th></tr>
+        </thead>
+        <tbody class="mono">
+          <tr><td>Piso interior cápsula</td><td>Z = 10.50</td><td>100% liso y limpio</td></tr>
+          <tr><td>Puntas 49 pines abajo</td><td>Z = 16.30</td><td style="color:#4ade80;">+5.80 mm sobre piso</td></tr>
+          <tr><td>4 Hombros esquina base</td><td>Z = 18.50</td><td>Asiento de baquelita</td></tr>
+          <tr><td>Baquelita Gris (1.6mm)</td><td>18.50 → 20.10</td><td>A nivel pasacables (17)</td></tr>
+          <tr><td>4 Pisadores de Tapa</td><td>Z = 20.40</td><td style="color:#4ade80;">+0.30 mm (prensado)</td></tr>
+          <tr><td>4 Espigas cuadradas</td><td>18.50 → 23.50</td><td>Entran en tapa hueca</td></tr>
+          <tr><td>Tope Módulos (ESP/SIM)</td><td>Z = 26.90</td><td style="color:#4ade80;">+11.0 mm al techo</td></tr>
+          <tr><td>Techo interior Tapa ZIP</td><td>Z = 37.90</td><td>Cúpula alta (14 mm)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Observación tangencial -->
+    <div class="card card-warn">
+      <div style="font-size:11.5px; font-weight:700; color:#fcd34d; margin-bottom:3px;">
+        🔎 Único punto ajustado (0.10 mm en esquina SIM800L):
+      </div>
+      <div style="font-size:11px; color:#fef3c7; line-height:1.4;">
+        El hombro circular verde (<code>Ø3.8 mm</code>) de la torreta superior-izquierda del SIM800L (<code>X=-45.0, Y=+27.7</code>) queda tangente (roce de <b>0.10 mm</b>) con la pared exterior del pisador de la tapa (<code>X=-46.8</code>). No impide el cierre.
+      </div>
+    </div>
+  </aside>
+
+  <!-- BOTTOM CONTROL DOCK: INTERACTIVE SLIDERS -->
+  <footer class="glass-panel bottom-dock">
+    <!-- Slider 1: Levantar / Encajar Baquelita -->
+    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:210px;">
+      <label style="font-size:11.5px; font-weight:700; color:#34d399; white-space:nowrap;">
+        🔽 Levantar Placa:
+      </label>
+      <input id="sliderBoardLift" type="range" min="0" max="100" value="0" style="width:100%; accent-color:#10b981;" />
+      <span id="valBoardLift" class="mono" style="font-size:11.5px; width:46px; text-align:right;">0 mm</span>
+    </div>
+
+    <!-- Slider 2: Abrir / Cerrar Tapa Solar -->
+    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:210px;">
+      <label style="font-size:11.5px; font-weight:700; color:#fb923c; white-space:nowrap;">
+        🧢 Abrir Tapa Solar:
+      </label>
+      <input id="sliderLidLift" type="range" min="0" max="100" value="35" style="width:100%; accent-color:#f97316;" />
+      <span id="valLidLift" class="mono" style="font-size:11.5px; width:46px; text-align:right;">+14 mm</span>
+    </div>
+
+    <!-- Slider 3: Transparencia Rayos X Carcasa -->
+    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
+      <label style="font-size:11.5px; font-weight:700; color:#38bdf8; white-space:nowrap;">
+        🩻 Rayos X Cápsula:
+      </label>
+      <input id="sliderXray" type="range" min="0" max="85" value="60" style="width:100%; accent-color:#38bdf8;" />
+      <span id="valXray" class="mono" style="font-size:11.5px; width:38px; text-align:right;">60%</span>
+    </div>
+
+    <!-- Slider 4: Despiece Módulos -->
+    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:190px;">
+      <label style="font-size:11.5px; font-weight:700; color:#fbbf24; white-space:nowrap;">
+        🔧 Separar Módulos:
+      </label>
+      <input id="sliderModExplode" type="range" min="0" max="100" value="0" style="width:100%; accent-color:#fbbf24;" />
+      <span id="valModExplode" class="mono" style="font-size:11.5px; width:38px; text-align:right;">0%</span>
+    </div>
+
+    <div style="display:flex; gap:6px;">
+      <button id="btnLabels" class="btn active-sky">🏷️ Cotas: ON</button>
+      <button id="btnRotate" class="btn">🔄 Giro: OFF</button>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // PARTS METADATA
+    // =========================================================================
+    const PARTS_INFO = {
+      all: {
+        name: '0. Ensamble Completo (Placa + Cápsula ZIP)',
+        short: 'Encaje por 4 espigas cuadradas sin tornillos',
+        badge: '100% Compatible',
+        dims: '126 × 82 × 40 mm (Ext)',
+        color: '#10b981',
+        desc: 'Simulación tridimensional exacta de la Baquelita Lógica (107.0 × 70.0 × 1.6 mm) montada dentro de la Cápsula Izquierda del archivo ZIP. Usa los deslizadores inferiores para levantar la tapa, sacar la placa o ver en Rayos X.'
+      },
+      capsule_base: {
+        name: '1. Cápsula Izquierda Base (STL del ZIP)',
+        short: 'Cavidad 114.8 × 70.8 mm · 4 Espigas 2.4×2.4mm',
+        badge: 'ASA Naranja (Base)',
+        dims: '126.0 × 82.0 × 26.0 mm',
+        color: '#f97316',
+        desc: 'El piso interior (Z=10.50 mm) es completamente plano y limpio. En las 4 esquinas tiene pedestales de apoyo con hombro a Z=18.50 mm y 4 espigas cuadradas de 2.40×2.40×5.00 mm (Z=18.50 a 23.50 mm) a DX=98.0 mm y DY=61.0 mm.'
+      },
+      substrate: {
+        name: '2. Baquelita PETG (107.0 × 70.0 × 1.6 mm)',
+        short: '4 Huecos cuadrados 3.15×3.15 mm (DX=98, DY=61)',
+        badge: 'PETG Gris + Cunas Verdes',
+        dims: '107.0 × 70.0 × 1.6 mm',
+        color: '#10b981',
+        desc: 'Apoya sobre los 4 hombros de Z=18.50 mm. Sus 4 huecos cuadrados de 3.15×3.15 mm reciben las espigas de 2.40×2.40 mm con +0.375 mm de holgura por lado. En los bordes deja +0.40 mm por lado en Y y +3.90 mm por lado en X.'
+      },
+      esp32: {
+        name: '3. ESP-32 DevKit V1 (30p USB-C)',
+        short: 'Abajo Derecha (51.5 × 28 mm)',
+        badge: 'MCU + Regulador 3.3V',
+        dims: 'Tope Z = 26.9 mm (+11mm libres)',
+        color: '#38bdf8',
+        desc: 'Montado horizontalmente abajo a la derecha sobre la baquelita. Queda 11.0 mm por debajo del techo interior de la tapa solar (Z=37.90 mm) y sus pines inferiores quedan 5.8 mm por encima del piso de la cápsula.'
+      },
+      sim800: {
+        name: '4. SIM800L EVB v2.0 + GY-GPS6MV2 + MPU6050',
+        short: 'Módem 2G/GSM + GPS Satelital + IMU I2C',
+        badge: 'Módulos Sensores y RF',
+        dims: 'Tope Z = 25.5 mm (+12.4mm libres)',
+        color: '#a855f7',
+        desc: 'Ubicados sobre sus collares y espigas verdes de Ø1.9 mm. Todos los módulos quedan lejos de las 4 columnas pisadoras de las esquinas de la tapa (solo el borde del anillo verde en X=-45, Y=+27.7 roza tangencialmente 0.1 mm).'
+      },
+      capsule_lid: {
+        name: '5. Tapa Solar Izquierda (STL del ZIP)',
+        short: 'Cúpula H=14 mm + 4 Columnas Pisadoras (Z=20.4)',
+        badge: 'ASA Naranja (Tapa)',
+        dims: '126.0 × 82.0 × 14.0 mm',
+        color: '#fb923c',
+        desc: 'Al cerrar con sus 7 clips perimetrales snap-fit, sus 4 columnas interiores huecas (4.4×4.4 mm) bajan hasta Z=20.40 mm, quedando a solo 0.30 mm de la cara superior de la baquelita (Z=20.10 mm) para bloquearla sin tornillos.'
+      }
+    };
+
+    let selectedPart = 'all';
+    let showBase = true;
+    let showLid = true;
+    let showBoard = true;
+    let showMods = true;
+    let showTracks = true;
+    let showLabels = true;
+    let autoRotate = false;
+
+    let boardLiftMm = 0;    // 0 to 35 mm
+    let lidLiftMm = 14.0;   // default +14 mm slightly open so user immediately sees inside!
+    let xrayFactor = 0.60;  // 60% transparent capsule by default
+    let modExplode = 0.0;   // 0 to 1
+
+    const partListEl = document.getElementById('partList');
+    function renderPartList() {
+      partListEl.innerHTML = '';
+      Object.entries(PARTS_INFO).forEach(([key, item]) => {
+        const active = (key === selectedPart);
+        const btn = document.createElement('button');
+        btn.className = 'comp-item' + (active ? ' active' : '');
+        btn.innerHTML =
+          '<span style="width:10px; height:10px; border-radius:999px; background:' + item.color + '; flex-shrink:0;"></span>' +
+          '<div style="min-width:0; flex:1;">' +
+            '<div style="font-size:12px; font-weight:600; color:' + (active ? '#6ee7b7' : '#f1f5f9') + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + item.name + '</div>' +
+            '<div style="font-size:11px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + item.short + '</div>' +
+          '</div>';
+        btn.onclick = () => selectPart(key);
+        partListEl.appendChild(btn);
+      });
+    }
+
+    function selectPart(key) {
+      selectedPart = key;
+      renderPartList();
+      const info = PARTS_INFO[key] || PARTS_INFO.all;
+      document.getElementById('detailBadge').textContent = info.badge;
+      document.getElementById('detailDims').textContent = info.dims;
+      document.getElementById('detailTitle').textContent = info.name;
+      document.getElementById('detailDesc').textContent = info.desc;
+    }
+
+    selectPart('all');
+    document.getElementById('btnAllParts').onclick = () => selectPart('all');
+
+    // Quick Assembly States
+    const sBoard = document.getElementById('sliderBoardLift');
+    const sLid   = document.getElementById('sliderLidLift');
+    const sMod   = document.getElementById('sliderModExplode');
+
+    function updateSliderLabels() {
+      document.getElementById('valBoardLift').textContent = boardLiftMm === 0 ? '0 mm' : '+' + boardLiftMm.toFixed(0) + ' mm';
+      document.getElementById('valLidLift').textContent = lidLiftMm === 0 ? 'Cerrada' : '+' + lidLiftMm.toFixed(0) + ' mm';
+      document.getElementById('valXray').textContent = Math.round(xrayFactor * 100) + '%';
+      document.getElementById('valModExplode').textContent = Math.round(modExplode * 100) + '%';
+    }
+
+    document.getElementById('btnStateSeated').onclick = () => {
+      boardLiftMm = 0; sBoard.value = 0;
+      lidLiftMm = 0;   sLid.value = 0;
+      modExplode = 0;  sMod.value = 0;
+      document.getElementById('btnStateSeated').className = 'btn active-emerald';
+      document.getElementById('btnStateOpenLid').className = 'btn';
+      document.getElementById('btnStateExplode').className = 'btn';
+      updateSliderLabels();
+    };
+
+    document.getElementById('btnStateOpenLid').onclick = () => {
+      boardLiftMm = 0;  sBoard.value = 0;
+      lidLiftMm = 24;   sLid.value = 60;
+      modExplode = 0;   sMod.value = 0;
+      document.getElementById('btnStateOpenLid').className = 'btn active-emerald';
+      document.getElementById('btnStateSeated').className = 'btn';
+      document.getElementById('btnStateExplode').className = 'btn';
+      updateSliderLabels();
+    };
+
+    document.getElementById('btnStateExplode').onclick = () => {
+      boardLiftMm = 22; sBoard.value = 63;
+      lidLiftMm = 40;   sLid.value = 100;
+      modExplode = 0.65; sMod.value = 65;
+      document.getElementById('btnStateExplode').className = 'btn active-emerald';
+      document.getElementById('btnStateSeated').className = 'btn';
+      document.getElementById('btnStateOpenLid').className = 'btn';
+      updateSliderLabels();
+    };
+
+    sBoard.oninput = e => {
+      boardLiftMm = (parseFloat(e.target.value) / 100) * 35.0;
+      updateSliderLabels();
+    };
+    sLid.oninput = e => {
+      lidLiftMm = (parseFloat(e.target.value) / 100) * 40.0;
+      updateSliderLabels();
+    };
+    document.getElementById('sliderXray').oninput = e => {
+      xrayFactor = parseFloat(e.target.value) / 100;
+      updateSliderLabels();
+    };
+    sMod.oninput = e => {
+      modExplode = parseFloat(e.target.value) / 100;
+      updateSliderLabels();
+    };
+
+    document.getElementById('chkShowBase').onchange = e => showBase = e.target.checked;
+    document.getElementById('chkShowLid').onchange = e => showLid = e.target.checked;
+    document.getElementById('chkShowBoard').onchange = e => showBoard = e.target.checked;
+    document.getElementById('chkShowMods').onchange = e => showMods = e.target.checked;
+    document.getElementById('chkShowTracks').onchange = e => showTracks = e.target.checked;
+
+    document.getElementById('btnLabels').onclick = e => {
+      showLabels = !showLabels;
+      e.target.textContent = showLabels ? '🏷️ Cotas: ON' : '🏷️ Cotas: OFF';
+      e.target.className = showLabels ? 'btn active-sky' : 'btn';
+    };
+    document.getElementById('btnRotate').onclick = e => {
+      autoRotate = !autoRotate;
+      e.target.textContent = autoRotate ? '🔄 Giro: ON' : '🔄 Giro: OFF';
+      e.target.className = autoRotate ? 'btn active-amber' : 'btn';
+    };
+
+    // =========================================================================
+    // STANDALONE 3D CANVAS ENGINE (ZERO EXTERNAL DEPENDENCIES)
+    // =========================================================================
+    const canvas = document.getElementById('cadCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Camera state
+    // Note: In our 3D engine:
+    //   X = Length (-63 to +63 mm)
+    //   Y = Vertical Height Z_cad (centered around Z_cad = 20 mm -> Y_3d = Z_cad - 20)
+    //   Z = Width (-41 to +41 mm, where -Z is Top/Bridge and +Z is Bottom/Strap)
+    let camPitch = 0.62;
+    let camYaw = -0.42;
+    let camZoom = 4.2;
+    let camPanX = -10;
+    let camPanY = 18;
+
+    let targetPitch = camPitch;
+    let targetYaw = camYaw;
+    let targetZoom = camZoom;
+    let targetPanX = camPanX;
+    let targetPanY = camPanY;
+
+    document.querySelectorAll('.cam-btn').forEach(btn => {
+      btn.onclick = () => {
+        const p = btn.dataset.cam;
+        autoRotate = false;
+        document.getElementById('btnRotate').textContent = '🔄 Giro: OFF';
+        if (p === 'iso') {
+          targetPitch = 0.62; targetYaw = -0.42; targetZoom = 4.2; targetPanX = -10; targetPanY = 18;
+        } else if (p === 'top') {
+          targetPitch = 1.54; targetYaw = 0.0; targetZoom = 4.5; targetPanX = -10; targetPanY = 10;
+        } else if (p === 'sideZ') {
+          targetPitch = 0.06; targetYaw = 0.0; targetZoom = 4.8; targetPanX = -10; targetPanY = 15;
+        } else if (p === 'corner') {
+          // Zoom directly into Top-Left corner peg (-49, -30.5)
+          targetPitch = 0.72; targetYaw = -0.55; targetZoom = 9.2; targetPanX = 240; targetPanY = 110;
+        }
+      };
+    });
+
+    document.getElementById('btnResetCam').onclick = () => {
+      targetPitch = 0.62; targetYaw = -0.42; targetZoom = 4.2; targetPanX = -10; targetPanY = 18;
+    };
+
+    function project(x, y, z) {
+      const cy = Math.cos(camYaw), sy = Math.sin(camYaw);
+      const x1 = x * cy - z * sy;
+      const z1 = z * cy + x * sy;
+
+      const cp = Math.cos(camPitch), sp = Math.sin(camPitch);
+      const y2 = y * cp - z1 * sp;
+      const z2 = z1 * cp + y * sp;
+
+      const fov = 680;
+      const dist = 280;
+      const s = (fov / Math.max(40, dist + z2)) * (camZoom / 4.0);
+
+      return {
+        x: width / 2 + camPanX + x1 * s,
+        y: height / 2 + camPanY - y2 * s,
+        z: z2,
+        s
+      };
+    }
+
+    function adjustHex(hex, factor) {
+      hex = hex.replace('#', '');
+      const r = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(0, 2), 16) * (1 + factor))));
+      const g = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(2, 4), 16) * (1 + factor))));
+      const b = Math.min(255, Math.max(0, Math.round(parseInt(hex.substring(4, 6), 16) * (1 + factor))));
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+
+    let primitives = [];
+
+    function getAlpha(partId, baseAlpha) {
+      let a = baseAlpha !== undefined ? baseAlpha : 1.0;
+      if (partId === 'capsule_base' || partId === 'capsule_lid') {
+        a = a * (1.0 - xrayFactor * 0.82);
+      }
+      if (selectedPart !== 'all' && selectedPart !== partId) {
+        a *= 0.25;
+      }
+      return Math.max(0.08, a);
+    }
+
+    // Add 3D Box using CAD Z_cad (0 = bottom of capsule base, 18.5 = board seat, 26 = top of base)
+    function addBoxCAD(cx, cz_width, z_cad_center, w_x, h_z_cad, d_y_width, color, partId, opts) {
+      opts = opts || {};
+      const cy = z_cad_center - 19.0; // center vertically around Z=19mm
+      const cz = cz_width;
+      const hw = w_x / 2, hh = h_z_cad / 2, hd = d_y_width / 2;
+      const verts = [
+        [cx - hw, cy - hh, cz - hd],
+        [cx + hw, cy - hh, cz - hd],
+        [cx + hw, cy + hh, cz - hd],
+        [cx - hw, cy + hh, cz - hd],
+        [cx - hw, cy - hh, cz + hd],
+        [cx + hw, cy - hh, cz + hd],
+        [cx + hw, cy + hh, cz + hd],
+        [cx - hw, cy + hh, cz + hd]
+      ];
+      const pv = verts.map(v => project(v[0], v[1], v[2]));
+
+      const faces = [
+        { idx: [3, 2, 6, 7], lum: 0.16, top: true },
+        { idx: [0, 1, 5, 4], lum: -0.24, top: false },
+        { idx: [4, 5, 6, 7], lum: -0.02, top: false },
+        { idx: [0, 1, 2, 3], lum: -0.14, top: false },
+        { idx: [1, 2, 6, 5], lum: -0.08, top: false },
+        { idx: [0, 3, 7, 4], lum: -0.10, top: false }
+      ];
+
+      const alpha = getAlpha(partId, opts.alpha);
+      const isFocused = (selectedPart === partId);
+
+      faces.forEach(f => {
+        const pts = f.idx.map(i => pv[i]);
+        const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) * 0.25 + (opts.zBias || 0);
+        primitives.push({
+          type: 'poly',
+          pts,
+          z: avgZ,
+          fill: adjustHex(color, f.lum),
+          stroke: isFocused ? '#34d399' : (opts.stroke || adjustHex(color, f.lum - 0.18)),
+          lineWidth: isFocused ? 1.3 : (opts.lineWidth || 0.65),
+          alpha,
+          partId,
+          label: f.top ? opts.label : null,
+          subLabel: f.top ? opts.subLabel : null
+        });
+      });
+    }
+
+    function addCylCAD(cx, cz_width, z_cad_center, r, h_z_cad, color, partId, opts) {
+      opts = opts || {};
+      const cy = z_cad_center - 19.0;
+      const cz = cz_width;
+      const segs = opts.segs || 12;
+      const topPts = [];
+      const botPts = [];
+      for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        const px = cx + Math.cos(a) * r;
+        const pz = cz + Math.sin(a) * r;
+        topPts.push(project(px, cy + h_z_cad / 2, pz));
+        botPts.push(project(px, cy - h_z_cad / 2, pz));
+      }
+      const alpha = getAlpha(partId, opts.alpha);
+      for (let i = 0; i < segs; i++) {
+        const nxt = (i + 1) % segs;
+        const pts = [botPts[i], botPts[nxt], topPts[nxt], topPts[i]];
+        const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) * 0.25;
+        const lum = Math.sin((i / segs) * Math.PI * 2) * 0.14 - 0.05;
+        primitives.push({
+          type: 'poly', pts, z: avgZ,
+          fill: adjustHex(color, lum),
+          stroke: adjustHex(color, lum - 0.12),
+          lineWidth: 0.4, alpha, partId
+        });
+      }
+      const avgTopZ = topPts.reduce((s, p) => s + p.z, 0) / segs;
+      primitives.push({
+        type: 'poly', pts: topPts, z: avgTopZ - 0.1,
+        fill: adjustHex(color, 0.16),
+        stroke: adjustHex(color, -0.18),
+        lineWidth: 0.6, alpha, partId
+      });
+    }
+
+    function addPathCAD(ptsCAD, color, widthPx, partId) {
+      const pts = ptsCAD.map(p => project(p[0], p[1] - 19.0, p[2]));
+      const avgZ = pts.reduce((s, p) => s + p.z, 0) / pts.length - 0.4;
+      primitives.push({
+        type: 'path', pts, z: avgZ,
+        stroke: color, lineWidth: widthPx,
+        alpha: getAlpha(partId, 0.95), partId
+      });
+    }
+
+    // =========================================================================
+    // SCENE BUILDER: EXACT GEOMETRY OF ZIP CAPSULE + 107x70 BAQUELITA
+    // =========================================================================
+    function buildFullFitScene() {
+      primitives = [];
+
+      // -----------------------------------------------------------------------
+      // 1. CÁPSULA IZQUIERDA BASE (STL DEL ZIP: 126 x 82 x 26 mm)
+      //    Cavidad interior: 114.8 x 70.8 mm (X: -57.4..+57.4, Z_width: -35.4..+35.4)
+      //    Piso interior: Z_cad = 10.50 mm
+      //    4 Pedestales de esquina con hombro en Z_cad = 18.50 mm
+      //    4 Espigas cuadradas 2.40 x 2.40 x 5.00 mm (Z_cad = 18.50..23.50 mm) en (±49.0, ±30.5)
+      // -----------------------------------------------------------------------
+      if (showBase) {
+        // Piso inferior Z=0..3.0 y sub-piso sobre túnel de correa Z=8.5..10.5
+        addBoxCAD(14.0, 0, 1.5, 91.0, 3.0, 82.0, '#ea580c', 'capsule_base');
+        addBoxCAD(0, 0, 9.5, 120.4, 2.0, 76.4, '#f97316', 'capsule_base', {
+          label: !showBoard ? 'Piso Interior Cápsula (Z=10.50mm)' : null
+        });
+        // Pilares laterales del túnel pasacorreas (52 mm ancho libre en el centro)
+        addBoxCAD(14.0, -33.5, 5.75, 91.0, 5.5, 15.0, '#ea580c', 'capsule_base');
+        addBoxCAD(14.0,  33.5, 5.75, 91.0, 5.5, 15.0, '#ea580c', 'capsule_base');
+
+        // 4 Paredes Perimetrales de la Base (Z_cad = 10.50 a 26.00 mm, H = 15.50 mm, Espesor = 5.6 mm)
+        // Pared Trasera (-Z_width = -38.2) y Frontal (+Z_width = +38.2)
+        addBoxCAD(0, -38.2, 18.25, 126.0, 15.5, 5.6, '#f97316', 'capsule_base');
+        addBoxCAD(0,  38.2, 18.25, 126.0, 15.5, 5.6, '#f97316', 'capsule_base');
+        // Pared Izquierda (X = -60.2, lado puente) y Derecha (X = +60.2)
+        addBoxCAD(-60.2, 0, 18.25, 5.6, 15.5, 70.8, '#f97316', 'capsule_base');
+        addBoxCAD( 60.2, 0, 18.25, 5.6, 15.5, 70.8, '#f97316', 'capsule_base');
+
+        // Conducto pasacables en pared izquierda (X = -60.2, Z_cad = 17.0 mm, Ø8.0 mm)
+        addBoxCAD(-60.2, 0, 17.0, 6.5, 8.0, 8.0, '#0284c7', 'capsule_base', {
+          stroke: '#38bdf8',
+          label: 'Pasacables Ø8mm (Z=17)'
+        });
+
+        // 4 PEDESTALES DE ESQUINA EN LA BASE (Z_cad = 10.50 a 18.50 mm, H = 8.00 mm)
+        // + 4 ESPIGAS CUADRADAS EN LAS ESQUINAS (2.40 x 2.40 x 5.00 mm, Z_cad = 18.50 a 23.50 mm)
+        // Coordenadas exactas del STL del ZIP: X = ±49.00 mm (DX=98.0), Z_width = ±30.50 mm (DY=61.0)
+        const corners = [
+          [-49.0, -30.5, 'Espiga 1 (-49, -30.5)'],
+          [ 49.0, -30.5, 'Espiga 2 (+49, -30.5)'],
+          [ 49.0,  30.5, 'Espiga 3 (+49, +30.5)'],
+          [-49.0,  30.5, 'Espiga 4 (-49, +30.5)']
+        ];
+        corners.forEach(([cx, cz, lbl], idx) => {
+          // Pedestal base con hombro plano en Z_cad = 18.50 mm (4.6 x 4.6 x 8.0 mm)
+          addBoxCAD(cx, cz, 14.50, 4.8, 8.0, 4.8, '#fb923c', 'capsule_base', {
+            stroke: '#fde047',
+            lineWidth: 1.0
+          });
+          // Espiga cuadrada de encaje 2.40 x 2.40 mm (Z_cad = 18.50 a 23.50 mm)
+          addBoxCAD(cx, cz, 21.00, 2.40, 5.00, 2.40, '#facc15', 'capsule_base', {
+            stroke: '#fef08a',
+            lineWidth: 1.2,
+            label: idx === 0 ? 'Espiga 2.4×2.4mm' : null,
+            subLabel: idx === 0 ? 'Hombro Z=18.5mm' : null
+          });
+        });
+      }
+
+      // -----------------------------------------------------------------------
+      // 2. BAQUELITA LÓGICA (107.0 x 70.0 x 1.6 mm) + CUNAS VERDES + 4 MÓDULOS
+      //    Asienta sobre los 4 hombros de la cápsula en Z_cad = 18.50 mm (+ boardLiftMm)
+      // -----------------------------------------------------------------------
+      const bZ = 18.50 + boardLiftMm; // Cara inferior de la baquelita
+      const simX = -27.0, simZ = -17.0, simPinX = simX + 17.5;
+      const gpsX =  26.0, gpsZ = -17.5, gpsPinX = gpsX - 15.5;
+      const mpuX = -26.0, mpuZ =  19.0, mpuPinZ = mpuZ - 6.0;
+      const espX =  21.0, espZ =  17.5, espTopRowZ = espZ - 11.2, espBotRowZ = espZ + 11.2;
+
+      if (showBoard) {
+        // Placa base PETG Gris (107.0 x 70.0 x 1.60 mm, de bZ a bZ + 1.60)
+        addBoxCAD(0, 0, bZ + 0.80, 107.0, 1.60, 70.0, '#64748b', 'substrate', {
+          stroke: '#94a3b8',
+          label: !showMods ? 'Baquelita 107.0 × 70.0 × 1.6 mm' : null
+        });
+
+        // 4 Huecos cuadrados de 3.15 x 3.15 mm en las esquinas (±49.0, ±30.5)
+        // Resaltados con marco verde esmeralda mostrando la holgura de +0.375 mm por lado alrededor de la espiga amarilla de 2.40 mm
+        [[-49.0, -30.5], [49.0, -30.5], [49.0, 30.5], [-49.0, 30.5]].forEach(([hx, hz], idx) => {
+          addBoxCAD(hx, hz, bZ + 0.82, 3.20, 1.66, 3.20, '#064e3b', 'substrate', {
+            stroke: '#10b981',
+            lineWidth: 1.3,
+            label: (idx === 0 && boardLiftMm > 4) ? 'Hueco 3.15×3.15mm' : null
+          });
+        });
+
+        // Collares Verdes Guía de Pines sobre la baquelita (bZ + 1.6 a bZ + 3.6)
+        addBoxCAD(simPinX, simZ + 1.0, bZ + 2.6, 4.2, 2.0, 19.5, '#16a34a', 'substrate');
+        addBoxCAD(gpsPinX, gpsZ, bZ + 2.6, 4.2, 2.0, 11.8, '#16a34a', 'substrate');
+        addBoxCAD(mpuX, mpuPinZ, bZ + 2.6, 21.8, 2.0, 4.2, '#16a34a', 'substrate');
+        addBoxCAD(espX - 1.0, espTopRowZ, bZ + 2.6, 39.8, 2.0, 4.2, '#16a34a', 'substrate');
+        addBoxCAD(espX - 1.0, espBotRowZ, bZ + 2.6, 39.8, 2.0, 4.2, '#16a34a', 'substrate');
+
+        // 14 Espigas Guía Escalonadas Verdes (Hombro Ø3.8mm + Espiga Ø1.9mm hasta bZ + 6.8mm)
+        [
+          [simPinX - 1.5,  simZ - 9.8], [simPinX - 34.5, simZ - 9.8],
+          [simPinX - 1.5,  simZ + 14.2], [simPinX - 34.5, simZ + 14.2],
+          [gpsPinX + 4.5,  gpsZ - 9.5], [gpsPinX + 33.5, gpsZ - 9.5],
+          [gpsPinX + 4.5,  gpsZ + 9.5], [gpsPinX + 33.5, gpsZ + 9.5],
+          [mpuX - 7.75, mpuPinZ + 4.0], [mpuX + 7.75, mpuPinZ + 4.0],
+          [espX - 23.2, espZ - 11.4], [espX + 21.2, espZ - 11.4],
+          [espX - 23.2, espZ + 11.4], [espX + 21.2, espZ + 11.4]
+        ].forEach(([tx, tz]) => {
+          addCylCAD(tx, tz, bZ + 2.6, 1.9, 2.0, '#16a34a', 'substrate');
+          addCylCAD(tx, tz, bZ + 5.2, 0.95, 3.2, '#4ade80', 'substrate');
+        });
+      }
+
+      // -----------------------------------------------------------------------
+      // 3. 49 PINES SOLDADOS ABAJO (bZ - 2.2 a bZ) + PISTAS INFERIORES
+      // -----------------------------------------------------------------------
+      if (showTracks) {
+        const pinMidZ = bZ - 1.1;
+        for (let i = -3; i <= 3; i++) {
+          addBoxCAD(simPinX, simZ + 1.0 + i * 2.54, pinMidZ, 0.8, 2.2, 0.8, '#e2e8f0', 'substrate');
+        }
+        for (let i = -1.5; i <= 1.5; i += 1.0) {
+          addBoxCAD(gpsPinX, gpsZ + i * 2.54, pinMidZ, 0.8, 2.2, 0.8, '#e2e8f0', 'substrate');
+        }
+        for (let i = 0; i < 8; i++) {
+          addBoxCAD((mpuX - 8.89) + i * 2.54, mpuPinZ, pinMidZ, 0.8, 2.2, 0.8, '#e2e8f0', 'substrate');
+        }
+        for (let i = 0; i < 15; i++) {
+          const px = (espX - 18.78) + i * 2.54;
+          addBoxCAD(px, espTopRowZ, pinMidZ, 0.8, 2.2, 0.8, '#e2e8f0', 'substrate');
+          addBoxCAD(px, espBotRowZ, pinMidZ, 0.8, 2.2, 0.8, '#e2e8f0', 'substrate');
+        }
+
+        const ty = bZ - 0.4;
+        const espPinX = idx => (espX - 18.78) + idx * 2.54;
+        addPathCAD([[espPinX(0), ty, espTopRowZ], [espPinX(0), ty, -6.6], [simPinX, ty, simZ - 6.6]], '#ef4444', 2.8, 'substrate');
+        addPathCAD([[espPinX(0), ty, -6.6], [gpsPinX, ty, -6.6], [gpsPinX, ty, gpsZ - 3.8]], '#ef4444', 2.6, 'substrate');
+        addPathCAD([[espPinX(0), ty, espBotRowZ], [espPinX(0), ty, 32.5], [-16.2, ty, 32.5], [-16.2, ty, mpuPinZ]], '#fb923c', 2.6, 'substrate');
+        addPathCAD([[espPinX(5), ty, espBotRowZ], [espPinX(5), ty, 0.0], [gpsPinX, ty, 0.0], [gpsPinX, ty, gpsZ + 1.27]], '#facc15', 2.4, 'substrate');
+        addPathCAD([[espPinX(5), ty, espTopRowZ], [espPinX(5), ty, simZ + 1.0], [simPinX, ty, simZ + 1.0]], '#c084fc', 2.4, 'substrate');
+        addPathCAD([[espPinX(10), ty, espBotRowZ], [espPinX(10), ty, 33.8], [-23.8, ty, 33.8], [-23.8, ty, mpuPinZ]], '#38bdf8', 2.4, 'substrate');
+      }
+
+      // -----------------------------------------------------------------------
+      // 4. LOS 4 MÓDULOS ELECTRÓNICOS SOBRE LA BAQUELITA
+      // -----------------------------------------------------------------------
+      if (showMods) {
+        const mLift = modExplode * 20.0;
+        const modZ = bZ + 4.4 + mLift;
+
+        // 1. SIM800L EVB (39 x 27.5 mm)
+        addBoxCAD(simX, simZ, modZ, 39.0, 1.5, 27.5, '#1e40af', 'sim800', { stroke: '#60a5fa' });
+        addBoxCAD(simX - 2.5, simZ + 2.0, modZ + 1.8, 16.0, 2.3, 17.5, '#d1d5db', 'sim800', {
+          label: '1. SIM800L EVB',
+          subLabel: 'Z_top = 25.5 mm'
+        });
+
+        // 2. GY-GPS6MV2 (36 x 24 mm)
+        addBoxCAD(gpsX, gpsZ, modZ, 35.0, 1.5, 24.0, '#1e3a8a', 'sim800', { stroke: '#60a5fa' });
+        addBoxCAD(gpsX + 1.5, gpsZ - 0.5, modZ + 1.8, 13.0, 2.2, 16.0, '#e2e8f0', 'sim800', {
+          label: '2. GY-GPS6MV2',
+          subLabel: '4 Pines'
+        });
+
+        // 3. ITG/MPU6050 (21.5 x 16 mm)
+        addBoxCAD(mpuX, mpuZ, modZ, 21.5, 1.5, 16.0, '#1d4ed8', 'sim800', {
+          stroke: '#60a5fa',
+          label: '3. MPU6050'
+        });
+        addBoxCAD(mpuX, mpuZ, modZ + 1.1, 4.2, 0.9, 4.2, '#0f172a', 'sim800');
+
+        // 4. ESP-32 DevKit V1 30p (51.5 x 28 mm)
+        addBoxCAD(espX, espZ, modZ, 51.5, 1.6, 28.0, '#161920', 'esp32', { stroke: '#475569' });
+        addBoxCAD(espX - 24.0, espZ, modZ + 2.1, 7.2, 3.2, 8.8, '#cbd5e1', 'esp32', { label: 'USB-C' });
+        addBoxCAD(espX + 7.5, espZ, modZ + 2.0, 18.5, 2.6, 17.5, '#d1d5db', 'esp32', {
+          label: '4. ESP-32 (30p)',
+          subLabel: 'Z_top = 26.9 mm'
+        });
+      }
+
+      // -----------------------------------------------------------------------
+      // 5. TAPA SOLAR IZQUIERDA (STL DEL ZIP: 126 x 82 x 14 mm, Z_cad = 26.0 a 40.0 mm)
+      //    4 Columnas Pisadoras huecas (4.4 x 4.4 mm) que bajan hasta Z_cad = 20.40 mm (-5.6 mm bajo 26.0)
+      // -----------------------------------------------------------------------
+      if (showLid) {
+        const lZ = 26.0 + lidLiftMm; // Plano de cierre de la tapa
+
+        // 4 Columnas Pisadoras en las esquinas (±49.0, ±30.5) desde lZ - 5.60 hasta lZ + 12.0
+        [[-49.0, -30.5], [49.0, -30.5], [49.0, 30.5], [-49.0, 30.5]].forEach(([cx, cz], idx) => {
+          addBoxCAD(cx, cz, lZ + 3.20, 4.40, 17.60, 4.40, '#f97316', 'capsule_lid', {
+            stroke: '#38bdf8',
+            lineWidth: 1.1,
+            label: (idx === 0 && lidLiftMm > 4) ? 'Pisador Tapa (Z=20.4)' : null
+          });
+        });
+
+        // Paredes perimetrales de la cúpula de la tapa (lZ a lZ + 14.0 mm)
+        addBoxCAD(0, -38.2, lZ + 6.4, 126.0, 12.8, 5.6, '#fb923c', 'capsule_lid');
+        addBoxCAD(0,  38.2, lZ + 6.4, 126.0, 12.8, 5.6, '#fb923c', 'capsule_lid');
+        addBoxCAD(-60.2, 0, lZ + 6.4, 5.6, 12.8, 70.8, '#fb923c', 'capsule_lid');
+        addBoxCAD( 60.2, 0, lZ + 6.4, 5.6, 12.8, 70.8, '#fb923c', 'capsule_lid');
+
+        // Techo superior de la tapa (lZ + 12.5 a lZ + 14.0 mm)
+        addBoxCAD(0, 0, lZ + 13.2, 124.0, 1.6, 80.0, '#fb923c', 'capsule_lid', {
+          label: 'Tapa Solar ZIP (Techo int. Z=37.9mm)'
+        });
+
+        // Panel Solar Monocristalino enrasado (60 x 55 mm)
+        addBoxCAD(8.0, 0, lZ + 13.6, 60.0, 1.2, 55.0, '#0f172a', 'capsule_lid', {
+          stroke: '#38bdf8',
+          label: 'Panel Solar 60×55mm'
+        });
+      }
+    }
+
+    // =========================================================================
+    // RENDER LOOP & MOUSE INTERACTION
+    // =========================================================================
+    let isDragging = false;
+    let dragMode = 'orbit';
+    let prevX = 0, prevY = 0;
+
+    canvas.addEventListener('pointerdown', e => {
+      isDragging = true;
+      dragMode = (e.button === 2 || e.shiftKey) ? 'pan' : 'orbit';
+      prevX = e.clientX;
+      prevY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    window.addEventListener('pointermove', e => {
+      if (!isDragging) return;
+      const dx = e.clientX - prevX;
+      const dy = e.clientY - prevY;
+      prevX = e.clientX;
+      prevY = e.clientY;
+      if (dragMode === 'orbit') {
+        targetYaw += dx * 0.0075;
+        targetPitch = Math.max(-1.52, Math.min(1.52, targetPitch + dy * 0.0075));
+        camYaw = targetYaw;
+        camPitch = targetPitch;
+      } else {
+        targetPanX += dx;
+        targetPanY += dy;
+        camPanX = targetPanX;
+        camPanY = targetPanY;
+      }
+    });
+
+    window.addEventListener('pointerup', () => { isDragging = false; });
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 0.91 : 1.10;
+      targetZoom = Math.max(1.8, Math.min(14.0, targetZoom * factor));
+    }, { passive: false });
+
+    function renderLoop() {
+      if (autoRotate && !isDragging) {
+        targetYaw += 0.004;
+      }
+      if (!isDragging) {
+        camPitch += (targetPitch - camPitch) * 0.14;
+        camYaw += (targetYaw - camYaw) * 0.14;
+        camZoom += (targetZoom - camZoom) * 0.14;
+        camPanX += (targetPanX - camPanX) * 0.14;
+        camPanY += (targetPanY - camPanY) * 0.14;
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      const grad = ctx.createRadialGradient(width / 2 + camPanX, height / 2 + camPanY, 30, width / 2, height / 2, Math.max(width, height) * 0.7);
+      grad.addColorStop(0, '#131c2e');
+      grad.addColorStop(1, '#070a12');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      buildFullFitScene();
+      primitives.sort((a, b) => b.z - a.z);
+
+      const labelsToDraw = [];
+
+      primitives.forEach(item => {
+        ctx.save();
+        ctx.globalAlpha = item.alpha !== undefined ? item.alpha : 1.0;
+
+        if (item.type === 'poly') {
+          ctx.beginPath();
+          ctx.moveTo(item.pts[0].x, item.pts[0].y);
+          for (let i = 1; i < item.pts.length; i++) {
+            ctx.lineTo(item.pts[i].x, item.pts[i].y);
+          }
+          ctx.closePath();
+          ctx.fillStyle = item.fill;
+          ctx.fill();
+          if (item.stroke) {
+            ctx.strokeStyle = item.stroke;
+            ctx.lineWidth = item.lineWidth || 0.6;
+            ctx.stroke();
+          }
+
+          if (showLabels && item.label && item.alpha > 0.25) {
+            const cx = item.pts.reduce((s, p) => s + p.x, 0) / item.pts.length;
+            const cy = item.pts.reduce((s, p) => s + p.y, 0) / item.pts.length;
+            labelsToDraw.push({ x: cx, y: cy, text: item.label, sub: item.subLabel });
+          }
+        } else if (item.type === 'path') {
+          ctx.beginPath();
+          ctx.moveTo(item.pts[0].x, item.pts[0].y);
+          for (let i = 1; i < item.pts.length; i++) {
+            ctx.lineTo(item.pts[i].x, item.pts[i].y);
+          }
+          ctx.strokeStyle = item.stroke;
+          ctx.lineWidth = item.lineWidth;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
+
+      // Draw 3D Dimensional Callouts
+      if (showLabels) {
+        labelsToDraw.forEach(lbl => {
+          ctx.save();
+          ctx.font = '700 10.5px system-ui, sans-serif';
+          const tw = Math.max(ctx.measureText(lbl.text).width, lbl.sub ? ctx.measureText(lbl.sub).width : 0) + 12;
+          const th = lbl.sub ? 28 : 18;
+          ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(lbl.x - tw / 2, lbl.y - th / 2, tw, th, 5);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(lbl.text, lbl.x, lbl.sub ? lbl.y - 5 : lbl.y);
+          if (lbl.sub) {
+            ctx.font = '600 9.5px ui-monospace, monospace';
+            ctx.fillStyle = '#34d399';
+            ctx.fillText(lbl.sub, lbl.x, lbl.y + 7);
+          }
+          ctx.restore();
+        });
+      }
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    updateSliderLabels();
+    renderLoop();
+  </script>
+</body>
+</html>
