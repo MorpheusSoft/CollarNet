@@ -172,6 +172,18 @@
   )
 
   ;; =========================================================================
+  ;; CONECTOR MAGNÉTICO 4 PINES POGO IP68 (Carga 5V + USB Firmware)
+  ;; =========================================================================
+  (footprint "CollarNet_Custom:Magnetic_4Pin_Pogo_IP68" (layer "F.Cu") (at 0.0 28.0 90.0)
+    (fp_text reference "J_MAG" (at 0 -4.0 90.0) (layer "F.SilkS") (effects (font (size 0.8 0.8) (thickness 0.12))))
+    (fp_text value "MAG_4PIN_IP68" (at 0 4.0 90.0) (layer "F.Fab") (effects (font (size 0.7 0.7) (thickness 0.1))))
+    (pad "1" smd rect (at 0 -3.81 90.0) (size 2.0 1.2) (layers "F.Cu" "F.Paste" "F.Mask") (net 12 "VBUS_5V"))
+    (pad "2" smd rect (at 0 -1.27 90.0) (size 2.0 1.2) (layers "F.Cu" "F.Paste" "F.Mask") (net 7 "MODEM_RXD"))
+    (pad "3" smd rect (at 0 1.27 90.0) (size 2.0 1.2) (layers "F.Cu" "F.Paste" "F.Mask") (net 6 "MODEM_TXD"))
+    (pad "4" smd rect (at 0 3.81 90.0) (size 2.0 1.2) (layers "F.Cu" "F.Paste" "F.Mask") (net 1 "GND"))
+  )
+
+  ;; =========================================================================
   ;; CARA INFERIOR (BOTTOM LAYER): CLIPS KEYSTONE 1042/1048 BATERÍA 18650
   ;; Orientados en diagonal a 42° para aprovechar la diagonal de 98.9 mm
   ;; =========================================================================
@@ -185,6 +197,7 @@
   )
 
   ;; Serigrafía de Identificación de Producción
-  (gr_text "COLLARNET V3 - ARQUITECTURA CUADRADA 70x70 mm" (at 35.0 2.2) (layer "F.SilkS") (effects (font (size 0.9 0.9) (thickness 0.15))))
-  (gr_text "60x60mm GND PLANE | 18650 DIAGONAL | L-SLOT 5kV" (at 35.0 68.2) (layer "F.SilkS") (effects (font (size 0.8 0.8) (thickness 0.12))))
+  (gr_text "COLLARNET V3 — PLACA 70x70 mm | RENIER MORALES & LINDBERGH ZAMBRANO" (at 35.0 2.2) (layer "F.SilkS") (effects (font (size 0.85 0.85) (thickness 0.14))))
+  (gr_text "60x60mm GND PLANE | 18650 DIAGONAL | MAG 4P IP68 | L-SLOT 5kV" (at 35.0 68.2) (layer "F.SilkS") (effects (font (size 0.8 0.8) (thickness 0.12))))
+  (gr_text "RENIER MORALES & LINDBERGH ZAMBRANO - COLLARNET V3" (at 35.0 45.0 42.0) (layer "B.SilkS") (effects (font (size 0.9 0.9) (thickness 0.14)) (justify mirror)))
 )

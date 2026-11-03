@@ -121,9 +121,19 @@ module top_components() {
         color([0.05, 0.05, 0.05]) translate([0, 0, 5.0]) cylinder(d=2.5, h=0.2); // Puerto acústico
     }
     
-    // 8. Conector USB-C Estanco en borde
-    translate([-1.0, 24, pcb_t]) {
-        color(c_shield) cube([7.5, 9.0, 3.2]);
+    // 8. Conector Magnético Pogo-Pin IP68 (4 Pines: +5V, D-, D+, GND)
+    translate([-2.0, 24, pcb_t]) {
+        color([0.15, 0.15, 0.15]) cube([6.0, 16.0, 3.5]); // Carcasa conector
+        // 2 Imanes de neodimio laterales (N/S inverso para polaridad segura)
+        color(c_shield) translate([0.5, 2.0, 1.75]) rotate([0, 90, 0]) cylinder(d=2.8, h=1.2);
+        color(c_shield) translate([0.5, 14.0, 1.75]) rotate([0, 90, 0]) cylinder(d=2.8, h=1.2);
+        // 4 Pines Pogo dorados (+5V, USB D-, USB D+, GND)
+        color(c_gold) {
+            translate([0.5, 5.0, 1.75]) rotate([0, 90, 0]) cylinder(d=1.3, h=1.2);
+            translate([0.5, 7.2, 1.75]) rotate([0, 90, 0]) cylinder(d=1.3, h=1.2);
+            translate([0.5, 9.4, 1.75]) rotate([0, 90, 0]) cylinder(d=1.3, h=1.2);
+            translate([0.5, 11.6, 1.75]) rotate([0, 90, 0]) cylinder(d=1.3, h=1.2);
+        }
     }
     
     // 9. Slot para tarjeta Nano-SIM (Lateral)
@@ -162,7 +172,7 @@ module top_components() {
 // Módulo: Batería Panasonic NCR18650B en Diagonal (Cara BOTTOM)
 // ------------------------------------------------------------------------------
 module bottom_battery_diagonal() {
-    // La batería va orientada a 40° para aprovechar la diagonal de 98.9 mm
+    // La batería va orientada a 42° para aprovechar la diagonal de 98.9 mm
     translate([35, 35, -9.5])
     rotate([0, 0, 42]) {
         // Cuerpo de la Celda 18650 (65.3 x 18.5 mm)
@@ -176,14 +186,83 @@ module bottom_battery_diagonal() {
         rotate([0, 90, 0])
         translate([0, 0, 32.65])
         cylinder(d=8.0, h=0.4);
+
+        // Terminal Negativo
+        color([0.7, 0.7, 0.7])
+        rotate([0, 90, 0])
+        translate([0, 0, -33.0])
+        cylinder(d=10.0, h=0.4);
         
         // Clips Keystone 1042 / 1048 soldados en PCB
         color(c_clip) {
             // Clip Positivo
-            translate([34.0, -10.0, 4.0]) cube([3.5, 20.0, 7.0]);
+            translate([34.0, -10.0, 4.0]) cube([3.5, 20.0, 7.5]);
             // Clip Negativo con resorte
-            translate([-37.5, -10.0, 4.0]) cube([3.5, 20.0, 7.0]);
+            translate([-37.5, -10.0, 4.0]) cube([3.5, 20.0, 7.5]);
         }
+    }
+}
+
+// ------------------------------------------------------------------------------
+// Módulo: Serigrafía y Pads de la Cara Inferior (BOTTOM)
+// ------------------------------------------------------------------------------
+module bottom_silkscreen() {
+    color([1.0, 1.0, 1.0, 0.9]) {
+        // Marcado de Batería y Polaridad
+        translate([35, 35, -0.01])
+        rotate([0, 0, 42]) {
+            // Contorno serigrafiado de la celda 18650
+            difference() {
+                cube([72, 21, 0.02], center=true);
+                cube([70, 19, 0.04], center=true);
+            }
+            // Signo positivo (+)
+            translate([24, 0, 0]) {
+                cube([5, 1.2, 0.02], center=true);
+                cube([1.2, 5, 0.02], center=true);
+            }
+            // Signo negativo (-)
+            translate([-24, 0, 0]) {
+                cube([5, 1.2, 0.02], center=true);
+            }
+        }
+        
+        // Textos de ingeniería en cara inferior (orientados en el plano inferior)
+        translate([32, 43, -0.01])
+        rotate([0, 180, -48])
+        linear_extrude(0.02)
+        text("COLLARNET V3", size=1.9, font="Liberation Sans:style=Bold");
+
+        translate([28, 38, -0.01])
+        rotate([0, 180, -48])
+        linear_extrude(0.02)
+        text("RENIER MORALES & LINDBERGH ZAMBRANO", size=1.2, font="Liberation Sans:style=Bold");
+
+        translate([24, 33, -0.01])
+        rotate([0, 180, -48])
+        linear_extrude(0.02)
+        text("BATTERY: 1x 18650 (3.7V / 3400mAh)", size=1.1, font="Liberation Sans");
+
+        translate([20, 28, -0.01])
+        rotate([0, 180, -48])
+        linear_extrude(0.02)
+        text("BOTTOM LAYER - SMT / THT ASSEMBLY", size=1.0, font="Liberation Sans");
+    }
+
+    // Pads de soldadura y vias doradas en Bottom (ENIG)
+    color(c_gold) {
+        // Pads de clips Keystone
+        translate([35, 35, -0.02])
+        rotate([0, 0, 42]) {
+            translate([34.0, 0, 0]) cube([6.0, 10.0, 0.04], center=true);
+            translate([-34.0, 0, 0]) cube([6.0, 10.0, 0.04], center=true);
+        }
+        // Pads de electrodos de alta tensión en Bottom
+        translate([62, 12, -0.02]) cylinder(d=7.0, h=0.04);
+        translate([62, 26, -0.02]) cylinder(d=7.0, h=0.04);
+        // Pads de módulo HV y condensador
+        translate([49, 10, -0.02]) cylinder(d=3.0, h=0.04);
+        translate([49, 23, -0.02]) cylinder(d=3.0, h=0.04);
     }
 }
 
@@ -195,6 +274,7 @@ module pcb_cuadrada_completa() {
     ground_plane_60x60();
     top_components();
     bottom_battery_diagonal();
+    bottom_silkscreen();
 }
 
 // ------------------------------------------------------------------------------
@@ -247,8 +327,23 @@ module caja_puck_ip67() {
         // Alojamiento / ventana rectangular central para Antena GNSS (en el centro del panel)
         translate([24.0, c_h/2 - 10.0, c_z - 18]) cube([16.0, 20.0, 8.0]);
         
+        // Cajeado lateral empotrado para puerto magnético IP68
+        translate([-1.0, 7.5 + 23.0, 0.5]) cube([4.5, 18.0, 6.0]);
+
         // Túnel pasante curvado para la correa del collar de 45 mm
         translate([-2, c_h/2 - 22.5, -14]) cube([c_w + 4, 45.0, 6.0]);
+    }
+
+    // 2b. Conector Magnético Exterior IP68 al ras de la carcasa
+    translate([1.5, 7.5 + 24.0, pcb_t]) {
+        color(c_shield) translate([0, 2.0, 1.75]) rotate([0, 90, 0]) cylinder(d=2.8, h=1.5);
+        color(c_shield) translate([0, 14.0, 1.75]) rotate([0, 90, 0]) cylinder(d=2.8, h=1.5);
+        color(c_gold) {
+            translate([0, 5.0, 1.75]) rotate([0, 90, 0]) cylinder(d=1.3, h=1.5);
+            translate([0, 7.2, 1.75]) rotate([0, 90, 0]) cylinder(d=1.3, h=1.5);
+            translate([0, 9.4, 1.75]) rotate([0, 90, 0]) cylinder(d=1.3, h=1.5);
+            translate([0, 11.6, 1.75]) rotate([0, 90, 0]) cylinder(d=1.3, h=1.5);
+        }
     }
     
     // 3. PANEL SOLAR MONOCRISTALINO EN LA TAPA (Área Azul de la simulación)
@@ -264,6 +359,11 @@ module caja_puck_ip67() {
 // Ejecución según selector de vista
 // ------------------------------------------------------------------------------
 if (view_mode == "pcb") {
+    pcb_cuadrada_completa();
+} else if (view_mode == "bottom_3d") {
+    // Invertir placa para mostrar la cara inferior (BOTTOM) en perspectiva isométrica
+    translate([0, pcb_h, 0])
+    rotate([180, 0, 0])
     pcb_cuadrada_completa();
 } else if (view_mode == "caja") {
     translate([7.5, 7.5, 0]) pcb_cuadrada_completa();

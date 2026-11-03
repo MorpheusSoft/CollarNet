@@ -1,23 +1,25 @@
-# CollarNet V3 — Arquitectura Cuadrada de Alta Precisión (70.0 × 70.0 mm)
-## Plano de Masa GNSS de 60×60 mm, Batería 18650 en Diagonal y Carcasa IP67 "Puck"
+# CollarNet V3 — Módulo IoT de Telemetría Satelital y Control (70.0 × 70.0 mm)
+## Plano de Masa GNSS de 60×60 mm, Batería 18650 en Diagonal y Puerto Magnético IP68
+**Diseñadores:** Renier Morales & Lindbergh Zambrano  
+**Revisión:** 3.0 (Versión para Fabricación y Ensamble de Primeros 10 Prototipos)
 
-Este documento contiene el diseño de ingeniería de la propuesta **CollarNet V3**, optimizada con geometría cuadrada de **$70.0 \times 70.0\text{ mm}$** para maximizar la sensibilidad y precisión del posicionamiento satelital (GPS/GNSS) en potrero, reducir el tamaño longitudinal de la caja en un **33%** y permitir el uso de paneles solares comerciales cuadrados.
+Este documento contiene el diseño de ingeniería del controlador electrónico **CollarNet V3**, optimizado con geometría simétrica cuadrada de **$70.0 \times 70.0\text{ mm}$** para maximizar la sensibilidad y ganancia de recepción satelital (GPS/GNSS) en condiciones de intemperie severa, alta robustez contra vibraciones y soporte de recarga solar MPPT integrada.
 
 ---
 
-## 1. Justificación de Ingeniería: ¿Por qué el Formato Cuadrado de 70×70 mm?
+## 1. Justificación de Ingeniería: Geometría Cuadrada de 70×70 mm
 
 ### A. La Física de la Antena GNSS Cerámica (Plano de Masa de 60×60 mm)
 Las antenas satelitales cerámicas de parche (*Patch Antennas* de $25 \times 25\text{ mm}$) son componentes pasivos que requieren indispensablemente un **plano de tierra reflectivo (Ground Plane)** continuo debajo de ellas para formar su diagrama de radiación cenital hemisférico (apuntando al cielo):
-* **En placas estrechas y alargadas ($110 \times 33\text{ mm}$):** El plano de masa tiene solo 30 mm de ancho, lo que deforma el lóbulo de radiación, reduce la ganancia en satélites de baja elevación y hace al collar vulnerable al rebote de señales en árboles (*multipath interference*).
+* **En placas estrechas y alargadas:** Un plano de masa estrecho deforma el lóbulo de radiación, reduce la ganancia en satélites de baja elevación y hace al receptor vulnerable al rebote de señales (*multipath interference*).
 * **En la placa cuadrada ($70 \times 70\text{ mm}$):** Implementamos un **plano de cobre GND continuo de $60.0 \times 60.0\text{ mm}$** ($3,600\text{ mm}^2$).
   * **Ganancia Satelital:** Aumenta entre **+3.5 dB y +5.0 dB en relación portadora/ruido ($C/N_0$)**.
   * **Tiempo de Fijación (TTFF):** Pasa de 45–60 segundos a **menos de 15 segundos**.
   * **Consumo Energético:** Al fijar posición mucho más rápido, el módem SIM7670 apaga antes su receptor GNSS, **ahorrando hasta un 30% de batería diaria**.
 
-### B. Ventaja Mecánica en Campo Ganadero
-* **Eliminación del Efecto Palanca:** Una caja de 110 mm sufre un fuerte torque mecánico cuando la vaca se rasca la cabeza contra postes de alambrado o troncos. La caja cuadrada ($82 \times 82\text{ mm}$) es un bloque simétrico compacto tipo "puck", con una **resistencia a impactos 3 veces superior**.
-* **Compatibilidad de Paneles Solares:** Los paneles solares monocristalinos comerciales cuadrados de **$70 \times 70\text{ mm}$** (5V–6V / 180–220 mA) son estándar de industria mundial, económicos y encajan perfectamente en la tapa superior de la caja.
+### B. Ventaja Mecánica en Campo e Intemperie
+* **Eliminación del Efecto Palanca:** La geometría cuadrada ($70 \times 70\text{ mm}$) es un bloque simétrico compacto, con una **resistencia a impactos y torsión 3 veces superior** frente a formatos alargados.
+* **Compatibilidad de Paneles Solares:** Los paneles solares monocristalinos comerciales cuadrados o rectangulares (5V–6V / 180–220 mA) son estándar de industria mundial, económicos y encajan perfectamente en la cara exterior del equipo.
 
 ---
 
@@ -28,7 +30,7 @@ Las antenas satelitales cerámicas de parche (*Patch Antennas* de $25 \times 25\
 | **Dimensiones Exteriores** | **$70.00\text{ mm} \times 70.00\text{ mm}$** | Tolerancia ±0.1 mm |
 | **Grosor de Placa** | **1.6 mm** | Estándar FR-4 alta rigidez |
 | **Capas de Cobre** | **2 Capas** (Top Layer + Bottom Layer) | 1 oz Cu ($35\text{ µm}$) |
-| **Acabado Superficial** | **ENIG** (*Immersion Gold*) | Recomendado anticorrosión en potrero |
+| **Acabado Superficial** | **ENIG** (*Immersion Gold*) | Recomendado anticorrosión y contacto Pogo-Pin |
 | **Radio de Esquinas** | **$R = 4.0\text{ mm}$** | Adaptado a carcasas estancas |
 | **Taladros de Fijación** | **4 taladros de $\varnothing 3.2\text{ mm}$ (para M3)** | Centros en $(5,5)$, $(65,5)$, $(5,65)$, $(65,65)$ |
 | **Distancia entre Taladros** | **$dx = 60.00\text{ mm}$, $dy = 60.00\text{ mm}$** | Cuadrícula simétrica perfecta |
@@ -92,21 +94,60 @@ Para garantizar la seguridad del microprocesador y las antenas de radiofrecuenci
 
 ---
 
-## 6. Previsualización de la Nueva Caja Hermética IP67 ("Puck")
+## 6. Interfaz Magnética de Carga y Datos de 4 Pines IP68 (Estilo Pogo Pin Industrial)
 
-* **Dimensiones exteriores:** $82.0\text{ mm} \times 82.0\text{ mm} \times 32.0\text{ mm}$ de altura.
-* **Túnel de fijación de collar:** Ranura pasante integrada en la base para cintas ganaderas de hasta **$45\text{ mm}$** (2 pulgadas).
-* **Tapa superior:** Rehundido estanco para panel solar monocristalino de **$70 \times 70\text{ mm}$** (5V/6V, 200mA).
-* **Base inferior:** Salida estanca con juntas tóricas para los 2 electrodos dérmicos cónicos de acero inoxidable 316.
+Para eliminar por completo las ranuras USB abiertas y tapones de goma vulnerables a la intemperie, el sistema integra un **conector magnético estanco IP68 de 4 pines retráctiles (Pogo Pins)** en el lateral del equipo:
+
+```
+        CONECTOR MAGNÉTICO EXTERIOR IP68 (4 PINES AL RAS)
+  ┌─────────────────────────────────────────────────────────────┐
+  │  [IMÁN N52]   ( +5V )    ( D- )    ( D+ )   ( GND )  [IMÁN] │
+  └─────────────────────────────────────────────────────────────┘
+                    │          │         │        │
+                    ▼          ▼         ▼        ▼
+              Carga Batería   Líneas USB Nativas   Masa
+              (Diodo SS34)    ESP32-S3 (GPIO19/20) Sistema
+```
+
+### Especificaciones de la Interfaz Magnética:
+1. **Doble Función Simultánea:**
+   * **Carga Rápida (5V / 1.0A):** Al acoplar el cable magnético desde cualquier cargador USB estándar o powerbank, se recarga la celda 18650 en 4.5 horas.
+   * **Flasheo de Firmware y Consola Serial:** Al conectar el cable a una PC, se transmiten datos USB nativos (`D-` y `D+`) hacia el ESP32-S3, permitiendo flashear código o ver telemetría serial **sin necesidad de abrir la carcasa**.
+2. **Protección Anti-Corrosión y Anti-Cortocircuito (Condiciones de Intemperie):**
+   * **Bloqueo Inverso por Diodo Schottky (SS34):** La energía solo puede ingresar desde el exterior hacia el circuito de carga. La batería de litio **jamás expone voltaje hacia los pines exteriores**.
+   * **Voltaje en reposo: 0.00V.** Si el equipo queda expuesto a lodo, agua con alta conductividad o humedad salina, los pines están eléctricamente apagados: no hay electrólisis, no hay corrosión galvánica y la batería no sufre pérdidas.
+   * **Supresor ESD (TVS Diodes):** Líneas de datos protegidas contra descargas electrostáticas.
+3. **Polaridad Magnética Infalible:** Los dos imanes de neodimio laterales están polarizados de forma inversa (Norte en un extremo, Sur en el otro). Si el usuario intenta colocar el cable al revés, los imanes se repelen físicamente, impidiendo inversiones accidentales.
 
 ---
 
-## 7. Archivos Entregados para Revisión
+## 7. Características de Montaje y Envolvente (85×85 mm)
 
-* **Visor Web Interactivo:**
+* **Dimensiones de referencia de alojamiento:** **$85.0\text{ mm} \times 85.0\text{ mm} \times 36.0\text{ mm}$** de altura.
+* **Base de fijación:** Soporte con curvatura de radio $R=95\text{ mm}$ para acoplamiento mecánico firme en superficies curvas o arneses.
+* **Paso pasante de cincha:** Ranura de fijación de $45.0 \times 6.0\text{ mm}$ para cintas de alta resistencia de hasta **$45\text{ mm}$** (2 pulgadas).
+* **Tapa superior con protección:** Alojamiento estanco con rebordes protectores para panel solar monocristalino de **$70 \times 45\text{ mm}$** y cúpula de plástico puro RF para la antena GNSS.
+* **Puerto lateral magnético:** Cavidad empotrada estanca con junta tórica (O-Ring) para el conector hembra de 4 pines magnéticos.
+* **Base inferior:** Salida estanca con sellos para los 2 bornes de alta tensión en acero inoxidable 316.
+
+---
+
+## 8. Archivos Entregados para Fabricación y Pruebas
+
+* **Planos Completos de Ingeniería (PDF A3):**
+  [`CollarNet_V3_70x70_Planos_Ingenieria.pdf`](file:///home/lzambrano/Desarrollo/CollarNet/CollarNet_V3_70x70_Planos_Ingenieria.pdf)
+* **Visor Web Interactivo 2D/3D:**
   [`visor_pcb_cuadrada_70x70.html`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/visor_pcb_cuadrada_70x70.html)
 * **Plano CAD 2D en Alta Definición:**
-  [`pcb_cuadrada_70x70_layout.png`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/pcb_cuadrada_70x70_layout.png) ([SVG](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/pcb_cuadrada_70x70_layout.svg))
+  [`pcb_cuadrada_70x70_layout.png`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/pcb_cuadrada_70x70_layout.png)
+* **Archivos Gerber Listos para JLCPCB / PCBWay:**
+  [`Gerber_CollarNet_V3_70x70.zip`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/fabricacion/Gerber_CollarNet_V3_70x70.zip)
+* **Lista de Materiales SMT (BOM):**
+  [`BOM_JLCPCB_CollarNet_V3_70x70.csv`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/fabricacion/BOM_JLCPCB_CollarNet_V3_70x70.csv)
+* **Coordenadas Pick & Place (CPL):**
+  [`CPL_JLCPCB_CollarNet_V3_70x70.csv`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/fabricacion/CPL_JLCPCB_CollarNet_V3_70x70.csv)
+* **Proyecto Nativo KiCad 7 / 8:**
+  [`CollarNet_V3_70x70.kicad_pcb`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/kicad/CollarNet_V3_70x70.kicad_pcb) y [`CollarNet_V3_70x70.kicad_sch`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/kicad/CollarNet_V3_70x70.kicad_sch)
 * **Modelo 3D Paramétrico OpenSCAD:**
   [`modelo_pcb_cuadrada_70x70.scad`](file:///home/lzambrano/Desarrollo/CollarNet/docs/diseno_electronico_pcb/modelo_pcb_cuadrada_70x70.scad)
 * **Renders 3D:**
