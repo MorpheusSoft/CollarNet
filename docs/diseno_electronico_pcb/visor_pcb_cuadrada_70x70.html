@@ -164,27 +164,34 @@
 <body>
   <header>
     <div class="logo-area">
-      <div class="logo-badge">V3 PUCK</div>
+      <div class="logo-badge">V3 IOT</div>
       <div class="title-area">
-        <h1>CollarNet V3 — Arquitectura Cuadrada (70.0 × 70.0 mm)</h1>
-        <p>Plano de Masa RF 60×60 mm | Celda Panasonic 18650 en Diagonal | Aislamiento L-Slot 5kV</p>
+        <h1>CollarNet V3 — Módulo IoT de Control &amp; Telemetría (70.0 × 70.0 mm)</h1>
+        <p>Plano de Masa RF 60×60 mm | Batería 18650 Diagonal | Puerto Magnético 4P IP68 | Renier Morales &amp; Lindbergh Zambrano</p>
       </div>
     </div>
     
     <div class="tabs">
       <button class="tab-btn active" onclick="switchView('layout', this)">Plano CAD 2D</button>
-      <button class="tab-btn" onclick="switchView('d3', this)">Render 3D</button>
-      <button class="tab-btn" onclick="switchView('top', this)">Cara Superior</button>
-      <button class="tab-btn" onclick="switchView('bot', this)">Cara Inferior (18650)</button>
-      <button class="tab-btn" onclick="switchView('caja', this)">Caja IP67 Puck</button>
+      <button class="tab-btn" onclick="switchView('conexion', this)">Diagrama Conexión PCBA</button>
+      <button class="tab-btn" onclick="switchView('pistas', this)">Pistas de Cobre 2D</button>
+      <button class="tab-btn" onclick="switchView('pines', this)">Pines y Conexiones BOM</button>
+      <button class="tab-btn" onclick="switchView('top3d', this)">3D Cara Superior</button>
+      <button class="tab-btn" onclick="switchView('bot3d', this)">3D Batería 18650</button>
     </div>
 
     <div class="controls">
-      <a href="pcb_cuadrada_70x70_layout.png" class="action-btn primary" download target="_blank">
-        <span>📥 Descargar Plano HD</span>
+      <a href="visor_diagrama_conexion_pcba.html" class="action-btn primary" target="_blank">
+        <span>🔍 Visor Conexión PCBA HD</span>
       </a>
-      <a href="modelo_pcb_cuadrada_70x70.scad" class="action-btn" download>
-        <span>🧊 Modelo OpenSCAD 3D</span>
+      <a href="visor_pcb_3d_interactivo.html" class="action-btn" target="_blank">
+        <span>🚀 Visor 3D Interactivo</span>
+      </a>
+      <a href="diagrama_conexion_placa_pcb.png" class="action-btn" download target="_blank">
+        <span>📥 Conexiones PNG (5400×3600)</span>
+      </a>
+      <a href="CollarNet_V3_70x70_Planos_Ingenieria.pdf" class="action-btn" download target="_blank">
+        <span>📄 Planos PDF (A3)</span>
       </a>
     </div>
   </header>
@@ -202,6 +209,16 @@
     </div>
 
     <aside class="info-panel">
+      <div class="info-card">
+        <h3>🔍 Conexión y Ruteo PCBA Maestro</h3>
+        <p>Plano oficial CAD con el conexionado físico pad a pad de los <strong>28 componentes BOM</strong> y ruteo de pistas Top/Bottom.</p>
+        <ul>
+          <li>Identificación pad por pad de todos los circuitos.</li>
+          <li>Aislamiento galvánico 5kV en ranura en 'L'.</li>
+          <li><a href="visor_diagrama_conexion_pcba.html" target="_blank" style="color:#38bdf8; font-weight:bold; text-decoration:none;">🔗 Abrir Visor PCBA Dedicado (Zoom 800%) &rarr;</a></li>
+        </ul>
+      </div>
+
       <div class="info-card">
         <h3>🛰️ Plano de Masa GNSS 60×60mm</h3>
         <p>El plano de cobre continuo de <strong>60.0 × 60.0 mm</strong> actúa como plano de tierra reflectivo para la antena cerámica de parche.</p>
@@ -234,11 +251,23 @@
       </div>
 
       <div class="info-card">
-        <h3>📦 Ventajas Caja IP67 Cuadrada</h3>
+        <h3>🔌 Puerto Magnético IP68 (4 Pines)</h3>
+        <p>Conector magnético Pogo-Pin industrial en lateral:</p>
         <ul>
-          <li>Dimensiones exteriores: <strong>82 × 82 × 32 mm</strong></li>
-          <li>Acomoda panel solar comercial cuadrado de <strong>70 × 70 mm</strong> en la tapa</li>
-          <li>Resistencia a impactos <strong>3 veces mayor</strong> por menor brazo de palanca contra árboles</li>
+          <li><strong>Carga externa (5V/1A):</strong> Recarga completa en 4.5 horas.</li>
+          <li><strong>Firmware USB Directo:</strong> Pines D- y D+ conectados a ESP32-S3 (GPIO19/20).</li>
+          <li><strong>Protección Intemperie:</strong> Diodo SS34 garantiza <strong>0.00V en reposo</strong> (inmune a barro, agua salina y humedad).</li>
+          <li><strong>Imanes N52 Polarizados:</strong> Impiden conexión invertida.</li>
+        </ul>
+      </div>
+
+      <div class="info-card">
+        <h3>👨‍💻 Diseñadores del Hardware</h3>
+        <p><strong>Renier Morales &amp; Lindbergh Zambrano</strong></p>
+        <ul>
+          <li>Revisión oficial: <strong>V3.0 (Lote de 10 Prototipos)</strong></li>
+          <li>Fabricación recomendada: <strong>FR-4 / 2 Capas / ENIG Gold</strong></li>
+          <li>Norma dieléctrica: <strong>IPC-2221 / IEC 60664-1 (5kV)</strong></li>
         </ul>
       </div>
     </aside>
@@ -248,10 +277,11 @@
     let currentZoom = 1.0;
     const views = {
       layout: 'pcb_cuadrada_70x70_layout.png',
-      d3: 'render_pcb_cuadrada_70x70_3d.png',
-      top: 'render_pcb_cuadrada_70x70_top.png',
-      bot: 'render_pcb_cuadrada_70x70_bottom.png',
-      caja: 'render_pcb_cuadrada_70x70_caja.png'
+      conexion: 'diagrama_conexion_placa_pcb.png',
+      pistas: 'pcb_pistas_enrutamiento_70x70.png',
+      pines: 'diagrama_interconexion_pines_bom.png',
+      top3d: 'render_pcb_cuadrada_70x70_3d.png',
+      bot3d: 'render_pcb_cuadrada_70x70_bottom_3d.png'
     };
 
     function switchView(viewKey, btnElement) {
