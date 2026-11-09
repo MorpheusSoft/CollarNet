@@ -272,13 +272,79 @@ module bottom_silkscreen() {
 module pcb_cuadrada_completa() {
     color(c_fr4) pcb_substrate();
     ground_plane_60x60();
+    top_copper_traces();
     top_components();
     bottom_battery_diagonal();
     bottom_silkscreen();
 }
 
 // ------------------------------------------------------------------------------
-// Módulo: Carcasa Puck IP67 Cuadrada (85 x 85 mm) con Silla Anatómica Dorsal
+// Módulo: Pistas de Cobre Físicas (Top Layer - Pistas de Señal, Potencia y RF)
+// ------------------------------------------------------------------------------
+module top_copper_traces() {
+    c_trace_sig   = [0.95, 0.40, 0.30, 1.0]; // Cobre / Señal
+    c_trace_pwr   = [0.92, 0.20, 0.20, 1.0]; // Rojo Potencia
+    c_trace_3v3   = [0.25, 0.70, 0.95, 1.0]; // Azul +3.3V
+    c_trace_rf    = [0.95, 0.80, 0.20, 1.0]; // Dorado RF 50Ω
+    c_trace_hv    = [0.85, 0.10, 0.15, 1.0]; // Rojo carmesí 1000V
+    
+    t_z = pcb_t + 0.04;
+    t_h = 0.06; // Espesor de cobre 35µm + relieve visual
+
+    // 1. Pistas USB D- y D+ (J1 a ESP32)
+    color(c_trace_sig) {
+        translate([1.5, 27.2, t_z]) cube([6.5, 0.35, t_h]);
+        translate([7.5, 25.5, t_z]) cube([3.0, 0.35, t_h]);
+        translate([1.5, 28.8, t_z]) cube([6.5, 0.35, t_h]);
+        translate([7.5, 27.0, t_z]) cube([3.0, 0.35, t_h]);
+    }
+
+    // 2. Pistas UART Módem (ESP32 a SIM7670)
+    color(c_trace_sig) {
+        translate([24.0, 48.0, t_z]) cube([12.0, 0.35, t_h]);
+        translate([24.0, 50.0, t_z]) cube([12.0, 0.35, t_h]);
+        translate([24.0, 45.0, t_z]) cube([12.0, 0.35, t_h]);
+    }
+
+    // 3. Pistas I2C Sensores (ESP32 a SC7A20)
+    color(c_trace_sig) {
+        translate([13.0, 36.0, t_z]) cube([0.35, 6.0, t_h]);
+        translate([15.0, 36.0, t_z]) cube([0.35, 6.0, t_h]);
+    }
+
+    // 4. Pistas de Potencia +3.3V (SY8089 a ESP32 y sensores)
+    color(c_trace_3v3) {
+        translate([7.0, 24.0, t_z]) cube([1.2, 14.0, t_h]);
+        translate([7.0, 38.0, t_z]) cube([1.2, 18.0, t_h]);
+    }
+
+    // 5. Pista de Potencia VBAT Principal
+    color(c_trace_pwr) {
+        translate([16.0, 44.0, t_z]) cube([20.0, 1.8, t_h]);
+        translate([34.0, 38.0, t_z]) cube([1.8, 12.0, t_h]);
+    }
+
+    // 6. Líneas RF de 50 Ohms (SIM7670 a U.FL LTE y GNSS)
+    color(c_trace_rf) {
+        translate([38.5, 38.0, t_z]) cube([0.8, 4.0, t_h]);
+        translate([56.5, 38.0, t_z]) cube([0.8, 4.0, t_h]);
+    }
+
+    // 7. Señal de Disparo IMPULSE_TRIG hacia U8
+    color(c_trace_sig) {
+        translate([24.0, 40.0, t_z]) cube([19.0, 0.4, t_h]);
+    }
+
+    // 8. Pistas de Alta Tensión 1000V (Cuadrante Sureste Aislado)
+    color(c_trace_hv) {
+        translate([52.0, 18.0, t_z]) cube([2.0, 6.0, t_h]);
+        translate([54.0, 26.0, t_z]) cube([10.0, 2.0, t_h]);
+        translate([62.0, 14.0, t_z]) cube([2.0, 12.0, t_h]);
+    }
+}
+
+// ------------------------------------------------------------------------------
+// Módulo: Carcasa Puck IP67 Cuadrada (85 x 85 mm) con Base Ergonómica
 // Idéntica al modelo CAD de producción evaluado por el equipo
 // ------------------------------------------------------------------------------
 module caja_puck_ip67() {
@@ -287,7 +353,7 @@ module caja_puck_ip67() {
     c_z = 36.0;
     c_r = 6.0;
     
-    // 1. SILLA ANATÓMICA CURVA DORSAL (Arco para el cuello del ganado)
+    // 1. BASE DE FIJACIÓN ERGONÓMICA CURVADA (Radio R=95mm para montaje superficial)
     color([0.22, 0.28, 0.35])
     difference() {
         // Bloque curvado

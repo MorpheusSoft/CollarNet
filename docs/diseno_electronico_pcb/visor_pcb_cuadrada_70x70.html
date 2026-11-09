@@ -173,15 +173,22 @@
     
     <div class="tabs">
       <button class="tab-btn active" onclick="switchView('layout', this)">Plano CAD 2D</button>
+      <button class="tab-btn" onclick="switchView('conexion', this)">Diagrama Conexión PCBA</button>
+      <button class="tab-btn" onclick="switchView('pistas', this)">Pistas de Cobre 2D</button>
+      <button class="tab-btn" onclick="switchView('pines', this)">Pines y Conexiones BOM</button>
       <button class="tab-btn" onclick="switchView('top3d', this)">3D Cara Superior</button>
-      <button class="tab-btn" onclick="switchView('bot3d', this)">3D Cara Inferior (Batería 18650)</button>
-      <button class="tab-btn" onclick="switchView('top', this)">Top Layer 2D</button>
-      <button class="tab-btn" onclick="switchView('bot', this)">Bottom Layer 2D</button>
+      <button class="tab-btn" onclick="switchView('bot3d', this)">3D Batería 18650</button>
     </div>
 
     <div class="controls">
-      <a href="pcb_cuadrada_70x70_layout.png" class="action-btn primary" download target="_blank">
-        <span>📥 Descargar Plano HD</span>
+      <a href="visor_diagrama_conexion_pcba.html" class="action-btn primary" target="_blank">
+        <span>🔍 Visor Conexión PCBA HD</span>
+      </a>
+      <a href="visor_pcb_3d_interactivo.html" class="action-btn" target="_blank">
+        <span>🚀 Visor 3D Interactivo</span>
+      </a>
+      <a href="diagrama_conexion_placa_pcb.png" class="action-btn" download target="_blank">
+        <span>📥 Conexiones PNG (5400×3600)</span>
       </a>
       <a href="CollarNet_V3_70x70_Planos_Ingenieria.pdf" class="action-btn" download target="_blank">
         <span>📄 Planos PDF (A3)</span>
@@ -202,6 +209,16 @@
     </div>
 
     <aside class="info-panel">
+      <div class="info-card">
+        <h3>🔍 Conexión y Ruteo PCBA Maestro</h3>
+        <p>Plano oficial CAD con el conexionado físico pad a pad de los <strong>28 componentes BOM</strong> y ruteo de pistas Top/Bottom.</p>
+        <ul>
+          <li>Identificación pad por pad de todos los circuitos.</li>
+          <li>Aislamiento galvánico 5kV en ranura en 'L'.</li>
+          <li><a href="visor_diagrama_conexion_pcba.html" target="_blank" style="color:#38bdf8; font-weight:bold; text-decoration:none;">🔗 Abrir Visor PCBA Dedicado (Zoom 800%) &rarr;</a></li>
+        </ul>
+      </div>
+
       <div class="info-card">
         <h3>🛰️ Plano de Masa GNSS 60×60mm</h3>
         <p>El plano de cobre continuo de <strong>60.0 × 60.0 mm</strong> actúa como plano de tierra reflectivo para la antena cerámica de parche.</p>
@@ -260,10 +277,11 @@
     let currentZoom = 1.0;
     const views = {
       layout: 'pcb_cuadrada_70x70_layout.png',
+      conexion: 'diagrama_conexion_placa_pcb.png',
+      pistas: 'pcb_pistas_enrutamiento_70x70.png',
+      pines: 'diagrama_interconexion_pines_bom.png',
       top3d: 'render_pcb_cuadrada_70x70_3d.png',
-      bot3d: 'render_pcb_cuadrada_70x70_bottom_3d.png',
-      top: 'render_pcb_cuadrada_70x70_top.png',
-      bot: 'render_pcb_cuadrada_70x70_bottom.png'
+      bot3d: 'render_pcb_cuadrada_70x70_bottom_3d.png'
     };
 
     function switchView(viewKey, btnElement) {

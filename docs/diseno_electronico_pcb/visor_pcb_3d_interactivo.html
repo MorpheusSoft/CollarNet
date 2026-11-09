@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CollarNet V3 — Visor 3D Interactivo de PCB y Pistas (70.0 × 70.0 mm)</title>
+  
+  <!-- Dependencias 3D: Carga local con respaldo CDN -->
+  <script src="libs/three.min.js"></script>
+  <script>
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
+  <script src="libs/OrbitControls.js"></script>
+  <script>
+    if (typeof THREE.OrbitControls === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>');
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background: #060913; color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    header {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      z-index: 100;
+    }
+
+    .brand-group { display: flex; align-items: center; gap: 12px; }
+    .badge-3d {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+    }
+    .title-box h1 { font-size: 16px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .title-box p { font-size: 11px; color: #94a3b8; }
+
+    .header-links { display: flex; gap: 8px; }
+    .btn-nav {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-nav:hover { background: #334155; border-color: #38bdf8; }
+    .btn-nav.primary { background: #0284c7; border-color: #38bdf8; color: #ffffff; }
+    .btn-nav.primary:hover { background: #0369a1; }
+
+    /* Layout principal */
+    main {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #viewport {
+      flex: 1;
+      height: 100%;
+      cursor: grab;
+      position: relative;
+    }
+    #viewport:active { cursor: grabbing; }
+
+    /* Barra flotante de vistas y herramientas */
+    .viewport-overlay-bar {
+      position: absolute;
+      top: 15px;
+      left: 20px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .cam-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cam-btn:hover { background: #0284c7; color: #fff; border-color: #38bdf8; }
+    .cam-btn.active { background: #0284c7; color: #fff; border-color: #38bdf8; }
+
+    /* Panel lateral derecho (Inspector de Componentes y Redes) */
+    aside.inspector-panel {
+      width: 380px;
+      background: #0b1120;
+      border-left: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      z-index: 20;
+    }
+
+    .panel-tabs {
+      display: flex;
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 6px;
+      gap: 4px;
+    }
+    .ptab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .ptab.active { background: #1e293b; color: #38bdf8; }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .layer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #162032;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .layer-item:last-child { border-bottom: none; }
+    .layer-item label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .layer-color { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+    /* Botones de resaltado de redes */
+    .net-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .net-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .net-btn:hover { background: #334155; }
+    .net-btn.active { border-color: #facc15; background: #27272a; box-shadow: 0 0 8px rgba(250, 204, 21, 0.3); }
+
+    /* Lista de componentes del BOM */
+    .component-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .comp-item {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s;
+    }
+    .comp-item:hover { border-color: #38bdf8; background: #25334d; }
+    .comp-item.active { border-color: #38bdf8; background: #0c4a6e; }
+    .comp-name { font-weight: bold; font-size: 12px; color: #f8fafc; }
+    .comp-desc { font-size: 10px; color: #94a3b8; }
+    .comp-badge {
+      font-family: monospace;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #0f172a;
+      color: #38bdf8;
+    }
+
+    /* Detalle del componente inspeccionado */
+    #compDetailBox {
+      background: #0a101f;
+      border: 1px solid #0284c7;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+    }
+    .detail-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #162238; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #94a3b8; font-size: 11px; }
+    .detail-val { color: #f8fafc; font-weight: 600; font-family: monospace; }
+    
+    .pin-grid {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .pin-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #131c2e;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    .pin-num { color: #facc15; font-family: monospace; font-weight: bold; width: 45px; }
+    .pin-func { color: #e2e8f0; font-weight: 600; flex: 1; }
+    .pin-net { color: #38bdf8; font-family: monospace; font-size: 10px; }
+
+    /* Barra inferior de estado */
+    .hud-bottom {
+      position: absolute;
+      bottom: 15px;
+      left: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      border-radius: 30px;
+      border: 1px solid #334155;
+      font-size: 11px;
+      color: #94a3b8;
+      z-index: 10;
+    }
+    .hud-bottom span strong { color: #38bdf8; }
+  </style>
+</head>
+<body>
+
+  <!-- ENCABEZADO -->
+  <header>
+    <div class="brand-group">
+      <div class="badge-3d">3D PCB CAD</div>
+      <div class="title-box">
+        <h1>CollarNet V3 — Visor 3D Interactivo de Placa y Pistas (70.0 × 70.0 mm)</h1>
+        <p>Inspección 360° | Pistas Top &amp; Bottom | Plano Masa GNSS 60×60 mm | Batería 18650 | Renier Morales &amp; Lindbergh Zambrano</p>
+      </div>
+    </div>
+
+    <div class="header-links">
+      <a href="visor_diagrama_conexion_pcba.html" class="btn-nav primary" target="_blank">
+        <span>🔍 Plano Maestro PCBA (Zoom 800%)</span>
+      </a>
+      <a href="diagrama_conexion_placa_pcb.png" class="btn-nav" target="_blank" download>
+        <span>📥 Descargar Plano HD (5400px)</span>
+      </a>
+      <a href="CollarNet_V3_70x70_Planos_Ingenieria.pdf" class="btn-nav" target="_blank" download>
+        <span>📄 Planos PDF (A3)</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR 3D Y PANEL DE CONTROL -->
+  <main>
+    <div id="viewport">
+      <!-- Barra superior de vistas rápidas -->
+      <div class="viewport-overlay-bar">
+        <button class="cam-btn active" onclick="setCameraView('iso')">Perspectiva 3D</button>
+        <button class="cam-btn" onclick="setCameraView('top')">Cara Superior (TOP)</button>
+        <button class="cam-btn" onclick="setCameraView('bot')">Cara Inferior (BOTTOM)</button>
+        <button class="cam-btn" onclick="setCameraView('pogo')">Puerto Magnético IP68</button>
+        <button class="cam-btn" onclick="setCameraView('hv')">Zona 1000V CDI</button>
+        <button class="cam-btn" onclick="toggleAutoRotate()" id="btnAutoRot">🔄 Auto-Giro</button>
+        <button class="cam-btn" onclick="resetCamera()">Restaurar</button>
+      </div>
+
+      <!-- Barra inferior HUD con métricas -->
+      <div class="hud-bottom">
+        <span>Dimensiones: <strong>70.0 × 70.0 × 1.6 mm</strong></span>
+        <span>•</span>
+        <span>Masa GNSS: <strong>60.0 × 60.0 mm (+4.5 dB)</strong></span>
+        <span>•</span>
+        <span>Batería: <strong>NCR18650B (42° Diagonal)</strong></span>
+        <span>•</span>
+        <span>Aislamiento: <strong>Ranura 2.0 mm (5,000V)</strong></span>
+        <span>•</span>
+        <span>Interacción: <strong>Arrastrar para rotar | Rueda para zoom | Clic derecho para desplazar</strong></span>
+      </div>
+    </div>
+
+    <!-- PANEL LATERAL DE CONTROL E INSPECCIÓN -->
+    <aside class="inspector-panel">
+      <div class="panel-tabs">
+        <button class="ptab active" onclick="switchPanelTab('components', this)">Componentes (BOM)</button>
+        <button class="ptab" onclick="switchPanelTab('layers', this)">Capas y Pistas</button>
+        <button class="ptab" onclick="switchPanelTab('nets', this)">Redes y Señales</button>
+      </div>
+
+      <div class="panel-content" id="tabContent">
+        <!-- Contenido dinámico según la pestaña activa -->
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    // =========================================================================
+    // COLLARNET V3 — MOTOR 3D PROCEDURAL EN THREE.JS
+    // =========================================================================
+    let scene, camera, renderer, controls;
+    let pcbGroup, compGroup, tracesTopGroup, tracesBotGroup, gndPlaneMesh, batteryGroup, slotMesh;
+    let autoRotate = false;
+    let currentHighlightedNet = null;
+
+    // Base de datos de componentes oficiales BOM JLCPCB (28 Partes)
+    const BOM_DATA = [
+      {
+        desig: "U1",
+        name: "ESP32-S3-WROOM-1-N16R8",
+        desc: "Microcontrolador Xtensa Dual-Core 240MHz + Wi-Fi/BLE",
+        lcsc: "C2913202",
+        footprint: "MODULE-ESP32-S3",
+        pos: [-20, 13, 1.6],
+        size: [18, 25.5, 3.2],
+        color: 0x1e293b,
+        shield: true,
+        pins: [
+          { num: "1", name: "GND", net: "GND_SYS" },
+          { num: "2", name: "3V3", net: "+3.3V_SYS" },
+          { num: "3", name: "EN", net: "RESET_RC" },
+          { num: "4", name: "IO4", net: "IMPULSE_TRIG" },
+          { num: "5", name: "IO5", net: "BUZZER_PWM" },
+          { num: "6", name: "IO6", net: "MODEM_PWRKEY" },
+          { num: "8", name: "IO8", net: "I2C_SDA" },
+          { num: "9", name: "IO9", net: "I2C_SCL" },
+          { num: "10", name: "IO10", net: "ACCEL_INT1" },
+          { num: "17", name: "IO17", net: "MODEM_TXD" },
+          { num: "18", name: "IO18", net: "MODEM_RXD" },
+          { num: "19", name: "IO19", net: "USB_D-" },
+          { num: "20", name: "IO20", net: "USB_D+" },
+          { num: "41", name: "EPAD", net: "GND_RF_PLANE" }
+        ]
+      },
+      {
+        desig: "U2",
+        name: "SIM7670SA-MNGV",
+        desc: "Módem Celular 4G LTE Cat-1 + GNSS Combo",
+        lcsc: "C2892994",
+        footprint: "LCC-LGA-68",
+        pos: [13, 11, 1.6],
+        size: [24, 24, 2.8],
+        color: 0x94a3b8,
+        shield: true,
+        pins: [
+          { num: "1", name: "PWRKEY", net: "MODEM_PWRKEY" },
+          { num: "21", name: "UART_RXD", net: "MODEM_TXD" },
+          { num: "22", name: "UART_TXD", net: "MODEM_RXD" },
+          { num: "32", name: "MAIN_ANT", net: "LTE_RF_50R" },
+          { num: "38,39", name: "VBAT", net: "VBAT_4V" },
+          { num: "46", name: "GNSS_ANT", net: "GNSS_RF_50R" },
+          { num: "52-55", name: "SIM_BUS", net: "SIM_INTERFACE" },
+          { num: "GND", name: "RF_GND", net: "GND_RF_PLANE" }
+        ]
+      },
+      {
+        desig: "U3",
+        name: "SC7A20TR",
+        desc: "Acelerómetro 3 Ejes I2C Ultra-Bajo Consumo (6µA)",
+        lcsc: "C392477",
+        footprint: "LGA-12",
+        pos: [-24, -9, 1.6],
+        size: [3, 3, 1.0],
+        color: 0x0f172a,
+        pins: [
+          { num: "1", name: "SCL", net: "I2C_SCL" },
+          { num: "4", name: "SDA", net: "I2C_SDA" },
+          { num: "6", name: "GND", net: "GND_SYS" },
+          { num: "7,8", name: "VDD", net: "+3.3V_SYS" },
+          { num: "11", name: "INT1", net: "ACCEL_INT1" }
+        ]
+      },
+      {
+        desig: "U4",
+        name: "CN3791",
+        desc: "Controlador Carga Solar MPPT (Vmp 6.0V / 1.2A)",
+        lcsc: "C154992",
+        footprint: "SSOP-10",
+        pos: [-23, -17, 1.6],
+        size: [5, 4, 1.2],
+        color: 0x0f172a,
+        pins: [
+          { num: "1", name: "VIN", net: "VBUS_SOLAR" },
+          { num: "2", name: "MPPT", net: "MPPT_SENSE" },
+          { num: "4", name: "GND", net: "GND_SYS" },
+          { num: "7", name: "BAT", net: "VBAT_4V" },
+          { num: "10", name: "DRV", net: "Q3_GATE" }
+        ]
+      },
+      {
+        desig: "U5",
+        name: "SY8089AAAC",
+        desc: "Regulador Buck DC-DC Síncrono 1.5MHz (3.3V / 2A)",
+        lcsc: "C78988",
+        footprint: "SOT-23-5",
+        pos: [-23, -27, 1.6],
+        size: [3.5, 3, 1.2],
+        color: 0x0f172a,
+        pins: [
+          { num: "1", name: "EN", net: "VBAT_4V" },
+          { num: "2", name: "GND", net: "GND_SYS" },
+          { num: "3", name: "LX", net: "SW_NODE_L1" },
+          { num: "4", name: "VIN", net: "VBAT_4V" },
+          { num: "5", name: "FB", net: "+3.3V_SYS" }
+        ]
+      },
+      {
+        desig: "U8",
+        name: "EL817S1(C)",
+        desc: "Optoacoplador Aislamiento Galvánico 5,000V RMS",
+        lcsc: "C4999",
+        footprint: "SOP-4",
+        pos: [10, -14, 1.6],
+        size: [5, 6, 3.5],
+        color: 0x1e293b,
+        pins: [
+          { num: "1", name: "ANODE", net: "IMPULSE_TRIG" },
+          { num: "2", name: "CATHODE", net: "GND_SYS" },
+          { num: "3", name: "EMITTER", net: "HV_GND" },
+          { num: "4", name: "COLLECTOR", net: "U9_TRIG_IN" }
+        ]
+      },
+      {
+        desig: "U9",
+        name: "74LVC1G123DCK",
+        desc: "Watchdog Hardware Temporizador Monoestable 1000ms",
+        lcsc: "C128362",
+        footprint: "VSSOP-8",
+        pos: [19, -13, 1.6],
+        size: [3.5, 3.5, 1.1],
+        color: 0x0f172a,
+        pins: [
+          { num: "1", name: "A", net: "U9_TRIG_IN" },
+          { num: "4", name: "GND", net: "HV_GND" },
+          { num: "5", name: "Q", net: "HV_WATCHDOG_EN" },
+          { num: "6,7", name: "RC", net: "TIMING_1S" }
+        ]
+      },
+      {
+        desig: "MOD_HV",
+        name: "Flyback 3.7V ➔ 1000V",
+        desc: "Micro-Módulo Elevador Resonante Encapsulado Epoxi",
+        lcsc: "Custom-MOD-HV",
+        footprint: "Potted-18x14mm",
+        pos: [21, -19, 1.6],
+        size: [18, 14, 11],
+        color: 0x18181b,
+        pins: [
+          { num: "1", name: "IN (+)", net: "VBAT_4V" },
+          { num: "2", name: "IN (-)", net: "HV_WATCHDOG_EN" },
+          { num: "3", name: "OUT (+)", net: "+1000V_CDI" },
+          { num: "4", name: "OUT (-)", net: "HV_GND" }
+        ]
+      },
+      {
+        desig: "C7",
+        name: "0.1µF 1000V CBB21",
+        desc: "Condensador Polipropileno Metalizado Descarga CDI (50mJ)",
+        lcsc: "C2839151",
+        footprint: "SMD-1812 / CBB21",
+        pos: [21, -29, 1.6],
+        size: [16, 7.5, 12],
+        color: 0xb91c1c,
+        pins: [
+          { num: "1", name: "POS", net: "+1000V_CDI" },
+          { num: "2", name: "NEG", net: "HV_GND" }
+        ]
+      },
+      {
+        desig: "TH1",
+        name: "TYN1225RG (SCR)",
+        desc: "Tiristor Descarga Rápida (1200V / 25A) en TO-252",
+        lcsc: "C14486",
+        footprint: "TO-252-2",
+        pos: [29, -17, 1.6],
+        size: [6.5, 6, 2.3],
+        color: 0x0f172a,
+        pins: [
+          { num: "1", name: "GATE", net: "DIAC_TRIGGER" },
+          { num: "2", name: "ANODE", net: "+1000V_CDI" },
+          { num: "3", name: "CATHODE", net: "HV_PULSE_OUT" }
+        ]
+      },
+      {
+        desig: "BZ1",
+        name: "Piezo Buzzer 95dB",
+        desc: "Transductor Acústico Pasivo Ø12.4mm a 4000 Hz",
+        lcsc: "C253457",
+        footprint: "PTH-D12.4mm",
+        pos: [-9, -25, 1.6],
+        cyl: true,
+        radius: 6,
+        height: 6,
+        color: 0x1e293b,
+        pins: [
+          { num: "+", name: "POS", net: "VBAT_4V" },
+          { num: "-", name: "NEG", net: "Q1_DRAIN_PWM" }
+        ]
+      },
+      {
+        desig: "J1",
+        name: "Pogo Magnético 4P IP68",
+        desc: "Conector Estanco Lateral (Carga 5V + USB Firmware)",
+        lcsc: "Custom-MAG4P-IP68",
+        footprint: "POGO-4PIN-MAG-IP68",
+        pos: [-35, -7, 1.6],
+        size: [5, 16, 4],
+        color: 0x0f172a,
+        pins: [
+          { num: "1", name: "VBUS (+5V)", net: "VBUS_SOLAR" },
+          { num: "2", name: "USB D-", net: "USB_D-" },
+          { num: "3", name: "USB D+", net: "USB_D+" },
+          { num: "4", name: "GND", net: "GND_SYS" }
+        ]
+      },
+      {
+        desig: "J2",
+        name: "NANO-SIM-6P",
+        desc: "Slot Push-Pull Lateral para Tarjeta Nano-SIM",
+        lcsc: "C2838382",
+        footprint: "PUSH-PULL",
+        pos: [30, 15, 1.6],
+        size: [9, 12, 1.6],
+        color: 0x475569,
+        pins: [
+          { num: "C1-C7", name: "SIM", net: "SIM_INTERFACE" }
+        ]
+      },
+      {
+        desig: "J3",
+        name: "U.FL LTE",
+        desc: "Conector Coaxial Micro-RF 50Ω para Antena Celular",
+        lcsc: "C88373",
+        footprint: "SMD-IPEX",
+        pos: [3, 1, 1.6],
+        size: [3, 3, 1.4],
+        color: 0xeab308,
+        pins: [{ num: "SIG", name: "RF", net: "LTE_RF_50R" }]
+      },
+      {
+        desig: "J4",
+        name: "U.FL GNSS",
+        desc: "Conector Coaxial Micro-RF 50Ω para Antena Satelital",
+        lcsc: "C88373",
+        footprint: "SMD-IPEX",
+        pos: [23, 1, 1.6],
+        size: [3, 3, 1.4],
+        color: 0xeab308,
+        pins: [{ num: "SIG", name: "RF", net: "GNSS_RF_50R" }]
+      },
+      {
+        desig: "ANT_GNSS",
+        name: "Antena Cerámica 25×25 mm",
+        desc: "Antena Satelital Acoplada a Plano de Masa 60×60 mm",
+        lcsc: "Ceramic-Patch-25x25",
+        footprint: "Patch-25x25mm",
+        pos: [0, -15, 1.6],
+        size: [25, 25, 4.0],
+        color: 0xe2e8f0,
+        pins: [{ num: "PIN", name: "FEED", net: "GNSS_RF_50R" }]
+      },
+      {
+        desig: "BT1",
+        name: "Keystone 1042/1048",
+        desc: "Clips Batería 18650 en Bottom Layer a 42° Diagonal",
+        lcsc: "Keystone-1042",
+        footprint: "PTH-18650",
+        pos: [0, 0, -9.5],
+        isBottom: true,
+        pins: [
+          { num: "+", name: "BT_POS", net: "VBAT_4V" },
+          { num: "-", name: "BT_NEG", net: "BT_MINUS" }
+        ]
+      },
+      {
+        desig: "EL1",
+        name: "Borne M4 (+)",
+        desc: "Electrodo Dérmico Salida Choque CDI (+1000V)",
+        lcsc: "Hardware-M4",
+        footprint: "PAD-M4-8MM",
+        pos: [30, -25, 1.6],
+        size: [4, 4, 8],
+        color: 0xdc2626,
+        pins: [{ num: "1", name: "OUT", net: "HV_PULSE_OUT" }]
+      },
+      {
+        desig: "EL2",
+        name: "Borne M4 (-)",
+        desc: "Electrodo Dérmico Retorno Choque CDI (HV_GND)",
+        lcsc: "Hardware-M4",
+        footprint: "PAD-M4-8MM",
+        pos: [30, -31, 1.6],
+        size: [4, 4, 8],
+        color: 0x3b82f6,
+        pins: [{ num: "1", name: "RET", net: "HV_GND" }]
+      }
+    ];
+
+    // Rutas de pistas 3D (Top Layer)
+    const NET_TRACES = [
+      {
+        net: "USB_D-",
+        color: 0x06b6d4,
+        width: 0.35,
+        points: [[-34.5, -6], [-30, -6], [-28, -7], [-24, -7], [-22, -2]]
+      },
+      {
+        net: "USB_D+",
+        color: 0x06b6d4,
+        width: 0.35,
+        points: [[-34.5, -8], [-30, -8], [-28, -8.5], [-24, -8.5], [-22, -3.5]]
+      },
+      {
+        net: "MODEM_TXD",
+        color: 0xc084fc,
+        width: 0.35,
+        points: [[-11, 14], [-4, 14], [1, 14]]
+      },
+      {
+        net: "MODEM_RXD",
+        color: 0xc084fc,
+        width: 0.35,
+        points: [[-11, 12], [-4, 12], [1, 12]]
+      },
+      {
+        net: "MODEM_PWRKEY",
+        color: 0xc084fc,
+        width: 0.35,
+        points: [[-11, 10], [-4, 10], [1, 8]]
+      },
+      {
+        net: "I2C_SDA",
+        color: 0x10b981,
+        width: 0.35,
+        points: [[-21, 0], [-21, -5], [-24, -7.5]]
+      },
+      {
+        net: "I2C_SCL",
+        color: 0x10b981,
+        width: 0.35,
+        points: [[-19, 0], [-19, -5], [-23, -7.5]]
+      },
+      {
+        net: "+3.3V_SYS",
+        color: 0x38bdf8,
+        width: 1.0,
+        points: [[-23, -25], [-26, -25], [-26, -10], [-26, 8], [-21, 8]]
+      },
+      {
+        net: "VBAT_4V",
+        color: 0xef4444,
+        width: 1.5,
+        points: [[-17, -17], [-10, -17], [-5, -17], [-5, 8], [1, 8]]
+      },
+      {
+        net: "IMPULSE_TRIG",
+        color: 0xf97316,
+        width: 0.4,
+        points: [[-11, 5], [0, 5], [5, -10], [8, -12]]
+      },
+      {
+        net: "BUZZER_PWM",
+        color: 0xf97316,
+        width: 0.4,
+        points: [[-11, 3], [-9, 3], [-9, -19]]
+      },
+      {
+        net: "+1000V_CDI",
+        color: 0xdc2626,
+        width: 1.8,
+        points: [[22, -14], [22, -23], [27, -23], [27, -18]]
+      },
+      {
+        net: "HV_PULSE_OUT",
+        color: 0xdc2626,
+        width: 1.8,
+        points: [[29, -15], [29, -25]]
+      },
+      {
+        net: "HV_GND",
+        color: 0x7c3aed,
+        width: 1.5,
+        points: [[29, -31], [25, -31], [21, -29]]
+      },
+      {
+        net: "LTE_RF_50R",
+        color: 0xeab308,
+        width: 0.6,
+        points: [[5, 3], [3, 1]]
+      },
+      {
+        net: "GNSS_RF_50R",
+        color: 0xeab308,
+        width: 0.6,
+        points: [[21, 3], [23, 1]]
+      }
+    ];
+
+    // INICIALIZACIÓN 3D
+    function init() {
+      const container = document.getElementById('viewport');
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x060913);
+
+      camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 1000);
+      camera.position.set(0, -90, 80);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI - 0.05;
+
+      // Iluminación
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight1.position.set(50, -50, 100);
+      dirLight1.castShadow = true;
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.4);
+      dirLight2.position.set(-60, 60, 40);
+      scene.add(dirLight2);
+
+      const dirLightBottom = new THREE.DirectionalLight(0xffffff, 0.5);
+      dirLightBottom.position.set(0, 0, -80);
+      scene.add(dirLightBottom);
+
+      // Grupos
+      pcbGroup = new THREE.Group();
+      compGroup = new THREE.Group();
+      tracesTopGroup = new THREE.Group();
+      tracesBotGroup = new THREE.Group();
+      batteryGroup = new THREE.Group();
+
+      scene.add(pcbGroup);
+      scene.add(compGroup);
+      scene.add(tracesTopGroup);
+      scene.add(tracesBotGroup);
+      scene.add(batteryGroup);
+
+      // Construcción del modelo 3D
+      buildPCBSubstrate();
+      buildGroundPlane();
+      buildComponents();
+      buildCopperTraces();
+      buildBottomBattery();
+
+      // UI
+      switchPanelTab('components');
+
+      window.addEventListener('resize', onWindowResize);
+      animate();
+    }
+
+    // 1. Sustrato PCB (70x70x1.6 mm) con esquinas redondeadas y ranura en L
+    function buildPCBSubstrate() {
+      const shape = new THREE.Shape();
+      const w = 70, h = 70, r = 4;
+      const hw = w / 2, hh = h / 2;
+
+      // Contorno con radio R=4
+      shape.moveTo(-hw + r, -hh);
+      shape.lineTo(hw - r, -hh);
+      shape.quadraticCurveTo(hw, -hh, hw, -hh + r);
+      shape.lineTo(hw, hh - r);
+      shape.quadraticCurveTo(hw, hh, hw - r, hh);
+      shape.lineTo(-hw + r, hh);
+      shape.quadraticCurveTo(-hw, hh, -hw, hh - r);
+      shape.lineTo(-hw, -hh + r);
+      shape.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+
+      // 4 Taladros de fijación M3 (d=3.2mm, r=1.6mm) en (±30, ±30)
+      const holes = [[-30, -30], [30, -30], [-30, 30], [30, 30]];
+      holes.forEach(([hx, hy]) => {
+        const holePath = new THREE.Path();
+        holePath.absarc(hx, hy, 1.6, 0, Math.PI * 2, true);
+        shape.holes.push(holePath);
+
+        // Anillo de cobre dorado alrededor del taladro M3
+        const ringGeo = new THREE.RingGeometry(1.6, 3.0, 32);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.8, side: THREE.DoubleSide });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.position.set(hx, hy, 1.61);
+        pcbGroup.add(ringMesh);
+      });
+
+      // Ranura en L pasante de aislamiento (2.0 mm ancho) en cuadrante Sureste
+      // Desde (9, -35) sube hasta (9, 9) y dobla a (35, 9)
+      const slotPath = new THREE.Path();
+      slotPath.moveTo(8.0, -35.0);
+      slotPath.lineTo(10.0, -35.0);
+      slotPath.lineTo(10.0, 10.0);
+      slotPath.lineTo(35.0, 10.0);
+      slotPath.lineTo(35.0, 8.0);
+      slotPath.lineTo(8.0, 8.0);
+      slotPath.closePath();
+      shape.holes.push(slotPath);
+
+      const extrudeSettings = { depth: 1.6, bevelEnabled: false };
+      const pcbGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      const pcbMat = new THREE.MeshStandardMaterial({
+        color: 0x064e3b, // Verde FR-4 soldermask
+        roughness: 0.5,
+        metalness: 0.1
+      });
+      const pcbMesh = new THREE.Mesh(pcbGeo, pcbMat);
+      pcbMesh.position.z = 0;
+      pcbMesh.receiveShadow = true;
+      pcbGroup.add(pcbMesh);
+    }
+
+    // 2. Plano de Masa RF GNSS (60×60 mm) en Capa Interna 2
+    function buildGroundPlane() {
+      const gndShape = new THREE.Shape();
+      gndShape.moveTo(-30, -30);
+      gndShape.lineTo(8, -30);
+      gndShape.lineTo(8, 8);
+      gndShape.lineTo(30, 8);
+      gndShape.lineTo(30, 30);
+      gndShape.lineTo(-30, 30);
+      gndShape.closePath();
+
+      const gndGeo = new THREE.ShapeGeometry(gndShape);
+      const gndMat = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        roughness: 0.3,
+        metalness: 0.8,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide
+      });
+      gndPlaneMesh = new THREE.Mesh(gndGeo, gndMat);
+      gndPlaneMesh.position.z = 1.58;
+      pcbGroup.add(gndPlaneMesh);
+    }
+
+    // 3. Construcción de componentes 3D con detalles de pines
+    function buildComponents() {
+      BOM_DATA.forEach(comp => {
+        if (comp.isBottom) return; // Se construye en batería
+
+        const group = new THREE.Group();
+        group.name = comp.desig;
+        group.userData = comp;
+
+        if (comp.cyl) {
+          // Cilindro (Buzzer)
+          const geo = new THREE.CylinderGeometry(comp.radius, comp.radius, comp.height, 32);
+          const mat = new THREE.MeshStandardMaterial({ color: comp.color, roughness: 0.4 });
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.rotation.x = Math.PI / 2;
+          mesh.position.z = comp.height / 2;
+          mesh.castShadow = true;
+          group.add(mesh);
+          
+          // Puerto acústico
+          const holeGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.5, 16);
+          const holeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+          const holeMesh = new THREE.Mesh(holeGeo, holeMat);
+          holeMesh.rotation.x = Math.PI / 2;
+          holeMesh.position.z = comp.height + 0.1;
+          group.add(holeMesh);
+        } else {
+          // Bloque Paralelepípedo
+          const [sx, sy, sz] = comp.size;
+          const geo = new THREE.BoxGeometry(sx, sy, sz);
+          const mat = new THREE.MeshStandardMaterial({
+            color: comp.color,
+            roughness: comp.shield ? 0.3 : 0.6,
+            metalness: comp.shield ? 0.85 : 0.1
+          });
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.z = sz / 2;
+          mesh.castShadow = true;
+          group.add(mesh);
+
+          // Si es módulo apantallado (ESP32 o SIM7670) agregar etiqueta
+          if (comp.shield) {
+            const topGeo = new THREE.PlaneGeometry(sx * 0.85, sy * 0.85);
+            const topMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.9, roughness: 0.2 });
+            const topMesh = new THREE.Mesh(topGeo, topMat);
+            topMesh.position.z = sz + 0.02;
+            group.add(topMesh);
+          }
+
+          // Si es conector magnético J1 (agregar imanes y 4 pogo pins dorados)
+          if (comp.desig === "J1") {
+            // 2 Imanes N52
+            [-6, 6].forEach(offsetY => {
+              const magGeo = new THREE.CylinderGeometry(1.4, 1.4, 0.4, 16);
+              const magMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 });
+              const magMesh = new THREE.Mesh(magGeo, magMat);
+              magMesh.rotation.z = Math.PI / 2;
+              magMesh.position.set(-sx/2 - 0.2, offsetY, sz/2);
+              group.add(magMesh);
+            });
+            // 4 Pogo Pins dorados (+5V, D-, D+, GND)
+            [-4.5, -1.5, 1.5, 4.5].forEach(offsetY => {
+              const pogoGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.6, 12);
+              const pogoMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.2 });
+              const pogoMesh = new THREE.Mesh(pogoGeo, pogoMat);
+              pogoMesh.rotation.z = Math.PI / 2;
+              pogoMesh.position.set(-sx/2 - 0.3, offsetY, sz/2);
+              group.add(pogoMesh);
+            });
+          }
+        }
+
+        group.position.set(comp.pos[0], comp.pos[1], comp.pos[2]);
+        compGroup.add(group);
+      });
+    }
+
+    // 4. Pistas de Cobre 3D en Cara Superior (TOP)
+    function buildCopperTraces() {
+      NET_TRACES.forEach(trace => {
+        const points3D = trace.points.map(p => new THREE.Vector3(p[0], p[1], 1.62));
+        const curve = new THREE.CatmullRomCurve3(points3D, false, 'catmullrom', 0.1);
+        const tubeGeo = new THREE.TubeGeometry(curve, 32, trace.width / 2, 8, false);
+        const tubeMat = new THREE.MeshStandardMaterial({
+          color: trace.color,
+          roughness: 0.2,
+          metalness: 0.9,
+          emissive: trace.color,
+          emissiveIntensity: 0.2
+        });
+        const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+        tubeMesh.name = trace.net;
+        tubeMesh.userData = { net: trace.net, defaultColor: trace.color };
+        tracesTopGroup.add(tubeMesh);
+      });
+    }
+
+    // 5. Batería Panasonic NCR18650B y Clips Keystone en BOTTOM Layer (42° diagonal)
+    function buildBottomBattery() {
+      const batGroup = new THREE.Group();
+      batGroup.rotation.z = 42 * (Math.PI / 180);
+      batGroup.position.set(0, 0, -9.5);
+
+      // Celda 18650 (65.3 x 18.5 mm)
+      const cellGeo = new THREE.CylinderGeometry(9.25, 9.25, 65.3, 32);
+      const cellMat = new THREE.MeshStandardMaterial({ color: 0x65a30d, roughness: 0.4 });
+      const cellMesh = new THREE.Mesh(cellGeo, cellMat);
+      cellMesh.rotation.x = Math.PI / 2;
+      batGroup.add(cellMesh);
+
+      // Polo positivo
+      const posGeo = new THREE.CylinderGeometry(4.0, 4.0, 1.0, 16);
+      const posMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.8 });
+      const posMesh = new THREE.Mesh(posGeo, posMat);
+      posMesh.rotation.x = Math.PI / 2;
+      posMesh.position.z = 32.8;
+      batGroup.add(posMesh);
+
+      // Clips Keystone 1042 / 1048
+      const clipMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.3 });
+      [-35, 35].forEach(offsetZ => {
+        const clipGeo = new THREE.BoxGeometry(16, 4, 10);
+        const clipMesh = new THREE.Mesh(clipGeo, clipMat);
+        clipMesh.position.set(0, 5, offsetZ);
+        batGroup.add(clipMesh);
+      });
+
+      batteryGroup.add(batGroup);
+    }
+
+    // Animación y Render
+    function animate() {
+      requestAnimationFrame(animate);
+      if (autoRotate) {
+        pcbGroup.rotation.z += 0.005;
+        compGroup.rotation.z += 0.005;
+        tracesTopGroup.rotation.z += 0.005;
+        tracesBotGroup.rotation.z += 0.005;
+        batteryGroup.rotation.z += 0.005;
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('viewport');
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    // Controles de cámara predeterminados
+    function setCameraView(view) {
+      document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      switch(view) {
+        case 'iso':
+          tweenCamera(new THREE.Vector3(0, -90, 80), new THREE.Vector3(0, 0, 0));
+          break;
+        case 'top':
+          tweenCamera(new THREE.Vector3(0, 0, 120), new THREE.Vector3(0, 0, 0));
+          break;
+        case 'bot':
+          tweenCamera(new THREE.Vector3(0, 0, -120), new THREE.Vector3(0, 0, 0));
+          break;
+        case 'pogo':
+          tweenCamera(new THREE.Vector3(-60, -15, 20), new THREE.Vector3(-35, -7, 0));
+          break;
+        case 'hv':
+          tweenCamera(new THREE.Vector3(45, -45, 40), new THREE.Vector3(20, -20, 0));
+          break;
+      }
+    }
+
+    function resetCamera() {
+      setCameraView('iso');
+      resetNetHighlight();
+    }
+
+    function tweenCamera(targetPos, targetLook) {
+      camera.position.copy(targetPos);
+      controls.target.copy(targetLook);
+    }
+
+    function toggleAutoRotate() {
+      autoRotate = !autoRotate;
+      document.getElementById('btnAutoRot').classList.toggle('active', autoRotate);
+    }
+
+    // Pestañas del Panel Lateral
+    function switchPanelTab(tab, btn) {
+      if (btn) {
+        document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+
+      const content = document.getElementById('tabContent');
+      content.innerHTML = '';
+
+      if (tab === 'components') {
+        renderComponentsTab(content);
+      } else if (tab === 'layers') {
+        renderLayersTab(content);
+      } else if (tab === 'nets') {
+        renderNetsTab(content);
+      }
+    }
+
+    function renderComponentsTab(content) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <h3>📦 Lista Oficial de Componentes BOM (28 Partes)</h3>
+        <p style="font-size:11px; color:#94a3b8; margin-bottom:10px;">Haz clic en cualquier componente para enfocar la cámara 3D e inspeccionar sus pines y conexiones físicas:</p>
+        <div class="component-list" id="compList"></div>
+      `;
+      content.appendChild(card);
+
+      const listDiv = card.querySelector('#compList');
+      BOM_DATA.forEach(comp => {
+        const item = document.createElement('div');
+        item.className = 'comp-item';
+        item.innerHTML = `
+          <div>
+            <div class="comp-name">${comp.desig}: ${comp.name}</div>
+            <div class="comp-desc">${comp.desc}</div>
+          </div>
+          <div class="comp-badge">${comp.lcsc}</div>
+        `;
+        item.onclick = () => selectComponent(comp, item);
+        listDiv.appendChild(item);
+      });
+
+      const detailCard = document.createElement('div');
+      detailCard.id = 'compDetailBox';
+      detailCard.innerHTML = `
+        <h3 style="color:#38bdf8; font-size:12px; margin-bottom:6px;">🔍 Inspector de Pines y Conexiones</h3>
+        <p style="color:#94a3b8; font-size:11px;">Selecciona un componente arriba para ver su asignación pin por pin.</p>
+      `;
+      content.appendChild(detailCard);
+    }
+
+    function selectComponent(comp, el) {
+      document.querySelectorAll('.comp-item').forEach(i => i.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      // Centrar cámara en el componente
+      const targetPos = new THREE.Vector3(comp.pos[0], comp.pos[1], 0);
+      const camPos = new THREE.Vector3(comp.pos[0], comp.pos[1] - 40, comp.pos[2] + 40);
+      if (comp.isBottom) camPos.z = -50;
+      tweenCamera(camPos, targetPos);
+
+      // Mostrar pines en el inspector
+      const box = document.getElementById('compDetailBox');
+      let pinsHtml = comp.pins.map(p => `
+        <div class="pin-row">
+          <span class="pin-num">Pin ${p.num}</span>
+          <span class="pin-func">${p.name}</span>
+          <span class="pin-net">&gt;&gt; ${p.net}</span>
+        </div>
+      `).join('');
+
+      box.innerHTML = `
+        <div class="detail-row"><span class="detail-label">Designador:</span><span class="detail-val" style="color:#38bdf8">${comp.desig}</span></div>
+        <div class="detail-row"><span class="detail-label">Componente:</span><span class="detail-val">${comp.name}</span></div>
+        <div class="detail-row"><span class="detail-label">Código LCSC:</span><span class="detail-val" style="color:#facc15">${comp.lcsc}</span></div>
+        <div class="detail-row"><span class="detail-label">Encapsulado:</span><span class="detail-val">${comp.footprint}</span></div>
+        <div class="detail-row"><span class="detail-label">Coordenadas PCB:</span><span class="detail-val">(${comp.pos[0]}, ${comp.pos[1]}) mm</span></div>
+        <div style="margin-top:10px; font-weight:bold; font-size:11px; color:#cbd5e1;">Pines y Señales Conectadas:</div>
+        <div class="pin-grid">${pinsHtml}</div>
+      `;
+    }
+
+    function renderLayersTab(content) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <h3>🥞 Control de Visibilidad de Capas PCB</h3>
+        <div class="layer-item">
+          <label><input type="checkbox" checked onchange="pcbGroup.visible = this.checked"> <span class="layer-color" style="background:#064e3b"></span> Sustrato FR-4 (1.6 mm)</label>
+          <span style="font-size:10px; color:#94a3b8">Borde 70×70</span>
+        </div>
+        <div class="layer-item">
+          <label><input type="checkbox" checked onchange="tracesTopGroup.visible = this.checked"> <span class="layer-color" style="background:#f43f5e"></span> Pistas Cobre Top Layer (L1)</label>
+          <span style="font-size:10px; color:#94a3b8">Señal/Potencia</span>
+        </div>
+        <div class="layer-item">
+          <label><input type="checkbox" checked onchange="gndPlaneMesh.visible = this.checked"> <span class="layer-color" style="background:#f59e0b"></span> Plano Masa GNSS (60×60 mm)</label>
+          <span style="font-size:10px; color:#94a3b8">Capa L2</span>
+        </div>
+        <div class="layer-item">
+          <label><input type="checkbox" checked onchange="compGroup.visible = this.checked"> <span class="layer-color" style="background:#38bdf8"></span> Componentes 3D (Cara Superior)</label>
+          <span style="font-size:10px; color:#94a3b8">SMD/PTH</span>
+        </div>
+        <div class="layer-item">
+          <label><input type="checkbox" checked onchange="batteryGroup.visible = this.checked"> <span class="layer-color" style="background:#84cc16"></span> Batería 18650 &amp; Clips (Bottom)</label>
+          <span style="font-size:10px; color:#94a3b8">Diagonal 42°</span>
+        </div>
+      `;
+      content.appendChild(card);
+    }
+
+    function renderNetsTab(content) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <h3>⚡ Resaltador de Redes Eléctricas (Net Highlighter)</h3>
+        <p style="font-size:11px; color:#94a3b8; margin-bottom:12px;">Haz clic en una red para iluminar su enrutamiento de cobre y pines conectados:</p>
+        <div class="net-selector">
+          <button class="net-btn" onclick="highlightNet('USB_D+', this)"><span class="layer-color" style="background:#06b6d4"></span> USB (D-/D+)</button>
+          <button class="net-btn" onclick="highlightNet('MODEM_TXD', this)"><span class="layer-color" style="background:#c084fc"></span> UART 4G Módem</button>
+          <button class="net-btn" onclick="highlightNet('I2C_SDA', this)"><span class="layer-color" style="background:#10b981"></span> I2C Sensores</button>
+          <button class="net-btn" onclick="highlightNet('+3.3V_SYS', this)"><span class="layer-color" style="background:#38bdf8"></span> +3.3V_SYS Buck</button>
+          <button class="net-btn" onclick="highlightNet('VBAT_4V', this)"><span class="layer-color" style="background:#ef4444"></span> VBAT Batería</button>
+          <button class="net-btn" onclick="highlightNet('+1000V_CDI', this)"><span class="layer-color" style="background:#dc2626"></span> 1000V Choque</button>
+          <button class="net-btn" onclick="highlightNet('IMPULSE_TRIG', this)"><span class="layer-color" style="background:#f97316"></span> Disparo HV</button>
+          <button class="net-btn" onclick="highlightNet('LTE_RF_50R', this)"><span class="layer-color" style="background:#eab308"></span> RF 50Ω Antenas</button>
+        </div>
+        <button class="btn-nav" style="width:100%; margin-top:12px; justify-content:center" onclick="resetNetHighlight()">Desactivar Resaltado</button>
+      `;
+      content.appendChild(card);
+    }
+
+    function highlightNet(netName, btn) {
+      document.querySelectorAll('.net-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      tracesTopGroup.children.forEach(mesh => {
+        if (mesh.userData.net.includes(netName) || netName.includes(mesh.userData.net)) {
+          mesh.material.emissiveIntensity = 1.0;
+          mesh.scale.set(1.5, 1.5, 1.5);
+        } else {
+          mesh.material.emissiveIntensity = 0.05;
+          mesh.scale.set(1.0, 1.0, 1.0);
+        }
+      });
+    }
+
+    function resetNetHighlight() {
+      document.querySelectorAll('.net-btn').forEach(b => b.classList.remove('active'));
+      tracesTopGroup.children.forEach(mesh => {
+        mesh.material.emissiveIntensity = 0.2;
+        mesh.scale.set(1.0, 1.0, 1.0);
+      });
+    }
+
+    // Inicializar al cargar
+    window.onload = init;
+  </script>
+</body>
+</html>
