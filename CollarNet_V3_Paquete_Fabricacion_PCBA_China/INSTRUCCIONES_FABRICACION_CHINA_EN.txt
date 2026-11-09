@@ -1,0 +1,47 @@
+================================================================================
+COLLARNET V3 — PCB FABRICATION & SMT ASSEMBLY INSTRUCTIONS
+Client / Designers: Renier Morales & Lindbergh Zambrano
+Project: CollarNet V3 (IoT Telemetry Controller & High Voltage Pulse Module)
+Revision: V3.0 (First Batch: 10 Prototypes)
+Date: November 2, 2026
+================================================================================
+
+1. PCB FABRICATION SPECIFICATIONS (Bare Board):
+--------------------------------------------------------------------------------
+- Board Dimensions: 70.00 mm x 70.00 mm
+- Layer Count: 2 Layers (Double-Sided FR-4)
+- PCB Thickness: 1.6 mm
+- Copper Weight: 1 oz (35 um) Outer Layers
+- Surface Finish: ENIG (Electroless Nickel Immersion Gold) - Required for Pogo-pin contacts
+- Solder Mask Color: Green (or Matte Black)
+- Silkscreen Color: White
+- Minimum Track / Clearance: 0.20 mm / 0.20 mm (8 mil / 8 mil)
+- Minimum Drill Hole: 0.30 mm
+- Mounting Holes: 4x 3.20 mm (for M3 screws) at (5,5), (65,5), (5,65), (65,65) mm
+- Milling Slot (Edge.Cuts): 2.0 mm routed L-slot separating Southeast corner (HV Stage)
+  * Note: Creepage distance > 14 mm across slot for 5kV / 1000V galvanic isolation.
+
+2. SMT ASSEMBLY SPECIFICATIONS (PCBA):
+--------------------------------------------------------------------------------
+- Assembly Type: Single / Double-sided SMT + THT (Top: SMT components, Bottom: Battery Clips)
+- Assembly Quantity: 10 units
+- BOM File: BOM_JLCPCB_CollarNet_V3_70x70.csv (contains exact LCSC Part Numbers)
+- CPL File: CPL_JLCPCB_CollarNet_V3_70x70.csv (Pick & Place Mid X/Y and Rotations)
+- Key ICs:
+  * U1: ESP32-S3-WROOM-1-N16R8 (Espressif - LCSC C2913202)
+  * U2: SIM7670SA-MNGV 4G LTE Cat-1 + GNSS (SIMCom - LCSC C2892994)
+  * U3: SC7A20TR 3-Axis Accelerometer (Silan - LCSC C392477)
+  * U4: CN3791 MPPT Solar Charger 6V (Consonance - LCSC C154992)
+  * U5: SY8089AAAC 3.3V/2A Step-Down Buck (Silergy - LCSC C78988)
+  * U8: EL817S1(C) 5kV Optocoupler (Everlight - LCSC C4999)
+  * TH1: TYN1225RG 1200V/25A SCR Thyristor (ST - LCSC C14486)
+  * BT1: Keystone 1042 / 1048 Battery Clips for 18650 Cell (Bottom Layer)
+  * J1: Magnetic 4-Pin Pogo Connector IP68 (+5V, USB D-, USB D+, GND)
+
+3. ATTACHED FILES SUMMARY:
+--------------------------------------------------------------------------------
+1. Gerber_CollarNet_V3_70x70.zip -> RS-274X Gerber & Excellon Drill files
+2. BOM_JLCPCB_CollarNet_V3_70x70.csv -> Component Bill of Materials
+3. CPL_JLCPCB_CollarNet_V3_70x70.csv -> Pick and Place component centroid coordinates
+4. CollarNet_V3_70x70_Planos_Ingenieria.pdf -> Complete A3 Engineering Drawings
+================================================================================

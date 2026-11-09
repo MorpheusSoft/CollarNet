@@ -2,12 +2,12 @@
   (uuid "3ec53989-0001-4000-8000-000000000001")
   (paper "A2")
   (title_block
-    (title "CollarNet V3 / CowAI - Placa Cuadrada 70x70mm para Caja Puck 85x85mm")
-    (date "2026-10-28")
+    (title "CollarNet V3 — Placa Cuadrada 70x70mm (Controlador IoT & Pulso HV)")
+    (date "2026-11-02")
     (rev "3.0")
-    (company "CowAI Technologies S.A.")
-    (comment 1 "Esquemático Completo Oficial V3: ESP32-S3 + SIM7670SA + CN3791 MPPT + Watchdog 1s + CDI 1000V")
-    (comment 2 "Plano de Masa Continuo 60x60mm, Batería 18650 en Diagonal y Ranura en L de 2.0 mm (Creepage > 14 mm)")
+    (company "Renier Morales & Lindbergh Zambrano")
+    (comment 1 "Esquemático Oficial V3: ESP32-S3 + SIM7670SA + CN3791 MPPT + Watchdog 1s + CDI 1000V")
+    (comment 2 "Plano de Masa Continuo 60x60mm, Batería 18650 en Diagonal, Puerto Magnético IP68 y Ranura en L de 2.0 mm")
   )
   (lib_symbols
     (symbol "CollarNet:ESP32-S3-WROOM-1" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)

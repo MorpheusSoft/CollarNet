@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CollarNet V3 — Visor CAD Maestro: Diagrama de Conexión y Soldadura PCBA (70.0 × 70.0 mm)</title>
+  <style>
+    :root {
+      --bg-dark: #060911;
+      --bg-panel: #0c1424;
+      --bg-card: #111c30;
+      --bg-card-hover: #17253f;
+      --border-color: #1e293b;
+      --border-highlight: #38bdf8;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-cyan: #38bdf8;
+      --accent-blue: #0284c7;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background: var(--bg-dark); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* HEADER */
+    header {
+      background: #090e1a;
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+    .brand-group { display: flex; align-items: center; gap: 12px; }
+    .badge-v3 {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      letter-spacing: 1px;
+      border: 1px solid #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+    }
+    .header-titles h1 { font-size: 15.5px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .header-titles p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      background: #162032;
+      color: #e2e8f0;
+      border: 1px solid #2d3e58;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #1e2c45; border-color: #38bdf8; color: #fff; transform: translateY(-1px); }
+    .btn.primary { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    .btn.primary:hover { background: #0369a1; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+    .btn.success { background: #059669; border-color: #10b981; color: #fff; }
+    .btn.success:hover { background: #10b981; }
+
+    /* SUBSYSTEM FILTER BAR */
+    .filter-bar {
+      background: #0b1220;
+      border-bottom: 1px solid var(--border-color);
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    .filter-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .filter-chip {
+      background: #131d2e;
+      border: 1px solid #22324b;
+      color: #94a3b8;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .filter-chip:hover { color: #f1f5f9; border-color: #38bdf8; background: #1a273e; }
+    .filter-chip.active { background: #0369a1; color: #ffffff; border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.35); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    /* MAIN CONTAINER */
+    main {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* VIEWPORT CANVAS */
+    .viewport {
+      flex: 1;
+      background: radial-gradient(circle at center, #0a101d 0%, #04060a 100%);
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+    }
+    .viewport:active { cursor: grabbing; }
+
+    .canvas-plane {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+      transition: transform 0.05s ease-out;
+      will-change: transform;
+    }
+
+    #cadImage {
+      display: block;
+      width: 5400px;
+      height: 3600px;
+      max-width: none;
+      max-height: none;
+      pointer-events: none;
+    }
+
+    /* OVERLAY HIGHLIGHT MARKER */
+    .component-marker {
+      position: absolute;
+      border: 3px solid #facc15;
+      background: rgba(250, 204, 21, 0.22);
+      border-radius: 8px;
+      pointer-events: none;
+      box-shadow: 0 0 25px rgba(250, 204, 21, 0.9), inset 0 0 15px rgba(250, 204, 21, 0.4);
+      display: none;
+      z-index: 50;
+      animation: pulseMarker 1.4s infinite alternate;
+    }
+    @keyframes pulseMarker {
+      0% { transform: scale(1.0); box-shadow: 0 0 20px rgba(250, 204, 21, 0.7); }
+      100% { transform: scale(1.03); box-shadow: 0 0 35px rgba(250, 204, 21, 1.0); }
+    }
+
+    .marker-label {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0284c7;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      border: 1px solid #38bdf8;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+    }
+
+    /* FLOATING NAVIGATION HUD */
+    .hud-controls {
+      position: absolute;
+      bottom: 18px;
+      left: 20px;
+      background: rgba(12, 20, 36, 0.88);
+      backdrop-filter: blur(10px);
+      border: 1px solid #22324b;
+      padding: 6px 12px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 60;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    }
+    .hud-btn {
+      background: #172439;
+      border: 1px solid #2b3d5a;
+      color: #e2e8f0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .hud-btn:hover { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    .hud-zoom-val { font-size: 12px; font-weight: 800; color: #38bdf8; min-width: 44px; text-align: center; }
+    .hud-divider { width: 1px; height: 18px; background: #22324b; }
+    .hud-tag-btn {
+      background: #172439;
+      border: 1px solid #2b3d5a;
+      color: #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .hud-tag-btn:hover { background: #0284c7; color: #fff; border-color: #38bdf8; }
+
+    /* RIGHT SIDEBAR INSPECTOR */
+    .inspector-panel {
+      width: 460px;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 70;
+      box-shadow: -5px 0 25px rgba(0,0,0,0.4);
+    }
+
+    .panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: #0f182b;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .panel-title { font-size: 13.5px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; justify-content: space-between; }
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-input {
+      width: 100%;
+      background: #080d17;
+      border: 1px solid #24344d;
+      color: #f1f5f9;
+      padding: 7px 12px 7px 32px;
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: #38bdf8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.3); }
+    .search-icon { position: absolute; left: 10px; font-size: 12px; color: var(--text-dim); }
+
+    /* DETAIL CARD OF SELECTED COMPONENT */
+    .component-detail-box {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: #111d33;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .detail-badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .callout-pill {
+      background: #facc15;
+      color: #000;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .desig-title { font-size: 16px; font-weight: 800; color: #fff; }
+    .comp-name { font-size: 13px; color: #38bdf8; font-weight: 600; margin-bottom: 6px; }
+    .specs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 11px;
+      background: #0a1120;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #1a283e;
+      margin-bottom: 8px;
+    }
+    .spec-item span:first-child { color: var(--text-muted); }
+    .spec-item span:last-child { color: #f8fafc; font-weight: 600; font-family: monospace; }
+    .solder-info {
+      font-size: 11.5px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      background: #080e1a;
+      padding: 8px;
+      border-radius: 6px;
+      border-left: 3px solid #10b981;
+    }
+
+    /* COMPONENT LIST TABLE */
+    .table-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+    .comp-table th {
+      background: #0f182b;
+      position: sticky;
+      top: 0;
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 10.5px;
+      color: #94a3b8;
+      border-bottom: 1px solid var(--border-color);
+      z-index: 10;
+    }
+    .comp-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #152238;
+      vertical-align: middle;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .comp-table tr:hover td { background: var(--bg-card-hover); }
+    .comp-table tr.selected td { background: #034b75; border-color: #38bdf8; }
+    .cell-callout { font-weight: 800; color: #facc15; font-family: monospace; width: 45px; }
+    .cell-desig { font-weight: 800; color: #38bdf8; font-family: monospace; width: 65px; }
+    .cell-name { font-weight: 600; color: #ffffff; }
+    .cell-lcsc { font-family: monospace; color: #facc15; font-size: 10.5px; }
+
+    /* FOOTER STATUS BAR */
+    footer {
+      background: #090e1a;
+      border-top: 1px solid var(--border-color);
+      padding: 6px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+    .footer-left { display: flex; align-items: center; gap: 12px; }
+    .footer-right { display: flex; align-items: center; gap: 10px; }
+
+    /* RESPONSIVE SCROLLBARS */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #060911; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER OFICIAL -->
+  <header>
+    <div class="brand-group">
+      <div class="badge-v3">COLLARNET V3</div>
+      <div class="header-titles">
+        <h1>Plano Maestro de Conexión, Soldadura y Enrutamiento PCBA (70.0 × 70.0 mm)</h1>
+        <p>Mapeo Físico Pad a Pad de los 28 Componentes BOM | Diseñadores: Renier Morales &amp; Lindbergh Zambrano</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn" onclick="toggleImageMode()" id="btnMode">
+        <span>🔄 Modo: Vectorial SVG</span>
+      </button>
+      <a href="diagrama_conexion_placa_pcb.svg" class="btn" download="diagrama_conexion_placa_pcb.svg">
+        <span>📥 SVG Vector</span>
+      </a>
+      <a href="diagrama_conexion_placa_pcb.png" class="btn success" download="diagrama_conexion_placa_pcb.png">
+        <span>📥 PNG HD (5400×3600)</span>
+      </a>
+      <a href="visor_pcb_cuadrada_70x70.html" class="btn">
+        <span>📐 Visor 70×70</span>
+      </a>
+      <a href="visor_pcb_3d_interactivo.html" class="btn primary" target="_blank">
+        <span>🚀 Visor 3D</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- BARRA DE FILTROS DE CIRCUITOS -->
+  <div class="filter-bar">
+    <span class="filter-label">Aislar Circuito:</span>
+    <button class="filter-chip active" onclick="filterSubsystem('all', this)">
+      <span class="dot" style="background: #38bdf8;"></span> Todos los Circuitos (28 BOM)
+    </button>
+    <button class="filter-chip" onclick="filterSubsystem('mcu', this)">
+      <span class="dot" style="background: #38bdf8;"></span> MCU &amp; Sensores (U1, U3, U9)
+    </button>
+    <button class="filter-chip" onclick="filterSubsystem('modem', this)">
+      <span class="dot" style="background: #0284c7;"></span> Módem 4G &amp; GNSS (U2, J2, J3, J4, C1, C2)
+    </button>
+    <button class="filter-chip" onclick="filterSubsystem('power', this)">
+      <span class="dot" style="background: #10b981;"></span> Carga Solar &amp; Buck 3.3V (U4, U5, L1, L2, Q3)
+    </button>
+    <button class="filter-chip" onclick="filterSubsystem('bms', this)">
+      <span class="dot" style="background: #84cc16;"></span> BMS 1S &amp; Batería 18650 (U6, U7, BT1)
+    </button>
+    <button class="filter-chip" onclick="filterSubsystem('hv', this)">
+      <span class="dot" style="background: #ef4444;"></span> Alta Tensión 1000V CDI (U8, MOD_HV, C7, TH1, EL1/2)
+    </button>
+    <button class="filter-chip" onclick="filterSubsystem('periph', this)">
+      <span class="dot" style="background: #f59e0b;"></span> Señalización &amp; Pogo IP68 (BZ1, Q1, D4, J1)
+    </button>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL: VIEWPORT + INSPECTOR -->
+  <main>
+    <!-- VIEWPORT CON ZOOM Y PAN -->
+    <div class="viewport" id="viewport">
+      <div class="canvas-plane" id="plane">
+        <img id="cadImage" src="diagrama_conexion_placa_pcb.svg" alt="Diagrama Maestro de Conexión PCBA">
+        
+        <!-- Marcador dinámico del componente seleccionado -->
+        <div id="compMarker" class="component-marker">
+          <div id="markerLabel" class="marker-label">U1</div>
+        </div>
+      </div>
+
+      <!-- HUD FLOTANTE DE NAVEGACIÓN -->
+      <div class="hud-controls">
+        <button class="hud-btn" onclick="zoomStep(-0.25)" title="Reducir Zoom">-</button>
+        <div class="hud-zoom-val" id="zoomDisplay">100%</div>
+        <button class="hud-btn" onclick="zoomStep(0.25)" title="Aumentar Zoom">+</button>
+        <div class="hud-divider"></div>
+        <button class="hud-tag-btn" onclick="focusRegion('full')">Plano Completo</button>
+        <button class="hud-tag-btn" onclick="focusRegion('pcb')">Baquelita 70×70</button>
+        <button class="hud-tag-btn" onclick="focusRegion('table')">Fichas de Soldadura</button>
+        <button class="hud-tag-btn" onclick="focusRegion('topo')">Topología Buses</button>
+      </div>
+    </div>
+
+    <!-- PANEL INSPECTOR LATERAL -->
+    <aside class="inspector-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>LISTA DE COMPONENTES &amp; SOLDADURA</span>
+          <span id="compCountBadge" style="background:#0284c7; color:#fff; font-size:11px; padding:2px 6px; border-radius:10px;">29 Items</span>
+        </div>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Buscar RefDes (U1, TH1, J1...), LCSC o Red..." oninput="handleSearch()">
+        </div>
+      </div>
+
+      <!-- TARJETA DE DETALLE DEL COMPONENTE SELECCIONADO -->
+      <div class="component-detail-box" id="detailBox">
+        <div class="detail-badge-row">
+          <span class="callout-pill" id="detCallout">[1]</span>
+          <span class="desig-title" id="detDesig">U1</span>
+          <span id="detLayer" style="background:#1e293b; color:#34d399; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; margin-left:auto;">TOP LAYER</span>
+        </div>
+        <div class="comp-name" id="detName">ESP32-S3-WROOM-1-N16R8</div>
+        <div class="specs-grid">
+          <div class="spec-item"><span>Encapsulado:</span> <span id="detFootprint">MODULE-ESP32-S3</span></div>
+          <div class="spec-item"><span>Código LCSC:</span> <span id="detLcsc" style="color:#facc15;">C2913202</span></div>
+          <div class="spec-item"><span>Coordenadas PCB:</span> <span id="detCoords">X: 15.0 mm, Y: 22.0 mm</span></div>
+          <div class="spec-item"><span>Subetapa:</span> <span id="detSubsystem" style="color:#38bdf8;">MCU &amp; Sensores</span></div>
+        </div>
+        <div class="solder-info" id="detSolder">
+          Pin 1/41: GND_SYS | Pin 2: +3.3V | Pin 4: IMPULSE_TRIG | Pin 13/14: USB D-/D+ | Pin 27/28: UART Módem SIM7670
+        </div>
+      </div>
+
+      <!-- TABLA DE COMPONENTES INTERACTIVA -->
+      <div class="table-container">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>REFDES</th>
+              <th>COMPONENTE</th>
+              <th>LCSC</th>
+            </tr>
+          </thead>
+          <tbody id="compTableBody">
+            <!-- Rellenado dinámicamente con JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </aside>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">
+      <span>📐 Dimensiones: <strong>70.00 × 70.00 mm (FR-4 / ENIG Gold)</strong></span>
+      <span>•</span>
+      <span>⚡ Aislamiento Ranura en 'L': <strong>5,000V RMS (&gt;14 mm Creepage)</strong></span>
+      <span>•</span>
+      <span>🛰️ Plano Reflectivo GNSS: <strong>60.0 × 60.0 mm (3,600 mm²)</strong></span>
+    </div>
+    <div class="footer-right">
+      <span>Diseñado por: <strong style="color:#38bdf8;">Renier Morales &amp; Lindbergh Zambrano</strong></span>
+      <span>•</span>
+      <span>Rev. <strong>3.0 Oficial</strong></span>
+    </div>
+  </footer>
+
+  <script>
+    // BASE DE DATOS MAESTRA DE LOS 28 COMPONENTES BOM + PINES Y COORDENADAS
+    const COMPONENTS = [
+      {
+        id: 1, callout: "[1]", desig: "U1", name: "ESP32-S3-WROOM-1-N16R8",
+        subsystem: "mcu", subName: "MCU & Sensores",
+        footprint: "MODULE-ESP32-S3", lcsc: "C2913202", layer: "TOP",
+        x_mm: 15.0, y_mm: 22.0, w_mm: 18.0, h_mm: 25.5,
+        solder: "Pad 41 (EPAD central 6x6mm): Reflujo térmico a plano GND con 9 vías. Pin 1 (GND), Pin 2 (+3.3V_SYS desacoplado con 100nF+10µF). Pines 13/14 (USB_D-/D+) a J1. Pines 27/28 (UART) a U2. Pin 4 (IMPULSE_TRIG) a opto U8."
+      },
+      {
+        id: 2, callout: "[2]", desig: "U2", name: "SIM7670SA-MNGV Módem 4G+GNSS",
+        subsystem: "modem", subName: "Módem 4G & GNSS",
+        footprint: "LCC-LGA-68", lcsc: "C2892994", layer: "TOP",
+        x_mm: 48.0, y_mm: 24.0, w_mm: 24.0, h_mm: 24.0,
+        solder: "Pines 38/39 (VBAT_1/2): Riel directo 3.7V-4.2V con soporte pico 2.0A; soldados a condensadores C1/C2 Tantalio. Pin 1: PWRKEY a Q2. Pines 21/22: UART a U1. Pin 32: MAIN_ANT 50Ω a J3. Pin 46: GNSS_ANT 50Ω a J4. Pines 52-55 a J2 Nano-SIM."
+      },
+      {
+        id: 3, callout: "[3]", desig: "U3", name: "SC7A20TR Acelerómetro 3-Ejes",
+        subsystem: "mcu", subName: "MCU & Sensores",
+        footprint: "LGA-12 (2x2mm)", lcsc: "C392477", layer: "TOP",
+        x_mm: 11.0, y_mm: 44.0, w_mm: 2.0, h_mm: 2.0,
+        solder: "Pin 1 (SCL) y Pin 4 (SDA) a bus I2C ESP32 (GPIO9 y GPIO8) con pull-up 4.7kΩ. Pin 11 (INT1) a GPIO10 para despertar de suspensión profunda. Pin 6: GND. Pines 7/8: +3.3V con desacople 100nF a <1.5mm."
+      },
+      {
+        id: 4, callout: "[4]", desig: "U4", name: "CN3791 Cargador Solar MPPT 6V/1.2A",
+        subsystem: "power", subName: "Carga Solar & Potencia",
+        footprint: "SSOP-10", lcsc: "C154992", layer: "TOP",
+        x_mm: 12.0, y_mm: 52.0, w_mm: 5.0, h_mm: 6.4,
+        solder: "Pin 9 (VCC) recibe energía solar vía D1/D2 y puerto J1 vía D5. Pin 10 (DRV) conmuta P-MOSFET Q3. Pin 8 (CSP) a resistencia de sensado 0.1Ω (1.2A máx). Pin 7 (BAT) a VBAT. Pin 6 (MPPT) fijado en 6.00V por divisor resistivo 499k/100k. Pin 2: GND."
+      },
+      {
+        id: 5, callout: "[5]", desig: "U5", name: "SY8089AAAC Buck DC-DC 3.3V/2.0A",
+        subsystem: "power", subName: "Carga Solar & Potencia",
+        footprint: "SOT-23-5", lcsc: "C78988", layer: "TOP",
+        x_mm: 12.0, y_mm: 62.0, w_mm: 3.0, h_mm: 3.0,
+        solder: "Pin 4 (IN) desde VBAT (3.4V a 4.2V). Pin 1 (EN) a VBAT. Pin 2 (GND) a plano térmico. Pin 3 (LX) a inductor L1 (2.2µH). Pin 5 (FB) a divisor 453k/100k para generar riel lógico de +3.318V ultra-estable."
+      },
+      {
+        id: 6, callout: "[6]", desig: "U6", name: "DW01A-G Integrado BMS Batería 1S",
+        subsystem: "bms", subName: "BMS 1S & Batería",
+        footprint: "SOT-23-6", lcsc: "C351410", layer: "TOP",
+        x_mm: 24.0, y_mm: 46.0, w_mm: 3.0, h_mm: 3.0,
+        solder: "Pin 5 (VCC) a borne BT_POS. Pin 6 (GND) a borne BT_NEG. Pin 1 (OD): Desconecta Q1 en U7 si Vcell < 2.40V. Pin 3 (OC): Desconecta Q2 en U7 si Vcell > 4.28V. Pin 2 (CS): Sensado ultra-rápido de cortocircuito (<10µs)."
+      },
+      {
+        id: 7, callout: "[7]", desig: "U7", name: "FS8205A Dual N-MOSFET de Potencia",
+        subsystem: "bms", subName: "BMS 1S & Batería",
+        footprint: "TSSOP-8", lcsc: "C32254", layer: "TOP",
+        x_mm: 28.0, y_mm: 46.0, w_mm: 3.0, h_mm: 6.4,
+        solder: "Pines 1/3 (S1): Conectados a GND_SYS general. Pines 4/5 (G1/G2): Comandados por OD y OC de U6. Pines 6/7/8 (S2): Conectados al borne negativo de la celda BT_NEG. Resistencia On ultra-baja (25mΩ)."
+      },
+      {
+        id: 8, callout: "[8]", desig: "U8", name: "EL817S1(C) Optoacoplador 5kV RMS",
+        subsystem: "hv", subName: "Alta Tensión 1000V CDI",
+        footprint: "SOP-4", lcsc: "C4999", layer: "TOP",
+        x_mm: 45.0, y_mm: 49.0, w_mm: 4.6, h_mm: 7.0,
+        solder: "Montado a horcajadas sobre la ranura fresada de 2.0mm. Pin 1 (Ánodo) a ESP32 IO4 vía resistencia 330Ω. Pin 2 (Cátodo) a GND_SYS digital. Pin 3 (Emisor) a HV_GND aislada. Pin 4 (Colector) a disparo de U9."
+      },
+      {
+        id: 9, callout: "[9]", desig: "U9", name: "74LVC1G123DCK Watchdog Hardware ≤1s",
+        subsystem: "hv", subName: "Alta Tensión 1000V CDI",
+        footprint: "VSSOP-8", lcsc: "C128362", layer: "TOP",
+        x_mm: 52.0, y_mm: 47.0, w_mm: 2.0, h_mm: 3.1,
+        solder: "Pin 1 (A): Entrada de disparo desde optoacoplador U8. Pin 4: HV_GND. Pines 6/7: Conectados a red temporizadora R_WDT 1MΩ + C_WDT 1µF. Pin 5 (Q): Salida de pulso recortada indefectiblemente a <=1000ms hacia Diac D6."
+      },
+      {
+        id: 10, callout: "[10]", desig: "TH1", name: "TYN1225RG Tiristor SCR 1200V/25A",
+        subsystem: "hv", subName: "Alta Tensión 1000V CDI",
+        footprint: "TO-252-2 (DPAK)", lcsc: "C14486", layer: "TOP",
+        x_mm: 64.0, y_mm: 52.0, w_mm: 6.6, h_mm: 10.0,
+        solder: "Pin 1 (Gate): Disparo en avalancha desde Diac D6 (DB3). Pin 2 / Tab central: Ánodo conectado a condensador de pulso C7 (+1000V). Pin 3 (Cátodo): Conectado a resistencia de choque R_LIM 220Ω (2W) y electrodo EL1."
+      },
+      {
+        id: 11, callout: "[11]", desig: "D6", name: "DB3 Diac Bidireccional 32V",
+        subsystem: "hv", subName: "Alta Tensión 1000V CDI",
+        footprint: "SOD-123", lcsc: "C139750", layer: "TOP",
+        x_mm: 60.8, y_mm: 48.0, w_mm: 2.7, h_mm: 1.6,
+        solder: "En serie entre el pulso del temporizador U9 y el Gate del tiristor TH1. Conmuta por ruptura de avalancha al superar 32V, asegurando un flanco de encendido ultra-rápido (<50ns) para descarga capacitiva limpia."
+      },
+      {
+        id: 12, callout: "[12]", desig: "Q1", name: "AO3400A N-MOSFET (Driver Buzzer)",
+        subsystem: "periph", subName: "Señalización Acústica",
+        footprint: "SOT-23", lcsc: "C20917", layer: "TOP",
+        x_mm: 20.5, y_mm: 56.5, w_mm: 3.0, h_mm: 3.0,
+        solder: "Pin 1 (Gate): Señal PWM 4kHz desde ESP32 GPIO5. Pin 2 (Source): A masa GND_SYS. Pin 3 (Drain): Conectado al borne negativo de BZ1 y al ánodo del diodo flyback D4 (1N4148W)."
+      },
+      {
+        id: 13, callout: "[13]", desig: "Q2", name: "AO3400A N-MOSFET (PWRKEY Módem)",
+        subsystem: "modem", subName: "Módem 4G & GNSS",
+        footprint: "SOT-23", lcsc: "C20917", layer: "TOP",
+        x_mm: 31.5, y_mm: 26.5, w_mm: 3.0, h_mm: 3.0,
+        solder: "Pin 1 (Gate): Comandado por ESP32 GPIO6. Pin 2 (Source): A GND_SYS. Pin 3 (Drain): Lleva a nivel BAJO el pin PWRKEY (Pin 1) de U2 durante 1.5s para forzar el ciclo de encendido y apagado controlado."
+      },
+      {
+        id: 14, callout: "[14]", desig: "Q3", name: "AO3401A P-MOSFET (Conmutador MPPT)",
+        subsystem: "power", subName: "Carga Solar & Potencia",
+        footprint: "SOT-23", lcsc: "C15127", layer: "TOP",
+        x_mm: 18.5, y_mm: 47.5, w_mm: 3.0, h_mm: 3.0,
+        solder: "Pin 1 (Gate): Conectado a DRV (Pin 10 de U4 CN3791). Pin 2 (Source): A la barra de alimentación solar VIN (+6V). Pin 3 (Drain): Al inductor de potencia L2 (10µH) y cátodo de D3."
+      },
+      {
+        id: 15, callout: "[15]", desig: "D1,D2", name: "SS34 Schottky 40V/3A (Aislamiento Solar)",
+        subsystem: "power", subName: "Carga Solar & Potencia",
+        footprint: "SMA (DO-214AC)", lcsc: "C8678", layer: "TOP",
+        x_mm: 5.2, y_mm: 50.0, w_mm: 5.0, h_mm: 2.8,
+        solder: "Diodos OR-ing con caída ultra-baja (0.35V). Ánodos reciben cada panel solar fotovoltaico independiente. Cátodos unidos en el bus común VIN del cargador MPPT U4."
+      },
+      {
+        id: 16, callout: "[16]", desig: "D3", name: "SS34 Schottky 40V/3A (Catch Diode MPPT)",
+        subsystem: "power", subName: "Carga Solar & Potencia",
+        footprint: "SMA (DO-214AC)", lcsc: "C8678", layer: "TOP",
+        x_mm: 18.5, y_mm: 54.0, w_mm: 5.0, h_mm: 2.8,
+        solder: "Diodo de retorno rápido (Freewheeling) en etapa reductora Buck MPPT. Ánodo a GND_SYS, cátodo unido al drenador de Q3 y entrada del inductor L2."
+      },
+      {
+        id: 17, callout: "[17]", desig: "D5", name: "SS34 Schottky (Anti-Retorno Puerto Magnético)",
+        subsystem: "power", subName: "Carga Solar & Potencia",
+        footprint: "SMA (DO-214AC)", lcsc: "C8678", layer: "TOP",
+        x_mm: 5.2, y_mm: 28.0, w_mm: 5.0, h_mm: 2.8,
+        solder: "Ánodo soldado al Pin 1 (+5V VBUS) del conector magnético J1. Cátodo a la línea de carga. Garantiza 0.00V en reposo en los pines expuestos exteriores (inmune a barro, agua salina y humedad)."
+      },
+      {
+        id: 18, callout: "[18]", desig: "D4", name: "1N4148W Diodo Rápido de Protección Buzzer",
+        subsystem: "periph", subName: "Señalización Acústica",
+        footprint: "SOD-123", lcsc: "C81598", layer: "TOP",
+        x_mm: 25.5, y_mm: 54.0, w_mm: 2.7, h_mm: 1.6,
+        solder: "Conectado en antiparalelo con BZ1 (cátodo a VBAT, ánodo a Drain de Q1) para suprimir los transitorios inductivos generados por el transductor piezoeléctrico."
+      },
+      {
+        id: 19, callout: "[19]", desig: "L1", name: "2.2µH 3.0A Inductor Blindado Buck 3.3V",
+        subsystem: "power", subName: "Carga Solar & Potencia",
+        footprint: "SMD-0420 (4x4mm)", lcsc: "C167733", layer: "TOP",
+        x_mm: 18.0, y_mm: 62.0, w_mm: 4.2, h_mm: 4.2,
+        solder: "Terminal 1: Soldado al Pin 3 (LX) de U5 SY8089. Terminal 2: Soldado al riel filtrado de salida +3.3V_SYS desacoplado con 2x 22µF cerámicos X7R."
+      },
+      {
+        id: 20, callout: "[20]", desig: "L2", name: "10µH 2.5A Inductor Blindado MPPT Solar",
+        subsystem: "power", subName: "Carga Solar & Potencia",
+        footprint: "SMD-0430 (4x4mm)", lcsc: "C38117", layer: "TOP",
+        x_mm: 12.0, y_mm: 57.0, w_mm: 4.2, h_mm: 4.2,
+        solder: "Terminal 1: Conectado al nodo de conmutación (Drain Q3 y cátodo D3). Terminal 2: Conectado a resistencia sensora de corriente CSP y riel de batería VBAT."
+      },
+      {
+        id: 21, callout: "[21]", desig: "C1,C2", name: "2x 220µF 6.3V Tantalio Low-ESR (Módem)",
+        subsystem: "modem", subName: "Módem 4G & GNSS",
+        footprint: "CASE-D_7343", lcsc: "C7187", layer: "TOP",
+        x_mm: 38.0, y_mm: 21.0, w_mm: 7.3, h_mm: 4.3,
+        solder: "Terminal positivo (+) soldado a menos de 2 mm de los pines 38 y 39 (VBAT) de U2. Terminal negativo (-) soldado con 4 vías de plano continuo a GND para suministrar picos de 2A."
+      },
+      {
+        id: 22, callout: "[22]", desig: "C7", name: "0.1µF 1000V CBB21 Polipropileno Pulso CDI",
+        subsystem: "hv", subName: "Alta Tensión 1000V CDI",
+        footprint: "SMD-1812 / PTH", lcsc: "C2839151", layer: "TOP",
+        x_mm: 56.0, y_mm: 64.0, w_mm: 4.5, h_mm: 3.2,
+        solder: "Almacenamiento de pulso dieléctrico 50 mJ a 1000V DC. Terminal positivo a HV_OUT (+1kV) y ánodo de TH1. Terminal negativo a HV_GND aislada. En paralelo con R_BLEED (10MΩ 1kV)."
+      },
+      {
+        id: 23, callout: "[23]", desig: "BZ1", name: "Piezo Buzzer 95dB 4kHz Resonante",
+        subsystem: "periph", subName: "Señalización Acústica",
+        footprint: "PTH-D12.4mm", lcsc: "C253457", layer: "TOP",
+        x_mm: 26.0, y_mm: 60.0, w_mm: 12.4, h_mm: 12.4,
+        solder: "Pin positivo (+): Conectado a VBAT (3.7V-4.2V). Pin negativo (-): Conectado al drenador de Q1 (AO3400A) y cátodo de diodo D4 (1N4148W). Nivel acústico: 95dB a 10cm."
+      },
+      {
+        id: 24, callout: "[24]", desig: "J1", name: "Conector Magnético Pogo-Pin 4P IP68",
+        subsystem: "periph", subName: "Puerto IP68 & Carga",
+        footprint: "POGO-4PIN-MAG-IP68", lcsc: "Custom-MAG4P", layer: "TOP",
+        x_mm: 0.8, y_mm: 28.0, w_mm: 3.0, h_mm: 14.0,
+        solder: "Pin 1 (+5V) a ánodo de diodo SS34 (D5). Pin 2 (USB_D-) a ESP32 GPIO19. Pin 3 (USB_D+) a ESP32 GPIO20. Pin 4 (GND) a chasis GND_SYS. Imanes polarizados N52 integrados."
+      },
+      {
+        id: 25, callout: "[25]", desig: "J2", name: "Portatarjeta Nano-SIM Push-Pull Dorado",
+        subsystem: "modem", subName: "Módem 4G & GNSS",
+        footprint: "PUSH-PULL NANO-SIM", lcsc: "C2838382", layer: "TOP",
+        x_mm: 65.0, y_mm: 20.0, w_mm: 10.0, h_mm: 12.0,
+        solder: "Pines C1 (VDD), C2 (RST), C3 (CLK), C7 (DATA) conectados a líneas dedicadas del módem U2 SIM7670 con diodos supresores ESD antiestáticos. Montaje en borde estanco."
+      },
+      {
+        id: 26, callout: "[26]", desig: "J3,J4", name: "2x Conectores Coaxiales 50Ω U.FL-R-SMT",
+        subsystem: "modem", subName: "Módem 4G & GNSS",
+        footprint: "SMD-IPEX / U.FL", lcsc: "C88373", layer: "TOP",
+        x_mm: 48.0, y_mm: 34.0, w_mm: 3.0, h_mm: 3.0,
+        solder: "J3 (Celular LTE Cat-1): Conectado al Pin 32 de U2 mediante guía coplanar de 50Ω. J4 (Satelital GNSS): Conectado al Pin 46 de U2 hacia la antena de parche montada sobre plano GND 60x60mm."
+      },
+      {
+        id: 27, callout: "[27]", desig: "BT1", name: "Portacelda Keystone 1042/1048 (18650)",
+        subsystem: "bms", subName: "BMS 1S & Batería",
+        footprint: "PTH-18650-DIAG42", lcsc: "Keystone-1042", layer: "BOT",
+        x_mm: 35.0, y_mm: 35.0, w_mm: 21.0, h_mm: 74.0,
+        solder: "Montaje diagonal a 42° en cara inferior (Bottom Layer). Terminal BT_POS en (18, 52) a VBAT; terminal BT_NEG en (52, 18) a corte FS8205A S2. Cero colisión con tornillos M3."
+      },
+      {
+        id: 28, callout: "[28]", desig: "MOD_HV", name: "Módulo Elevador Resonante Flyback 1kV",
+        subsystem: "hv", subName: "Alta Tensión 1000V CDI",
+        footprint: "Potted-18x14mm", lcsc: "Custom-MOD-HV", layer: "TOP",
+        x_mm: 56.0, y_mm: 54.0, w_mm: 18.0, h_mm: 14.0,
+        solder: "Pines entrada 1/2: VBAT y control U9. Pines salida 3/4: HV_OUT (+1000V DC) y HV_GND aislada galvánicamente 5kV. Cuadrante protegido por ranura en 'L' fresada de 2.0 mm."
+      },
+      {
+        id: 29, callout: "[29]", desig: "EL1,EL2", name: "2x Bornes Roscados M4 Inox 316 (PAD-M4)",
+        subsystem: "hv", subName: "Alta Tensión 1000V CDI",
+        footprint: "PAD-M4-8MM", lcsc: "Hardware-M4", layer: "TOP",
+        x_mm: 65.0, y_mm: 63.0, w_mm: 8.0, h_mm: 12.0,
+        solder: "EL1 (+): Conectado al cátodo de TH1 a través de R_LIM (220Ω / 2W) para fijar el pulso CDI en 50 mJ. EL2 (-): Conectado directamente a HV_GND aislada marina."
+      }
+    ];
+
+    // ESTADO DE NAVEGACIÓN Y TRANSFORMACIÓN
+    let currentZoom = 0.35;
+    let panX = 40;
+    let panY = 20;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let currentSubsystem = "all";
+    let selectedCompId = 1;
+    let isSvgMode = true;
+
+    // ELEMENTOS DOM
+    const viewport = document.getElementById('viewport');
+    const plane = document.getElementById('plane');
+    const cadImage = document.getElementById('cadImage');
+    const zoomDisplay = document.getElementById('zoomDisplay');
+    const compMarker = document.getElementById('compMarker');
+    const markerLabel = document.getElementById('markerLabel');
+    const compTableBody = document.getElementById('compTableBody');
+    const searchInput = document.getElementById('searchInput');
+
+    // CONVERSIÓN DE COORDENADAS MM -> PIXELES DEL PLANO
+    // Parámetros de escala del plano SVG de 5400x3600 px:
+    const ORIGIN_X = 120.0;
+    const ORIGIN_Y = 280.0;
+    const SCALE_S = 37.0; // px por mm (70.0 mm = 2590 px)
+
+    function mmToPx(x_mm, y_mm) {
+      return {
+        x: ORIGIN_X + x_mm * SCALE_S,
+        y: ORIGIN_Y + y_mm * SCALE_S
+      };
+    }
+
+    // INICIALIZACIÓN
+    function init() {
+      renderTable(COMPONENTS);
+      selectComponent(1);
+      focusRegion('pcb');
+
+      // Eventos de arrastre (Pan)
+      viewport.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+        viewport.style.cursor = 'grabbing';
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        applyTransform();
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+        viewport.style.cursor = 'grab';
+      });
+
+      // Evento de zoom con rueda del ratón centrado en cursor
+      viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = viewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+        const newZoom = Math.max(0.15, Math.min(6.0, currentZoom * zoomFactor));
+
+        // Ajustar paneo para mantener el puntero en el mismo punto físico
+        panX = mouseX - (mouseX - panX) * (newZoom / currentZoom);
+        panY = mouseY - (mouseY - panY) * (newZoom / currentZoom);
+        currentZoom = newZoom;
+
+        applyTransform();
+      });
+
+      // Redimensionamiento de ventana
+      window.addEventListener('resize', () => {
+        applyTransform();
+      });
+    }
+
+    function applyTransform() {
+      plane.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+      zoomDisplay.innerText = `${Math.round(currentZoom * 100)}%`;
+    }
+
+    function zoomStep(delta) {
+      const rect = viewport.getBoundingClientRect();
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const newZoom = Math.max(0.15, Math.min(6.0, currentZoom + delta));
+
+      panX = cx - (cx - panX) * (newZoom / currentZoom);
+      panY = cy - (cy - panY) * (newZoom / currentZoom);
+      currentZoom = newZoom;
+      applyTransform();
+    }
+
+    function focusRegion(region) {
+      const vRect = viewport.getBoundingClientRect();
+      if (region === 'full') {
+        const scaleX = vRect.width / 5400;
+        const scaleY = vRect.height / 3600;
+        currentZoom = Math.min(scaleX, scaleY) * 0.94;
+        panX = (vRect.width - 5400 * currentZoom) / 2;
+        panY = (vRect.height - 3600 * currentZoom) / 2;
+      } else if (region === 'pcb') {
+        // Baquelita 70x70 está entre x: 120..2710, y: 280..2870 (ancho: 2590, alto: 2590)
+        const pcbSize = 2590;
+        currentZoom = Math.min(vRect.width / pcbSize, vRect.height / pcbSize) * 0.90;
+        panX = (vRect.width - pcbSize * currentZoom) / 2 - 120 * currentZoom;
+        panY = (vRect.height - pcbSize * currentZoom) / 2 - 280 * currentZoom;
+      } else if (region === 'table') {
+        // Tabla de soldadura pin a pin en x: 2770..5320, y: 1880..3530
+        const tableW = 2550;
+        currentZoom = Math.min(vRect.width / tableW, vRect.height / 1650) * 0.92;
+        panX = (vRect.width - tableW * currentZoom) / 2 - 2770 * currentZoom;
+        panY = (vRect.height - 1650 * currentZoom) / 2 - 1880 * currentZoom;
+      } else if (region === 'topo') {
+        // Diagrama esquemático de interconexión en x: 2770..5320, y: 240..1840
+        const topW = 2550;
+        currentZoom = Math.min(vRect.width / topW, vRect.height / 1600) * 0.92;
+        panX = (vRect.width - topW * currentZoom) / 2 - 2770 * currentZoom;
+        panY = (vRect.height - 1600 * currentZoom) / 2 - 240 * currentZoom;
+      }
+      applyTransform();
+    }
+
+    // SELECCIÓN Y RESALTADO DE COMPONENTE
+    function selectComponent(id) {
+      const comp = COMPONENTS.find(c => c.id === id);
+      if (!comp) return;
+
+      selectedCompId = id;
+
+      // Actualizar tarjeta detalle
+      document.getElementById('detCallout').innerText = comp.callout;
+      document.getElementById('detDesig').innerText = comp.desig;
+      document.getElementById('detName').innerText = comp.name;
+      document.getElementById('detFootprint').innerText = comp.footprint;
+      document.getElementById('detLcsc').innerText = comp.lcsc;
+      document.getElementById('detCoords').innerText = `X: ${comp.x_mm.toFixed(1)} mm, Y: ${comp.y_mm.toFixed(1)} mm`;
+      document.getElementById('detLayer').innerText = `${comp.layer} LAYER`;
+      document.getElementById('detSubsystem').innerText = comp.subName;
+      document.getElementById('detSolder').innerText = comp.solder;
+
+      // Actualizar selección en tabla
+      document.querySelectorAll('#compTableBody tr').forEach(row => {
+        row.classList.toggle('selected', parseInt(row.dataset.id) === id);
+      });
+
+      // Actualizar marcador visual en canvas
+      const px = mmToPx(comp.x_mm, comp.y_mm);
+      const w_px = Math.max(comp.w_mm * SCALE_S, 80);
+      const h_px = Math.max(comp.h_mm * SCALE_S, 80);
+
+      compMarker.style.display = 'block';
+      compMarker.style.left = `${px.x - w_px / 2}px`;
+      compMarker.style.top = `${px.y - h_px / 2}px`;
+      compMarker.style.width = `${w_px}px`;
+      compMarker.style.height = `${h_px}px`;
+      markerLabel.innerText = `${comp.callout} ${comp.desig}`;
+
+      // Paneo suave para centrar en el componente si está fuera de vista o con bajo zoom
+      const vRect = viewport.getBoundingClientRect();
+      const targetScreenX = vRect.width / 2;
+      const targetScreenY = vRect.height / 2;
+
+      // Si el zoom actual es muy bajo (<0.7), incrementarlo para apreciar el detalle
+      if (currentZoom < 0.7) {
+        currentZoom = 0.95;
+      }
+
+      panX = targetScreenX - px.x * currentZoom;
+      panY = targetScreenY - px.y * currentZoom;
+      applyTransform();
+    }
+
+    // RENDERIZADO DE TABLA DE COMPONENTES
+    function renderTable(list) {
+      compTableBody.innerHTML = '';
+      list.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.dataset.id = c.id;
+        if (c.id === selectedCompId) tr.classList.add('selected');
+        tr.innerHTML = `
+          <td class="cell-callout">${c.callout}</td>
+          <td class="cell-desig">${c.desig}</td>
+          <td class="cell-name">${c.name}</td>
+          <td class="cell-lcsc">${c.lcsc}</td>
+        `;
+        tr.addEventListener('click', () => selectComponent(c.id));
+        compTableBody.appendChild(tr);
+      });
+      document.getElementById('compCountBadge').innerText = `${list.length} Items`;
+    }
+
+    // BÚSQUEDA Y FILTRADO
+    function handleSearch() {
+      const q = searchInput.value.toLowerCase().trim();
+      let filtered = COMPONENTS;
+
+      if (currentSubsystem !== 'all') {
+        filtered = filtered.filter(c => c.subsystem === currentSubsystem);
+      }
+
+      if (q) {
+        filtered = filtered.filter(c => 
+          c.desig.toLowerCase().includes(q) ||
+          c.name.toLowerCase().includes(q) ||
+          c.lcsc.toLowerCase().includes(q) ||
+          c.callout.toLowerCase().includes(q) ||
+          c.solder.toLowerCase().includes(q)
+        );
+      }
+      renderTable(filtered);
+    }
+
+    function filterSubsystem(sub, btn) {
+      currentSubsystem = sub;
+      document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      handleSearch();
+
+      // Zoom inteligente por subsistema
+      if (sub === 'mcu') {
+        selectComponent(1);
+      } else if (sub === 'modem') {
+        selectComponent(2);
+      } else if (sub === 'power') {
+        selectComponent(4);
+      } else if (sub === 'bms') {
+        selectComponent(6);
+      } else if (sub === 'hv') {
+        selectComponent(10);
+      } else if (sub === 'periph') {
+        selectComponent(24);
+      } else {
+        focusRegion('pcb');
+      }
+    }
+
+    // ALTERNAR ENTRE MODO SVG Y PNG
+    function toggleImageMode() {
+      isSvgMode = !isSvgMode;
+      const btn = document.getElementById('btnMode');
+      if (isSvgMode) {
+        cadImage.src = 'diagrama_conexion_placa_pcb.svg';
+        btn.innerHTML = '<span>🔄 Modo: Vectorial SVG</span>';
+      } else {
+        cadImage.src = 'diagrama_conexion_placa_pcb.png';
+        btn.innerHTML = '<span>🔄 Modo: Raster PNG HD</span>';
+      }
+    }
+
+    // INICIAR AL CARGAR
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

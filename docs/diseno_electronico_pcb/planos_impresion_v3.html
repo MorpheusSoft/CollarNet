@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>CollarNet V3 — Planos de Ingeniería: Placa Cuadrada 70x70 mm (Caja Puck 85x85 mm)</title>
+  <title>CollarNet V3 — Planos de Ingeniería: Placa Cuadrada 70x70 mm (Controlador IoT & Generador de Pulso)</title>
   <style>
     @page {
       size: 420mm 297mm; /* A3 Landscape */
@@ -52,25 +52,25 @@
   <!-- LÁMINA 1: ESQUEMÁTICO COMPLETO OFICIAL (8 BLOQUES) -->
   <div class="page light">
     <img src="esquematico_circuito_completo.svg" alt="Lámina 1: Esquemático Electrónico Oficial Completo">
-    <div class="page-footer" style="color: #475569;">COLLARNET V3 | PLANO 1 DE 4: DIAGRAMA ESQUEMÁTICO ELECTRÓNICO OFICIAL (8 BLOQUES)</div>
+    <div class="page-footer" style="color: #475569;">COLLARNET V3 | PLANO 1 DE 4: DIAGRAMA ESQUEMÁTICO ELECTRÓNICO OFICIAL (8 BLOQUES) | RENIER MORALES &amp; LINDBERGH ZAMBRANO</div>
   </div>
 
   <!-- LÁMINA 2: LAYOUT PCB CUADRADA 70.0 x 70.0 mm CON PLANO DE MASA 60x60 Y RANURA L -->
   <div class="page">
     <img src="pcb_cuadrada_70x70_layout.svg" alt="Lámina 2: PCB Layout Cuadrado 70x70 mm con Cotas Mecánicas">
-    <div class="page-footer">COLLARNET V3 | PLANO 2 DE 4: PCB ARTWORK CUADRADO 70.0 × 70.0 mm (PLANO GND 60×60, 18650 DIAGONAL, L-SLOT 5kV)</div>
+    <div class="page-footer">COLLARNET V3 | PLANO 2 DE 4: PCB ARTWORK CUADRADO 70.0 × 70.0 mm (PLANO GND 60×60, PUERTO MAGNÉTICO IP68, L-SLOT 5kV)</div>
   </div>
 
-  <!-- LÁMINA 3: ENSAMBLE 3D ISOMÉTRICO DE LA PCB CON COMPONENTES Y BATERÍA PANASONIC 18650 -->
+  <!-- LÁMINA 3: ENSAMBLE 3D ISOMÉTRICO DE LA PCB - CARA SUPERIOR (TOP LAYER) -->
   <div class="page">
-    <img src="render_pcb_cuadrada_70x70_3d.png" alt="Lámina 3: Ensamble 3D de la PCB Cuadrada">
-    <div class="page-footer">COLLARNET V3 | PLANO 3 DE 4: RENDER 3D DE COMPONENTES SMT, PLANO DE MASA RF Y BATERÍA 18650</div>
+    <img src="render_pcb_cuadrada_70x70_3d.png" alt="Lámina 3: Ensamble 3D Cara Superior de la PCB Cuadrada">
+    <div class="page-footer">COLLARNET V3 | PLANO 3 DE 4: ISOMÉTRICO 3D CARA SUPERIOR (TOP LAYER SMT - ESP32-S3 / SIM7670SA / MPPT / CDI 1000V)</div>
   </div>
 
-  <!-- LÁMINA 4: ENSAMBLE EN LA NUEVA CAJA PUCK 85x85 mm CON SILLA ANATÓMICA DORSAL -->
+  <!-- LÁMINA 4: ENSAMBLE 3D ISOMÉTRICO DE LA PCB - CARA INFERIOR (BOTTOM LAYER CON BATERÍA 18650) -->
   <div class="page">
-    <img src="render_pcb_cuadrada_70x70_caja.png" alt="Lámina 4: Ensamble en Caja Puck 85x85 mm">
-    <div class="page-footer">COLLARNET V3 | PLANO 4 DE 4: INTEGRACIÓN MECÁNICA EN CAJA PUCK 85×85 mm CON SILLA ANATÓMICA DORSAL</div>
+    <img src="render_pcb_cuadrada_70x70_bottom_3d.png" alt="Lámina 4: Ensamble 3D Cara Inferior con Batería 18650">
+    <div class="page-footer">COLLARNET V3 | PLANO 4 DE 4: ISOMÉTRICO 3D CARA INFERIOR (BOTTOM LAYER - SOPORTE BATERÍA 18650 EN DIAGONAL Y CLIPS KEYSTONE)</div>
   </div>
 </body>
 </html>
