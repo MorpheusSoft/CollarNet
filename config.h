@@ -48,6 +48,6 @@ enum NetPreference {
 // Configuración del Broker MQTT Oficial COWAI (cowai.net)
 #define MQTT_SERVER "broker.hivemq.com"
 #define MQTT_PORT 1883
-#define MQTT_TOPIC_PREFIX "collarnet/lzambrano"
+#define MQTT_TOPIC_PREFIX "collarnet/dev_local"
 
 #endif // CONFIG_H

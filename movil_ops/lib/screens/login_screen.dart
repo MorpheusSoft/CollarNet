@@ -363,11 +363,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                     },
                                   ),
                                   ActionChip(
-                                    label: Text('Nube COWAI', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.emeraldGreen)),
+                                    label: Text('Localhost', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.emeraldGreen)),
                                     backgroundColor: AppTheme.surface,
                                     padding: EdgeInsets.zero,
                                     onPressed: () async {
-                                      _serverCtrl.text = 'https://cowai.net/api';
+                                      _serverCtrl.text = 'http://127.0.0.1:3500/api';
                                       await ApiService.setCustomBaseUrl(_serverCtrl.text);
                                       _testServerConnection();
                                     },

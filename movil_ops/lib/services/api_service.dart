@@ -9,31 +9,24 @@ import '../models/potrero.dart';
 import 'gis_service.dart';
 
 class ApiService {
-  // Servidor backend CollarNet oficial COWAI por defecto
-  static const String defaultBaseUrl = 'https://cowai.net/api';
+  // Servidor backend local de desarrollo (Restringido sin acceso al VPS de producción)
+  static const String defaultBaseUrl = 'http://127.0.0.1:3500/api';
 
   static Future<String> getBaseUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       var savedUrl = prefs.getString('custom_server_url');
 
-      // Si se ejecuta en navegador Web o PWA, usar siempre el origin actual para evitar CORS
       if (kIsWeb) {
         final origin = Uri.base.origin;
         if (origin.startsWith('http://') || origin.startsWith('https://')) {
-          if (savedUrl == null || savedUrl.contains('192.168.') || savedUrl.isEmpty) {
-            final webApiUrl = '$origin/api';
-            await prefs.setString('custom_server_url', webApiUrl);
-            return webApiUrl;
-          }
+          final webApiUrl = '$origin/api';
+          await prefs.setString('custom_server_url', webApiUrl);
+          return webApiUrl;
         }
       }
 
-      if (savedUrl == null ||
-          savedUrl.isEmpty ||
-          savedUrl.contains('192.168.') ||
-          savedUrl.contains('10.0.2.2') ||
-          savedUrl.contains('localhost')) {
+      if (savedUrl == null || savedUrl.isEmpty || savedUrl.contains('cowai.net')) {
         savedUrl = defaultBaseUrl;
         await prefs.setString('custom_server_url', defaultBaseUrl);
       }
@@ -41,7 +34,7 @@ class ApiService {
       if (clean.startsWith('http://') || clean.startsWith('https://')) {
         return clean.endsWith('/api') ? clean : (clean.endsWith('/') ? '${clean}api' : '$clean/api');
       }
-      return clean.contains('cowai.net') ? 'https://$clean/api' : 'http://$clean/api';
+      return 'http://$clean/api';
     } catch (_) {
       return defaultBaseUrl;
     }

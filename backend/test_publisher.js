@@ -5,7 +5,7 @@ import http from 'http';
 
 // Configuración
 const COLLAR_ID = 'collar_test_001';
-const PREFIX = process.env.MQTT_TOPIC_PREFIX || 'collarnet/lzambrano';
+const PREFIX = process.env.MQTT_TOPIC_PREFIX || 'collarnet/dev_local';
 const PUB_TOPIC = `${PREFIX}/${COLLAR_ID}/telemetria`;
 
 // Coordenadas del Hato (Polígono rectangular ~220m x 220m)
